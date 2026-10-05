@@ -1,0 +1,22 @@
+PUBLICAÇÃO — guias_18_paginas
+
+1. Crie o repositório público guias_18_paginas na conta wernermoura2-web.
+2. Extraia este ZIP.
+3. No repositório, Add file > Upload files: envie TODOS OS ARQUIVOS extraídos diretamente na raiz, e não o ZIP nem a pasta externa.
+4. Confirme o upload na branch do repositório.
+5. Settings > Pages > Source: Deploy from a branch. Escolha a branch em que os arquivos estão (normalmente main; confira o nome) e a pasta /(root). Save.
+6. Actions: aguarde pages build and deployment ficar verde.
+7. Abra https://wernermoura2-web.github.io/guias_18_paginas/
+
+Não confunda com a branch man do repositório revisao-guia: este repositório pode usar main.
+
+Pacote extraído do ZIP enviado. Preservadas as funcionalidades dos guias. Apenas o nome do banco de rascunhos do navegador foi separado entre individual e equipe. Os JSONs continuam portáteis.
+As versões individual e equipe do arquivo enviado têm o mesmo formulário e as mesmas funções de importação. Aqui elas possuem acessos e rascunhos separados. Não foi retirada nenhuma função.
+
+O site hospeda os formulários; não armazena inspeções no GitHub. Salve o JSON antes de sair. Rascunhos de arquivos content:// não migram automaticamente: abra seu JSON no site. Este pacote não oferece instalação offline; o atalho da tela inicial abre o site.
+
+Este pacote usa exatamente os PDFs presentes no ZIP enviado. Não é uma revisão dos PDFs nem uma aplicação das contribuições APPCC ainda em revisão.
+
+PDFs incluídos: original de 18 páginas e original de 18 ampliado para 22 páginas.
+
+Incluído também Guia_Rev6_Referencia.pdf, com botão na página inicial. O HTML com banco permanece no repositório já existente.
