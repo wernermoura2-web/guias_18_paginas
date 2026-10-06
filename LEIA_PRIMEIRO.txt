@@ -20,3 +20,4 @@ Este pacote usa exatamente os PDFs presentes no ZIP enviado. Não é uma revisã
 PDFs incluídos: original de 18 páginas e original de 18 ampliado para 22 páginas.
 
 Incluído também Guia_Rev6_Referencia.pdf, com botão na página inicial. O HTML com banco permanece no repositório já existente.
+Atualização da publicação em 06/10/2026.
