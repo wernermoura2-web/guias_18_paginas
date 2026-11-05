@@ -7,6 +7,10 @@ replacement = "if(page.page===6)return ({1:'Garrafões retornáveis',2:'Embalage
 for name in ('individual.html','equipe.html'):
     p=Path(name)
     s=p.read_text(encoding='utf-8')
+    print('CAMPOS_RECEPCAO', name, len(s))
+    for term in ('bpfScopeLabel', 'BPF_PHRASES', 'linha ', 'Linha ', 'LINHA ', 'Recepção', 'Recep', '4.5.2', 'bpfPhraseName', 'bpfSyncNCLists'):
+        pos=s.find(term)
+        print('TERM', repr(term), 'count', s.count(term), 'pos', pos, 'context', repr(s[max(0,pos-130):pos+440]) if pos>=0 else '')
     matches=pat.findall(s)
     print('DIAGNOSTICO',name,'bytes',len(s),'match',len(matches))
     for term in ('bpfScopeLabel','page.page===6','Garrafão retornável','Garrafões retornáveis','LINHA 1'):
