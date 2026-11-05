@@ -1,4 +1,4 @@
-name: Publicar Fs em caixas de selecao BPF
+name: Publicar grupos F com resposta unica BPF
 
 on:
   push:
@@ -18,10 +18,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Criar selecoes Sim e Nao com OBS e NC coletivas nos dois HTML
-        run: python3 scripts/patch_f_checkbox_grupos.py
-      - name: Testar grupos de F e calculos internos
-        run: node scripts/test_f_checkbox_grupos.js
+      - name: Aplicar desenho de F com resposta unica e caixas selecionaveis
+        run: python3 scripts/patch_f_unica_resposta_desenho.py
+      - name: Testar 4.11.2, 4.3.3, 4.10.3, JSON e Anexo F
+        run: node scripts/test_f_unica_resposta_desenho.js
+      - name: Validar que o PDF continua paginado sem perda de texto
+        run: node scripts/test_pdf_overflow_geral.js
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -30,6 +32,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: grupos F selecionáveis com Sim Não OBS e NC"
+            git commit -m "Guia BPF: respostas unicas dos Fs conforme desenho, com observacao do grupo"
             git push origin HEAD:main
           fi
