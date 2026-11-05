@@ -41,7 +41,7 @@ for filename in ('individual.html','equipe.html'):
 
 index=Path('index.html')
 html=index.read_text(encoding='utf-8')
-html,n=re.subn(r'href="((?:individual|equipe)\\.html\\?v=)[^"]+"',
+html,n=re.subn(r'href="((?:individual|equipe)\.html\?v=)[^"]+"',
                lambda m:'href="'+m.group(1)+'20261105-nc-resumo-corrigido"',html)
 assert n==2,f'index: 2 links esperados; encontrados {n}'
 index.write_text(html,encoding='utf-8')
