@@ -58,7 +58,7 @@ function bpfSyncPCCFinal(){
   if(phrase.appcc!=='PCC'||values[bpfPhraseName(scope,i)]!=='0')return;
   const id=page.page+'_'+scope.name+'_'+i;
   const source=page.page<2?values['fill_'+(scope.col+1)]:page.page<6?values['fill_'+page.page]:'';
-  const unit=(page.page<2?'Captação ':page.page<6?'Reservatório ':'Linha ')+scope.col+(source?' - '+source:'');
+  const unit=(page.page===6?({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[scope.col]:(page.page<2?'Captação ':page.page<6?'Reservatório ':'Linha ')+scope.col)+(source?' - '+source:'');
   current[id]=PCCFinal.statement({code:row.code},{},i,unit,titles[page.page]);
  });
  const next=PCCFinal.synchronize(values[field]||'',previous,current);values[field]=next.text;values.BPF_PCCGenerated=JSON.stringify(next.generated);bpfSyncNCLists();
@@ -71,7 +71,7 @@ function bpfSyncNCLists(){
   if(values[bpfPhraseName(scope,i)]!=='0')return;
   const group=groups.find(g=>g.cats.includes(phrase.appcc));if(!group)return;
   const source=page.page<2?values['fill_'+(scope.col+1)]:page.page<6?values['fill_'+page.page]:'';
-  const unit=(page.page<2?'Captação ':page.page<6?'Reservatório ':'Linha ')+scope.col+(source?' - '+source:'');
+  const unit=(page.page===6?({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[scope.col]:(page.page<2?'Captação ':page.page<6?'Reservatório ':'Linha ')+scope.col)+(source?' - '+source:'');
   group.lines.push(PCCFinal.statement({code:row.code},{cat:phrase.appcc},i,unit,titles[page.page]));
  });
  let previous={};try{previous=JSON.parse(values.BPF_NCGenerated||'{}');}catch(e){}
