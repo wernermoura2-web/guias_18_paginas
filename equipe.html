@@ -70,9 +70,8 @@ function bpfSyncNCLists(){
  for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes)scope.phrases.forEach((phrase,i)=>{
   if(values[bpfPhraseName(scope,i)]!=='0')return;
   const group=groups.find(g=>g.cats.includes(phrase.appcc));if(!group)return;
-  const source=page.page<2?values['fill_'+(scope.col+1)]:page.page<6?values['fill_'+page.page]:'';
-  const unit=(page.page===6?({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[scope.col]:(page.page<2?'Captação ':page.page<6?'Reservatório ':'Linha ')+scope.col)+(source?' - '+source:'');
-  group.lines.push(PCCFinal.statement({code:row.code},{cat:phrase.appcc},i,unit,titles[page.page]));
+  const unit=page.page<2?'Captação '+scope.col:page.page<6?'Reservatório '+scope.col:page.page===6?({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[scope.col]:page.page<=10?'Linha '+scope.col:'Estabelecimento';
+  group.lines.push('Frase '+(i+1)+', do item '+row.code+', do processo '+titles[page.page]+', na unidade '+unit+', classificada como '+phrase.appcc);
  });
  let previous={};try{previous=JSON.parse(values.BPF_NCGenerated||'{}');}catch(e){}
  const current={};for(const group of groups)current[group.id]=group.title+' — Total: '+group.lines.length+'\n'+(group.lines.length?group.lines.map((line,i)=>(i+1)+'. '+line).join('\n'):'Nenhuma não conformidade registrada.');
