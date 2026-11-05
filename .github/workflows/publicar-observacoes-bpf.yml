@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Diagnosticar nomes das quatro categorias da recepcao
+      - name: Aplicar nomes das quatro categorias somente na recepcao
         run: python3 scripts/patch_recepcao_4_colunas.py
       - name: Publicar a revisao na branch main
         run: |
