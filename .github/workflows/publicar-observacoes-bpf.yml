@@ -20,7 +20,7 @@ jobs:
           persist-credentials: true
       - name: Aplicar desenho de F com resposta unica e caixas selecionaveis
         run: python3 scripts/patch_f_unica_resposta_desenho.py
-      - name: Testar 4.11.2, 4.3.3, 4.10.3, JSON e Anexo F
+      - name: Revalidar 4.11.2, 4.3.3, 4.10.3, JSON e Anexo F
         run: node scripts/test_f_unica_resposta_desenho.js
       - name: Validar que o PDF continua paginado sem perda de texto
         run: node scripts/test_pdf_overflow_geral.js
