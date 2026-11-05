@@ -20,7 +20,7 @@ jobs:
           persist-credentials: true
       - name: Corrigir divisão do texto no PDF editavel em ambos os modos
         run: python3 scripts/patch_pdf_overflow_geral.py
-      - name: Validar texto e páginas extras com o PDF original
+      - name: Conferir páginas extras editáveis com o PDF original A4
         run: node scripts/test_pdf_overflow_geral.js
       - name: Publicar a revisao na branch main
         run: |
