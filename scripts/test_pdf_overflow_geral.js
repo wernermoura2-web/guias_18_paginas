@@ -33,14 +33,14 @@ async function main(){
   const font=await pdf.embedFont(PDFLib.StandardFonts.Helvetica);
   const cases=[
    {name:'curto',text:'Observações gerais da inspeção sanitária.'},
-   {name:'páginas 14 e 15',text:Array.from({length:120},(_,i)=>'Não conformidade '+(i+1)+'; frase 1; item 4.3.5; Reservatórios da Captação 1.').join('\n')},
+   {name:'páginas 14 e 15',text:Array.from({length:90},(_,i)=>'Não conformidade '+(i+1)+'; frase 1; item 4.3.5; Reservatórios da Captação 1.').join('\n')},
    {name:'páginas adicionais',text:Array.from({length:900},(_,i)=>'Não conformidade '+(i+1)+'; frase 1; item 4.3.5; Reservatórios da Captação 1.').join('\n')}
   ];
   for(const c of cases){
    const flow=run.bpfPdfGeneralSplit(c.text,font,form,pdf);
    assert.equal([flow.first,flow.second,...flow.extras].join(''),c.text,filename+': perdeu conteúdo: '+c.name);
    if(c.name==='curto')assert.equal(flow.extras.length,0);
-   if(c.name==='páginas 14 e 15')assert(flow.second.length>0,filename+': não preencheu a continuação da página 15');
+   if(c.name==='páginas 14 e 15'){assert(flow.second.length>0,filename+': não preencheu a continuação da página 15');assert.equal(flow.extras.length,0,filename+': criou páginas além das duas previstas');}
    if(c.name==='páginas adicionais')assert(flow.extras.length>0,filename+': não criou páginas extras');
    console.log('DIVISÃO OK',filename,c.name,'chars primeira',flow.first.length,'segunda',flow.second.length,'extras',flow.extras.length);
   }
@@ -48,6 +48,7 @@ async function main(){
   first.enableMultiline();first.setText(flow.first);first.acroField.setDefaultAppearance('/Helv 9 Tf 0 g');first.defaultUpdateAppearances(font);
   second.enableMultiline();second.setText(flow.second);second.acroField.setDefaultAppearance('/Helv 9 Tf 0 g');second.defaultUpdateAppearances(font);
   const originalCount=pdf.getPageCount();
+  console.log('TAMANHO PDF ORIGINAL',filename,pdf.getPage(0).getSize(),pdf.getPageCount());
   const extraCount=run.bpfPdfAppendGeneralPages(pdf,form,font,flow);
   assert.equal(extraCount,flow.extras.length);
   assert.equal(pdf.getPageCount(),originalCount+extraCount);
