@@ -161,9 +161,10 @@ function bpfSyncNCLists(){
 function bpfPhraseName(scope,index){return 'BPF_F_'+scope.name+'_'+(index+1);}
 function bpfNoteName(scope,index){return 'BPF_Obs_'+scope.name+'_'+(index+1);}
 function bpfSummaryName(page,row){return 'BPF_Summary_'+page.page+'_'+row.code;}
-function bpfInitFields(data){data.fields.BPF_NCGenerated={name:'BPF_NCGenerated',type:'/Tx',flags:0,label:'Controle das listas de não conformidades',options:[],calc:''};data.fields.BPF_PCCDestination={name:'BPF_PCCDestination',type:'/Tx',flags:0,label:'Destino dos considerandos PCC',options:[],calc:''};data.fields.BPF_PCCGenerated={name:'BPF_PCCGenerated',type:'/Tx',flags:0,label:'Controle dos considerandos PCC',options:[],calc:''};for(const p of BPF_PHRASES)for(const r of p.rows){const n=bpfSummaryName(p,r);data.fields[n]={name:n,type:'/Tx',flags:0,label:'Resumo '+r.code,options:[],calc:'',phrasePage:p.page};}for(const p of BPF_PHRASES)for(const r of p.rows)for(const scope of r.scopes)scope.phrases.forEach((f,i)=>{const n=bpfPhraseName(scope,i),note=bpfNoteName(scope,i);data.fields[n]={name:n,type:'/Ch',flags:0,label:r.code+' F'+(i+1),options:['','1','0','2'],calc:'',phrasePage:p.page};data.fields[note]={name:note,type:'/Tx',flags:4096,label:r.code+' F'+(i+1)+' observação',options:[],calc:'',phrasePage:p.page};});bpfInitGroupFields(data);}
+function bpfInitFields(data){data.fields.BPF_NCGenerated={name:'BPF_NCGenerated',type:'/Tx',flags:0,label:'Controle das listas de não conformidades',options:[],calc:''};data.fields.BPF_PCCDestination={name:'BPF_PCCDestination',type:'/Tx',flags:0,label:'Destino dos considerandos PCC',options:[],calc:''};data.fields.BPF_PCCGenerated={name:'BPF_PCCGenerated',type:'/Tx',flags:0,label:'Controle dos considerandos PCC',options:[],calc:''};for(const p of BPF_PHRASES)for(const r of p.rows){const n=bpfSummaryName(p,r);data.fields[n]={name:n,type:'/Tx',flags:0,label:'Resumo '+r.code,options:[],calc:'',phrasePage:p.page};}for(const p of BPF_PHRASES)for(const r of p.rows)for(const scope of r.scopes)scope.phrases.forEach((f,i)=>{const n=bpfPhraseName(scope,i),note=bpfNoteName(scope,i);data.fields[n]={name:n,type:'/Ch',flags:0,label:r.code+' F'+(i+1),options:['','1','0','2'],calc:'',phrasePage:p.page};data.fields[note]={name:note,type:'/Tx',flags:4096,label:r.code+' F'+(i+1)+' observação',options:[],calc:'',phrasePage:p.page};});bpfInitGroupFields(data);bpfInitUnifiedFields(data);}
 function bpfMergeObservation(text,code,previous,summary){const start='[Frases '+code+']',end='[/Frases '+code+']',a=text.indexOf(start);if(a>=0){const b=text.indexOf(end,a);if(b>=0)text=text.slice(0,a)+text.slice(b+end.length);}if(previous){const i=text.indexOf(previous);if(i>=0)text=text.slice(0,i)+text.slice(i+previous.length);}text=text.trimEnd();return text+(summary?(text?' ':'')+summary:'');}
 function bpfSyncObservation(row,page){
+ if(bpfUnifiedRow(row))return bpfSyncUnifiedObservation(row,page);
  const name=BPF_OBSERVATION_FIELDS[page.page+'_'+row.code];if(!name)return;
  const entries=[];
  for(const panel of bpfPanels(page,row)){
@@ -234,7 +235,233 @@ function bpfSeedGroupNotes(page,row,panels){
  }
 }
 
+
+function bpfUnifiedRow(row){return ['4.3.3','4.10.3','4.11.2'].includes(row.code);}
+function bpfUnifiedKey(page,row,panel,kind){
+ return 'BPF_FGroup'+kind+'_'+page.page+'_'+row.code.replace(/[^0-9a-z]/gi,'_')+'_G'+(panel.id+1);
+}
+function bpfUnifiedOtherKey(page,row,panel){return bpfUnifiedKey(page,row,panel,'Other');}
+function bpfUnifiedSelection(page,row,panel){
+ const raw=values[bpfUnifiedKey(page,row,panel,'Selected')];
+ if(typeof raw==='string'&&raw){
+  try{
+   const parsed=JSON.parse(raw);
+   if(Array.isArray(parsed))return parsed.filter(x=>panel.entries.some(e=>e.name===x));
+  }catch(_){}
+ }
+ return panel.entries.filter(e=>['1','0'].includes(values[e.name])).map(e=>e.name);
+}
+function bpfUnifiedAnswer(page,row,panel){
+ const raw=values[bpfUnifiedKey(page,row,panel,'Choice')];
+ if(raw==='1'||raw==='0')return raw;
+ const answers=[...new Set(panel.entries.filter(e=>['1','0'].includes(values[e.name])).map(e=>values[e.name]))];
+ return answers.length===1?answers[0]:'';
+}
+function bpfUnifiedIsOther(row,panel,e){return row.code==='4.11.2'&&panel.id===1&&e.index===5;}
+function bpfUnifiedOption(row,e){
+ if(row.code==='4.11.2')return ['RT','Responsável legal','Proprietário','Químico','Biólogo','Outro'][e.index];
+ if(row.code==='4.3.3')return [
+   'Extravasor protegido por tela milimetrada',
+   'Dispositivo inferior para esvaziamento e higienização',
+   'Verificação e troca dos elementos filtrantes',
+   'Filtro de ar microbiológico',
+   'Válvula de retenção ou sifão',
+   'Torneira específica para coleta'
+ ][e.index];
+ if(row.code==='4.10.3')return [
+   'Coliformes totais','Escherichia coli','Enterococos',
+   'Pseudomonas aeruginosa','Clostrídios sulfito redutores',
+   'Clostridium perfringens','Bactérias heterotróficas',
+   'Coliformes totais','Escherichia coli','Bactérias heterotróficas',
+   'Coliformes totais','Escherichia coli','Pseudomonas aeruginosa','Bactérias heterotróficas',
+   'Análise físico-química anual — RDC 717/2022',
+   'Cinco unidades do mesmo lote envasado',
+   'Demais análises e controles do requisito'
+ ][e.index];
+ return e.phrase.text;
+}
+function bpfInitUnifiedFields(data){
+ for(const page of BPF_PHRASES)for(const row of page.rows){
+  if(!bpfUnifiedRow(row))continue;
+  for(const panel of bpfPanels(page,row)){
+   for(const [kind,label] of [['Choice','resposta única'],['Selected','opções selecionadas']]){
+    const key=bpfUnifiedKey(page,row,panel,kind);
+    data.fields[key]={name:key,type:'/Tx',flags:0,label:row.code+' '+panel.label+' '+label,options:[],calc:'',phrasePage:page.page};
+   }
+   if(row.code==='4.11.2'&&panel.id===1){
+    const key=bpfUnifiedOtherKey(page,row,panel);
+    data.fields[key]={name:key,type:'/Tx',flags:0,label:'4.11.2 outro conselho profissional',options:[],calc:'',phrasePage:page.page};
+   }
+  }
+ }
+}
+function bpfUnifiedApply(page,row,panel){
+ const answer=bpfUnifiedAnswer(page,row,panel);
+ const selected=new Set(bpfUnifiedSelection(page,row,panel));
+ if(!['1','0'].includes(answer))return;
+ const note=String(values[bpfGroupNoteName(page,row,panel,answer)]||'').trim();
+ const other=String(values[bpfUnifiedOtherKey(page,row,panel)]||'').trim();
+ for(const scope of row.scopes){
+  const scopeEntries=panel.entries.filter(e=>e.scope.name===scope.name);
+  const anySelected=scopeEntries.some(e=>selected.has(e.name));
+  for(const e of scopeEntries){
+   const checked=selected.has(e.name);
+   values[e.name]=checked?answer:(anySelected?'2':'');
+   const noteKey=bpfNoteName(e.scope,e.index);
+   values[noteKey]=checked?(note+(bpfUnifiedIsOther(row,panel,e)&&other?(note?'\n':'')+'Outro: '+other:'')):'';
+  }
+ }
+}
+function bpfSyncUnifiedObservation(row,page){
+ const name=BPF_OBSERVATION_FIELDS[page.page+'_'+row.code];if(!name)return;
+ const entries=[];
+ for(const panel of bpfPanels(page,row)){
+  const answer=bpfUnifiedAnswer(page,row,panel),selected=new Set(bpfUnifiedSelection(page,row,panel));
+  if(!['1','0'].includes(answer)||!selected.size)continue;
+  const note=String(values[bpfGroupNoteName(page,row,panel,answer)]||'').replace(/\s+/g,' ').trim();
+  const other=String(values[bpfUnifiedOtherKey(page,row,panel)]||'').replace(/\s+/g,' ').trim();
+  if(answer==='1'&&!note&&!other)continue;
+  const checks=panel.entries.filter(e=>selected.has(e.name)).map(e=>
+   (row.scopes.length>1?bpfScopeLabel(page,e.scope)+': ':'')+bpfUnifiedOption(row,e));
+  entries.push(panel.label+' — '+(answer==='1'?'Sim':'Não')+' ('+checks.join(', ')+')'+(note?'; '+(answer==='1'?'OBS: ':'NC: ')+note:'')+(other?'; Outro: '+other:''));
+ }
+ const key=bpfSummaryName(page,row),summary=entries.length?row.code+' '+entries.join('; ')+'.':'';
+ values[name]=bpfMergeObservation(values[name]||'',row.code,values[key]||'',summary);
+ values[key]=summary;
+}
+function bpfOpenUnifiedPhrases(row,page){
+ if(!bpfDismissEditor())return;
+ const panels=bpfPanels(page,row);
+ bpfSeedGroupNotes(page,row,panels);
+ const dlg=document.createElement('section');dlg.id='bpf-editor';dlg.className='bpf-editor';
+ dlg.setAttribute('aria-label','Frases agrupadas do item '+row.code);
+ const title=document.createElement('h2');title.textContent='Item '+row.code+' — Frases';dlg.append(title);
+ const cssId='bpf-unified-group-css';
+ if(!document.getElementById(cssId)){
+  const style=document.createElement('style');style.id=cssId;
+  style.textContent='#bpf-editor .bpf-unified-group{border:2px solid #7897ad;border-radius:10px;padding:14px;margin:18px 0 22px}#bpf-editor .bpf-unified-group>legend{font-weight:700;padding:0 8px;font-size:1.1rem}#bpf-editor .bpf-unified-top{display:grid;grid-template-columns:minmax(105px,145px) minmax(0,1fr);gap:12px;margin:10px 0}#bpf-editor .bpf-unified-status{display:flex;flex-direction:column;gap:13px;padding:14px 8px;border-right:1px solid #c8d4dc}#bpf-editor .bpf-unified-status label{display:flex;align-items:center;gap:9px;cursor:pointer;font-size:1rem}#bpf-editor .bpf-unified-status input{width:20px;height:20px;margin:0}#bpf-editor .bpf-unified-options{display:flex;flex-direction:column;gap:6px;padding:8px 0}#bpf-editor .bpf-unified-option{display:flex;align-items:flex-start;gap:8px;line-height:1.35;cursor:pointer}#bpf-editor .bpf-unified-option input[type=checkbox]{width:19px;height:19px;flex-shrink:0;margin:2px 0 0}#bpf-editor .bpf-unified-option small{color:#5b6770}#bpf-editor .bpf-unified-other{flex:1;min-width:110px;max-width:250px;padding:5px;font:inherit}#bpf-editor .bpf-unified-observation{display:block;font-weight:600;margin-top:10px}#bpf-editor .bpf-unified-observation textarea{display:block;margin-top:7px;width:100%;min-height:90px;box-sizing:border-box;padding:8px;resize:vertical;font-weight:400}#bpf-editor .bpf-unified-hint{font-size:.9rem;color:#4b606e;margin:8px 0}#bpf-editor .bpf-unified-clear{font-size:.82rem;padding:6px 10px;margin-top:10px}#bpf-editor .bpf-unified-legacy{color:#a14218;font-weight:600}#bpf-editor .bpf-unified-option-scope{font-weight:600;margin-top:8px}#bpf-editor .bpf-unified-guidance{margin-top:10px}#bpf-editor .bpf-unified-guidance p{margin:5px 0;line-height:1.4}@media(max-width:560px){#bpf-editor .bpf-unified-top{grid-template-columns:1fr;gap:6px}#bpf-editor .bpf-unified-status{flex-direction:row;border-right:0;border-bottom:1px solid #c8d4dc;padding:9px 0}}';
+  document.head.append(style);
+ }
+ const content=document.createElement('div');dlg.append(content);
+ for(const panel of panels){
+  const card=document.createElement('fieldset');card.className='bpf-unified-group';
+  const legend=document.createElement('legend');legend.textContent=panel.label;card.append(legend);
+  const answers=[...new Set(panel.entries.map(e=>e.phrase.appcc))];
+  const category=document.createElement('p');category.className='bpf-unified-hint';category.textContent='Classificação das verificações: '+answers.join(' / ');card.append(category);
+  const top=document.createElement('div');top.className='bpf-unified-top';card.append(top);
+  const radios=document.createElement('div');radios.className='bpf-unified-status';top.append(radios);
+  const checkArea=document.createElement('div');checkArea.className='bpf-unified-options';top.append(checkArea);
+  const noteLabel=document.createElement('label');noteLabel.className='bpf-unified-observation';
+  const area=document.createElement('textarea');area.rows=4;
+  noteLabel.append(area);card.append(noteLabel);
+  const selectedKey=bpfUnifiedKey(page,row,panel,'Selected');
+  const answerKey=bpfUnifiedKey(page,row,panel,'Choice');
+  const oldSelected=bpfUnifiedSelection(page,row,panel);
+  let chosen=new Set(oldSelected);
+  let answer=bpfUnifiedAnswer(page,row,panel);
+  if(!Object.hasOwn(values,selectedKey)||!values[selectedKey])values[selectedKey]=JSON.stringify([...chosen]);
+  if(answer&&!values[answerKey])values[answerKey]=answer;
+  const updateNote=()=>{
+   if(answer==='0'){noteLabel.firstChild?.remove?.();noteLabel.textContent='NC — não conformidade do grupo';}
+   else{noteLabel.textContent='OBS — observação única do grupo';}
+   noteLabel.append(area);
+   area.disabled=!answer;
+   area.dataset.note=answer?bpfGroupNoteName(page,row,panel,answer):'';
+   area.value=answer?String(values[area.dataset.note]||''):'';
+  };
+  for(const [key,label]of [['1','Sim'],['0','Não']]){
+   const line=document.createElement('label'),radio=document.createElement('input');radio.type='radio';radio.name=answerKey;radio.value=key;radio.checked=answer===key;
+   radio.onchange=()=>{
+    if(!radio.checked)return;
+    answer=key;values[answerKey]=answer;
+    updateNote();
+    bpfUnifiedApply(page,row,panel);
+    changed();recalc();
+   };
+   line.append(radio,document.createTextNode(' '+label));radios.append(line);
+  }
+  let scopeLabel='';
+  for(const e of panel.entries){
+   if(row.scopes.length>1&&scopeLabel!==e.scope.name){
+    scopeLabel=e.scope.name;
+    const label=document.createElement('div');label.className='bpf-unified-option-scope';label.textContent=bpfScopeLabel(page,e.scope);checkArea.append(label);
+   }
+   const line=document.createElement('label');line.className='bpf-unified-option';
+   const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.dataset.phrase=e.name;checkbox.checked=chosen.has(e.name);
+   const caption=document.createElement('span');caption.textContent=bpfUnifiedOption(row,e);caption.title=e.phrase.text;
+   checkbox.onchange=()=>{
+    if(checkbox.checked)chosen.add(e.name);else chosen.delete(e.name);
+    values[selectedKey]=JSON.stringify([...chosen]);
+    bpfUnifiedApply(page,row,panel);
+    changed();recalc();
+   };
+   line.append(checkbox,caption);
+   if(bpfUnifiedIsOther(row,panel,e)){
+    const other=document.createElement('input');other.type='text';other.className='bpf-unified-other';other.placeholder='Qual conselho?';other.setAttribute('aria-label','Identificação do outro conselho profissional');
+    other.value=String(values[bpfUnifiedOtherKey(page,row,panel)]||'');other.disabled=!checkbox.checked;
+    checkbox.onchange=()=>{
+     if(checkbox.checked)chosen.add(e.name);else chosen.delete(e.name);
+     other.disabled=!checkbox.checked;
+     values[selectedKey]=JSON.stringify([...chosen]);
+     bpfUnifiedApply(page,row,panel);changed();recalc();
+    };
+    other.oninput=()=>{values[bpfUnifiedOtherKey(page,row,panel)]=other.value;bpfUnifiedApply(page,row,panel);changed();};
+    line.append(other);
+   }
+   checkArea.append(line);
+  }
+  area.oninput=()=>{if(!answer)return;values[bpfGroupNoteName(page,row,panel,answer)]=area.value;bpfUnifiedApply(page,row,panel);changed();};
+  updateNote();
+  const hint=document.createElement('p');hint.className='bpf-unified-hint';hint.textContent='Marque uma ou várias opções e atribua uma única resposta Sim ou Não ao grupo.';card.append(hint);
+  const oldAnswers=[...new Set(panel.entries.filter(e=>['1','0'].includes(values[e.name])).map(e=>values[e.name]))];
+  if(!answer&&oldAnswers.length>1){
+   const legacy=document.createElement('p');legacy.className='bpf-unified-legacy';
+   legacy.textContent='Este preenchimento antigo possui respostas diferentes dentro do mesmo grupo. Escolha Sim ou Não para consolidar; as respostas anteriores permanecem até a confirmação.';card.append(legacy);
+  }
+  const guidance=panel.entries.filter((e,i,a)=>e.phrase.guidance&&a.findIndex(x=>x.index===e.index)===i);
+  if(guidance.length){
+   const details=document.createElement('details');details.className='bpf-unified-guidance';
+   const summary=document.createElement('summary');summary.textContent='Textos completos e orientações ao inspetor';details.append(summary);
+   for(const e of guidance){
+    const p=document.createElement('p');p.textContent='F'+(e.index+1)+' — '+e.phrase.text+' | Orientação: '+e.phrase.guidance;details.append(p);
+   }card.append(details);
+  }
+  const clear=document.createElement('button');clear.type='button';clear.className='bpf-unified-clear';clear.textContent='Limpar avaliação deste F';
+  clear.onclick=()=>{
+   answer='';values[answerKey]='';chosen.clear();values[selectedKey]='[]';
+   for(const e of panel.entries){values[e.name]='';values[bpfNoteName(e.scope,e.index)]='';}
+   for(const inp of checkArea.querySelectorAll('input[type=checkbox]'))inp.checked=false;
+   for(const inp of checkArea.querySelectorAll('input[type=text]'))inp.disabled=true;
+   for(const inp of radios.querySelectorAll('input[type=radio]'))inp.checked=false;
+   updateNote();changed();recalc();
+  };
+  card.append(clear);content.append(card);
+ }
+ dlg.bpfCommit=()=>{
+  for(const panel of panels){
+   const selected=bpfUnifiedSelection(page,row,panel);
+   const answer=bpfUnifiedAnswer(page,row,panel);
+   if(!selected.length&&!answer)continue;
+   if(!selected.length||!['1','0'].includes(answer)){
+    alert('Item '+row.code+' — '+panel.label+': marque as opções e escolha uma única resposta Sim ou Não.');return false;
+   }
+   if(row.code==='4.11.2'&&panel.id===1&&panel.entries.some(e=>e.index===5&&selected.includes(e.name))&&!String(values[bpfUnifiedOtherKey(page,row,panel)]||'').trim()){
+    alert('Item 4.11.2 — F2: identifique o conselho profissional em Outro.');return false;
+   }
+   if(answer==='0'&&!String(values[bpfGroupNoteName(page,row,panel,'0')]||'').trim()){
+    alert('Item '+row.code+' — '+panel.label+': descreva a não conformidade no campo NC.');return false;
+   }
+   bpfUnifiedApply(page,row,panel);
+  }
+  bpfSyncUnifiedObservation(row,page);bpfSyncPCCFinal();recalc();return true;
+ };
+ function finish(){if(!dlg.bpfCommit())return;if(dirty)document.querySelector('#status').textContent='Respostas mantidas no guia. Use Salvar arquivo para guardar o preenchimento.';dlg.remove();document.querySelector('.page.active .bpf-f[data-code="'+row.code+'"]')?.scrollIntoView({block:'center'});}
+ function controls(){const bar=document.createElement('div');bar.className='bpf-editor-controls';for(const name of ['Salvar e fechar','Retornar']){const button=document.createElement('button');button.textContent=name;button.onclick=finish;bar.append(button);}return bar;}
+ dlg.insertBefore(controls(),title);dlg.append(controls());host.after(dlg);dlg.scrollIntoView({block:'start',behavior:'instant'});
+}
+
 function bpfOpenPhrases(row,page){
+ if(bpfUnifiedRow(row))return bpfOpenUnifiedPhrases(row,page);
  if(!bpfDismissEditor())return;
  const panels=bpfPanels(page,row);
  bpfSeedGroupNotes(page,row,panels);
@@ -605,10 +832,24 @@ for(const el of document.querySelectorAll('select[data-field^="BPF_PhotoProcess_
 </script><script>/* Anexo compacto: um texto por frase, seguido das unidades avaliadas. */
 function bpfAnnexRows(){
  const result=[];
- for(const page of BPF_PHRASES)for(const row of page.rows)row.phrases.forEach((phrase,i)=>{
-  const records=row.scopes.filter(scope=>values[bpfPhraseName(scope,i)]||String(values[bpfNoteName(scope,i)]||'').trim()).map(scope=>({scope,answer:({'1':'Sim','0':'Não','2':'NA'})[values[bpfPhraseName(scope,i)]]||'',note:String(values[bpfNoteName(scope,i)]||'').trim()}));
-  if(records.length)result.push({page,row,phrase,index:i,records});
- });return result;
+ for(const page of BPF_PHRASES)for(const row of page.rows){
+  if(bpfUnifiedRow(row)){
+   for(const panel of bpfPanels(page,row)){
+    const answer=bpfUnifiedAnswer(page,row,panel),selected=new Set(bpfUnifiedSelection(page,row,panel));
+    if(!['1','0'].includes(answer)||!selected.size)continue;
+    const entries=panel.entries.filter(e=>selected.has(e.name));
+    const note=String(values[bpfGroupNoteName(page,row,panel,answer)]||'').trim();
+    const other=row.code==='4.11.2'&&panel.id===1?String(values[bpfUnifiedOtherKey(page,row,panel)]||'').trim():'';
+    result.push({page,row,grouped:true,panel,entries,answer,note,other});
+   }
+   continue;
+  }
+  row.phrases.forEach((phrase,i)=>{
+   const records=row.scopes.filter(scope=>values[bpfPhraseName(scope,i)]||String(values[bpfNoteName(scope,i)]||'').trim()).map(scope=>({scope,answer:({'1':'Sim','0':'Não','2':'NA'})[values[bpfPhraseName(scope,i)]]||'',note:String(values[bpfNoteName(scope,i)]||'').trim()}));
+   if(records.length)result.push({page,row,phrase,index:i,records});
+  });
+ }
+ return result;
 }
 async function bpfAppendCompactAnnex(pdf){
  if(!document.querySelector('#bpf-include-annex')?.checked)return 0;
@@ -629,7 +870,18 @@ async function bpfAppendCompactAnnex(pdf){
   for(const r of records)record(r);y-=9;
  }
  fresh();text('Estabelecimento: '+(values.ENVASADORA||''));text('Data: '+(values.DATA||'')+' | Somente frases preenchidas. Classificação APPCC informativa; regra BPF mantida.',8);
- for(const {page:source,row,phrase,index,records} of rows){ensure(90);text('Página '+(source.page+1)+' do guia | Item '+row.code+' | F'+(index+1)+' | BPF/APPCC: '+phrase.appcc,9,true);text(phrase.text);
+ for(const item of rows){
+  if(item.grouped){
+   const {page:source,row,panel,entries,answer,note,other}=item;
+   ensure(90);
+   text('Página '+(source.page+1)+' | Item '+row.code+' | '+panel.label+' | Resultado: '+(answer==='1'?'Sim':'Não'),9,true);
+   table(entries.map(e=>[(row.scopes.length>1?bpfScopeLabel(source,e.scope):'Grupo')+' / F'+(e.index+1),answer==='1'?'Sim':'Não',bpfUnifiedOption(row,e)]));
+   if(note)text((answer==='1'?'OBS: ':'NC: ')+note,8.5);
+   if(other)text('Outro conselho: '+other,8);
+   continue;
+  }
+  const {page:source,row,phrase,index,records}=item;
+  ensure(90);text('Página '+(source.page+1)+' do guia | Item '+row.code+' | F'+(index+1)+' | BPF/APPCC: '+phrase.appcc,9,true);text(phrase.text);
   table(records.map(r=>[(source.page<2?'Captação ':source.page<6?'Reservatório ':'Linha ')+r.scope.col+' / F'+(index+1),r.answer,(r.answer==='Não'&&r.note?'NC: ':'')+r.note]));
  }
  annexPages.forEach((p,i)=>p.drawText('Anexo F - '+(i+1)+' de '+annexPages.length,{x:margin,y:20,size:8,font}));return annexPages.length;
@@ -730,7 +982,7 @@ async function bpfExportEditable(){
  for(const f of form.getFields()){const name=f.getName(),value=name==='OBS 1'?pdfFlow.first:name==='obs_gerais_continuacao'?pdfFlow.second:values[name];if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=(name==='OBS 1'||name==='obs_gerais_continuacao')?pdfFlow.size:Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
  // Keep the original photo fields and embed the supplied inspection images.
  for(const [name,data]of Object.entries(images)){const widget=D.widgets.find(w=>w.name===name);if(!widget)continue;const image=await (/^data:image\/png/.test(data)?pdf.embedPng(data):pdf.embedJpg(data)),page=pdf.getPages()[widget.page],delta=page.getHeight()-widget.size[1],region=BPF_PHRASES.find(p=>p.page===widget.page),above=region&&widget.size[1]-widget.rect[3]<region.end;const [x1,y1,x2,y2]=widget.rect;const box={x:x1,y:y1+(above?delta:0),width:x2-x1,height:y2-y1},scale=Math.min(box.width/image.width,box.height/image.height);page.drawImage(image,{x:box.x+(box.width-image.width*scale)/2,y:box.y+(box.height-image.height*scale)/2,width:image.width*scale,height:image.height*scale});const pictureField=form.getFieldMaybe(name);if(pictureField)for(const appearance of pictureField.acroField.getWidgets()){const rect=appearance.getRectangle();const transparent=pdf.context.flateStream('q Q',{Type:'XObject',Subtype:'Form',BBox:[0,0,rect.width,rect.height]});appearance.setNormalAppearance(pdf.context.register(transparent));}}
- const state={};for(const [name,value] of Object.entries(values))if(name.startsWith('BPF_F_'))state[name]=({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta';for(const [name,value]of Object.entries(values))if(name.startsWith('BPF_Obs_'))state[name]=value;state._summaries={};for(const page of BPF_PHRASES)for(const row of page.rows)state._summaries[page.page+'_'+row.code]=values[bpfSummaryName(page,row)]||'';form.getTextField('BPF_State').setText(JSON.stringify(state));
+ const state={};for(const [name,value] of Object.entries(values))if(name.startsWith('BPF_F_'))state[name]=({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta';for(const [name,value]of Object.entries(values))if(name.startsWith('BPF_Obs_'))state[name]=value;for(const [name,value]of Object.entries(values))if(/^BPF_FGroup(?:Note|Choice|Selected|Other)_/.test(name))state[name]=value;state._summaries={};for(const page of BPF_PHRASES)for(const row of page.rows)state._summaries[page.page+'_'+row.code]=values[bpfSummaryName(page,row)]||'';form.getTextField('BPF_State').setText(JSON.stringify(state));
  const extraObsPages=bpfPdfAppendGeneralPages(pdf,form,observationFont,pdfFlow);const annexCount=await bpfAppendCompactAnnex(pdf);
  const bytes=await pdf.save();const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})),a=document.createElement('a');a.href=url;a.download='Guia_BPF_Inspecao_Editavel.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);status.textContent='PDF preenchível gerado'+(extraObsPages?' com '+extraObsPages+' página(s) adicional(is) de Observações Gerais':'')+(annexCount?' e anexo F compacto ('+annexCount+' página(s))':'')+'. Texto integral distribuído entre páginas e campos editáveis.';
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
