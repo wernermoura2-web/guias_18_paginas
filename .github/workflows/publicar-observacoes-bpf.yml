@@ -1,4 +1,4 @@
-name: Publicar espacamento compacto das Observacoes Gerais BPF
+name: Diagnosticar orientacao ao inspetor no anexo PDF BPF
 
 on:
   push:
@@ -18,12 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Ajustar entrelinhas e ocupar mais espaco nas paginas 14 e 15
-        run: python3 scripts/patch_entrelinhas_obs_gerais.py
-      - name: Testar PDF e comparar aproveitamento da primeira pagina
-        run: node scripts/test_pdf_overflow_geral.js
-      - name: Testar fluxo das Observacoes Gerais no HTML
-        run: node scripts/test_overflow_observacoes_14_15.js
+      - name: Conferir orientacoes no anexo PDF
+        run: python3 scripts/diagnosticar_orientacoes_anexo_pdf.py
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
