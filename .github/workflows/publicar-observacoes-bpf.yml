@@ -1,4 +1,4 @@
-name: Diagnosticar PDF de observacoes gerais BPF
+name: Publicar PDF com continuacao das observacoes BPF
 
 on:
   push:
@@ -18,8 +18,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Examinar exportacao PDF e fluxo de impressao
-        run: python3 scripts/diagnosticar_pdf_observacoes_14_15.py
+      - name: Corrigir divisão do texto no PDF editavel em ambos os modos
+        run: python3 scripts/patch_pdf_overflow_geral.py
+      - name: Validar texto e páginas extras com o PDF original
+        run: node scripts/test_pdf_overflow_geral.js
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -28,6 +30,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: distribuir Observações Gerais da página 14 para a página 15"
+            git commit -m "Guia BPF: PDF editável divide as Observações Gerais entre páginas"
             git push origin HEAD:main
           fi
