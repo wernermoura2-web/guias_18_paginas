@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Corrigir as quatro categorias da recepcao nos dois modos
+      - name: Aplicar identificacoes revisadas aos campos F da recepcao
         run: python3 scripts/patch_recepcao_4_colunas.py
       - name: Publicar a revisao na branch main
         run: |
