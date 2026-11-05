@@ -24,6 +24,22 @@ for name in ('individual.html','equipe.html'):
     else:
         raise RuntimeError(name+': marcador de contexto incompatível; nenhuma alteração publicada')
 
+# O seletor das frases F deve identificar os insumos (e não linhas de envase).
+old_picker = "(page.page<6?'Captação / reservatório ':'Linha ')+s.col"
+new_picker = "(page.page===6?({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[s.col]:(page.page<6?'Captação / reservatório ':'Linha ')+s.col)"
+for name in ('individual.html','equipe.html'):
+    path=Path(name)
+    source=path.read_text(encoding='utf-8')
+    n_old=source.count(old_picker)
+    n_new=source.count(new_picker)
+    if n_old==1 and n_new==0:
+        path.write_text(source.replace(old_picker,new_picker),encoding='utf-8')
+        print(name,'seletor das frases F da recepção atualizado')
+    elif n_old==0 and n_new==1:
+        print(name,'seletor das frases F já atualizado')
+    else:
+        raise RuntimeError(name+': seletor F incompatível ('+str(n_old)+' / '+str(n_new)+')')
+
 path=Path('index.html')
 source=path.read_text(encoding='utf-8')
 source, count=re.subn(
