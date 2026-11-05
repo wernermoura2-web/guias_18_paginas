@@ -1,4 +1,4 @@
-name: Publicar NC resumidas nas observacoes gerais BPF
+name: Diagnosticar renderizacao das observacoes gerais BPF
 
 on:
   push:
@@ -18,8 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Abreviar NC criticas, maiores e menores nos dois modos
-        run: python3 scripts/patch_nc_resumo_curto.py
+      - name: Conferir sincronizacao das observacoes gerais
+        run: python3 scripts/diagnosticar_render_observacoes_gerais.py
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -28,6 +28,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: resumir não conformidades nas Observações Gerais"
+            git commit -m "Verificar o HTML das observações gerais"
             git push origin HEAD:main
           fi
