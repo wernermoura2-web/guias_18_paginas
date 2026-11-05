@@ -20,7 +20,7 @@ function bpfPatchObservacoes(source){
  "function fit(el){",
  " if(!el.classList.contains('text')||!el.clientHeight||!el.clientWidth)return;",
  " const name=el.dataset.field||'';",
- " const observation=el.classList.contains('bpf-process-observation')||/OBSERV|CONSIDERAÇÕES FINAIS/i.test(name);",
+ " const observation=el.classList.contains('bpf-process-observation')||/OBSERV|^OBS\\s*\\d|CONSIDERAÇÕES FINAIS/i.test(name);",
  " const maxSize=Math.min(14,Math.max(8,el.clientHeight*.55));",
  " let size=maxSize;el.style.fontSize=size+'px';",
  " const fits=()=>el.scrollHeight<=el.clientHeight+1&&el.scrollWidth<=el.clientWidth+1;",
