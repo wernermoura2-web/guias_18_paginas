@@ -1,4 +1,4 @@
-name: Publicar continuacao de observacoes gerais BPF
+name: Diagnosticar PDF de observacoes gerais BPF
 
 on:
   push:
@@ -18,10 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Distribuir Observacoes Gerais nas paginas 14 e 15 dos dois modos
-        run: python3 scripts/patch_overflow_observacoes_14_15.py
-      - name: Testar divisao integral e edicao do JSON no HTML
-        run: node scripts/test_overflow_observacoes_14_15.js
+      - name: Examinar exportacao PDF e fluxo de impressao
+        run: python3 scripts/diagnosticar_pdf_observacoes_14_15.py
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
