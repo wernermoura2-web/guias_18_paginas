@@ -1,4 +1,4 @@
-name: Diagnosticar orientacao ao inspetor no anexo PDF BPF
+name: Publicar Anexo F PDF sem orientacao ao inspetor
 
 on:
   push:
@@ -18,8 +18,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Conferir orientacoes no anexo PDF
-        run: python3 scripts/diagnosticar_orientacoes_anexo_pdf.py
+      - name: Retirar orientacoes ao inspetor somente do Anexo F PDF
+        run: python3 scripts/patch_anexo_pdf_sem_orientacao.py
+      - name: Testar anexo sem orientacoes e com frases e observacoes preservadas
+        run: node scripts/test_anexo_pdf_sem_orientacao.js
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -28,6 +30,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: ajustar entrelinhas e ampliar uso da página 14 no HTML e PDF"
+            git commit -m "Guia BPF: retirar orientação ao inspetor apenas do Anexo F PDF"
             git push origin HEAD:main
           fi
