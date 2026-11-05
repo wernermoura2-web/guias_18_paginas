@@ -10,7 +10,7 @@ function bpfPdfGeneralSplit(full,font,form,pdf){
  full=String(full||'').replace(/\r\n?/g,'\n');
  const box1=form.getTextField('OBS 1').acroField.getWidgets()[0].getRectangle();
  const box2=form.getTextField('obs_gerais_continuacao').acroField.getWidgets()[0].getRectangle();
- const base=pdf.getPage(0), width=base.getWidth(),height=base.getHeight();
+ const base=pdf.getPage(0), rawWidth=base.getWidth(),rawHeight=base.getHeight(),width=Number.isFinite(rawWidth)?rawWidth:595.32,height=Number.isFinite(rawHeight)?rawHeight:841.92;
  const extraBox={width:width-100,height:height-166};
  const size=9;
  function countLines(part,usableWidth){
@@ -69,7 +69,7 @@ function bpfPdfGeneralSplit(full,font,form,pdf){
 }
 function bpfPdfAppendGeneralPages(pdf,form,font,flow){
  if(!flow.extras.length)return 0;
- const page0=pdf.getPage(0),width=page0.getWidth(),height=page0.getHeight();
+ const page0=pdf.getPage(0),rawWidth=page0.getWidth(),rawHeight=page0.getHeight(),width=Number.isFinite(rawWidth)?rawWidth:595.32,height=Number.isFinite(rawHeight)?rawHeight:841.92;
  for(let i=0;i<flow.extras.length;i++){
   // Insert after page 15 (documents and continuation), before the original photos.
   const page=pdf.insertPage(15+i,[width,height]);
