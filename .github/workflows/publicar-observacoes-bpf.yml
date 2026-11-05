@@ -1,4 +1,4 @@
-name: Diagnosticar agrupamento de frases F BPF
+name: Publicar Fs em caixas de selecao BPF
 
 on:
   push:
@@ -18,8 +18,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Conferir frases e grupos de 4.3.3 4.10.2 4.10.3 e 4.11.2
-        run: python3 scripts/diag_4102_4103_20261105.py
+      - name: Criar selecoes Sim e Nao com OBS e NC coletivas nos dois HTML
+        run: python3 scripts/patch_f_checkbox_grupos.py
+      - name: Testar grupos de F e calculos internos
+        run: node scripts/test_f_checkbox_grupos.js
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -28,6 +30,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: retirar orientação ao inspetor apenas do Anexo F PDF"
+            git commit -m "Guia BPF: grupos F selecionáveis com Sim Não OBS e NC"
             git push origin HEAD:main
           fi
