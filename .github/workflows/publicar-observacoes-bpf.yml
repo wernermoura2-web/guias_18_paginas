@@ -18,8 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Corrigir seletor F e nomes da recepcao sem alterar envase
-        run: python3 scripts/patch_recepcao_4_colunas.py
+      - name: Conferir regra de NA da F2 do item 4.2.9
+        run: python3 scripts/inspecionar_f2_429.py
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
