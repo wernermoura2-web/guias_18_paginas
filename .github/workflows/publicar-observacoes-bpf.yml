@@ -1,4 +1,4 @@
-name: Publicar observacoes editaveis do Guia BPF
+name: Publicar observacoes e colunas de recepcao do Guia BPF
 
 on:
   push:
@@ -18,9 +18,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Atualizar observacoes nos dois modos
+      - name: Conferir observacoes editaveis nos dois modos
         run: python3 scripts/patch_bpf_observacoes.py
-      - name: Publicar versao revisada na branch main
+      - name: Corrigir as quatro colunas da recepcao
+        run: python3 scripts/patch_recepcao_4_colunas.py
+      - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -28,6 +30,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Publicar Guia BPF: observacoes editaveis e texto autoajustavel"
+            git commit -m "Publicar Guia BPF: quatro categorias da recepcao nos dois modos"
             git push origin HEAD:main
           fi
