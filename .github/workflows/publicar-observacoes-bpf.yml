@@ -1,4 +1,4 @@
-name: Publicar Anexo F PDF sem orientacao ao inspetor
+name: Diagnosticar painel F por grupos de captação
 
 on:
   push:
@@ -18,10 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Retirar orientacoes ao inspetor somente do Anexo F PDF
-        run: python3 scripts/patch_anexo_pdf_sem_orientacao.py
-      - name: Testar anexo sem orientacoes e com frases e observacoes preservadas
-        run: node scripts/test_anexo_pdf_sem_orientacao.js
+      - name: Inspecionar UI e armazenamento das frases F
+        run: python3 scripts/diag_reorganizar_f_grupos.py
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
