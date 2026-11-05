@@ -1,4 +1,4 @@
-name: Publicar F2 4.2.9 com NA no Guia BPF
+name: Publicar F2 4.3.6 com NA no Guia BPF
 
 on:
   push:
@@ -18,8 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Aplicar opcao NA a F2 do 4.2.9 e validar dois modos
-        run: python3 scripts/patch_f2_429_na.py
+      - name: Aplicar opcao NA a F2 do 4.3.6 e validar dois modos
+        run: python3 scripts/patch_f2_436_na.py
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -28,6 +28,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Publicar Guia BPF: NA para F2 do item 4.2.9 nos dois modos"
+            git commit -m "Publicar Guia BPF: NA para F2 do item 4.3.6 nos dois modos"
             git push origin HEAD:main
           fi
