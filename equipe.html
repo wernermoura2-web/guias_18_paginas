@@ -468,7 +468,7 @@ async function bpfAppendCompactAnnex(pdf){
   for(const r of records)record(r);y-=9;
  }
  fresh();text('Estabelecimento: '+(values.ENVASADORA||''));text('Data: '+(values.DATA||'')+' | Somente frases preenchidas. Classificação APPCC informativa; regra BPF mantida.',8);
- for(const {page:source,row,phrase,index,records} of rows){ensure(90);text('Página '+(source.page+1)+' do guia | Item '+row.code+' | F'+(index+1)+' | BPF/APPCC: '+phrase.appcc,9,true);text(phrase.text);if(phrase.guidance)text('Orientação ao inspetor: '+phrase.guidance,7.8);
+ for(const {page:source,row,phrase,index,records} of rows){ensure(90);text('Página '+(source.page+1)+' do guia | Item '+row.code+' | F'+(index+1)+' | BPF/APPCC: '+phrase.appcc,9,true);text(phrase.text);
   table(records.map(r=>[(source.page<2?'Captação ':source.page<6?'Reservatório ':'Linha ')+r.scope.col+' / F'+(index+1),r.answer,(r.answer==='Não'&&r.note?'NC: ':'')+r.note]));
  }
  annexPages.forEach((p,i)=>p.drawText('Anexo F - '+(i+1)+' de '+annexPages.length,{x:margin,y:20,size:8,font}));return annexPages.length;

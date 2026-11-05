@@ -1,4 +1,4 @@
-const CACHE='guia18-menu-v15-bpf20261105-obs-entrelinhas';
+const CACHE='guia18-menu-v16-bpf20261105-anexo-sem-orientacoes';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-192.png','./icon-bpf-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
