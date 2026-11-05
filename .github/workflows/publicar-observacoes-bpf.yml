@@ -1,4 +1,4 @@
-name: Diagnosticar texto de NC nas observacoes gerais BPF
+name: Publicar NC resumidas nas observacoes gerais BPF
 
 on:
   push:
@@ -18,8 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Consultar origem das informacoes de processo captação e unidade
-        run: python3 scripts/diagnosticar_nc_bpf.py
+      - name: Abreviar NC criticas, maiores e menores nos dois modos
+        run: python3 scripts/patch_nc_resumo_curto.py
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -28,6 +28,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Revisar resumo de não conformidades BPF"
+            git commit -m "Guia BPF: resumir não conformidades nas Observações Gerais"
             git push origin HEAD:main
           fi
