@@ -94,7 +94,7 @@ function bpfGeneralFlow(full){
   probe.style.padding=getComputedStyle(el).padding;
   probe.style.fontFamily=getComputedStyle(el).fontFamily;
   probe.style.fontWeight=getComputedStyle(el).fontWeight;
-  probe.style.lineHeight='1.25';
+  probe.style.lineHeight='1.2';
   el.parentElement.appendChild(probe);
   return probe;
  }
@@ -115,7 +115,7 @@ function bpfGeneralFlow(full){
   if(cut>0&&cut<full.length){
    const n=full.lastIndexOf('\n',cut-1),sp=full.lastIndexOf(' ',cut-1);
    const pos=Math.max(n,sp);
-   if(pos>=cut-150&&pos>0)cut=pos+1;
+   if(pos>0&&cut-pos<=28)cut=pos+1;
   }
   const firstPart=full.slice(0,cut),secondPart=full.slice(cut);
   return {first:firstPart,second:secondPart,ok:fit(b,secondPart,font),font:font};
@@ -282,9 +282,9 @@ function syncLinked(){for(let i=0;i<4;i++){const name=values[sourceFields[i]].tr
 function fit(el){if(!el.classList.contains('text')||!el.clientHeight)return;
  if(el.dataset.field==='OBS 1'||el.dataset.field==='obs_gerais_continuacao'){
   let font=9;try{font=Number(JSON.parse(values.BPF_ObsGeneralFlow||'{}').font)||9}catch(e){}
-  el.style.fontSize=font+'px';el.style.lineHeight='1.25';
+  el.style.fontSize=font+'px';el.style.lineHeight='1.2';
   const mirror=el.parentElement.querySelector('.printable[data-field="'+CSS.escape(el.dataset.field)+'"]');
-  if(mirror){mirror.style.fontSize=(font/el.parentElement.clientWidth*100)+'cqw';mirror.style.lineHeight='1.25';mirror.style.whiteSpace='pre-wrap'}
+  if(mirror){mirror.style.fontSize=(font/el.parentElement.clientWidth*100)+'cqw';mirror.style.lineHeight='1.2';mirror.style.whiteSpace='pre-wrap'}
   el.style.overflowY=el.scrollHeight>el.clientHeight+1?'auto':'hidden';return;
  }const observation=el.classList.contains('bpf-process-observation');let size=observation?Math.min(16,Math.max(9,el.clientHeight*.55)):Math.min(14,Math.max(8,el.clientHeight*.55));const minimum=observation?1.5:5;el.style.fontSize=size+'px';while(size>minimum&&(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)){size=Math.max(minimum,size-(observation?.25:.5));el.style.fontSize=size+'px'}const mirror=el.parentElement.querySelector('.printable[data-field="'+CSS.escape(el.dataset.field)+'"]');if(mirror)mirror.style.fontSize=(size/el.parentElement.clientWidth*100)+'cqw';if(observation)el.style.overflowY=el.scrollHeight>el.clientHeight+1?'auto':'hidden'}
 function sync(){bpfGeneralFlow(bpfGeneralFullText());for(let i=0;i<4;i++)values[conductions[i]]=values[sourceFields[i]];syncLinked();
@@ -493,7 +493,7 @@ function bpfPdfGeneralSplit(full,font,form,pdf){
  }
  function fits(part,box){
   const h=font.heightAtSize(size,{descender:false});
-  return countLines(part,Math.max(25,box.width-18))*h*1.5<=Math.max(1,box.height-18);
+  return countLines(part,Math.max(25,box.width-14))*h*1.32<=Math.max(1,box.height-14);
  }
  function take(remaining,box){
   if(!remaining)return ['', ''];
@@ -508,7 +508,7 @@ function bpfPdfGeneralSplit(full,font,form,pdf){
   if(cut===0)throw Error('O campo do PDF não possui espaço para uma linha de observação.');
   const paragraph=remaining.lastIndexOf('\n',cut-1),space=remaining.lastIndexOf(' ',cut-1);
   const boundary=Math.max(paragraph,space);
-  if(boundary>0&&boundary>=cut-125)cut=boundary+1;
+  if(boundary>0&&cut-boundary<=28)cut=boundary+1;
   if(!fits(remaining.slice(0,cut),box))cut=low;
   return [remaining.slice(0,cut),remaining.slice(cut)];
  }
