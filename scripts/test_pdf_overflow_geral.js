@@ -11,7 +11,8 @@ async function main(){
   assert(libStart>=0,filename+': pdf-lib incorporado não encontrado');
   const libJS=html.slice(libStart+8,html.indexOf('</script>',libStart));
   const library={};const context={exports:library,module:{exports:library},Buffer,Uint8Array,ArrayBuffer,TextEncoder,TextDecoder,atob,btoa,setTimeout,clearTimeout};
-  vm.runInNewContext(libJS,context,{timeout:20000});
+  vm.createContext(context);
+  vm.runInContext(libJS,context,{timeout:20000});
   const PDFLib=context.module.exports;
   assert.equal(typeof PDFLib.PDFDocument.load,'function',filename+': pdf-lib indisponível');
   const marker='const BPF_EMBEDDED_PDF="';
@@ -27,9 +28,10 @@ async function main(){
   const j=html.indexOf('function bpfPdfGeneralSplit(full,font,form,pdf){');
   const k=html.indexOf('// Start observations at 9 pt',j);
   assert(j>=0&&k>j,filename+': funções de PDF não inseridas');
-  const run={PDFLib,console,Math,Number,String,Array,JSON};
-  vm.createContext(run);
-  vm.runInContext(html.slice(j,k),run,{timeout:15000});
+  // Use the same VM realm as pdf-lib: PDFPage.insertPage validates Array identity.
+  context.PDFLib=PDFLib;context.console=console;
+  vm.runInContext(html.slice(j,k),context,{timeout:15000});
+  const run=context;
   const font=await pdf.embedFont(PDFLib.StandardFonts.Helvetica);
   const cases=[
    {name:'curto',text:'Observações gerais da inspeção sanitária.'},
