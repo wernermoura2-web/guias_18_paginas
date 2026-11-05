@@ -1,4 +1,4 @@
-const CACHE='guia18-menu-v13-bpf20261105-observacoes-14-15';
+const CACHE='guia18-menu-v14-bpf20261105-pdf-fluxo-paginas';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-192.png','./icon-bpf-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));

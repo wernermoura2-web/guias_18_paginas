@@ -462,7 +462,90 @@ async function bpfAppendCompactAnnex(pdf){
  }
  annexPages.forEach((p,i)=>p.drawText('Anexo F - '+(i+1)+' de '+annexPages.length,{x:margin,y:20,size:8,font}));return annexPages.length;
 }
-</script><script>// Start observations at 9 pt; shrink only when their wrapped text exceeds the box.
+</script><script>
+// PDF: use actual PDF field dimensions instead of browser viewport size.
+// Preserve all characters: each part is an exact slice of the original text.
+function bpfPdfGeneralSplit(full,font,form,pdf){
+ full=String(full||'').replace(/\r\n?/g,'\n');
+ const box1=form.getTextField('OBS 1').acroField.getWidgets()[0].getRectangle();
+ const box2=form.getTextField('obs_gerais_continuacao').acroField.getWidgets()[0].getRectangle();
+ const base=pdf.getPage(0), rawWidth=base.getWidth(),rawHeight=base.getHeight(),width=Number.isFinite(rawWidth)?rawWidth:595.32,height=Number.isFinite(rawHeight)?rawHeight:841.92;
+ const extraBox={width:width-100,height:height-166};
+ const size=9;
+ function countLines(part,usableWidth){
+  if(!part)return 0;
+  let count=0;
+  for(const paragraph of part.split('\n')){
+   if(!paragraph.trim()){count++;continue}
+   let line='';
+   for(const word of paragraph.trim().split(/\s+/)){
+    const proposal=line?line+' '+word:word;
+    if(font.widthOfTextAtSize(proposal,size)<=usableWidth){line=proposal;continue}
+    if(line){count++;line=''}
+    for(const character of word){
+     if(line&&font.widthOfTextAtSize(line+character,size)>usableWidth){count++;line=''}
+     line+=character;
+    }
+   }
+   if(line)count++;
+  }
+  return count;
+ }
+ function fits(part,box){
+  const h=font.heightAtSize(size,{descender:false});
+  return countLines(part,Math.max(25,box.width-18))*h*1.5<=Math.max(1,box.height-18);
+ }
+ function take(remaining,box){
+  if(!remaining)return ['', ''];
+  if(fits(remaining,box))return [remaining,''];
+  let low=0,high=remaining.length;
+  while(low<high){
+   const mid=Math.ceil((low+high)/2);
+   if(fits(remaining.slice(0,mid),box))low=mid;
+   else high=mid-1;
+  }
+  let cut=low;
+  if(cut===0)throw Error('O campo do PDF não possui espaço para uma linha de observação.');
+  const paragraph=remaining.lastIndexOf('\n',cut-1),space=remaining.lastIndexOf(' ',cut-1);
+  const boundary=Math.max(paragraph,space);
+  if(boundary>0&&boundary>=cut-125)cut=boundary+1;
+  if(!fits(remaining.slice(0,cut),box))cut=low;
+  return [remaining.slice(0,cut),remaining.slice(cut)];
+ }
+ let remaining=full,first,second;
+ [first,remaining]=take(remaining,box1);
+ [second,remaining]=take(remaining,box2);
+ const extras=[];
+ while(remaining){
+  if(extras.length>=200)throw Error('Limite de 200 páginas complementares excedido.');
+  let part;
+  [part,remaining]=take(remaining,extraBox);
+  extras.push(part);
+ }
+ const pieces=[first,second,...extras];
+ if(pieces.join('')!==full)throw Error('A paginação do PDF não preservou o texto completo.');
+ return {first,second,extras,size,full};
+}
+function bpfPdfAppendGeneralPages(pdf,form,font,flow){
+ if(!flow.extras.length)return 0;
+ const page0=pdf.getPage(0),rawWidth=page0.getWidth(),rawHeight=page0.getHeight(),width=Number.isFinite(rawWidth)?rawWidth:595.32,height=Number.isFinite(rawHeight)?rawHeight:841.92;
+ for(let i=0;i<flow.extras.length;i++){
+  // Insert after page 15 (documents and continuation), before the original photos.
+  const page=pdf.insertPage(15+i,[width,height]);
+  page.drawText('CONTINUAÇÃO DAS OBSERVAÇÕES GERAIS',{x:50,y:height-58,size:14,font,color:PDFLib.rgb(0.08,0.22,0.35)});
+  page.drawText('Texto complementar da avaliação sanitária — página adicional '+(i+1),{x:50,y:height-79,size:9,font,color:PDFLib.rgb(0.27,0.3,0.34)});
+  const field=form.createTextField('BPF_ObsGerais_Extra_'+(i+1));
+  field.enableMultiline();
+  field.addToPage(page,{x:50,y:65,width:width-100,height:height-166,font,borderWidth:0,backgroundColor:PDFLib.rgb(1,1,1),textColor:PDFLib.rgb(0,0,0)});
+  field.setText(flow.extras[i]);
+  field.acroField.setDefaultAppearance('/Helv '+flow.size+' Tf 0 g');
+  field.defaultUpdateAppearances(font);
+  page.drawText('Guia BPF — Observações Gerais (continuação)',{x:50,y:37,size:8,font,color:PDFLib.rgb(0.35,0.35,0.35)});
+ }
+ return flow.extras.length;
+}
+
+// Start observations at 9 pt; shrink only when their wrapped text exceeds the box.
 function bpfObservationFontSize(text,font,width,height){
  const normalized=String(text||'').replace(/\r\n?/g,'\n');
  function fits(size){let count=0;for(const paragraph of normalized.split('\n')){let line='';for(const word of paragraph.split(/\s+/).filter(Boolean)){const candidate=(line?line+' ':'')+word;if(font.widthOfTextAtSize(candidate,size)<=width){line=candidate;continue;}if(line){count++;line='';}for(const char of word){if(line&&font.widthOfTextAtSize(line+char,size)>width){count++;line='';}line+=char;}}count++;}return count*font.heightAtSize(size,{descender:false})*1.2<=height;}
@@ -471,12 +554,13 @@ function bpfObservationFontSize(text,font,width,height){
 async function bpfExportEditable(){
  const button=document.querySelector('#print'),status=document.querySelector('#status');if(button.disabled)return;button.disabled=true;
  try{if(document.querySelector('#bpf-editor')?.bpfCommit?.()===false)return;stopSpeech();document.activeElement?.blur();recalc();status.textContent='Preparando PDF preenchível…';const templateBytes=Uint8Array.from(atob(BPF_EMBEDDED_PDF),c=>c.charCodeAt(0));const pdf=await PDFLib.PDFDocument.load(templateBytes),form=pdf.getForm(),observationFont=await pdf.embedFont(PDFLib.StandardFonts.Helvetica),observationNames=new Set([...Object.values(BPF_OBSERVATION_FIELDS),'CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1_2','CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1','OBS 1']);
- for(const f of form.getFields()){const name=f.getName(),value=values[name];if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
+ const pdfFlow=bpfPdfGeneralSplit(bpfGeneralFullText(),observationFont,form,pdf);
+ for(const f of form.getFields()){const name=f.getName(),value=name==='OBS 1'?pdfFlow.first:name==='obs_gerais_continuacao'?pdfFlow.second:values[name];if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=(name==='OBS 1'||name==='obs_gerais_continuacao')?pdfFlow.size:Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
  // Keep the original photo fields and embed the supplied inspection images.
  for(const [name,data]of Object.entries(images)){const widget=D.widgets.find(w=>w.name===name);if(!widget)continue;const image=await (/^data:image\/png/.test(data)?pdf.embedPng(data):pdf.embedJpg(data)),page=pdf.getPages()[widget.page],delta=page.getHeight()-widget.size[1],region=BPF_PHRASES.find(p=>p.page===widget.page),above=region&&widget.size[1]-widget.rect[3]<region.end;const [x1,y1,x2,y2]=widget.rect;const box={x:x1,y:y1+(above?delta:0),width:x2-x1,height:y2-y1},scale=Math.min(box.width/image.width,box.height/image.height);page.drawImage(image,{x:box.x+(box.width-image.width*scale)/2,y:box.y+(box.height-image.height*scale)/2,width:image.width*scale,height:image.height*scale});const pictureField=form.getFieldMaybe(name);if(pictureField)for(const appearance of pictureField.acroField.getWidgets()){const rect=appearance.getRectangle();const transparent=pdf.context.flateStream('q Q',{Type:'XObject',Subtype:'Form',BBox:[0,0,rect.width,rect.height]});appearance.setNormalAppearance(pdf.context.register(transparent));}}
  const state={};for(const [name,value] of Object.entries(values))if(name.startsWith('BPF_F_'))state[name]=({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta';for(const [name,value]of Object.entries(values))if(name.startsWith('BPF_Obs_'))state[name]=value;state._summaries={};for(const page of BPF_PHRASES)for(const row of page.rows)state._summaries[page.page+'_'+row.code]=values[bpfSummaryName(page,row)]||'';form.getTextField('BPF_State').setText(JSON.stringify(state));
- const annexCount=await bpfAppendCompactAnnex(pdf);
- const bytes=await pdf.save();const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})),a=document.createElement('a');a.href=url;a.download='Guia_BPF_Inspecao_Editavel.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);status.textContent='PDF preenchível gerado'+(annexCount?' com anexo F compacto ('+annexCount+' página(s))':'')+'. Os campos do guia continuam editáveis.';
+ const extraObsPages=bpfPdfAppendGeneralPages(pdf,form,observationFont,pdfFlow);const annexCount=await bpfAppendCompactAnnex(pdf);
+ const bytes=await pdf.save();const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})),a=document.createElement('a');a.href=url;a.download='Guia_BPF_Inspecao_Editavel.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);status.textContent='PDF preenchível gerado'+(extraObsPages?' com '+extraObsPages+' página(s) adicional(is) de Observações Gerais':'')+(annexCount?' e anexo F compacto ('+annexCount+' página(s))':'')+'. Texto integral distribuído entre páginas e campos editáveis.';
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
 }
 document.querySelector('#print').onclick=bpfExportEditable;
