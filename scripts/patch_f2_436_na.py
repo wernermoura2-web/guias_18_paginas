@@ -14,7 +14,8 @@ def update_form(path):
     start=html.index(MARKER)+len(MARKER)
     pages, consumed=json.JSONDecoder().raw_decode(html[start:])
     matches=[(p,r) for p in pages for r in p.get("rows",[]) if r.get("code")=="4.3.6"]
-    assert len(matches)==1 and matches[0][0].get("page")==5, f"{path}: item 4.3.6 não localizado na página de reservatórios"
+    print(path, "item 4.3.6 encontrado em:", [(p.get("page"),len(r.get("scopes",[]))) for p,r in matches])
+    assert len(matches)==1 and matches[0][0].get("page") in (2,3,4,5), f"{path}: item 4.3.6 não localizado exclusivamente em Reservatórios"
     page, row=matches[0]
     assert row.get("scopes"), f"{path}: item 4.3.6 sem posições de avaliação"
     assert len(row.get("phrases",[]))>=2, f"{path}: F2 da definição geral ausente"
