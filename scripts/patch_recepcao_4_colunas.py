@@ -1,37 +1,47 @@
 #!/usr/bin/env python3
-"""Atualizar categorias da recepção sem alterar os demais processos."""
-import re
+"""Identificar as quatro categorias somente na Recepção (página 7) do Guia BPF."""
 from pathlib import Path
-pat = re.compile(r"if\s*\(\s*page\.page\s*===\s*6\s*\)\s*return\s*[^;\n]+;")
-replacement = "if(page.page===6)return ({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[n]||'Avaliação do item';"
+import re
+
+old = "const unit=(page.page<2?'Captação ':page.page<6?'Reservatório ':'Linha ')+scope.col+(source?' - '+source:'');"
+new = "const unit=(page.page===6?({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[scope.col]:(page.page<2?'Captação ':page.page<6?'Reservatório ':'Linha ')+scope.col)+(source?' - '+source:'');"
+
 for name in ('individual.html','equipe.html'):
-    p=Path(name)
-    s=p.read_text(encoding='utf-8')
-    print('CAMPOS_RECEPCAO', name, len(s))
-    for term in ('bpfScopeLabel', 'BPF_PHRASES', 'linha ', 'Linha ', 'LINHA ', 'Recepção', 'Recep', '4.5.2', 'bpfPhraseName', 'bpfSyncNCLists'):
-        pos=s.find(term)
-        print('TERM', repr(term), 'count', s.count(term), 'pos', pos, 'context', repr(s[max(0,pos-130):pos+440]) if pos>=0 else '')
-    matches=pat.findall(s)
-    print('DIAGNOSTICO',name,'bytes',len(s),'match',len(matches))
-    for term in ('bpfScopeLabel','page.page===6','Garrafão retornável','Garrafões retornáveis','LINHA 1'):
-        i=s.find(term)
-        print('TERMO',term,'count',s.count(term),'pos',i,'ctx',repr(s[max(i-75,0):i+200]) if i>=0 else '')
-    if len(matches)!=1:
-        raise SystemExit('Estrutura incompatível: procurar outra posição da recepção.')
-    s=pat.sub(lambda _:replacement,s,count=1)
-    p.write_text(s,encoding='utf-8')
+    path=Path(name)
+    source=path.read_text(encoding='utf-8')
+    count_old=source.count(old)
+    count_new=source.count(new)
+    print(name,'rótulos antigos',count_old,'rótulos novos',count_new)
+    for match in re.finditer(re.escape("'Linha '"),source[:500000]):
+        i=match.start()
+        print('CONTEXTO_LINHA',name,repr(source[max(0,i-140):i+175]))
+    if count_old==2:
+        source=source.replace(old,new)
+        path.write_text(source,encoding='utf-8')
+        print(name,'recepção atualizada em NC críticas, maiores e menores e considerações PCC')
+    elif count_old==0 and count_new==2:
+        print(name,'recepção já corrigida')
+    else:
+        raise RuntimeError(name+': marcador de contexto incompatível; nenhuma alteração publicada')
 
-p=Path('index.html')
-s=p.read_text(encoding='utf-8')
-s,n=re.subn(r'href="((?:individual|equipe)\.html\?v=)[^"]+"',lambda m:'href="'+m.group(1)+'20261105-recepcao4"',s)
-if n!=2: raise SystemExit('Links: esperados 2, obtidos '+str(n))
-if 'Quatro categorias da recepção:' not in s:
-    s=s.replace('<p>Escolha como irá preencher o Guia.','<p><strong>Quatro categorias da recepção:</strong> garrafões retornáveis, embalagens descartáveis, rótulos e saneantes.</p><p>Escolha como irá preencher o Guia.')
-p.write_text(s,encoding='utf-8')
+path=Path('index.html')
+source=path.read_text(encoding='utf-8')
+source, count=re.subn(
+    r'href="((?:individual|equipe)\.html\?v=)[^"]+"',
+    lambda m:'href="'+m.group(1)+'20261105-recepcao4"',
+    source
+)
+if count != 2:
+    raise RuntimeError('Página inicial: esperados dois links, encontrados '+str(count))
+if 'Recepção: garrafões retornáveis' not in source:
+    source=source.replace('<p>Escolha como irá preencher o Guia.',
+        '<p><strong>Recepção:</strong> garrafões retornáveis, embalagens descartáveis, rótulos e saneantes, também identificados nos registros de não conformidades.</p><p>Escolha como irá preencher o Guia.')
+path.write_text(source,encoding='utf-8')
 
-p=Path('sw-guia18.js')
-s=p.read_text(encoding='utf-8')
-s,n=re.subn(r"const CACHE='guia18-menu-[^']+';", "const CACHE='guia18-menu-v7-bpf20261105-recepcao4';",s)
-if n!=1: raise SystemExit('Cache não localizado')
-p.write_text(s,encoding='utf-8')
-print('Campos e links atualizados.')
+path=Path('sw-guia18.js')
+source=path.read_text(encoding='utf-8')
+source, count=re.subn(r"const CACHE='guia18-menu-[^']+';",
+    "const CACHE='guia18-menu-v7-bpf20261105-recepcao4';",source)
+if count != 1: raise RuntimeError('Cache não localizado')
+path.write_text(source,encoding='utf-8')
+print('Página inicial e cache revisados. Envase preservado.')
