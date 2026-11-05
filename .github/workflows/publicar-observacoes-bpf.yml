@@ -1,4 +1,4 @@
-name: Publicar PDF com continuacao das observacoes BPF
+name: Publicar espacamento compacto das Observacoes Gerais BPF
 
 on:
   push:
@@ -18,10 +18,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Corrigir divisão do texto no PDF editavel em ambos os modos
-        run: python3 scripts/patch_pdf_overflow_geral.py
-      - name: Testar PDF editavel com paginas extras usando pdf-lib incorporado
+      - name: Ajustar entrelinhas e ocupar mais espaco nas paginas 14 e 15
+        run: python3 scripts/patch_entrelinhas_obs_gerais.py
+      - name: Testar PDF e comparar aproveitamento da primeira pagina
         run: node scripts/test_pdf_overflow_geral.js
+      - name: Testar fluxo das Observacoes Gerais no HTML
+        run: node scripts/test_overflow_observacoes_14_15.js
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -30,6 +32,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: PDF editável divide as Observações Gerais entre páginas"
+            git commit -m "Guia BPF: ajustar entrelinhas e ampliar uso da página 14 no HTML e PDF"
             git push origin HEAD:main
           fi
