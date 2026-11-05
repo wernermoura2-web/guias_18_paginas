@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b5c91">
+<title>Guia Estadual BPF — Observações Editáveis</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#edf4f8;font-family:Arial,sans-serif}
+#guia{display:block;width:100%;height:100%;border:0}
+#aviso{position:absolute;bottom:0;left:0;right:0;background:#fff4dc;color:#273849;padding:9px 16px;text-align:center;z-index:20;font-size:13px}
+#aviso[hidden]{display:none}
+</style>
+</head>
+<body>
+<iframe id="guia" title="Guia BPF" allow="microphone; camera; clipboard-read; clipboard-write" referrerpolicy="same-origin"></iframe>
+<div id="aviso" role="status">Carregando a versão do Guia BPF com observações editáveis...</div>
+<script>
+(function(){
+'use strict';
+const params=new URLSearchParams(location.search);
+const mode=params.get('modo')==='equipe'?'equipe':'individual';
+document.title='Guia BPF — '+(mode==='equipe'?'Equipe':'Individual')+' — Observações editáveis';
+const frame=document.getElementById('guia');
+const notice=document.getElementById('aviso');
+frame.addEventListener('load',()=>{
+try{
+ const w=frame.contentWindow;
+ const d=frame.contentDocument;
+ if(!w||!d||!w.Guia?.values||typeof w.fit!=='function')throw Error('O formulário ainda não está pronto.');
+ const originalFit=w.fit;
+ // Ajustar o tamanho da fonte à caixa original da página, sem cobrir outros campos.
+ w.fit=function(el){
+  if(!el?.classList?.contains('bpf-process-observation'))return originalFit(el);
+  if(!el.clientHeight||!el.clientWidth)return;
+  let size=Math.min(14,Math.max(8,el.clientHeight*.55));
+  el.style.fontSize=size+'px';
+  el.style.lineHeight='1.08';
+  el.style.overflow='hidden';
+  while(size>2.5&&(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)){
+   size=Math.max(2.5,size-.25);el.style.fontSize=size+'px';
+  }
+  if(el.scrollHeight>el.clientHeight+1||el.scrollWidth>el.clientWidth+1)el.style.overflowY='auto';
+  const mirror=el.parentElement?.querySelector('.printable[data-field="'+CSS.escape(el.dataset.field)+'"]');
+  if(mirror){mirror.style.fontSize=(size/el.parentElement.clientWidth*100)+'cqw';mirror.style.lineHeight='1.08'}
+ };
+ const style=d.createElement('style');
+ style.textContent='.text.bpf-process-observation{background:#f7fcff!important;text-align:left!important;overflow-wrap:anywhere!important;white-space:pre-wrap}';
+ d.head.appendChild(style);
+ const items=Array.from(d.querySelectorAll('textarea.bpf-process-observation'));
+ if(items.length===0)throw Error('Os campos de observações não foram encontrados.');
+ items.forEach(el=>{
+  el.readOnly=false;
+  el.removeAttribute('readonly');
+  el.setAttribute('aria-description','Campo editável. O resumo das frases F permanece sincronizado. Texto dimensionado para o quadro.');
+  el.oninput=function(){
+   w.Guia.values[this.dataset.field]=this.value;
+   w.changed();
+   w.Guia.recalc();
+   w.fit(this);
+  };
+  w.fit(el);
+ });
+ // Permitir edição dos mesmos campos também no PDF gerado.
+ const cls=w.PDFLib?.PDFTextField;
+ if(cls?.prototype){
+  const proto=cls.prototype;
+  const oldSetText=proto.setText;
+  const oldEnable=proto.enableReadOnly;
+  const isObs=f=>/^OBSERVAÇÕES GERAISRow1(?:_\d+)?$/.test(f.getName());
+  if(typeof oldSetText==='function')proto.setText=function(text){
+   if(isObs(this)){try{this.disableReadOnly();this.enableMultiline()}catch(e){}}
+   return oldSetText.call(this,text);
+  };
+  if(typeof oldEnable==='function')proto.enableReadOnly=function(){
+   if(isObs(this)){try{this.disableReadOnly();this.enableMultiline()}catch(e){};return}
+   return oldEnable.apply(this,arguments);
+  };
+ }
+ // Reaplicar o dimensionamento após recuperar arquivo ou atualizar frases.
+ w.addEventListener('resize',()=>{d.querySelectorAll('textarea.bpf-process-observation').forEach(el=>w.fit(el))});
+ notice.hidden=true;
+}catch(e){
+ notice.textContent='Não foi possível ativar a edição das observações: '+e.message+'. Atualize a página com a internet ligada.';
+ notice.hidden=false;
+}
+});
+frame.src=mode+'.html?v=20261105-observacoes';
+})();
+</script>
+</body>
+</html>
