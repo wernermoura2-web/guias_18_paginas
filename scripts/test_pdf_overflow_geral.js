@@ -31,6 +31,15 @@ async function main(){
   // Use the same VM realm as pdf-lib: PDFPage.insertPage validates Array identity.
   context.PDFLib=PDFLib;context.console=console;
   vm.runInContext(html.slice(j,k),context,{timeout:15000});
+  // Compare against the former conservative fit: 1.50 line-height, 18pt insets.
+  const oldCode=html.slice(j,k)
+    .replace('function bpfPdfGeneralSplit(full,font,form,pdf){','function bpfPdfBaselineSplit(full,font,form,pdf){')
+    .replace('return countLines(part,Math.max(25,box.width-14))*h*1.32<=Math.max(1,box.height-14);',
+             'return countLines(part,Math.max(25,box.width-18))*h*1.5<=Math.max(1,box.height-18);')
+    .replace('if(boundary>0&&cut-boundary<=28)cut=boundary+1;',
+             'if(boundary>0&&boundary>=cut-125)cut=boundary+1;');
+  assert(!oldCode.includes("function bpfPdfGeneralSplit(full,font,form,pdf){"),filename+': baseline not isolated');
+  vm.runInContext(oldCode,context,{timeout:15000});
   const run=context;
   const font=await pdf.embedFont(PDFLib.StandardFonts.Helvetica);
   const cases=[
@@ -40,7 +49,12 @@ async function main(){
   ];
   for(const c of cases){
    const flow=run.bpfPdfGeneralSplit(c.text,font,form,pdf);
+   const baseline=run.bpfPdfBaselineSplit(c.text,font,form,pdf);
    assert.equal([flow.first,flow.second,...flow.extras].join(''),c.text,filename+': perdeu conteúdo: '+c.name);
+   if(c.name!=='curto'){
+    assert(flow.first.length>baseline.first.length,filename+': o ajuste não aproveitou mais a primeira página');
+    console.log('APROVEITAMENTO DA PAGINA 14',filename,c.name,'antes',baseline.first.length,'depois',flow.first.length);
+   }
    if(c.name==='curto')assert.equal(flow.extras.length,0);
    if(c.name==='páginas 14 e 15'){assert(flow.second.length>0,filename+': não preencheu a continuação da página 15');assert.equal(flow.extras.length,0,filename+': criou páginas além das duas previstas');}
    if(c.name==='páginas adicionais')assert(flow.extras.length>0,filename+': não criou páginas extras');
