@@ -87,9 +87,9 @@ for(const filename of ['individual.html','equipe.html']){
  choose(panels[1],panels[1].entries[4-3],'0'); // original F5: Biólogo
  choose(panels[1],panels[1].entries[5-3],'0'); // original F6: Outro
  assert.equal(other[0].disabled,false,filename+': other field not enabled');
- assert(!dialog.bpfCommit(),filename+': NC missing should prevent save');
- assert(alerts.some(s=>s.includes('campo NC')));
  other[0].value='Conselho profissional específico';other[0].oninput();
+ assert(!dialog.bpfCommit(),filename+': NC missing should prevent save');
+ assert(alerts.some(s=>s.includes('campo NC')),filename+': expected NC warning: '+alerts.join(' | '));
  areas[1].value='Faltou registro profissional';areas[1].oninput();
  assert(dialog.bpfCommit(),filename+': grouped save failed');
  assert.equal(values[panels[1].entries[2].name],'0');
