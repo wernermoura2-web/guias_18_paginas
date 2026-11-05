@@ -75,7 +75,15 @@ function bpfSyncNCLists(){
  });
  let previous={};try{previous=JSON.parse(values.BPF_NCGenerated||'{}');}catch(e){}
  const current={};for(const group of groups)current[group.id]=group.title+' — Total: '+group.lines.length+'\n'+(group.lines.length?group.lines.map((line,i)=>(i+1)+'. '+line).join('\n'):'Nenhuma não conformidade registrada.');
- const next=PCCFinal.synchronize(values[field]||'',previous,current);values[field]=next.text;values.BPF_NCGenerated=JSON.stringify(next.generated);
+ let priorText=String(values[field]||'').replace(/\r\n?/g,'\n');
+ for(const [id,original] of Object.entries(previous)){
+  if(!Object.hasOwn(current,id)||typeof original!=='string'||original===current[id])continue;
+  const old=original.replace(/\r\n?/g,'\n'),at=priorText.indexOf(old);
+  if(at<0)continue;
+  priorText=priorText.slice(0,at)+current[id]+priorText.slice(at+old.length);
+  previous[id]=current[id];
+ }
+ const next=PCCFinal.synchronize(priorText,previous,current);values[field]=next.text;values.BPF_NCGenerated=JSON.stringify(next.generated);
 }
 </script><script>/* Frases BPF: respostas portáteis nos mesmos campos do JSON individual/equipe. */
 function bpfPhraseName(scope,index){return 'BPF_F_'+scope.name+'_'+(index+1);}
@@ -86,7 +94,7 @@ function bpfMergeObservation(text,code,previous,summary){const start='[Frases '+
 function bpfSyncObservation(row,page){const name=BPF_OBSERVATION_FIELDS[page.page+'_'+row.code],entries=[];if(!name)return;const answeredScopes=row.scopes.filter(scope=>scope.phrases.some((_,i)=>values[bpfPhraseName(scope,i)]||String(values[bpfNoteName(scope,i)]||'').trim())).length;for(const scope of row.scopes){const unit=(page.page<2?'C':page.page<6?'R':'L')+scope.col;scope.phrases.forEach((phrase,i)=>{const answer=({'1':'Sim','0':'Não','2':'NA'})[values[bpfPhraseName(scope,i)]];const note=String(values[bpfNoteName(scope,i)]||'').replace(/\s+/g,' ').trim();if(note||(answer&&answer!=='Sim'))entries.push((answeredScopes>1?unit+'/':'')+'F'+(i+1)+': '+(answer||'Sem resposta')+(note?' ('+(answer==='Não'?'NC: ':'')+note+')':''));});}const key=bpfSummaryName(page,row),summary=entries.length?row.code+' '+entries.join('; ')+'.':'';values[name]=bpfMergeObservation(values[name]||'',row.code,values[key]||'',summary);values[key]=summary;}
 function bpfDismissEditor(){const editor=document.querySelector('#bpf-editor');if(editor?.bpfCommit?.()===false)return false;editor?.remove();return true;}
 function bpfAggregateAnswers(v,scope){const a=scope.phrases.map((f,i)=>v[bpfPhraseName(scope,i)]||'');if(!a.some(Boolean))return null;if(a.includes('0'))return '0';if(a.some(x=>!x))return 'Off';return a.every(x=>x==='2')?'2':'1';}
-function bpfApplyAnswers(v){for(const p of BPF_PHRASES)for(const r of p.rows)for(const s of r.scopes){const a=bpfAggregateAnswers(v,s);if(a!==null)v[s.name]=a;}if(v.BPF_PCCGenerated&&v.BPF_PCCDestination!=='18')bpfSyncPCCFinal();if(v.BPF_PCCGenerated&&!v.BPF_NCGenerated)bpfSyncNCLists();}
+function bpfApplyAnswers(v){for(const p of BPF_PHRASES)for(const r of p.rows)for(const s of r.scopes){const a=bpfAggregateAnswers(v,s);if(a!==null)v[s.name]=a;}if(v.BPF_PCCGenerated&&v.BPF_PCCDestination!=='18')bpfSyncPCCFinal();if(v.BPF_NCGenerated||BPF_PHRASES.some(p=>p.rows.some(r=>r.scopes.some(s=>s.phrases.some((_,i)=>v[bpfPhraseName(s,i)]==='0')))))bpfSyncNCLists();}
 function bpfOpenPhrases(row,page){
  if(!bpfDismissEditor())return;const dlg=document.createElement('section');dlg.id='bpf-editor';dlg.className='bpf-editor';dlg.setAttribute('aria-label','Frases do item '+row.code);const title=document.createElement('h2');title.textContent='Item '+row.code+' — Frases';dlg.append(title);
  const note=document.createElement('p');note.textContent='Qualquer Não torna o item Não. Sim exige todas as frases aplicáveis atendidas. Ao salvar e fechar, a observação do guia recebe as avaliações Não e Não se aplica e as observações escritas, com item e frase, em texto contínuo. Sim sem observação não entra no resumo. Complete todas as frases da captação ou linha iniciada antes de transferir.';dlg.append(note);
