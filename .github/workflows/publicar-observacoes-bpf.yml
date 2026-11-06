@@ -1,4 +1,4 @@
-name: Diagnosticar escopos de Conducao e Tampas BPF
+name: Publicar identificacao Conducao e Higienizacao de tampas BPF
 
 on:
   push:
@@ -18,8 +18,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Localizar codigos e identificadores das unidades
-        run: python3 scripts/diag_scope_conducao_tampas.py
+      - name: Corrigir unidades nos dois modos e no anexo PDF
+        run: python3 scripts/patch_escopos_conducao_tampas.py
+      - name: Testar escopos nas telas F e nos relatorios
+        run: node scripts/test_escopos_conducao_tampas.js
+      - name: Verificar paginacao do PDF
+        run: node scripts/test_pdf_overflow_geral.js
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -28,6 +32,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: respostas unicas dos Fs conforme desenho, com observacao do grupo"
+            git commit -m "Guia BPF: corrigir Condução e Higienização de tampas nas unidades"
             git push origin HEAD:main
           fi
