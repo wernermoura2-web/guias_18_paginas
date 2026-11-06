@@ -242,7 +242,8 @@ assert h.count(anchor)==1,"Menu inicial não encontrado"
 block='''<section id="revisao-inspetores"><h2>Revisão das frases e orientações ao inspetor</h2><p>Consulte cada frase F original e sua orientação, edite os textos e restaure a versão original quando necessário. As revisões podem ser exportadas em JSON, compartilhadas e importadas nos dois modos de uso, sem alterar a classificação APPCC.</p><a href="individual.html?v=20261106-revisao-frases-inspetores#revisar-inspetores">Revisar no modo individual</a><a href="equipe.html?v=20261106-revisao-frases-inspetores#revisar-inspetores">Revisar no modo equipe</a></section>'''
 h=h.replace(anchor,block+anchor,1)
 h,n=re.subn(r'href="((?:individual|equipe)\.html\?v=)[^"#]+"',lambda m:'href="'+m.group(1)+'20261106-revisao-frases-inspetores"',h)
-assert n==4,("Link count expected 4",n)
+assert n==2,("Link count expected 2 primary links",n)
+assert h.count("#revisar-inspetores")==2,"Revisão deve ter links nos dois modos"
 idx.write_text(h,encoding="utf-8")
 
 sw=Path("sw-guia18.js")
