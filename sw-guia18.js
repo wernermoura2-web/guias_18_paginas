@@ -1,12 +1,12 @@
 /* Guia BPF — cache offline e menu de importação único (06/11/2026). */
-const CACHE='guia18-menu-v31-bpf20261106-importar-unico';
+const CACHE='guia18-menu-v32-bpf20261106-importar-unico';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-192.png','./icon-bpf-512.png','./importar-processos-unico.js'];
 const IS_TEAM=url=>/\/(?:equipe|equipe_atualizado)\.html$/i.test(url.pathname);
 async function equipeComBotaoUnico(response,url){
   if(!IS_TEAM(url)||!response||!response.ok)return response;
   const html=await response.text();
-  const tag='<script src="./importar-processos-unico.js?v=20261106-1" defer></script>';
+  const tag='<script src="./importar-processos-unico.js?v=20261106-2" defer></script>';
   const altered=html.includes('importar-processos-unico.js')?html:html.replace(/<\/body\s*>/i,tag+'</body>');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
