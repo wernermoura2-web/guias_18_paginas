@@ -20,7 +20,7 @@ jobs:
           persist-credentials: true
       - name: Corrigir unidades nos dois modos e no anexo PDF
         run: python3 scripts/patch_escopos_conducao_tampas.py
-      - name: Testar escopos nas telas F e nos relatorios
+      - name: Revalidar escopos nas telas F e nos relatorios
         run: node scripts/test_escopos_conducao_tampas.js
       - name: Verificar paginacao do PDF
         run: node scripts/test_pdf_overflow_geral.js
