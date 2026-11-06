@@ -22,7 +22,7 @@ for(const file of ['individual.html','equipe.html']){
  };
  c.bpfSpaceProcessObservations();
  checkSeparator(values['OBSERVAÇÕES GERAISRow1_2'],'(Texto A).','4.2.8 C1/F1');
- checkSeparator(values['OBSERVAÇÕES GERAISRow1_2'],'(Texto B).','4.2.9 C1/F1');
+ checkSeparator(values['OBSERVAÇÕES GERAISRow1_2'],'(NC: Texto B).','4.2.9 C1/F1');
  checkSeparator(values['OBSERVAÇÕES GERAISRow1'],'concluída.','4.1.2 F1');
  for(const key of ['OBSERVAÇÕES GERAISRow1','OBSERVAÇÕES GERAISRow1_2']){
   assert.equal(values[key].replace(/\s+/g,''),before[key].replace(/\s+/g,''),file+': actual observation words were changed');
@@ -36,10 +36,11 @@ for(const file of ['individual.html','equipe.html']){
  const same="4.1.2 F1 — Não (Captação 1): NC: Problema.";
  const actual=c.bpfMergeObservation(saved+'\n\n'+same,'4.1.3','',"4.1.3 F1 — Sim (Captação 1): OBS: Documento correto.");
  assert(actual.includes(same+'\n\n4.1.3 F1'),file+': new item not separated by blank line');
- const revised=c.bpfMergeObservation(saved+'\n\n'+same+'\n\n'+newer,'4.1.1',newer,saved);
- assert.equal((revised.match(/4\.1\.1 F1 — Sim/g)||[]).length,1,file+': old summary duplicate');
- assert.equal((revised.match(/4\.1\.1 F1 — Não/g)||[]).length,0,file+': prior summary not removed');
- assert.equal(revised.replace(/\s+/g,'').replace(/4\.1\.1F1—Sim\(Captação1\):OBS:Inspeçãoconcluída\./g,''),same.replace(/\s+/g,''),file+': other item altered');
+ const revised=c.bpfMergeObservation(saved+'\n\n'+same,'4.1.1',saved,newer);
+ assert.equal((revised.match(/4\.1\.1 F1 — Sim/g)||[]).length,0,file+': prior summary not removed');
+ assert.equal((revised.match(/4\.1\.1 F1 — Não/g)||[]).length,1,file+': updated summary should occur once');
+ assert(revised.includes(same),file+': other item must remain unchanged');
+ assert(revised.includes(same+'\n\n'+newer),file+': summaries must have a blank line between items');
  assert(h.includes('function recalc(){bpfInspectorApplySaved();bpfApplyAnswers(values);bpfSpaceProcessObservations();'),file+': old JSON import not normalized');
  assert(h.includes("white-space:pre-wrap"),file+': printable line breaks not supported');
  assert(h.includes("full=String(full||'').replace(/\\r\\n?/g,'\\n')"),file+': PDF line breaks not carried through');
