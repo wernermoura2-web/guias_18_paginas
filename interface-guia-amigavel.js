@@ -5,6 +5,9 @@
  const inTeam=/(?:^|\/)equipe(?:_atualizado)?\.html$/i.test(location.pathname);
  const CSS=`
  @media screen{
+  .bpf-ui-guide-header{background:linear-gradient(110deg,#123e57,#126a91)!important;color:#fff!important;padding:18px 19px!important}
+  .bpf-ui-guide-header h1{font-size:clamp(22px,5vw,29px)!important;line-height:1.2!important;margin:0 0 5px!important;letter-spacing:-.4px!important}
+  .bpf-ui-guide-header p{font-size:14px!important;line-height:1.35!important;margin:0!important;color:#e3f3fb!important}
   .bpf-ui-hub{box-sizing:border-box;margin:14px auto 20px;max-width:1040px;padding:18px;color:#183f52;background:linear-gradient(180deg,#fff,#f9fcfe);border:1px solid #cddfea;border-radius:18px;box-shadow:0 8px 24px #173e5512;font:inherit}
   .bpf-ui-hub *{box-sizing:border-box}
   .bpf-ui-hub h2{font-size:clamp(20px,4.6vw,24px);line-height:1.25;margin:0 0 15px;font-weight:750;letter-spacing:-.4px;color:#153b50}
@@ -72,7 +75,7 @@
   }
   const header=Array.from(document.querySelectorAll('header h1,h1,header h2'))
    .find(el=>norm(el.textContent)==='Guia Estadual de Avaliação do Risco Sanitário');
-  if(header)header.textContent='Guia de Avaliação de Risco';
+  if(header){header.textContent='Guia de Avaliação de Risco';header.closest('header')?.classList.add('bpf-ui-guide-header')}
   const subs=Array.from(document.querySelectorAll('header p,header small')).filter(el=>norm(el.textContent).includes('Formulário local para Chrome'));
   for(const p of subs)p.textContent='Envasadoras de água mineral';
  }
@@ -180,6 +183,15 @@
   if(inTeam)sourceControls().filter(el=>/^Importar processos$/i.test(label(el))&&!el.closest('dialog,[role="dialog"],[aria-modal="true"]')).forEach(mark);
   const anchor=save.closest('nav,.toolbar,.controls,.actions')||save.parentElement;
   anchor.parentNode.insertBefore(root,anchor);
+  // Recolher a barra antiga apenas quando ela contiver exclusivamente os controles duplicados.
+  // Não esconder formulários, caixas de diálogo, tabelas ou campos da inspeção.
+  let oldBar=save.parentElement;
+  while(oldBar&&oldBar!==document.body&&(!oldBar.contains(open)||!oldBar.contains(pdf)))oldBar=oldBar.parentElement;
+  if(oldBar&&oldBar!==document.body&&norm(oldBar.textContent).length<2500&&
+     !oldBar.querySelector('dialog,table,canvas,textarea,[role="dialog"]')&&
+     oldBar.querySelectorAll('input:not([type="button"]):not([type="checkbox"]):not([type="range"]),select').length<=2){
+    oldBar.classList.add('bpf-ui-original');
+  }
   return true;
  }
  function emphasizeF(){
