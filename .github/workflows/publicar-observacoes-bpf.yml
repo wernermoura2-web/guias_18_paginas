@@ -20,7 +20,7 @@ jobs:
           persist-credentials: true
       - name: Inserir quebras e pequeno espaco entre observacoes dos itens
         run: python3 scripts/patch_espacamento_observacoes_itens.py
-      - name: Testar espaco entre itens sem editar texto nem dados das frases
+      - name: Revalidar espaco entre itens sem editar texto nem dados das frases
         run: node scripts/test_espacamento_observacoes_itens.js
       - name: Validar OBS unicas no Anexo F
         run: node scripts/test_anexo_f_obs_unica.js
