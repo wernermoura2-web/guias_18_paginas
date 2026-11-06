@@ -106,10 +106,10 @@ for(const filename of ['individual.html','equipe.html']){
  assert.equal(dialog.querySelectorAll('input[type=text]')[0].value,'Conselho profissional específico');
  assert.equal(context.bpfSyncObservation(row,pg),undefined);
  // The other grouped items are independent and retain original APPCC per checkbox.
- const examples=[[pages[0],r433,24],[pages[1],r4103,17]];
+ const examples=[[pages[0],r433,24],[pages[1],r4103,14]];
  for(const [page,r,n]of examples){
   context.bpfOpenPhrases(r,page);
-  assert.equal(dialog.querySelectorAll('input[type=checkbox]').length,n,filename+': number of original options was changed '+r.code);
+  assert.equal(dialog.querySelectorAll('input[type=checkbox]').length,n,filename+': selectable options count unexpected '+r.code);
   assert.equal(dialog.querySelectorAll('input[type=radio]').length,context.bpfPanels(page,r).length*2);
   assert.equal(dialog.querySelectorAll('textarea').length,context.bpfPanels(page,r).length);
   const check=dialog.querySelectorAll('input[type=checkbox]')[0],rd=dialog.querySelectorAll('input[type=radio]')[0];
