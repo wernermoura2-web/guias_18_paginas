@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Corrigir F4 F5 F6 de 4.10.3 para Sim Nao simples
+      - name: Aplicar F4 F5 F6 Sim Nao simples preservando links do menu
         run: python3 scripts/patch_4103_f456_sim_nao_simples.py
       - name: Testar resposta Sim Nao simples para F4 F5 F6
         run: node scripts/test_4103_f456_sim_nao_simples.js
