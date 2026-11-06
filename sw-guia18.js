@@ -1,4 +1,4 @@
-const CACHE='guia18-menu-v21-bpf20261105-4102-labs-f5-terceirizadas';
+const CACHE='guia18-menu-v23-bpf20261106-revisao-frases';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-192.png','./icon-bpf-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
