@@ -20,7 +20,7 @@ jobs:
           persist-credentials: true
       - name: Ampliar importacao da equipe para documentos fotos rotulos e responsaveis
         run: python3 scripts/patch_equipe_importar_documentos_fotos_responsaveis.py
-      - name: Testar transferencias sem sobrescrita e acrescimo de responsaveis
+      - name: Revalidar transferencias sem sobrescrita e acrescimo de responsaveis
         run: node scripts/test_equipe_documentos_fotos_responsaveis.js
       - name: Validar agrupamento do Anexo F PDF
         run: node scripts/test_anexo_f_obs_unica.js
