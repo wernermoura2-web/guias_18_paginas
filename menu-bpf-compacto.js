@@ -60,6 +60,22 @@ function apply(){
   const menuActions=menuRoot?all.filter(a=>menuRoot.contains(a)&&/^(Salvar arquivo|Abrir preenchimento|Imprimir\s*\/\s*PDF|Importar processos|Revisar frases dos inspetores|Novo\s*\/\s*limpar tudo)$/i.test(actionText(a))):[];
   const seen=new Set();
   for(const a of menuActions){const key=actionText(a).toLowerCase().replace(/\s+/g,' ');if(seen.has(key)){a.hidden=true;a.style.display='none'}else seen.add(key)}
+  // Mostrar somente um comando "Importar processos" no guia em equipe.
+  // Não interferir com o botão de confirmação dentro de janelas de importação.
+  const imports=all.filter(a=>{
+    const label=actionText(a)||normalized(a.getAttribute('aria-label'));
+    return /^Importar processos$/i.test(label)&&
+      !a.closest('dialog,[role="dialog"],[aria-modal="true"],.modal,.modal-content,.popup,[hidden]');
+  });
+  if(imports.length>1){
+    const mainImport=imports.find(a=>!a.dataset.bpfImportDuplicado&&a.getClientRects().length>0)||imports[0];
+    for(const a of imports){
+      if(a===mainImport||a.dataset.bpfImportDuplicado==='1')continue;
+      a.dataset.bpfImportDuplicado='1';
+      a.hidden=true;
+      a.style.setProperty('display','none','important');
+    }
+  }
   // Botão F nas páginas de processos: não altera comportamento nem estados SIM/NÃO.
   for(const el of all){
     if(actionText(el)!=='F')continue;
