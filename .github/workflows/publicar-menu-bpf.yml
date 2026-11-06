@@ -1,0 +1,47 @@
+name: Publicar menu compacto do Guia BPF
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publicar-menu-bpf.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  atualizar-menu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do Guia BPF
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Revisar menus em equipe e individual
+        run: python3 scripts/patch_menu_bpf_20261106.py
+      - name: Validar estrutura e recursos do Guia
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          for f in ('individual.html','equipe.html'):
+              s=Path(f).read_text(encoding='utf8')
+              assert '<h1>Guia de Avaliação de Risco</h1>' in s, f
+              assert 'bpf-menu-compact-20261106' in s, f
+              assert 'const GUIDE_DATA=' in s, f
+              assert 'window.BPF=' in s, f
+              assert 'id="removeImage" hidden' in s, f
+              assert 'Math.min(13,h*.46)' in s, f
+              assert 'Revisar frases dos inspetores' not in s, f
+              print(f, len(s), 'OK')
+          assert '<h1>Guia de Avaliação de Risco</h1>' in Path('index.html').read_text()
+          PY
+          git diff --check
+      - name: Publicar na branch principal
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add individual.html equipe.html index.html sw-guia18.js
+          if git diff --cached --quiet; then
+            echo "Menu ja atualizado."
+          else
+            git commit -m "Guia BPF: menu compacto, titulo e F com contraste reforcado"
+            git push origin HEAD:main
+          fi
