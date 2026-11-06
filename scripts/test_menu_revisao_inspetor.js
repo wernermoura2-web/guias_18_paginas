@@ -5,7 +5,7 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 class Node {
  constructor(tag) {
   this.tagName=tag;this.children=[];this.style={};this.dataset={};this.value='';this.checked=false;
-  this._text='';this.id='';this.className='';this.parentElement=null;this.scrollTop=0;
+  this._text='';this.id='';this.className='';this.parentElement=null;this.scrollTop=0;this.classList={add:()=>{},remove:()=>{}};
  }
  get textContent(){return this._text}
  set textContent(s){this._text=String(s);this.children=[]}
