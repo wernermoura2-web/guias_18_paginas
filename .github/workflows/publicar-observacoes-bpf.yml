@@ -18,7 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Instalar menu de revisao de frases e orientacoes
+      - name: Aplicar menu de revisao de frases e orientacoes
         run: python3 scripts/patch_menu_revisao_inspetor.py
       - name: Testar original, edicao, retorno e JSON nos dois modos
         run: node scripts/test_menu_revisao_inspetor.js
