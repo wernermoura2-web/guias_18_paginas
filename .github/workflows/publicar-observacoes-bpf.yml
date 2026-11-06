@@ -1,4 +1,4 @@
-name: Inspecionar ajuste preciso das observacoes HTML e PDF
+name: Publicar autoajuste de observacoes nos processos HTML e PDF
 
 on:
   push:
@@ -18,8 +18,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Examinar autoajuste HTML e PDF das observacoes
-        run: python3 scripts/diag_autofit_focused.py
+      - name: Ajustar textos dos processos ao espaco no HTML e PDF
+        run: python3 scripts/patch_autofit_processos_html_pdf.py
+      - name: Testar ajuste sem recorte e sem novas paginas de processos
+        run: node scripts/test_autofit_processos_html_pdf.js
+      - name: Testar paginacao existente de listas de nao conformidades
+        run: node scripts/test_pdf_overflow_geral.js
+      - name: Validar anexo F com observacoes consolidadas
+        run: node scripts/test_anexo_f_obs_unica.js
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -28,6 +34,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: separar observações dos itens com uma linha em branco"
+            git commit -m "Guia BPF: ajustar automaticamente observações dos processos no HTML e PDF"
             git push origin HEAD:main
           fi
