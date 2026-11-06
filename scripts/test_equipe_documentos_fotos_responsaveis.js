@@ -4,7 +4,14 @@ const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/st
 const html=fs.readFileSync('equipe.html','utf8');
 const start=html.indexOf('const GUIDE_DATA=')+'const GUIDE_DATA='.length;
 assert(start>'const GUIDE_DATA='.length);
-const D=JSON.parse(html.slice(start,html.indexOf(';',start)));
+let depth=0,inString=false,escaped=false,end=-1;
+for(let i=start;i<html.length;i++){
+ const ch=html[i];
+ if(inString){if(escaped)escaped=false;else if(ch==='\\')escaped=true;else if(ch==='"')inString=false;}
+ else if(ch==='"')inString=true;else if(ch==='{')depth++;else if(ch==='}'&&--depth===0){end=i+1;break;}
+}
+assert(end>start,'GUIDE_DATA JSON not complete');
+const D=JSON.parse(html.slice(start,end));
 const get=(a,b)=>{const x=html.indexOf(a),y=html.indexOf(b,x+a.length);assert(x>=0&&y>x,'Missing '+a);return html.slice(x,y);};
 const img={a:'data:image/png;base64,QUFBQQ==',b:'data:image/png;base64,QkJCQg==',c:'data:image/png;base64,Q0NDQw==',d:'data:image/jpeg;base64,RERERA==',e:'data:image/jpeg;base64,RUVFRQ=='};
 class N{constructor(tag){this.tag=tag;this.id='';this.innerHTML='';this.textContent='';this.style={};}remove(){this.removed=true;}}
