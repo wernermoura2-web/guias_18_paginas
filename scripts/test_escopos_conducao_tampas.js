@@ -15,6 +15,11 @@ for(const file of ['individual.html','equipe.html']){
  const sandbox={
   values,
   bpfUnifiedRow:()=>false,
+  bpfPanels:(page,row)=>[{
+   id:0,label:'F1',composite:false,
+   entries:row.scopes.map(scope=>({scope,index:0,phrase:scope.phrases[0],name:'F_'+scope.name+'_0'}))
+  }],
+  bpfGroupNoteName:(page,row,panel,answer)=>'GROUP_NOTE_'+page.page+'_'+row.code+'_'+panel.id+'_'+answer,
   bpfScopeLabel:null,
   BPF_OBSERVATION_FIELDS:{'1_4.2.2':'OBS_CONDUCAO','7_4.6.11':'OBS_RETORNAVEIS','8_4.6.12':'OBS_DESCARTAVEIS'},
   bpfSummaryName:(page,row)=>'Summary_'+page.page+'_'+row.code,
@@ -40,6 +45,7 @@ for(const file of ['individual.html','equipe.html']){
   const row={code,phrases:scope.phrases,scopes:[scope]};
   values[sandbox.bpfPhraseName(scope,0)]='0';
   values[sandbox.bpfNoteName(scope,0)]='Não conformidade de teste';
+  values[sandbox.bpfGroupNoteName({page},row,{id:0},'0')]='Não conformidade de teste';
   sandbox.bpfSyncObservation(row,{page});
   const key=sandbox.BPF_OBSERVATION_FIELDS[page+'_'+code];
   const v=values[key];
