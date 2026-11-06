@@ -355,7 +355,27 @@ function bpfInspectorInstallMenu(){
 }
 
 function bpfInitFields(data){data.fields.BPF_InspectorRevisions={name:'BPF_InspectorRevisions',type:'/Tx',flags:0,label:'Revisões das frases e orientações ao inspetor',options:[],calc:''};data.fields.BPF_NCGenerated={name:'BPF_NCGenerated',type:'/Tx',flags:0,label:'Controle das listas de não conformidades',options:[],calc:''};data.fields.BPF_PCCDestination={name:'BPF_PCCDestination',type:'/Tx',flags:0,label:'Destino dos considerandos PCC',options:[],calc:''};data.fields.BPF_PCCGenerated={name:'BPF_PCCGenerated',type:'/Tx',flags:0,label:'Controle dos considerandos PCC',options:[],calc:''};for(const p of BPF_PHRASES)for(const r of p.rows){const n=bpfSummaryName(p,r);data.fields[n]={name:n,type:'/Tx',flags:0,label:'Resumo '+r.code,options:[],calc:'',phrasePage:p.page};}for(const p of BPF_PHRASES)for(const r of p.rows)for(const scope of r.scopes)scope.phrases.forEach((f,i)=>{const n=bpfPhraseName(scope,i),note=bpfNoteName(scope,i);data.fields[n]={name:n,type:'/Ch',flags:0,label:r.code+' F'+(i+1),options:['','1','0','2'],calc:'',phrasePage:p.page};data.fields[note]={name:note,type:'/Tx',flags:4096,label:r.code+' F'+(i+1)+' observação',options:[],calc:'',phrasePage:p.page};});bpfInitGroupFields(data);bpfInitUnifiedFields(data);}
-function bpfMergeObservation(text,code,previous,summary){const start='[Frases '+code+']',end='[/Frases '+code+']',a=text.indexOf(start);if(a>=0){const b=text.indexOf(end,a);if(b>=0)text=text.slice(0,a)+text.slice(b+end.length);}if(previous){const i=text.indexOf(previous);if(i>=0)text=text.slice(0,i)+text.slice(i+previous.length);}text=text.trimEnd();return text+(summary?(text?' ':'')+summary:'');}
+function bpfSpaceItemObservations(text){
+ // Espaço pequeno: somente UMA linha vazia entre itens, sem editar as palavras.
+ // Reconhece os resumos antigos (4.2.7 C1/F2) e os novos (4.2.7 F2 —).
+ return String(text??'').replace(/\r\n?/g,'\n')
+  .replace(/([.;)])[\t ]+(?=4\.\d{1,2}\.\d{1,2}\s+(?:[CRL]\d+\/F\d+|F\d+\s*[—–-]))/g,'$1\n\n');
+}
+function bpfSpaceProcessObservations(){
+ // Executa após importação de JSON antigo e antes de desenhar as páginas do guia.
+ // Não mistura itens, categorias APPCC, notas individuais nem conteúdo de usuário.
+ for(const name of new Set(Object.values(BPF_OBSERVATION_FIELDS))){
+  if(typeof values[name]==='string'&&values[name])
+   values[name]=bpfSpaceItemObservations(values[name]);
+ }
+}
+function bpfMergeObservation(text,code,previous,summary){
+ const start='[Frases '+code+']',end='[/Frases '+code+']',a=text.indexOf(start);
+ if(a>=0){const b=text.indexOf(end,a);if(b>=0)text=text.slice(0,a)+text.slice(b+end.length);}
+ if(previous){const i=text.indexOf(previous);if(i>=0)text=text.slice(0,i)+text.slice(i+previous.length);}
+ text=bpfSpaceItemObservations(text).trimEnd();
+ return text+(summary?(text?'\n\n':'')+summary:'');
+}
 function bpfSyncObservation(row,page){
  if(bpfUnifiedRow(row))return bpfSyncUnifiedObservation(row,page);
  const name=BPF_OBSERVATION_FIELDS[page.page+'_'+row.code];if(!name)return;
@@ -810,7 +830,7 @@ const api={getField:n=>refs[n]||null,numFields:Object.keys(refs).length,getNthFi
 const compiled={};
 for(const n of D.order){const source=D.fields[n].calc.replace(/valor = 100/g,'valor === 100');try{compiled[n]=new Function('event','color','AFSimple_Calculate',source)}catch(e){errors.add(n+': '+e.message)}}
 function aggregate(names){const vals=names.map(n=>values[n]);return vals.includes('0')?'0':vals.includes('1')?'1':vals.includes('2')?'2':'Off'}
-function recalc(){bpfInspectorApplySaved();bpfApplyAnswers(values);for(let i=0;i<4;i++)values[conductions[i]]=values[sourceFields[i]];
+function recalc(){bpfInspectorApplySaved();bpfApplyAnswers(values);bpfSpaceProcessObservations();for(let i=0;i<4;i++)values[conductions[i]]=values[sourceFields[i]];
  for(const [n,sources]of Object.entries(D.groups))values[n]=aggregate(sources);
  for(let pass=0;pass<4;pass++){
  const before=JSON.stringify(values);
