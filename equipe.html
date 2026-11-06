@@ -200,6 +200,10 @@ function bpfPanels(page,row){
  const range=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
  let parts;
  if(row.code==='4.3.3')parts=[{label:'F1 — Dispositivos do reservatório',indices:range(0,5),composite:true}];
+ else if(row.code==='4.10.2')parts=[
+   {label:'F1 — Laboratório próprio e/ou terceirizado',indices:[0,1],composite:true},
+   {label:'F3 — Contrato de terceirização',indices:[2],composite:false}
+ ];
  else if(row.code==='4.11.2')parts=[
    {label:'F1 — Responsabilidade pela industrialização',indices:range(0,2),composite:true},
    {label:'F2 — Habilitação nos conselhos profissionais',indices:range(3,5),composite:true}
@@ -209,7 +213,7 @@ function bpfPanels(page,row){
    {label:'F2 — Captação',indices:range(7,9),composite:true},
    {label:'F3 — Reservatório',indices:range(10,13),composite:true},
    {label:'F4 — Análise físico-química anual (RDC 717/2022)',indices:[14],composite:true},
-   {label:'F5 — Cinco análises mensais de um lote envasado',indices:[15],composite:true},
+   {label:'F5 — Cinco análises mensais terceirizadas de um lote envasado',indices:[15],composite:true},
    {label:'F6 — Cinco unidades analisadas de todos os lotes envasados',indices:[16],composite:true}
  ];
  else parts=range(0,max-1).map(i=>({label:'F'+(i+1),indices:[i],composite:false}));
@@ -238,7 +242,7 @@ function bpfSeedGroupNotes(page,row,panels){
 }
 
 
-function bpfUnifiedRow(row){return ['4.3.3','4.10.3','4.11.2'].includes(row.code);}
+function bpfUnifiedRow(row){return ['4.3.3','4.10.2','4.10.3','4.11.2'].includes(row.code);}
 function bpfUnifiedKey(page,row,panel,kind){
  return 'BPF_FGroup'+kind+'_'+page.page+'_'+row.code.replace(/[^0-9a-z]/gi,'_')+'_G'+(panel.id+1);
 }
@@ -261,6 +265,7 @@ function bpfUnifiedAnswer(page,row,panel){
 }
 function bpfUnifiedIsOther(row,panel,e){return row.code==='4.11.2'&&panel.id===1&&e.index===5;}
 function bpfUnifiedOption(row,e){
+ if(row.code==='4.10.2')return ['Laboratório próprio','Laboratório terceirizado','Contrato de terceirização'][e.index];
  if(row.code==='4.11.2')return ['RT','Responsável legal','Proprietário','Químico','Biólogo','Outro'][e.index];
  if(row.code==='4.3.3')return [
    'Extravasor protegido por tela milimetrada',
@@ -277,7 +282,7 @@ function bpfUnifiedOption(row,e){
    'Coliformes totais','Escherichia coli','Bactérias heterotróficas',
    'Coliformes totais','Escherichia coli','Pseudomonas aeruginosa','Bactérias heterotróficas',
    'Análise físico-química anual — RDC 717/2022',
-   'Cinco análises mensais de um lote envasado',
+   'Cinco análises mensais terceirizadas de um lote envasado',
    'Cinco unidades analisadas de todos os lotes envasados'
  ][e.index];
  return e.phrase.text;
@@ -353,6 +358,10 @@ function bpfOpenUnifiedPhrases(row,page){
   const top=document.createElement('div');top.className='bpf-unified-top';card.append(top);
   const radios=document.createElement('div');radios.className='bpf-unified-status';top.append(radios);
   const checkArea=document.createElement('div');checkArea.className='bpf-unified-options';top.append(checkArea);
+  if(row.code==='4.10.2'&&panel.id===1){
+   top.style.display='block';checkArea.style.display='none';
+   radios.style.flexDirection='row';radios.style.borderRight='0';radios.style.gap='24px';
+  }
   const noteLabel=document.createElement('label');noteLabel.className='bpf-unified-observation';
   const area=document.createElement('textarea');area.rows=4;
   noteLabel.append(area);card.append(noteLabel);
@@ -376,6 +385,10 @@ function bpfOpenUnifiedPhrases(row,page){
    radio.onchange=()=>{
     if(!radio.checked)return;
     answer=key;values[answerKey]=answer;
+    if(row.code==='4.10.2'&&panel.id===1){
+     chosen=new Set([panel.entries[0].name]);
+     values[selectedKey]=JSON.stringify([...chosen]);
+    }
     updateNote();
     bpfUnifiedApply(page,row,panel);
     changed();recalc();
@@ -383,7 +396,7 @@ function bpfOpenUnifiedPhrases(row,page){
    line.append(radio,document.createTextNode(' '+label));radios.append(line);
   }
   let scopeLabel='';
-  for(const e of panel.entries){
+  for(const e of (row.code==='4.10.2'&&panel.id===1?[]:panel.entries)){
    if(row.scopes.length>1&&scopeLabel!==e.scope.name){
     scopeLabel=e.scope.name;
     const label=document.createElement('div');label.className='bpf-unified-option-scope';label.textContent=bpfScopeLabel(page,e.scope);checkArea.append(label);
@@ -414,7 +427,9 @@ function bpfOpenUnifiedPhrases(row,page){
   }
   area.oninput=()=>{if(!answer)return;values[bpfGroupNoteName(page,row,panel,answer)]=area.value;bpfUnifiedApply(page,row,panel);changed();};
   updateNote();
-  const hint=document.createElement('p');hint.className='bpf-unified-hint';hint.textContent='Marque uma ou várias opções e atribua uma única resposta Sim ou Não ao grupo.';card.append(hint);
+  const hint=document.createElement('p');hint.className='bpf-unified-hint';hint.textContent=(row.code==='4.10.2'&&panel.id===1)
+   ?'Contrato de terceirização: escolha Sim ou Não e registre a observação.'
+   :'Marque uma ou várias opções e atribua uma única resposta Sim ou Não ao grupo.';card.append(hint);
   const oldAnswers=[...new Set(panel.entries.filter(e=>['1','0'].includes(values[e.name])).map(e=>values[e.name]))];
   if(!answer&&oldAnswers.length>1){
    const legacy=document.createElement('p');legacy.className='bpf-unified-legacy';
