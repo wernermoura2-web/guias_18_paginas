@@ -209,8 +209,8 @@ function bpfPanels(page,row){
    {label:'F2 — Captação',indices:range(7,9),composite:true},
    {label:'F3 — Reservatório',indices:range(10,13),composite:true},
    {label:'F4 — Análise físico-química anual (RDC 717/2022)',indices:[14],composite:true},
-   {label:'F5 — Cinco unidades do lote envasado',indices:[15],composite:true},
-   {label:'F6 — Demais análises previstas no requisito',indices:[16],composite:true}
+   {label:'F5 — Cinco análises mensais de um lote envasado',indices:[15],composite:true},
+   {label:'F6 — Cinco unidades analisadas de todos os lotes envasados',indices:[16],composite:true}
  ];
  else parts=range(0,max-1).map(i=>({label:'F'+(i+1),indices:[i],composite:false}));
  return parts.map((part,id)=>({
@@ -277,8 +277,8 @@ function bpfUnifiedOption(row,e){
    'Coliformes totais','Escherichia coli','Bactérias heterotróficas',
    'Coliformes totais','Escherichia coli','Pseudomonas aeruginosa','Bactérias heterotróficas',
    'Análise físico-química anual — RDC 717/2022',
-   'Cinco unidades do mesmo lote envasado',
-   'Demais análises e controles do requisito'
+   'Cinco análises mensais de um lote envasado',
+   'Cinco unidades analisadas de todos os lotes envasados'
  ][e.index];
  return e.phrase.text;
 }
