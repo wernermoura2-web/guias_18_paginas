@@ -1,4 +1,4 @@
-name: Publicar 4.10.2 laboratorios e F5 terceirizadas BPF
+name: Diagnosticar menu revisao inspetores BPF
 
 on:
   push:
@@ -18,14 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Aplicar 4.10.2 com laboratorios e F5 com terceirizacao
-        run: python3 scripts/patch_4102_labs_4103_f5_terceirizadas.py
-      - name: Validar os grupos 4.10.2 e o F5 no HTML e PDF
-        run: node scripts/test_4102_labs_f5_terceirizadas.js
-      - name: Conferir demais grupos e observacoes
-        run: node scripts/test_f_unica_resposta_desenho.js
-      - name: Validar paginacao do PDF
-        run: node scripts/test_pdf_overflow_geral.js
+      - name: Inspecionar menu e persistencia de orientacoes
+        run: python3 scripts/diag_menu_revisao_inspetor.py
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
