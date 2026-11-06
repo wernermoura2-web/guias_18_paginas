@@ -41,16 +41,23 @@ function apply(){
   hideBlock('Preencha os campos sobre o guia.');
   hideBlock('Envasadoras de Água Mineral · Revisão 6 · Formulário local para Chrome');
   const all=actions();
-  const isTeam=/(?:^|\/)equipe(?:_atualizado)?\.html$/i.test(location.pathname);
-  // A tela já está no modo equipe: o botão de modo repete a escolha da página inicial.
+  // Retirar o comando solicitado, sem bloquear a inclusão de imagens nos campos do guia.
   for(const a of all){
     const t=actionText(a);
-    if(t==='Remover imagem' || (isTeam&&t==='Trabalho em equipe')){
+    if(t==='Remover imagem'){
       a.hidden=true;a.style.display='none';
     }
   }
   // Apenas no menu, manter a primeira ocorrência de cada comando.
-  const menuActions=all.filter(a=>/^(Salvar arquivo|Abrir preenchimento|Imprimir\s*\/\s*PDF|Importar processos|Revisar frases dos inspetores|Novo\s*\/\s*limpar tudo)$/i.test(actionText(a)));
+  const save=all.find(a=>actionText(a)==='Salvar arquivo');
+  let menuRoot=save?.parentElement;
+  while(menuRoot&&menuRoot!==document.body){
+    const t=normalized(menuRoot.textContent);
+    if(t.includes('Imprimir / PDF')&&t.includes('Novo / limpar tudo'))break;
+    menuRoot=menuRoot.parentElement;
+  }
+  if(menuRoot===document.body)menuRoot=null;
+  const menuActions=menuRoot?all.filter(a=>menuRoot.contains(a)&&/^(Salvar arquivo|Abrir preenchimento|Imprimir\s*\/\s*PDF|Importar processos|Revisar frases dos inspetores|Novo\s*\/\s*limpar tudo)$/i.test(actionText(a))):[];
   const seen=new Set();
   for(const a of menuActions){const key=actionText(a).toLowerCase().replace(/\s+/g,' ');if(seen.has(key)){a.hidden=true;a.style.display='none'}else seen.add(key)}
   // Botão F nas páginas de processos: não altera comportamento nem estados SIM/NÃO.
