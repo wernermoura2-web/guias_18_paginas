@@ -1,4 +1,4 @@
-name: Publicar menu de revisao de frases e orientacoes BPF
+name: Publicar F4 F5 F6 Sim Nao e manter revisao de frases BPF
 
 on:
   push:
@@ -18,8 +18,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Aplicar menu de revisao de frases e orientacoes
-        run: python3 scripts/patch_menu_revisao_inspetor.py
+      - name: Corrigir F4 F5 F6 de 4.10.3 para Sim Nao simples
+        run: python3 scripts/patch_4103_f456_sim_nao_simples.py
+      - name: Testar resposta Sim Nao simples para F4 F5 F6
+        run: node scripts/test_4103_f456_sim_nao_simples.js
       - name: Revalidar original, edicao, retorno e JSON nos dois modos
         run: node scripts/test_menu_revisao_inspetor.js
       - name: Validar integridade dos demais grupos de F
@@ -34,6 +36,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: menu de revisão de frases e orientações com original e restauração"
+            git commit -m "Guia BPF: 4.10.3 F4 F5 F6 Sim Não sem checkbox, revisão preservada"
             git push origin HEAD:main
           fi
