@@ -187,7 +187,7 @@
   // Não esconder formulários, caixas de diálogo, tabelas ou campos da inspeção.
   let oldBar=save.parentElement;
   while(oldBar&&oldBar!==document.body&&(!oldBar.contains(open)||!oldBar.contains(pdf)))oldBar=oldBar.parentElement;
-  if(oldBar&&oldBar!==document.body&&norm(oldBar.textContent).length<2500&&
+  if(oldBar&&oldBar!==document.body&&!oldBar.contains(root)&&norm(oldBar.textContent).length<2500&&
      !oldBar.querySelector('dialog,table,canvas,textarea,[role="dialog"]')&&
      oldBar.querySelectorAll('input:not([type="button"]):not([type="checkbox"]):not([type="range"]),select').length<=2){
     oldBar.classList.add('bpf-ui-original');
