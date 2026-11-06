@@ -20,7 +20,7 @@ jobs:
           persist-credentials: true
       - name: Aplicar menu de revisao de frases e orientacoes
         run: python3 scripts/patch_menu_revisao_inspetor.py
-      - name: Testar original, edicao, retorno e JSON nos dois modos
+      - name: Revalidar original, edicao, retorno e JSON nos dois modos
         run: node scripts/test_menu_revisao_inspetor.js
       - name: Validar integridade dos demais grupos de F
         run: node scripts/test_4102_labs_f5_terceirizadas.js
