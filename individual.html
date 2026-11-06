@@ -551,7 +551,7 @@ function bpfOpenUnifiedPhrases(row,page){
   const top=document.createElement('div');top.className='bpf-unified-top';card.append(top);
   const radios=document.createElement('div');radios.className='bpf-unified-status';top.append(radios);
   const checkArea=document.createElement('div');checkArea.className='bpf-unified-options';top.append(checkArea);
-  if(row.code==='4.10.2'&&panel.id===1){
+  if((row.code==='4.10.2'&&panel.id===1)||(row.code==='4.10.3'&&panel.id>=3)){
    top.style.display='block';checkArea.style.display='none';
    radios.style.flexDirection='row';radios.style.borderRight='0';radios.style.gap='24px';
   }
@@ -565,6 +565,11 @@ function bpfOpenUnifiedPhrases(row,page){
   let answer=bpfUnifiedAnswer(page,row,panel);
   if(!Object.hasOwn(values,selectedKey)||!values[selectedKey])values[selectedKey]=JSON.stringify([...chosen]);
   if(answer&&!values[answerKey])values[answerKey]=answer;
+  if(((row.code==='4.10.2'&&panel.id===1)||(row.code==='4.10.3'&&panel.id>=3))&&answer&&!chosen.size){
+   chosen.add(panel.entries[0].name);
+   values[selectedKey]=JSON.stringify([...chosen]);
+   bpfUnifiedApply(page,row,panel);
+  }
   const updateNote=()=>{
    if(answer==='0'){noteLabel.firstChild?.remove?.();noteLabel.textContent='NC — não conformidade do grupo';}
    else{noteLabel.textContent='OBS — observação única do grupo';}
@@ -578,7 +583,7 @@ function bpfOpenUnifiedPhrases(row,page){
    radio.onchange=()=>{
     if(!radio.checked)return;
     answer=key;values[answerKey]=answer;
-    if(row.code==='4.10.2'&&panel.id===1){
+    if((row.code==='4.10.2'&&panel.id===1)||(row.code==='4.10.3'&&panel.id>=3)){
      chosen=new Set([panel.entries[0].name]);
      values[selectedKey]=JSON.stringify([...chosen]);
     }
@@ -589,7 +594,7 @@ function bpfOpenUnifiedPhrases(row,page){
    line.append(radio,document.createTextNode(' '+label));radios.append(line);
   }
   let scopeLabel='';
-  for(const e of (row.code==='4.10.2'&&panel.id===1?[]:panel.entries)){
+  for(const e of ((row.code==='4.10.2'&&panel.id===1)||(row.code==='4.10.3'&&panel.id>=3)?[]:panel.entries)){
    if(row.scopes.length>1&&scopeLabel!==e.scope.name){
     scopeLabel=e.scope.name;
     const label=document.createElement('div');label.className='bpf-unified-option-scope';label.textContent=bpfScopeLabel(page,e.scope);checkArea.append(label);
@@ -620,8 +625,8 @@ function bpfOpenUnifiedPhrases(row,page){
   }
   area.oninput=()=>{if(!answer)return;values[bpfGroupNoteName(page,row,panel,answer)]=area.value;bpfUnifiedApply(page,row,panel);changed();};
   updateNote();
-  const hint=document.createElement('p');hint.className='bpf-unified-hint';hint.textContent=(row.code==='4.10.2'&&panel.id===1)
-   ?'Contrato de terceirização: escolha Sim ou Não e registre a observação.'
+  const hint=document.createElement('p');hint.className='bpf-unified-hint';hint.textContent=((row.code==='4.10.2'&&panel.id===1)||(row.code==='4.10.3'&&panel.id>=3))
+   ?'Escolha Sim ou Não para esta verificação e registre a observação correspondente.'
    :'Marque uma ou várias opções e atribua uma única resposta Sim ou Não ao grupo.';card.append(hint);
   const oldAnswers=[...new Set(panel.entries.filter(e=>['1','0'].includes(values[e.name])).map(e=>values[e.name]))];
   if(!answer&&oldAnswers.length>1){
