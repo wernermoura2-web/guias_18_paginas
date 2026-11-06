@@ -1,4 +1,4 @@
-name: Inspecionar mesclagem da equipe BPF
+name: Publicar importacao da equipe documentos fotos rotulos responsaveis
 
 on:
   push:
@@ -18,8 +18,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Inspecionar mesclagem detalhada e responsaveis
-        run: python3 scripts/diag_equipe_merge_full.py
+      - name: Ampliar importacao da equipe para documentos fotos rotulos e responsaveis
+        run: python3 scripts/patch_equipe_importar_documentos_fotos_responsaveis.py
+      - name: Testar transferencias sem sobrescrita e acrescimo de responsaveis
+        run: node scripts/test_equipe_documentos_fotos_responsaveis.js
+      - name: Validar agrupamento do Anexo F PDF
+        run: node scripts/test_anexo_f_obs_unica.js
+      - name: Validar integridade e paginacao do PDF
+        run: node scripts/test_pdf_overflow_geral.js
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
@@ -28,6 +34,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: Anexo F com uma observação por frase, resposta e grupo de unidades"
+            git commit -m "Guia BPF: importar documentos, fotos, rótulos e acrescentar responsáveis da equipe"
             git push origin HEAD:main
           fi
