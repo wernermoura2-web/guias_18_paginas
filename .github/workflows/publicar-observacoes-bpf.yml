@@ -1,4 +1,4 @@
-name: Diagnosticar importacao de documentos e anexos na equipe
+name: Inspecionar mesclagem da equipe BPF
 
 on:
   push:
@@ -18,8 +18,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Inspecionar mesclagem de documentos e anexos da equipe
-        run: python3 scripts/diag_equipe_anexos_p15_fotos_rotulos.py
+      - name: Inspecionar mesclagem detalhada e responsaveis
+        run: python3 scripts/diag_equipe_merge_full.py
       - name: Publicar a revisao na branch main
         run: |
           git config user.name "github-actions[bot]"
