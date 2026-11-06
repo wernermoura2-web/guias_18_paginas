@@ -1,4 +1,4 @@
-name: Publicar F5 e F6 de 4.10.3 corrigidos BPF
+name: Publicar 4.10.2 laboratorios e F5 terceirizadas BPF
 
 on:
   push:
@@ -18,10 +18,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - name: Corrigir F5 mensal e F6 todos os lotes de 4.10.3
-        run: python3 scripts/patch_4103_f5_f6_analises_lotes.py
-      - name: Testar F5 e F6 nos modos Individual e Equipe e no PDF
-        run: node scripts/test_4103_f5_f6_analises_lotes.js
+      - name: Aplicar 4.10.2 com laboratorios e F5 com terceirizacao
+        run: python3 scripts/patch_4102_labs_4103_f5_terceirizadas.py
+      - name: Validar os grupos 4.10.2 e o F5 no HTML e PDF
+        run: node scripts/test_4102_labs_f5_terceirizadas.js
+      - name: Conferir demais grupos e observacoes
+        run: node scripts/test_f_unica_resposta_desenho.js
       - name: Validar paginacao do PDF
         run: node scripts/test_pdf_overflow_geral.js
       - name: Publicar a revisao na branch main
@@ -32,6 +34,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Guia BPF ja atualizado"
           else
-            git commit -m "Guia BPF: distinguir F5 mensal de um lote e F6 cinco unidades em todos os lotes"
+            git commit -m "Guia BPF: 4.10.2 proprio ou terceirizado e F5 mensal terceirizadas"
             git push origin HEAD:main
           fi
