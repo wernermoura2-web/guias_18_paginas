@@ -67,8 +67,10 @@ for filename in ("individual.html", "equipe.html"):
 
 p=Path("index.html")
 s=p.read_text(encoding="utf-8")
-s,n=re.subn(r'href="((?:individual|equipe)\.html\?v=)[^"]+"',lambda m:'href="'+m.group(1)+version+'"',s)
-assert n==2,n
+s,n=re.subn(r'href="((?:individual|equipe)\.html\?v=)[^"#]+(#[^"]*)?"',
+    lambda m:'href="'+m.group(1)+version+(m.group(2) or '')+'"',s)
+assert n==4,n
+assert s.count('#revisar-inspetores')==2,"Revisão deve abrir pelo link do menu inicial"
 p.write_text(s,encoding="utf-8")
 
 p=Path("sw-guia18.js")
