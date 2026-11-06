@@ -48,7 +48,7 @@ for(const filename of ['individual.html','equipe.html']){
  const tiny=fakeArea('curto',480,110);
  context.bpfFitProcessObservation(tiny.area);
  assert.equal(parseFloat(tiny.area.style.fontSize),16);
- const huge=fakeArea('A'.repeat(45000),300,30);
+ const huge=fakeArea('A'.repeat(3000000),300,30);
  context.bpfFitProcessObservation(huge.area);
  assert.equal(huge.area.style.overflowY,'auto',filename+': impossible HTML content should remain accessible');
 
