@@ -947,10 +947,111 @@ show();sync();
 
 // Trabalho em equipe no formulário original de 22 páginas.
 function makeTeam18(){return {inspectionId:crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+'-'+Math.random().toString(36).slice(2),createdAt:new Date().toISOString(),imports:[]};}
-function cleanTeam18(raw){if(!raw||typeof raw.inspectionId!=='string'||!/^[A-Za-z0-9_-]{8,100}$/.test(raw.inspectionId))return null;return {inspectionId:raw.inspectionId,createdAt:typeof raw.createdAt==='string'?raw.createdAt:'',imports:Array.isArray(raw.imports)?raw.imports.filter(r=>r&&typeof r.hash==='string'&&Array.isArray(r.processes)).slice(-200).map(r=>({hash:r.hash,file:typeof r.file==='string'?r.file:'',at:typeof r.at==='string'?r.at:'',processes:r.processes.filter(p=>Object.hasOwn(PROCESSES18,p))})):[]};}
+function cleanTeam18(raw){if(!raw||typeof raw.inspectionId!=='string'||!/^[A-Za-z0-9_-]{8,100}$/.test(raw.inspectionId))return null;return {inspectionId:raw.inspectionId,createdAt:typeof raw.createdAt==='string'?raw.createdAt:'',imports:Array.isArray(raw.imports)?raw.imports.filter(r=>r&&typeof r.hash==='string'&&Array.isArray(r.processes)).slice(-200).map(r=>({hash:r.hash,file:typeof r.file==='string'?r.file:'',at:typeof r.at==='string'?r.at:'',processes:r.processes.filter(p=>Object.hasOwn(PROCESSES18,p)||Object.hasOwn(TEAM18_EXTRAS,p))})):[]};}
 let team18=makeTeam18();
 const PROCESSES18={'4.1':{label:'Captação',pages:[0]},'4.2':{label:'Condução',pages:[1]},'4.3':{label:'Reservatórios das fontes',pages:[2,3,4,5]},'4.5':{label:'Recepção de embalagens e insumos',pages:[6]},'4.6':{label:'Higienização — retornáveis e descartáveis',pages:[7,8]},'4.7':{label:'Envase — retornáveis e descartáveis',pages:[9,10]},'4.10':{label:'Controle da Qualidade',pages:[11]},'4.11':{label:'Responsável e Manipuladores',pages:[12]}};
 const scopedFields18=Object.fromEntries(Object.entries(PROCESSES18).map(([p,scope])=>[p,[...new Set([...D.widgets.filter(w=>scope.pages.includes(w.page)).map(w=>w.name),...Object.keys(D.fields).filter(n=>scope.pages.includes(D.fields[n].phrasePage))])].filter(n=>!derived.has(n)&&!['ENVASADORA','ENDEREÇO','DATA'].includes(n)&&!(D.fields[n].type==='/Btn'&&D.fields[n].flags&65536)&&!/ATENDIDO|RISCO/i.test(D.fields[n].label))]));
+
+const TEAM18_DOC_FIELDS=[...new Set(D.widgets.filter(w=>w.page===14&&/^doc_legal_\d+_(situacao|atende|observacao)$/.test(w.name)).map(w=>w.name))];
+const TEAM18_PHOTO_SLOTS=[...new Set(D.widgets.filter(w=>[15,16].includes(w.page)&&/^(Imagem[1-6]|Foto_Extra_[1-6])$/.test(w.name)).map(w=>w.name))];
+const TEAM18_LABEL_SLOTS=[...new Set(D.widgets.filter(w=>[19,20,21].includes(w.page)&&/^(Imagem[1-3]_af_image|Rotulo_Pagina_[23]_[1-3])$/.test(w.name)).map(w=>w.name))];
+const TEAM18_RESP_FIELD='RESPONSÁVEIS PELA INSPEÇÃORow1';
+const TEAM18_EXTRAS={
+ documents:{label:'Documentos legais e regulatórios — página 15'},
+ photos:{label:'Fotos anexadas — páginas 16 e 17'},
+ labels:{label:'Rótulos anexados — páginas 20 a 22'},
+ inspectors:{label:'Responsáveis pela inspeção — acrescentar para conferência'}
+};
+function imageTeam18(value){
+ return typeof value==='string'&&/^data:image\/(jpeg|png);base64,[A-Za-z0-9+/=\s]+$/.test(value);
+}
+function parsedTeamImages18(raw){
+ const allowed=new Set([...TEAM18_PHOTO_SLOTS,...TEAM18_LABEL_SLOTS]),pics={};
+ if(!raw||typeof raw!=='object')return pics;
+ for(const [name,data]of Object.entries(raw))if(allowed.has(name)&&imageTeam18(data))pics[name]=data;
+ return pics;
+}
+function countTeamExtra18(incoming,key){
+ if(key==='documents')return TEAM18_DOC_FIELDS.filter(n=>nonempty18(incoming.values?.[n])).length;
+ if(key==='inspectors')return String(incoming.values?.[TEAM18_RESP_FIELD]||'').trim()?1:0;
+ const slots=key==='photos'?TEAM18_PHOTO_SLOTS:TEAM18_LABEL_SLOTS;
+ return slots.filter(n=>imageTeam18(incoming.images?.[n])).length;
+}
+function teamPhotoMeta18(from,to){
+ const possible=['BPF_PhotoProcess_','BPF_PhotoLocation_','BPF_PhotoRotation_','BPF_PhotoAngle_'];
+ return possible.filter(prefix=>Object.hasOwn(D.fields,prefix+from)&&Object.hasOwn(D.fields,prefix+to))
+                .map(prefix=>[prefix+from,prefix+to]);
+}
+function appendInspectors18(previous,received,file){
+ const old=String(previous||'').trimEnd(),text=String(received||'').trim();
+ if(!text)return {text:old,added:0};
+ const existing=new Set(old.split(/\r?\n/).map(x=>x.trim().toLocaleLowerCase('pt-BR')).filter(Boolean));
+ const seen=new Set(existing);
+ const fresh=text.split(/\r?\n/).filter(line=>{
+  const key=line.trim().toLocaleLowerCase('pt-BR');
+  if(!key||seen.has(key))return false;
+  seen.add(key);return true;
+ });
+ if(!fresh.length)return {text:old,added:0};
+ // A conferência posterior é obrigatória antes da consolidação final do relatório.
+ const origin=String(file||'arquivo da equipe').replace(/[\r\n]/g,' ').slice(0,110);
+ const block='[IMPORTADO PARA CONFERÊNCIA — '+origin+']\n'+fresh.join('\n');
+ return {text:old?(old+'\n\n'+block):block,added:fresh.length};
+}
+function mergeTeamExtras18(targetValues,targetImages,incoming,selected,filename){
+ const stats={documents:0,documentsKept:0,photos:0,labels:0,duplicates:0,inspectors:0};
+ // Use a temporary copy in applyTeam18; no partial changes if one category exceeds capacity.
+ if(selected.includes('documents')){
+  for(const name of TEAM18_DOC_FIELDS){
+   const v=incoming.values[name];
+   if(!nonempty18(v))continue;
+   if(nonempty18(targetValues[name])){
+    if(targetValues[name]!==v)stats.documentsKept++;
+    continue;
+   }
+   targetValues[name]=v;stats.documents++;
+  }
+ }
+ for(const [category,slots]of [['photos',TEAM18_PHOTO_SLOTS],['labels',TEAM18_LABEL_SLOTS]]){
+  if(!selected.includes(category))continue;
+  const incomingNames=slots.filter(name=>imageTeam18(incoming.images?.[name]));
+  const pending=[];
+  for(const src of incomingNames){
+   if(slots.some(name=>targetImages[name]===incoming.images[src])){stats.duplicates++;continue;}
+   pending.push(src);
+  }
+  const free=slots.filter(name=>!imageTeam18(targetImages[name]));
+  if(pending.length>free.length)throw Error('Não há posições livres para '+pending.length+' '+TEAM18_EXTRAS[category].label+
+   ' (disponíveis: '+free.length+'). Nenhuma foto ou rótulo existente foi sobrescrito. Libere posições e tente novamente.');
+  for(const src of pending){
+   let index=free.indexOf(src);
+   if(index<0){
+    const family=src.startsWith('Rotulo_Pagina_2_')?'Rotulo_Pagina_2_':
+      src.startsWith('Rotulo_Pagina_3_')?'Rotulo_Pagina_3_':
+      src.startsWith('Foto_Extra_')?'Foto_Extra_':
+      src.startsWith('Imagem')&&src.endsWith('_af_image')?'Imagem':
+      src.startsWith('Imagem')?'Imagem':'';
+    if(family)index=free.findIndex(n=>n.startsWith(family)&&
+      (family!=='Imagem'||(src.endsWith('_af_image')?n.endsWith('_af_image'):!n.endsWith('_af_image'))));
+   }
+   if(index<0)index=0;
+   const dest=free.splice(index,1)[0];
+   targetImages[dest]=incoming.images[src];
+   // Transferir a identificação da foto com ela (processo, local e rotação, quando houver).
+   for(const [a,b]of teamPhotoMeta18(src,dest)){
+    const val=incoming.values[a];
+    if(typeof val==='string'&&!nonempty18(targetValues[b]))targetValues[b]=val;
+   }
+   stats[category]++;
+  }
+ }
+ if(selected.includes('inspectors')){
+  const out=appendInspectors18(targetValues[TEAM18_RESP_FIELD],incoming.values[TEAM18_RESP_FIELD],filename);
+  targetValues[TEAM18_RESP_FIELD]=out.text;stats.inspectors=out.added;
+ }
+ return stats;
+}
+
 const TEAM18={queue:[],preview:null,busy:false};
 const copy18=x=>JSON.parse(JSON.stringify(x));
 const nonempty18=v=>v!==''&&v!=='Off'&&v!==undefined;
@@ -967,14 +1068,66 @@ function identityTeam18(incoming){const received=cleanTeam18(incoming.team18);if
 async function hashTeam18(text){if(crypto.subtle){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));return [...new Uint8Array(bytes)].map(x=>x.toString(16).padStart(2,'0')).join('');}let v=2166136261;for(let i=0;i<text.length;i++)v=Math.imul(v^text.charCodeAt(i),16777619);return (v>>>0).toString(16)+'-'+text.length;}
 function snapshotTeam18(){return JSON.stringify({values,images,team18});}
 async function receiveTeam18(files){if(TEAM18.preview||TEAM18.busy)return;cancelSpeech();TEAM18.queue=Array.from(files);await nextTeam18();}
-async function nextTeam18(){const file=TEAM18.queue.shift();if(!file)return;TEAM18.busy=true;try{const text=await file.text(),raw=JSON.parse(text);if(raw.format!=='guia-rev6-chrome'||raw.version!==1||!raw.values)throw Error('Use o JSON do Guia de 22 páginas.');const incoming={values:parseValues18(raw.values),team18:raw.team18},legacy=identityTeam18(incoming),hash=await hashTeam18(text);const repeated=new Set(team18.imports.filter(r=>r.hash===hash).flatMap(r=>r.processes));TEAM18.preview={incoming,legacy,hash,repeated,file:file.name,base:snapshotTeam18()};showMergeTeam18();}catch(err){alert(file.name+': '+err.message);TEAM18.busy=false;await nextTeam18();}}
+async function nextTeam18(){const file=TEAM18.queue.shift();if(!file)return;TEAM18.busy=true;try{const text=await file.text(),raw=JSON.parse(text);if(raw.format!=='guia-rev6-chrome'||raw.version!==1||!raw.values)throw Error('Use o JSON do Guia de 22 páginas.');const incoming={values:parseValues18(raw.values),images:parsedTeamImages18(raw.images),team18:raw.team18},legacy=identityTeam18(incoming),hash=await hashTeam18(text);const repeated=new Set(team18.imports.filter(r=>r.hash===hash).flatMap(r=>r.processes));TEAM18.preview={incoming,legacy,hash,repeated,file:file.name,base:snapshotTeam18()};showMergeTeam18();}catch(err){alert(file.name+': '+err.message);TEAM18.busy=false;await nextTeam18();}}
 const escapeTeam18=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function closeTeam18(){document.querySelector('#teamModal18')?.remove();TEAM18.preview=null;TEAM18.queue=[];TEAM18.busy=false;}
 function skipTeam18(){document.querySelector('#teamModal18')?.remove();TEAM18.preview=null;TEAM18.busy=false;nextTeam18();}
-function showMergeTeam18(){const view=TEAM18.preview,modal=document.createElement('div');modal.id='teamModal18';modal.className='team-modal18';const rows=Object.keys(PROCESSES18).map(p=>{const incoming=summary18(view.incoming.values,p),current=summary18(values,p),done=view.repeated.has(p);return '<tr><td><label><input type="checkbox" class="team-pick18" value="'+p+'" '+(done?'disabled':incoming.filled&&!current.filled?'checked':'')+'> <b>'+p+'</b> '+escapeTeam18(PROCESSES18[p].label)+'</label></td><td>'+incoming.answers+' resposta(s), '+incoming.fields+' campo(s) preenchido(s)'+(done?'<br><b>Já importado deste arquivo</b>':'')+'</td><td>'+(current.filled?'<b>Já contém dados.</b><br><label><input type="checkbox" id="replace18_'+p+'"> Autorizar substituição deste processo</label>':'Sem preenchimento')+'</td></tr>';}).join('');modal.innerHTML='<div class="team-box18"><h2>Importar processos — Guia de 22 páginas</h2><p><b>Arquivo:</b> '+escapeTeam18(view.file)+'</p><p><b>Recebido:</b> '+escapeTeam18(view.incoming.values.ENVASADORA||'Envasadora não informada')+' · '+escapeTeam18(view.incoming.values.DATA||'Data não informada')+'</p><p>Selecione somente os processos preenchidos pelo colega. Cada processo selecionado será substituído inteiro; os demais serão preservados.</p><p class="team-hint18">Identificação, fotos, rótulos, observações gerais dos processos (página 14), medidas adotadas e responsáveis do seu guia serão preservados. As observações da própria página de cada processo serão importadas junto com ele.</p>'+(view.legacy?'<p class="team-hint18">Arquivo antigo sem código comum. Confira a identificação.</p><label><input type="checkbox" id="same18"> Confirmo que pertence à mesma inspeção.</label>':'')+'<div class="team-scroll18"><table><tr><th>Processo</th><th>Recebido</th><th>Seu guia</th></tr>'+rows+'</table></div><p id="teamError18" role="alert"></p><button onclick="applyTeam18()">Incorporar processos selecionados</button> <button onclick="skipTeam18()">Ignorar este arquivo</button> <button onclick="closeTeam18()">Fechar</button><p>'+TEAM18.queue.length+' arquivo(s) aguardando conferência. Depois de incorporar, use Salvar arquivo.</p></div>';document.body.append(modal);TEAM18.busy=false;}
+function showMergeTeam18(){const view=TEAM18.preview,modal=document.createElement('div');modal.id='teamModal18';modal.className='team-modal18';const extraRows=Object.entries(TEAM18_EXTRAS).map(([key,meta])=>{
+ const received=countTeamExtra18(view.incoming,key),present=countTeamExtra18({values,images},key),done=view.repeated.has(key);
+ return '<tr><td><label><input type="checkbox" class="team-extra18" value="'+key+'" '+
+ (done||!received?'disabled': 'checked')+'> <b>'+escapeTeam18(meta.label)+'</b></label></td><td>'+
+ received+' registro(s)'+(done?'<br><b>Já importado deste arquivo</b>':'')+
+ '</td><td>'+present+' registro(s) no guia. '+
+ (key==='inspectors'?'As informações novas serão acrescentadas para conferência.':
+ key==='documents'?'Dados existentes serão preservados; apenas lacunas serão preenchidas.':
+ 'Posições existentes serão preservadas; anexos novos usarão espaços livres.')+
+ '</td></tr>';
+}).join('');
+const rows=Object.keys(PROCESSES18).map(p=>{const incoming=summary18(view.incoming.values,p),current=summary18(values,p),done=view.repeated.has(p);return '<tr><td><label><input type="checkbox" class="team-pick18" value="'+p+'" '+(done?'disabled':incoming.filled&&!current.filled?'checked':'')+'> <b>'+p+'</b> '+escapeTeam18(PROCESSES18[p].label)+'</label></td><td>'+incoming.answers+' resposta(s), '+incoming.fields+' campo(s) preenchido(s)'+(done?'<br><b>Já importado deste arquivo</b>':'')+'</td><td>'+(current.filled?'<b>Já contém dados.</b><br><label><input type="checkbox" id="replace18_'+p+'"> Autorizar substituição deste processo</label>':'Sem preenchimento')+'</td></tr>';}).join('');modal.innerHTML='<div class="team-box18"><h2>Importar processos — Guia de 22 páginas</h2><p><b>Arquivo:</b> '+escapeTeam18(view.file)+'</p><p><b>Recebido:</b> '+escapeTeam18(view.incoming.values.ENVASADORA||'Envasadora não informada')+' · '+escapeTeam18(view.incoming.values.DATA||'Data não informada')+'</p><p>Selecione somente os processos preenchidos pelo colega. Cada processo selecionado será substituído inteiro; os demais serão preservados.</p><p class="team-hint18">Além dos processos, você pode importar documentos da página 15, fotos, rótulos e responsáveis pela inspeção. Os anexos existentes e as observações gerais (página 14) serão preservados. Os responsáveis recebidos serão acrescentados para conferência, sem apagar o texto anterior. As observações de cada processo acompanham a respectiva importação.</p>'+(view.legacy?'<p class="team-hint18">Arquivo antigo sem código comum. Confira a identificação.</p><label><input type="checkbox" id="same18"> Confirmo que pertence à mesma inspeção.</label>':'')+'<div class="team-scroll18"><table><tr><th>Processo</th><th>Recebido</th><th>Seu guia</th></tr>'+rows+extraRows+'</table></div><p id="teamError18" role="alert"></p><button onclick="applyTeam18()">Incorporar processos selecionados</button> <button onclick="skipTeam18()">Ignorar este arquivo</button> <button onclick="closeTeam18()">Fechar</button><p>'+TEAM18.queue.length+' arquivo(s) aguardando conferência. Depois de incorporar, use Salvar arquivo.</p></div>';document.body.append(modal);TEAM18.busy=false;}
 function checkSourceLinks18(incoming,selected){const changed=sourceFields.some(n=>normalizeTeam18(incoming[n])!==normalizeTeam18(values[n]));if(!changed)return;if(selected.includes('4.1')){for(const p of ['4.2','4.3'])if(summary18(values,p).filled&&!selected.includes(p))throw Error('Os nomes ou a ordem das fontes são diferentes. Importe 4.1, 4.2 e 4.3 juntos para preservar os vínculos.');}else if(selected.some(p=>p==='4.2'||p==='4.3'))throw Error('As fontes do arquivo são diferentes das fontes do guia atual. Importe 4.1 junto com Condução / Reservatórios ou confira o mesmo arquivo inicial.');}
-function applyTeam18(){const view=TEAM18.preview;if(!view||TEAM18.busy)return;try{if(snapshotTeam18()!==view.base)throw Error('O guia foi alterado durante a conferência. Feche e selecione o arquivo novamente.');identityTeam18(view.incoming);if(view.legacy&&!document.querySelector('#same18')?.checked)throw Error('Confirme que o arquivo pertence à mesma inspeção.');const selected=[...document.querySelectorAll('.team-pick18:checked')].map(el=>el.value);if(!selected.length)throw Error('Selecione pelo menos um processo.');for(const p of selected){if(view.repeated.has(p))throw Error('Processo já importado deste arquivo.');if(summary18(values,p).filled&&!document.getElementById('replace18_'+p)?.checked)throw Error('Autorize a substituição de '+p+' ou desmarque o processo.');}checkSourceLinks18(view.incoming.values,selected);const next={...values};for(const p of selected)for(const n of scopedFields18[p])next[n]=view.incoming.values[n];cancelSpeech();Object.assign(values,next);team18.imports.push({hash:view.hash,file:view.file,at:new Date().toISOString(),processes:selected});team18.imports=team18.imports.slice(-200);dirty=true;recalc();document.querySelector('#teamModal18').remove();TEAM18.preview=null;document.querySelector('#status').textContent='Incorporados: '+selected.join(', ')+' de '+view.file+'. Confira a matriz e salve o arquivo consolidado.';if(TEAM18.queue.length)nextTeam18();}catch(err){const box=document.querySelector('#teamError18');box.textContent=err.message;box.style.color='#a32020';}}
-function showTeam18(){cancelSpeech();const modal=document.createElement('div');modal.id='teamModal18';modal.className='team-modal18';modal.innerHTML='<div class="team-box18"><h2>Trabalho em equipe — Guia de 22 páginas</h2><p><b>Código comum:</b> '+escapeTeam18(team18.inspectionId)+'</p><ol><li>Preencha Envasadora, Endereço e Data no Guia.</li><li>Gere o arquivo inicial e envie o MESMO JSON e este HTML às duas pessoas.</li><li>As duas pessoas usam Abrir preenchimento para carregar esse JSON.</li><li>Você continua preenchendo neste HTML aberto. Gerar o JSON inicial não apaga seu trabalho.</li><li>Pessoa 1: 4.1/4.2/4.3. Pessoa 2 (consolidação): 4.10/4.11 e dados gerais. Pessoa 3: 4.5/4.6/4.7.</li><li>Cada colega usa Salvar arquivo e envia seu JSON ao responsável.</li><li>O responsável usa Importar processos e seleciona somente os processos recebidos. Pode selecionar os dois JSONs de uma vez.</li><li>Depois completa fotos, rótulos, observações, medidas e responsáveis e salva o arquivo consolidado.</li></ol><p class="team-hint18">Abrir preenchimento restaura o guia inteiro. Importar processos incorpora apenas a parte escolhida. Não use Novo / limpar tudo depois de abrir o JSON inicial da equipe.</p><button onclick="initialTeam18()">Gerar arquivo inicial da equipe</button> <button onclick="closeTeam18();document.querySelector(\'#teamInput18\').click()">Importar processos</button> <button onclick="closeTeam18()">Fechar</button><h3>Arquivos incorporados</h3>'+((team18.imports.length)?'<ul>'+team18.imports.map(r=>'<li>'+escapeTeam18(r.file)+' — '+escapeTeam18(r.processes.join(', '))+'</li>').join('')+'</ul>':'<p>Nenhum arquivo incorporado.</p>')+'</div>';document.body.append(modal);}
+function applyTeam18(){
+ const view=TEAM18.preview;
+ if(!view||TEAM18.busy)return;
+ try{
+  if(snapshotTeam18()!==view.base)throw Error('O guia foi alterado durante a conferência. Feche e selecione o arquivo novamente.');
+  identityTeam18(view.incoming);
+  if(view.legacy&&!document.querySelector('#same18')?.checked)
+   throw Error('Confirme que o arquivo pertence à mesma inspeção.');
+  const processes=[...document.querySelectorAll('.team-pick18:checked')].map(el=>el.value);
+  const extras=[...document.querySelectorAll('.team-extra18:checked')].map(el=>el.value);
+  const selected=[...processes,...extras];
+  if(!selected.length)throw Error('Selecione pelo menos um processo, documento, conjunto de anexos ou responsáveis.');
+  for(const key of selected)if(view.repeated.has(key))throw Error('Esta parte já foi importada deste arquivo: '+key);
+  for(const p of processes){
+   if(summary18(values,p).filled&&!document.getElementById('replace18_'+p)?.checked)
+    throw Error('Autorize a substituição de '+p+' ou desmarque o processo.');
+  }
+  checkSourceLinks18(view.incoming.values,processes);
+  const next={...values},nextImages={...images};
+  for(const p of processes)for(const n of scopedFields18[p])next[n]=view.incoming.values[n];
+  const stats=mergeTeamExtras18(next,nextImages,view.incoming,extras,view.file);
+  cancelSpeech();
+  Object.assign(values,next);
+  Object.assign(images,nextImages);
+  team18.imports.push({hash:view.hash,file:view.file,at:new Date().toISOString(),processes:selected});
+  team18.imports=team18.imports.slice(-200);
+  dirty=true;recalc();sync();
+  document.querySelector('#teamModal18').remove();
+  TEAM18.preview=null;
+  const summary=selected.join(', ')+' de '+view.file+
+   '. Documentos novos: '+stats.documents+
+   ', fotos: '+stats.photos+', rótulos: '+stats.labels+
+   ', informações de responsáveis: '+stats.inspectors+'.'+
+   (stats.documentsKept?' '+stats.documentsKept+' documento(s) existente(s) preservado(s).':'')+
+   ' Confira e critique os responsáveis importados antes de concluir o relatório. Salve o JSON consolidado.';
+  document.querySelector('#status').textContent=summary;
+  if(TEAM18.queue.length)nextTeam18();
+ }catch(err){
+  const box=document.querySelector('#teamError18');
+  if(box){box.textContent=err.message;box.style.color='#a32020';}
+ }
+}
+function showTeam18(){cancelSpeech();const modal=document.createElement('div');modal.id='teamModal18';modal.className='team-modal18';modal.innerHTML='<div class="team-box18"><h2>Trabalho em equipe — Guia de 22 páginas</h2><p><b>Código comum:</b> '+escapeTeam18(team18.inspectionId)+'</p><ol><li>Preencha Envasadora, Endereço e Data no Guia.</li><li>Gere o arquivo inicial e envie o MESMO JSON e este HTML às duas pessoas.</li><li>As duas pessoas usam Abrir preenchimento para carregar esse JSON.</li><li>Você continua preenchendo neste HTML aberto. Gerar o JSON inicial não apaga seu trabalho.</li><li>Pessoa 1: 4.1/4.2/4.3. Pessoa 2 (consolidação): 4.10/4.11 e dados gerais. Pessoa 3: 4.5/4.6/4.7.</li><li>Cada colega usa Salvar arquivo e envia seu JSON ao responsável.</li><li>O responsável usa Importar processos e seleciona somente os processos recebidos. Pode selecionar os dois JSONs de uma vez.</li><li>Na importação selecione também documentos da página 15, fotos, rótulos e responsáveis da inspeção recebidos. As informações de responsáveis serão acrescentadas e conferidas antes da conclusão. Salve o arquivo consolidado.</li></ol><p class="team-hint18">Abrir preenchimento restaura o guia inteiro. Importar processos incorpora apenas a parte escolhida. Não use Novo / limpar tudo depois de abrir o JSON inicial da equipe.</p><button onclick="initialTeam18()">Gerar arquivo inicial da equipe</button> <button onclick="closeTeam18();document.querySelector(\'#teamInput18\').click()">Importar processos</button> <button onclick="closeTeam18()">Fechar</button><h3>Arquivos incorporados</h3>'+((team18.imports.length)?'<ul>'+team18.imports.map(r=>'<li>'+escapeTeam18(r.file)+' — '+escapeTeam18(r.processes.join(', '))+'</li>').join('')+'</ul>':'<p>Nenhum arquivo incorporado.</p>')+'</div>';document.body.append(modal);}
 const pickerTeam18=document.createElement('input');pickerTeam18.type='file';pickerTeam18.id='teamInput18';pickerTeam18.accept='.json,application/json';pickerTeam18.multiple=true;pickerTeam18.hidden=true;pickerTeam18.onchange=e=>{receiveTeam18(e.target.files);e.target.value=''};document.body.append(pickerTeam18);
 for(const[label,handler]of [['Trabalho em equipe',showTeam18],['Importar processos',()=>pickerTeam18.click()]]){const button=document.createElement('button');button.textContent=label;button.onclick=handler;document.querySelector('#save').before(button);}
 const styleTeam18=document.createElement('style');styleTeam18.textContent='.team-modal18{position:fixed;inset:0;background:#0008;z-index:10000;overflow-y:auto;padding:16px;box-sizing:border-box}.team-box18{background:#fff;color:#163146;border-radius:12px;padding:18px;max-width:1000px;margin:auto}.team-box18 li{margin-bottom:10px}.team-hint18{background:#fff5c8;padding:12px}.team-scroll18{overflow:auto;margin:12px 0}.team-scroll18 table{border-collapse:collapse;width:100%;min-width:600px}.team-scroll18 td,.team-scroll18 th{border:1px solid #b9cbd6;padding:10px;text-align:left;vertical-align:top}.team-box18 input[type=checkbox]{width:20px;height:20px;vertical-align:middle}.team-box18 button{margin:5px}@media(max-width:700px){.team-modal18{padding:8px}.team-box18{padding:12px}}@media print{.team-modal18{display:none!important}}';document.head.append(styleTeam18);

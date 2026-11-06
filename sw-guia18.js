@@ -1,4 +1,4 @@
-const CACHE='guia18-menu-v25-bpf20261106-revisao-unica';
+const CACHE='guia18-menu-v26-bpf20261106-equipe-anexos';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-192.png','./icon-bpf-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting())));
