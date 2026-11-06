@@ -87,6 +87,15 @@ function mergeTeamExtras18(targetValues,targetImages,incoming,selected,filename)
    ' (disponíveis: '+free.length+'). Nenhuma foto ou rótulo existente foi sobrescrito. Libere posições e tente novamente.');
   for(const src of pending){
    let index=free.indexOf(src);
+   if(index<0){
+    const family=src.startsWith('Rotulo_Pagina_2_')?'Rotulo_Pagina_2_':
+      src.startsWith('Rotulo_Pagina_3_')?'Rotulo_Pagina_3_':
+      src.startsWith('Foto_Extra_')?'Foto_Extra_':
+      src.startsWith('Imagem')&&src.endsWith('_af_image')?'Imagem':
+      src.startsWith('Imagem')?'Imagem':'';
+    if(family)index=free.findIndex(n=>n.startsWith(family)&&
+      (family!=='Imagem'||(src.endsWith('_af_image')?n.endsWith('_af_image'):!n.endsWith('_af_image'))));
+   }
    if(index<0)index=0;
    const dest=free.splice(index,1)[0];
    targetImages[dest]=incoming.images[src];
