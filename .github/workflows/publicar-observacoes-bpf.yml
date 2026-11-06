@@ -20,7 +20,7 @@ jobs:
           persist-credentials: true
       - name: Ajustar textos dos processos ao espaco no HTML e PDF
         run: python3 scripts/patch_autofit_processos_html_pdf.py
-      - name: Testar ajuste sem recorte e sem novas paginas de processos
+      - name: Revalidar ajuste sem recorte e sem novas paginas de processos
         run: node scripts/test_autofit_processos_html_pdf.js
       - name: Testar paginacao existente de listas de nao conformidades
         run: node scripts/test_pdf_overflow_geral.js
