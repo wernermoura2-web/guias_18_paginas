@@ -58,7 +58,7 @@ function bpfSyncPCCFinal(){
   if(phrase.appcc!=='PCC'||values[bpfPhraseName(scope,i)]!=='0')return;
   const id=page.page+'_'+scope.name+'_'+i;
   const source=page.page<2?values['fill_'+(scope.col+1)]:page.page<6?values['fill_'+page.page]:'';
-  const unit=(page.page===6?({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[scope.col]:(page.page<2?'Captação ':page.page<6?'Reservatório ':'Linha ')+scope.col)+(source?' - '+source:'');
+  const unit=bpfScopeLabel(page,scope)+(source?' - '+source:'');
   current[id]=PCCFinal.statement({code:row.code},{},i,unit,titles[page.page]);
  });
  const next=PCCFinal.synchronize(values[field]||'',previous,current);values[field]=next.text;values.BPF_PCCGenerated=JSON.stringify(next.generated);bpfSyncNCLists();
@@ -142,7 +142,7 @@ function bpfSyncNCLists(){
  for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes)scope.phrases.forEach((phrase,i)=>{
   if(values[bpfPhraseName(scope,i)]!=='0')return;
   const group=groups.find(g=>g.cats.includes(phrase.appcc));if(!group)return;
-  const unit=page.page<2?'Captação '+scope.col:page.page<6?'Reservatório '+scope.col:page.page===6?({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[scope.col]:page.page<=10?'Linha '+scope.col:'Estabelecimento';
+  const unit=bpfScopeLabel(page,scope);
   group.lines.push('Frase '+(i+1)+', do item '+row.code+', do processo '+titles[page.page]+', na unidade '+unit+', classificada como '+phrase.appcc);
  });
  let previous={};try{previous=JSON.parse(values.BPF_NCGenerated||'{}');}catch(e){}
@@ -187,9 +187,11 @@ function bpfAggregateAnswers(v,scope){const a=scope.phrases.map((f,i)=>v[bpfPhra
 function bpfApplyAnswers(v){for(const p of BPF_PHRASES)for(const r of p.rows)for(const s of r.scopes){const a=bpfAggregateAnswers(v,s);if(a!==null)v[s.name]=a;}if(v.BPF_PCCGenerated&&v.BPF_PCCDestination!=='18')bpfSyncPCCFinal();if(v.BPF_NCGenerated||BPF_PHRASES.some(p=>p.rows.some(r=>r.scopes.some(s=>s.phrases.some((_,i)=>v[bpfPhraseName(s,i)]==='0')))))bpfSyncNCLists();}
 
 function bpfScopeLabel(page,scope){
- if(page.page<2)return 'Captação '+scope.col;
+ if(page.page===0)return 'Captação '+scope.col;
+ if(page.page===1)return 'Condução '+scope.col;
  if(page.page<6)return 'Reservatório '+scope.col;
  if(page.page===6)return ({1:'Garrafões retornáveis',2:'Embalagens descartáveis',3:'Rótulos',4:'Saneantes'})[scope.col];
+ if((page.page===7||page.page===8)&&Number(scope.col)===4)return 'Higienização de tampas';
  if(page.page<=10)return 'Linha '+scope.col;
  return 'Estabelecimento';
 }
@@ -871,7 +873,7 @@ async function bpfAppendCompactAnnex(pdf){
   }
   const {page:source,row,phrase,index,records}=item;
   ensure(90);text('Página '+(source.page+1)+' do guia | Item '+row.code+' | F'+(index+1)+' | BPF/APPCC: '+phrase.appcc,9,true);text(phrase.text);
-  table(records.map(r=>[(source.page<2?'Captação ':source.page<6?'Reservatório ':'Linha ')+r.scope.col+' / F'+(index+1),r.answer,(r.answer==='Não'&&r.note?'NC: ':'')+r.note]));
+  table(records.map(r=>[bpfScopeLabel(source,r.scope)+' / F'+(index+1),r.answer,(r.answer==='Não'&&r.note?'NC: ':'')+r.note]));
  }
  annexPages.forEach((p,i)=>p.drawText('Anexo F - '+(i+1)+' de '+annexPages.length,{x:margin,y:20,size:8,font}));return annexPages.length;
 }
