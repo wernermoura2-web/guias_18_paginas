@@ -1,0 +1,55 @@
+name: Retirar Não se aplica do F2 do item 4.3.6
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publicar-correcao-f436.yml']
+permissions:
+  contents: write
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar a correção nos dois modos
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          
+          for name in ("equipe.html", "individual.html"):
+              path = Path(name)
+              with path.open(newline="") as f:
+                  source = f.read()
+              phrase = ('"text":"O Procedimento Operacional Padronizado referente à higienização do reservatório deve estar disponível e atualizado.",'
+                        '"guidance":"Verificar versão atualizada do POP de higienização do reservatório e sua disponibilidade aos executores no local de trabalho.",'
+                        '"appcc":"POP","allowNA":true')
+              scope_phrase = phrase.replace('"appcc":"POP","allowNA":true', '"allowNA":true,"appcc":"POP"')
+              replacements = [
+                  (phrase, phrase.removesuffix("true") + "false", 4),
+                  (scope_phrase, scope_phrase.replace('"allowNA":true', '"allowNA":false'), 16),
+                  ("index===1&&(row.code==='4.2.9'||popItems.includes(row.code))",
+                   "index===1&&(row.code==='4.2.9'||(row.code!=='4.3.6'&&popItems.includes(row.code)))", 1),
+                  ("if(row.code==='4.5.8'&&entry.index===0)return false;",
+                   "if((row.code==='4.5.8'&&entry.index===0)||(row.code==='4.3.6'&&entry.index===1))return false;", 1),
+              ]
+              for old, new, count in replacements:
+                  assert source.count(old) == count, (name, old, source.count(old))
+                  source = source.replace(old, new)
+              with path.open("w", newline="") as f:
+                  f.write(source)
+          
+          for name in ("index.html", "sw-guia18.js"):
+              path = Path(name)
+              source = path.read_text()
+              old = "20261107-reservatorio-f433-v39"
+              assert source.count(old) == 1, name
+              path.write_text(source.replace(old, "20261107-reservatorio-f436-v40"))
+          PY
+          git diff --check
+          node scripts/test_pcc_alto_risco_20261107.cjs
+      - name: Enviar correção ao repositório
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add equipe.html individual.html index.html sw-guia18.js
+          git commit -m 'Retirar Não se aplica do F2 do item 4.3.6'
+          git push origin HEAD:main
