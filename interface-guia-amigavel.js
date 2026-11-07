@@ -223,12 +223,12 @@
   'Perigos sem controle: contaminação microbiológica da água e química por resíduos de saneantes e detergentes.'
  ];
  const embalagem=[
-  general[0],
-  'PCC do enxágue: comprovar eliminação de resíduos de saneantes e detergentes das embalagens; perigos microbiológico e químico.'
+  'REGRA PCC: Higienização classificada como PCC não atendida = ALTO RISCO; perigos microbiológico e químico sem controle.',
+  'PCC do enxágue: comprovar eliminação dos resíduos de saneantes e detergentes usados na higienização/desinfecção das embalagens.'
  ];
  const matriz=[
   general[0],
-  'Perigos sem controle: contaminação MICROBIOLÓGICA da água e QUÍMICA por resíduos de saneantes e detergentes.'
+  'Perigos: contaminação MICROBIOLÓGICA da água e QUÍMICA por resíduos de saneantes/detergentes da higienização e desinfecção das embalagens.'
  ];
  const riscoFinal={0:'Dropdown5',1:'Dropdown10',2:'Dropdown15',3:'Dropdown20',4:'Dropdown25',5:'Dropdown30',6:'Dropdown35',7:'Dropdown40',8:'Dropdown45',9:'Dropdown50',10:'Dropdown55',11:'Dropdown56',12:'Dropdown57'};
  const areas=[];
