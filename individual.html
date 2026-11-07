@@ -484,7 +484,7 @@ function bpfSyncObservation(row,page){
    if(!selected.length)continue;
    const note=answer==='2'?'':String(values[bpfGroupNoteName(page,row,panel,answer)]||'').replace(/\s+/g,' ').trim();
    if(answer==='1'&&!note)continue;
-   const units=selected.map(e=>panel.composite?'F'+(e.index+1)+' '+bpfScopeLabel(page,e.scope):bpfScopeLabel(page,e.scope));
+   const units=selected.map(e=>row.code==='4.3.3'?bpfScopeLabel(page,e.scope)+': '+bpfUnifiedOption(row,e):panel.composite?'F'+(e.index+1)+' '+bpfScopeLabel(page,e.scope):bpfScopeLabel(page,e.scope));
    entries.push(panel.label+' — '+label+' ('+units.join(', ')+')'+(note?': '+bpfObservationMarker(answer,selected)+note:''));
   }
  }
@@ -494,7 +494,45 @@ function bpfSyncObservation(row,page){
 }
 function bpfDismissEditor(){const editor=document.querySelector('#bpf-editor');if(editor?.bpfCommit?.()===false)return false;editor?.remove();return true;}
 function bpfAggregateAnswers(v,scope){const a=scope.phrases.map((f,i)=>v[bpfPhraseName(scope,i)]||'');if(!a.some(Boolean))return null;if(a.includes('0'))return '0';if(a.some(x=>!x))return 'Off';return a.every(x=>x==='2')?'2':'1';}
-function bpfApplyAnswers(v){for(const p of BPF_PHRASES)for(const r of p.rows)for(const s of r.scopes){const a=bpfAggregateAnswers(v,s);if(a!==null)v[s.name]=a;}if(v.BPF_PCCGenerated&&v.BPF_PCCDestination!=='18')bpfSyncPCCFinal();if(v.BPF_NCGenerated||BPF_PHRASES.some(p=>p.rows.some(r=>r.scopes.some(s=>s.phrases.some((_,i)=>v[bpfPhraseName(s,i)]==='0')))))bpfSyncNCLists();}
+function bpfAllowsDependentNA(row,entry,v){
+ return entry.index!==1||!['4.2.9','4.3.6'].includes(row.code)||v[bpfPhraseName(entry.scope,0)]==='0';
+}
+function bpfNormalizeDependentNA(row,scope,v){
+ const key=bpfPhraseName(scope,1);
+ if(v[key]!=='2'||bpfAllowsDependentNA(row,{scope,index:1},v))return false;
+ v[key]='';v[bpfNoteName(scope,1)]='';
+ return true;
+}
+function bpfMigrateReservoirAnswers(page,row,v){
+ const panel=bpfPanels(page,row)[0];
+ const choiceKey=bpfUnifiedKey(page,row,panel,'Choice'),selectedKey=bpfUnifiedKey(page,row,panel,'Selected');
+ const answer=v[choiceKey];
+ if(answer!=='1'&&answer!=='0')return;
+ let selected=[];
+ try{const parsed=JSON.parse(v[selectedKey]);if(Array.isArray(parsed))selected=parsed;}catch(_){}
+ if(!panel.entries.some(e=>['1','0'].includes(v[e.name]))){
+  const matched=panel.entries.filter(e=>selected.includes(e.name));
+  for(const entry of panel.entries){
+   if(!matched.some(e=>e.scope.name===entry.scope.name))continue;
+   v[entry.name]=selected.includes(entry.name)?answer:'2';
+  }
+ }
+ v[choiceKey]='';v[selectedKey]='';
+}
+function bpfApplyAnswers(v){for(const p of BPF_PHRASES)for(const r of p.rows){
+ if(r.code==='4.3.3'){
+  const prefix='_'+p.page+'_4_3_3_G1';
+  if(v['BPF_FGroupChoice'+prefix])bpfMigrateReservoirAnswers(p,r,v);
+ }
+ let corrected=false;
+ for(const s of r.scopes){
+  const cleared=bpfNormalizeDependentNA(r,s,v);
+  const a=bpfAggregateAnswers(v,s);
+  if(a!==null||cleared)v[s.name]=a??'Off';
+  corrected=corrected||cleared;
+ }
+ if(corrected&&v===values)bpfSyncObservation(r,p);
+}if(v.BPF_PCCGenerated&&v.BPF_PCCDestination!=='18')bpfSyncPCCFinal();if(v.BPF_NCGenerated||BPF_PHRASES.some(p=>p.rows.some(r=>r.scopes.some(s=>s.phrases.some((_,i)=>v[bpfPhraseName(s,i)]==='0')))))bpfSyncNCLists();}
 
 function bpfScopeLabel(page,scope){
  if(page.page===0)return 'Captação '+scope.col;
@@ -552,7 +590,7 @@ function bpfSeedGroupNotes(page,row,panels){
 }
 
 
-function bpfUnifiedRow(row){return ['4.3.3','4.10.2','4.10.3','4.11.2'].includes(row.code);}
+function bpfUnifiedRow(row){return ['4.10.2','4.10.3','4.11.2'].includes(row.code);}
 function bpfUnifiedKey(page,row,panel,kind){
  return 'BPF_FGroup'+kind+'_'+page.page+'_'+row.code.replace(/[^0-9a-z]/gi,'_')+'_G'+(panel.id+1);
 }
@@ -599,7 +637,7 @@ function bpfUnifiedOption(row,e){
 }
 function bpfInitUnifiedFields(data){
  for(const page of BPF_PHRASES)for(const row of page.rows){
-  if(!bpfUnifiedRow(row))continue;
+  if(!bpfUnifiedRow(row)&&row.code!=='4.3.3')continue;
   for(const panel of bpfPanels(page,row)){
    for(const [kind,label] of [['Choice','resposta única'],['Selected','opções selecionadas']]){
     const key=bpfUnifiedKey(page,row,panel,kind);
@@ -804,6 +842,7 @@ function bpfOpenPhrases(row,page){
  dlg.setAttribute('aria-label','Frases do item '+row.code);
  const title=document.createElement('h2');title.textContent='Item '+row.code+' — Frases';dlg.append(title);bpfAddPhotoFromF(dlg,row,page);
  const content=document.createElement('div');content.className='bpf-groups';dlg.append(content);
+ const dependentNA=[];
  const cssId='bpf-checkbox-groups-css';
  if(!document.getElementById(cssId)){
   const style=document.createElement('style');style.id=cssId;
@@ -832,19 +871,31 @@ function bpfOpenPhrases(row,page){
   if(!panel.composite&&panel.entries.some(e=>e.phrase.allowNA||values[e.name]==='2'))allowed.push(['2','Não se aplica',null]);
   for(const [answer,heading,noteHeading] of allowed){
    const box=document.createElement('fieldset');box.className='bpf-answer-box';
-   const header=document.createElement('legend');header.textContent=heading;box.append(header);
+   const header=document.createElement('legend');header.textContent=row.code==='4.3.3'?'F1 — '+heading:heading;box.append(header);
+   if(answer==='2'&&panel.id===1&&['4.2.9','4.3.6'].includes(row.code)){
+    const hint=document.createElement('p');hint.textContent='Disponível quando o F1 da mesma unidade estiver marcado como Não.';box.append(hint);
+   }
    for(const entry of panel.entries){
     if(answer==='2'&&!entry.phrase.allowNA&&values[entry.name]!=='2')continue;
     const label=document.createElement('label');label.className='bpf-answer-item';
     const input=document.createElement('input');input.type='checkbox';input.dataset.answerName=entry.name;input.dataset.answer=answer;
     input.checked=values[entry.name]===answer;
-    const detail=panel.composite?'F'+(entry.index+1)+' — '+entry.phrase.text:'';
+    if(answer==='2'){
+     input.disabled=!bpfAllowsDependentNA(row,entry,values);
+     dependentNA.push({control:input,entry});
+    }
+    const detail=row.code==='4.3.3'?bpfUnifiedOption(row,entry):panel.composite?'F'+(entry.index+1)+' — '+entry.phrase.text:'';
     const scopeText=panel.composite&&row.scopes.length===1?'':bpfScopeLabel(page,entry.scope)+(panel.composite?' — ':'');
     const caption=document.createElement('span');caption.textContent=scopeText+detail;
     input.onchange=()=>{
      values[entry.name]=input.checked?answer:values[entry.name]===answer?'':values[entry.name];
-     for(const other of card.querySelectorAll('input[type=checkbox]'))if(other.dataset.answerName===entry.name)other.checked=values[entry.name]===other.dataset.answer;
+     if(row.code==='4.3.3'&&!entry.scope.phrases.some((_,i)=>['1','0'].includes(values[bpfPhraseName(entry.scope,i)]))){
+      entry.scope.phrases.forEach((_,i)=>{values[bpfPhraseName(entry.scope,i)]='';});
+      values[entry.scope.name]='Off';
+     }
      changed();recalc();
+     for(const other of content.querySelectorAll('input[type=checkbox]'))other.checked=values[other.dataset.answerName]===other.dataset.answer;
+     for(const {control,entry:naEntry} of dependentNA)control.disabled=!bpfAllowsDependentNA(row,naEntry,values);
     };
     label.append(input,caption);box.append(label);
    }
@@ -869,10 +920,13 @@ function bpfOpenPhrases(row,page){
     }
    }
    // Requisitos não selecionados são não avaliados; não viram NC.
-   const scoped=new Set(row.scopes.filter(s=>s.phrases.some((_,i)=>['1','0'].includes(values[bpfPhraseName(s,i)]))).map(s=>s.name));
-   for(const scope of row.scopes)if(scoped.has(scope.name))scope.phrases.forEach((_,i)=>{
-    const n=bpfPhraseName(scope,i);if(!values[n])values[n]='2';
-   });
+   for(const scope of row.scopes){
+    const assessed=scope.phrases.some((_,i)=>['1','0'].includes(values[bpfPhraseName(scope,i)]));
+    scope.phrases.forEach((_,i)=>{
+     const n=bpfPhraseName(scope,i);
+     if(!['1','0'].includes(values[n]))values[n]=assessed?'2':'';
+    });
+   }
   }else{
    for(const scope of row.scopes){
     const started=scope.phrases.some((_,i)=>values[bpfPhraseName(scope,i)]||String(values[bpfNoteName(scope,i)]||'').trim());
@@ -895,7 +949,7 @@ function bpfOpenPhrases(row,page){
   for(const panel of panels)for(const e of panel.entries){
    const v=values[e.name];
    if(v==='1'||v==='0')values[bpfNoteName(e.scope,e.index)]=String(values[bpfGroupNoteName(page,row,panel,v)]||'');
-   else if(v==='2')values[bpfNoteName(e.scope,e.index)]='';
+   else if(v==='2'||row.code==='4.3.3')values[bpfNoteName(e.scope,e.index)]='';
   }
   bpfSyncObservation(row,page);bpfSyncPCCFinal();recalc();return true;
  };
@@ -1549,6 +1603,16 @@ function bpfAnnexCompactRecords(source,index,records){
 function bpfAnnexRows(){
  const result=[];
  for(const page of BPF_PHRASES)for(const row of page.rows){
+  if(row.code==='4.3.3'){
+   const panel=bpfPanels(page,row)[0];
+   for(const answer of ['1','0']){
+    const entries=panel.entries.filter(e=>values[e.name]===answer);
+    if(!entries.length)continue;
+    const note=String(values[bpfGroupNoteName(page,row,panel,answer)]||'').trim();
+    result.push({page,row,grouped:true,panel,entries,answer,note});
+   }
+   continue;
+  }
   if(bpfUnifiedRow(row)){
    for(const panel of bpfPanels(page,row)){
     const answer=bpfUnifiedAnswer(page,row,panel),selected=new Set(bpfUnifiedSelection(page,row,panel));
