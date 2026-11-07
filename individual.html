@@ -2229,7 +2229,7 @@ async function bpfExportEditable(){
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
 }
 document.querySelector('#print').onclick=bpfExportEditable;
-</script><script src="./interface-guia-amigavel.js?v=20261107-R-ampliado-v23" defer></script><script id="bpf-update-worker">
+</script><script src="./interface-guia-amigavel.js?v=20261107-R-processos-v24" defer></script><script id="bpf-update-worker">
 if('serviceWorker' in navigator && location.protocol==='https:'){
  navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 }

@@ -239,11 +239,11 @@
  ];
  const matriz=[...embalagem];
  const curta=['REGRA PCC: PCC não atendido implica ALTO RISCO, inclusive por perigos microbiológicos ou resíduos químicos.'];
- // Centros das células AVALIAÇÃO (páginas 0–12) e RISCO (17) nos fundos
+ // Centros das células AVALIAÇÃO (páginas 0–10) e RISCO (17) nos fundos
  // do formulário, em porcentagem da altura de cada página.
  const ruleCellCenters={
   0:53.52,1:31.12,2:35.15,3:35.15,4:35.15,5:35.15,6:33.33,
-  7:39.59,8:39.59,9:39.86,10:39.86,11:68.96,12:76.80,17:62.63
+  7:39.59,8:39.59,9:39.86,10:39.86,17:62.63
  };
  const areas=[];
  function linesFor(page){return page>=11?curta:page===7||page===8?embalagem:general;}
