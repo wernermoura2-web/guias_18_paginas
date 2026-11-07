@@ -213,97 +213,126 @@
 })();
 
 
-/* BPF_PCC_DUAS_NATUREZAS_20261107_REV4: justificativa sanitária visível no HTML e no PDF.
-   A regra de classificação automática PCC já é calculada no formulário principal. */
+/* BPF_PCC_DUAS_NATUREZAS_20261107_REV5: regra PCC e perigos microbiologicos/quimicos no HTML e PDF.
+   Mantem o calculo original, corrige o PCC de testes de residuos do item 4.6.6 e preserva a area editavel. */
 (()=>{'use strict';
- if(window.__BPF_PCC_DUAS_NATUREZAS_20261107)return;
- window.__BPF_PCC_DUAS_NATUREZAS_20261107=true;
+ if(window.__BPF_PCC_DUAS_NATUREZAS_20261107_REV5)return;
+ window.__BPF_PCC_DUAS_NATUREZAS_20261107_REV5=true;
  const general=[
-  'REGRA PCC: O não cumprimento da higienização prevista em qualquer item classificado como PCC torna automaticamente o processo de ALTO RISCO, independentemente da pontuação.',
-  'Justificativa: falta de controle do perigo de contaminação microbiológica da água.'
+  'REGRA PCC: O não atendimento de qualquer item classificado como PCC torna automaticamente o processo de ALTO RISCO, independentemente do percentual.',
+  'Justificativa: a falha pode permitir contaminação microbiológica ou química da água, inclusive por resíduos de saneantes e detergentes nas embalagens.'
  ];
  const embalagem=[
-  'REGRA PCC: O não cumprimento da higienização prevista em qualquer item classificado como PCC torna automaticamente o processo de ALTO RISCO, independentemente da pontuação.',
-  'Justificativa: perigo de contaminação microbiológica da água e de contaminação química por resíduos de saneantes e detergentes, quando não comprovada sua eliminação após o enxágue das embalagens higienizadas ou desinfetadas.'
+  'REGRA PCC: O não atendimento de qualquer item classificado como PCC torna automaticamente o processo de ALTO RISCO, independentemente do percentual.',
+  'Justificativa: perigos microbiológicos e químicos. No item 4.6.6, a ausência de resíduos de saneantes e detergentes após a higienização das embalagens deve ser comprovada por testes indicadores.'
  ];
- const matriz=[...general];
+ const matriz=[...embalagem];
+ const curta=['REGRA PCC: PCC não atendido implica ALTO RISCO, inclusive por perigos microbiológicos ou resíduos químicos.'];
  const riscoFinal={0:'Dropdown5',1:'Dropdown10',2:'Dropdown15',3:'Dropdown20',4:'Dropdown25',5:'Dropdown30',6:'Dropdown35',7:'Dropdown40',8:'Dropdown45',9:'Dropdown50',10:'Dropdown55',11:'Dropdown56',12:'Dropdown57'};
  const areas=[];
- function linesFor(page){return page===7||page===8?embalagem:general;}
- function bpfNoteBelowProcessTable(page,widget){
-  if(page<=10 && typeof BPF_ITEM_CELLS!=='undefined'){
-   const bottoms=Object.entries(BPF_ITEM_CELLS).filter(([code])=>code.startsWith(page+'_')).map(([,cell])=>cell.bottom);
-   if(bottoms.length)return Math.max(...bottoms)+0.7;
+ function linesFor(page){return page>=11?curta:page===7||page===8?embalagem:general;}
+ function fixResiduePCC(){
+  if(typeof BPF_PHRASES==='undefined')return;
+  let modified=false;
+  for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(row.code!=='4.6.6')continue;
+   for(const scope of row.scopes){
+    if(scope.phrases.length<2)continue;
+    if(scope.phrases[0].appcc!=='PPRO'||scope.phrases[1].appcc!=='PCC'){
+     scope.phrases[0].appcc='PPRO';
+     scope.phrases[1].appcc='PCC';
+     modified=true;
+    }
+   }
   }
-  return widget.size[1]-widget.rect[1]+3;
+  if(modified&&typeof window.Guia?.recalc==='function')window.Guia.recalc();
  }
  function start(){
   const host=document.getElementById('pages'),data=window.Guia?.data;
   if(!host||!data?.widgets||host.children.length<18)return;
-  const existing=document.getElementById('bpf-regra-pcc-matriz');
-  if(existing){
-   existing.replaceChildren(...matriz.map(s=>{const d=document.createElement('div');d.textContent=s;return d;}));
-   existing.style.cssText='position:absolute;left:5.8%;top:63.60%;width:88.4%;height:2.65%;font:bold 0.96cqw Arial,sans-serif;line-height:1.08;text-align:center;white-space:normal;color:#a11414;pointer-events:none;z-index:8';
+  fixResiduePCC();
+  const oldNote=host.children[17].querySelector('#bpf-regra-pcc-matriz');
+  if(oldNote){
+   oldNote.replaceChildren(...matriz.map(s=>{const d=document.createElement('div');d.textContent=s;return d;}));
+   oldNote.style.cssText='position:absolute;left:6%;top:65.0%;width:88%;height:3.2%;font:bold 1.03cqw Arial,sans-serif;line-height:1.1;text-align:left;white-space:normal;color:#a11414;pointer-events:none;z-index:10;background:white';
   }
-  for(const [pageText,name]of Object.entries(riscoFinal)){
-   const page=+pageText,widget=data.widgets.find(w=>w.page===page&&w.name===name);
-   if(!widget||host.children[page].querySelector('.bpf-nota-pcc-2-perigos'))continue;
-   const top=bpfNoteBelowProcessTable(page,widget);
-   areas.push({page,top});
-   const note=document.createElement('div');
-   note.className='bpf-nota-pcc-2-perigos';
-   note.replaceChildren(...linesFor(page).map(s=>{const d=document.createElement('div');d.textContent=s;return d;}));
-   note.style.cssText='position:absolute;left:5.8%;top:'+(100*top/widget.size[1])+'%;width:88.4%;height:'+(100*((page===7||page===8)?21:16.5)/widget.size[1])+'%;font:bold 0.91cqw Arial,sans-serif;line-height:1.02;text-align:left;white-space:normal;color:#a11414;pointer-events:none;z-index:8';
-   host.children[page].append(note);
+  for(const [pageStr,name]of Object.entries(riscoFinal)){
+   const page=+pageStr,pageEl=host.children[page],riskWidget=data.widgets.find(w=>w.page===page&&w.name===name);
+   if(!riskWidget||pageEl.querySelector('.bpf-nota-pcc-2-perigos'))continue;
+   const obs=data.widgets.find(w=>w.page===page&&/^OBSERVAÇÕES GERAISRow1/.test(w.name));
+   const size=riskWidget.size[1],reserve=39;
+   const top=obs?size-obs.rect[3]+2:size-72;
+   areas.push({page,top,obsName:obs?.name||null});
+   if(obs){
+    for(const el of pageEl.querySelectorAll('[data-field]')){
+     if(el.dataset.field!==obs.name)continue;
+     el.style.top=100*(size-obs.rect[3]+reserve)/size+'%';
+     el.style.height=100*(obs.rect[3]-obs.rect[1]-reserve)/size+'%';
+    }
+   }
+   const note=document.createElement('div');note.className='bpf-nota-pcc-2-perigos';
+   note.replaceChildren(...linesFor(page).map(t=>{const div=document.createElement('div');div.textContent=t;return div;}));
+   note.style.cssText='position:absolute;left:6%;top:'+(100*top/size)+'%;width:88%;height:'+(100*(obs?35:10)/size)+'%;font:bold '+(obs?'1.0':'0.98')+'cqw Arial,sans-serif;line-height:1.12;text-align:left;white-space:normal;overflow:hidden;color:#9a1515;background:#fff;pointer-events:none;z-index:10';
+   pageEl.append(note);
   }
  }
  function installPdfPatch(){
-  const lib=window.PDFLib;if(!lib?.PDFDocument?.load||lib.PDFDocument.load.__bpfPccTwoHazards)return;
+  const lib=window.PDFLib;if(!lib?.PDFDocument?.load||lib.PDFDocument.load.__bpfPccTwoHazardsRev5)return;
   const oldLoad=lib.PDFDocument.load;
   async function newLoad(...args){
    const pdf=await oldLoad.apply(this,args);
    if(pdf.getPageCount()<22)return pdf;
-   const originalPages=pdf.getPages().slice(0,18); // Mantém a matriz no lugar mesmo com páginas extras.
-   let added=false;
-   const oldSave=pdf.save.bind(pdf);
+   const originalPages=pdf.getPages().slice(0,18);
+   const form=pdf.getForm();
+   for(const {obsName}of areas){
+    if(!obsName)continue;
+    const field=form.getFieldMaybe(obsName);
+    if(!field)continue;
+    for(const widget of field.acroField.getWidgets()){
+     const rect=widget.getRectangle();
+     widget.setRectangle({x:rect.x,y:rect.y,width:rect.width,height:Math.max(20,rect.height-39)});
+    }
+   }
+   let done=false;const oldSave=pdf.save.bind(pdf);
    pdf.save=async function(...options){
-    if(!added){
-     added=true;
-     const font=await pdf.embedFont(lib.StandardFonts.HelveticaBold);
-     const red=lib.rgb(0.56,0.07,0.07);
-     function put(page,lines,top){
-      const maxWidth=523,standardSize=7.2;
-      for(let i=0;i<lines.length;i++){
-       const line=lines[i];
-       const width=font.widthOfTextAtSize(line,standardSize);
-       const size=Math.min(standardSize,standardSize*maxWidth/width);
-       page.drawText(line,{x:36,y:page.getHeight()-top-7-i*9.1,size,font,color:red});
+    if(!done){
+     done=true;
+     const font=await pdf.embedFont(lib.StandardFonts.HelveticaBold),red=lib.rgb(.56,.07,.07);
+     function put(page,sourceLines,top,compact=false){
+      const size=compact?6.4:7.15,sp=compact?7.2:8.4,maxWidth=522;
+      let lines=[];
+      for(const sentence of sourceLines){
+       let line='';
+       for(const word of sentence.split(/\s+/)){
+        const proposed=line?line+' '+word:word;
+        if(line&&font.widthOfTextAtSize(proposed,size)>maxWidth){lines.push(line);line=word;}else line=proposed;
+       }
+       if(line)lines.push(line);
       }
+      const maxLines=compact?1:4;
+      if(lines.length>maxLines)throw Error('Nota PCC excede espaco da pagina '+(page===originalPages[17]?'matriz':'processo'));
+      for(let i=0;i<lines.length;i++)page.drawText(lines[i],{x:37,y:page.getHeight()-top-7-i*sp,size,font,color:red});
      }
-     const pageMatriz=originalPages[17];
-     // Substitui a nota antiga, desenhada pelo HTML, pela explicação dos dois perigos.
-     pageMatriz.drawRectangle({x:36,y:282,width:523,height:22,color:lib.rgb(1,1,1)});
-     put(pageMatriz,matriz,539);
-     for(const {page,top}of areas)put(originalPages[page],linesFor(page),top);
+     const matrix=originalPages[17];
+     matrix.drawRectangle({x:36,y:260,width:523,height:33,color:lib.rgb(1,1,1)});
+     put(matrix,matriz,548);
+     for(const {page,top,obsName}of areas)put(originalPages[page],linesFor(page),top,!obsName);
     }
     return oldSave(...options);
    };
    return pdf;
   }
-  newLoad.__bpfPccTwoHazards=true;
+  newLoad.__bpfPccTwoHazardsRev5=true;
   lib.PDFDocument.load=newLoad;
  }
  function installGeneralRiskCount(){
-  // Classificação do estabelecimento: mantém a contagem aprovada dos oito processos.
   const previous=window.recalc;
   if(typeof previous!=='function'||previous.__bpfCount8Processes)return;
   function corrected(...args){
-   const result=previous.apply(this,args);
-   const v=window.Guia?.values;
+   const result=previous.apply(this,args),v=window.Guia?.values;
    if(v){
     const fields=['Dropdown60','Dropdown61','Dropdown62','Dropdown63','Dropdown64','Dropdown65','Dropdown66','Dropdown67'];
-    const levels=fields.map(field=>v[field]);
-    const altos=levels.filter(level=>level==='ALTO').length;
+    const levels=fields.map(field=>v[field]),altos=levels.filter(level=>level==='ALTO').length;
     v.Dropdown58=levels.every(level=>!level)?'':altos>=6?'ALTO':altos>=4?'MÉDIO':'BAIXO';
     v.Group279=v.Dropdown58==='BAIXO'?'0':v.Dropdown58==='MÉDIO'?'1':v.Dropdown58==='ALTO'?'2':'Off';
     if(typeof window.sync==='function')window.sync();
