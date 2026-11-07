@@ -1320,7 +1320,7 @@ D.backgrounds.forEach((src,i)=>{
 
 /* Faixa vermelha dos seis primeiros processos na matriz. Coordenadas em pontos da página. */
 const BPF_MATRIX_PCC_BAND={left:100,right:348,top:185,bottom:222.5,width:595.32,height:841.92};
-const BPF_MATRIX_PCC_TEXT='Regra PCC — Não atendimento de qualquer requisito classificado como PCC';
+const BPF_MATRIX_PCC_TEXT='REGRA PCC — NÃO ATENDIMENTO DE\nQUALQUER REQUISITO CLASSIFICADO COMO PCC';
 const bpfRiskRule=document.createElement('div');
 bpfRiskRule.id='bpf-faixa-pcc-matriz';
 const band=BPF_MATRIX_PCC_BAND;
@@ -1333,7 +1333,7 @@ for(let i=0;i<6;i++){
 }
 const pccText=document.createElement('span');
 pccText.textContent=BPF_MATRIX_PCC_TEXT;
-pccText.style.cssText='grid-column:1/-1;display:grid;place-items:center;border-top:1px solid #94443e;color:#fff;font:bold .94cqw Arial,sans-serif;text-align:center;white-space:nowrap';
+pccText.style.cssText='grid-column:1/-1;display:grid;place-items:center;border-top:1px solid #94443e;color:#000;font:bold 1.45cqw/1.02 Arial,sans-serif;text-align:center;white-space:pre-line';
 bpfRiskRule.append(pccText);host.children[17].append(bpfRiskRule);
 function place(el,w){const [x1,y1,x2,y2]=w.rect,[pw,ph]=w.size;Object.assign(el.style,{left:100*x1/pw+'%',top:100*(ph-y2)/ph+'%',width:100*(x2-x1)/pw+'%',height:100*(y2-y1)/ph+'%'});}
 function bpfDateToISO(value){
@@ -2166,8 +2166,13 @@ async function bpfExportEditable(){
   if(i)pccPage.drawLine({start:{x,y:split},end:{x,y:height-top},thickness:.45,color:border});
   pccPage.drawText('ALTO',{x:x+bandWidth/12-observationFont.widthOfTextAtSize('ALTO',7.4)/2,y:split+half/2-2.6,size:7.4,font:observationFont,color:ink});
  }
- const pccSize=Math.min(7.4,(bandWidth-9)/pccBold.widthOfTextAtSize(BPF_MATRIX_PCC_TEXT,1));
- pccPage.drawText(BPF_MATRIX_PCC_TEXT,{x:left+(bandWidth-pccBold.widthOfTextAtSize(BPF_MATRIX_PCC_TEXT,pccSize))/2,y:height-bottom+half/2-pccSize*.35,size:pccSize,font:pccBold,color:PDFLib.rgb(1,1,1)});
+ const pccLines=BPF_MATRIX_PCC_TEXT.split('\n');
+ const pccSize=Math.min(9,(bandWidth-9)/Math.max(...pccLines.map(line=>pccBold.widthOfTextAtSize(line,1))));
+ pccLines.forEach((line,i)=>{
+  const x=left+(bandWidth-pccBold.widthOfTextAtSize(line,pccSize))/2;
+  const y=height-bottom+half/2+(0.5-i)*pccSize-pccSize*.34;
+  pccPage.drawText(line,{x,y,size:pccSize,font:pccBold,color:PDFLib.rgb(0,0,0)});
+ });
  bpfPreparePhotoPdf(pdf,form,observationFont);
  const pdfFlow=bpfPdfGeneralSplit(bpfGeneralFullText(),observationFont,form,pdf);
  for(const f of form.getFields()){const name=f.getName(),value=name==='OBS 1'?pdfFlow.first:name==='obs_gerais_continuacao'?pdfFlow.second:values[name];if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=(name==='OBS 1'||name==='obs_gerais_continuacao')?pdfFlow.size:Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
