@@ -560,10 +560,15 @@ function bpfGroupedF2(row){
 function bpfSplitPanel(row,panel){
  return bpfDetailedF1(row,panel)||(row.code==='4.3.3'&&panel.id===0)||(panel.id===1&&!!bpfGroupedF2(row));
 }
-function bpfDetailedF1(row,panel){return panel.id===0&&['4.6.4','4.7.2'].includes(row.code);}
+function bpfDetailedF1(row,panel){return panel.id===0&&['4.6.4','4.7.2','4.7.6'].includes(row.code);}
 function bpfF1Checks(row,scope){
  const prewash=row.code==='4.6.4';
- const options=prewash?[
+ const uniforms=row.code==='4.7.6';
+ const options=uniforms?[
+  '1) Utilizar uniformes limpos',
+  '2) Trocar os uniformes diariamente',
+  '3) Utilizar uniformes de uso exclusivo para essa área'
+ ]:prewash?[
   '1) Remoção do rótulo',
   '2) Remoção dos resíduos da substância adesiva',
   '3) Remoção das sujidades da superfície interna',
@@ -577,7 +582,8 @@ function bpfF1Checks(row,scope){
   '6) Ajuste da porta aos batentes',
   '7) Estado de conservação da porta'
  ];
- return options.map((option,i)=>({scope,index:0,phrase:scope.phrases[0],option,name:bpfPhraseName(scope,0)+(prewash?'_PreLavagem_':'_SalaEnvase_')+(i+1)}));
+ const suffix=uniforms?'UniformesEnvase':prewash?'PreLavagem':'SalaEnvase';
+ return options.map((option,i)=>({scope,index:0,phrase:scope.phrases[0],option,name:bpfPhraseName(scope,0)+'_'+suffix+'_'+(i+1)}));
 }
 function bpfPanelRecords(row,panel){
  if(!bpfDetailedF1(row,panel))return panel.entries;
@@ -616,7 +622,7 @@ function bpfPanels(page,row){
  else parts=range(0,max-1).map(i=>({label:'F'+(i+1),indices:[i],composite:false}));
  return parts.map((part,id)=>{
   if(bpfDetailedF1(row,{id}))return {
-   id,label:row.code==='4.6.4'?'F1 — Pré-lavagem':'F1 — Revestimentos e porta da sala de envase',
+   id,label:({'4.6.4':'F1 — Pré-lavagem','4.7.2':'F1 — Revestimentos e porta da sala de envase','4.7.6':'F1 — Uniformes da sala de envase'})[row.code],
    composite:true,entries:row.scopes.flatMap(scope=>bpfF1Checks(row,scope))
   };
   return {
@@ -1057,7 +1063,9 @@ function bpfMountDescriptions(){bpfInspectorInstallMenu();
  const option=document.createElement('label'),check=document.createElement('input');check.type='checkbox';check.id='bpf-include-annex';option.style.cssText='display:flex;align-items:center;gap:6px;font-size:14px';option.append(check,document.createTextNode('Anexar F ao PDF (compacto, somente preenchidos)'));document.querySelector('#print').after(option);
 
  for(const data of BPF_PHRASES){const page=host.children[data.page];
-  for(const row of data.rows){const bounds=BPF_ITEM_CELLS[data.page+'_'+row.code];const cell=document.createElement('div'),code=document.createElement('span'),button=document.createElement('button');cell.className='bpf-item-code';cell.style.cssText='left:'+100*bounds.left/595.32+'%;top:'+100*bounds.top/BPF_PAGE_HEIGHTS[data.page]+'%;width:'+100*(bounds.right-bounds.left)/595.32+'%;height:'+100*(bounds.bottom-bounds.top)/BPF_PAGE_HEIGHTS[data.page]+'%';code.textContent=row.code;button.type='button';button.className='bpf-f';button.textContent='F';button.dataset.code=row.code;button.setAttribute('aria-label','Abrir frases do item '+row.code);button.title='Frases e orientações ao inspetor';button.onclick=()=>bpfOpenPhrases(row,data);const h=bounds.bottom-bounds.top;code.style.fontSize=100*Math.min(6.5,h*.29)/595.32+'cqw';button.style.fontSize=100*Math.min(13,h*.46)/595.32+'cqw';button.style.minHeight=100*Math.min(16,h*.57)/595.32+'cqw';button.style.padding='0';cell.append(code,button);page.append(cell);}
+  for(const row of data.rows){
+   if(data.page===9&&row.code==='4.7.3')continue;
+   const bounds=BPF_ITEM_CELLS[data.page+'_'+row.code];const cell=document.createElement('div'),code=document.createElement('span'),button=document.createElement('button');cell.className='bpf-item-code';cell.style.cssText='left:'+100*bounds.left/595.32+'%;top:'+100*bounds.top/BPF_PAGE_HEIGHTS[data.page]+'%;width:'+100*(bounds.right-bounds.left)/595.32+'%;height:'+100*(bounds.bottom-bounds.top)/BPF_PAGE_HEIGHTS[data.page]+'%';code.textContent=row.code;button.type='button';button.className='bpf-f';button.textContent='F';button.dataset.code=row.code;button.setAttribute('aria-label','Abrir frases do item '+row.code);button.title='Frases e orientações ao inspetor';button.onclick=()=>bpfOpenPhrases(row,data);const h=bounds.bottom-bounds.top;code.style.fontSize=100*Math.min(6.5,h*.29)/595.32+'cqw';button.style.fontSize=100*Math.min(13,h*.46)/595.32+'cqw';button.style.minHeight=100*Math.min(16,h*.57)/595.32+'cqw';button.style.padding='0';cell.append(code,button);page.append(cell);}
  }
 document.querySelector('#nav').addEventListener('change',bpfDismissEditor);for(const id of ['prev','next'])document.getElementById(id)?.addEventListener('click',bpfDismissEditor);
 }
