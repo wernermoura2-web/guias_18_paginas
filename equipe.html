@@ -1372,7 +1372,7 @@ async function bpfAppendCompactAnnex(pdf){
   record(['Unidade / F','Avaliação','Observação'],true);
   for(const r of records)record(r);y-=9;
  }
- fresh();text('Estabelecimento: '+(values.ENVASADORA||''));text('Data: '+(values.DATA||'')+' | Todas as frases, inclusive sem resposta. Classificação APPCC informativa; regra BPF mantida.',8);
+ fresh();text('Estabelecimento: '+(values.ENVASADORA||''));text('Data: '+(values.DATA||'')+' | Somente frases preenchidas. Classificação APPCC informativa; regra BPF mantida.',8);
  for(const item of rows){
   if(item.grouped){
    const {page:source,row,panel,entries,answer,note,other}=item;
