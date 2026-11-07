@@ -1053,9 +1053,9 @@ function bpfOpenPhrases(row,page){
  dlg.bpfCommit=()=>{
   const special=['4.3.3','4.10.3','4.11.2'].includes(row.code);
   if(special){
-   for(const panel of panels){
-    const selected=panel.entries.filter(e=>['1','0'].includes(values[e.name]));
-    if(!selected.length){
+   if(row.code!=='4.3.3')for(const panel of panels){
+    const selected=panel.entries.some(e=>['1','0'].includes(values[e.name]));
+    if(!selected){
      alert('Item '+row.code+' — '+panel.label+': selecione uma ou mais caixas em Sim ou Não antes de salvar.');
      return false;
     }
