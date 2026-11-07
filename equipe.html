@@ -514,7 +514,7 @@ function bpfSyncObservation(row,page){
    if(!selected.length)continue;
    const note=answer==='2'?'':String(values[bpfGroupNoteName(page,row,panel,answer)]||'').replace(/\s+/g,' ').trim();
    if(answer==='1'&&!note)continue;
-   const units=row.code==='4.10.2'&&panel.id===0?selected.map(e=>bpfUnifiedOption(row,e)):[11,12].includes(page.page)?[]:selected.map(e=>bpfSplitPanel(row,panel)?bpfScopeLabel(page,e.scope)+': '+bpfUnifiedOption(row,e):panel.composite?'F'+(e.index+1)+' '+bpfScopeLabel(page,e.scope):bpfScopeLabel(page,e.scope));
+   const units=(row.code==='4.10.2'&&panel.id===0)||(page.page===12&&bpfDetailedF1(row,panel))?selected.map(e=>bpfUnifiedOption(row,e)):[11,12].includes(page.page)?[]:selected.map(e=>bpfSplitPanel(row,panel)?bpfScopeLabel(page,e.scope)+': '+bpfUnifiedOption(row,e):panel.composite?'F'+(e.index+1)+' '+bpfScopeLabel(page,e.scope):bpfScopeLabel(page,e.scope));
    entries.push(panel.label+' — '+label+(units.length?' ('+units.join(', ')+')':'')+(note?': '+bpfObservationMarker(answer,selected)+note:''));
   }
  }
@@ -593,8 +593,23 @@ function bpfGroupedF2(row){
 function bpfSplitPanel(row,panel){
  return bpfDetailedF1(row,panel)||(['4.3.3','4.10.2'].includes(row.code)&&panel.id===0)||(panel.id===1&&!!bpfGroupedF2(row));
 }
-function bpfDetailedF1(row,panel){return panel.id===0&&['4.6.4','4.7.2','4.7.6','4.7.8'].includes(row.code);}
+function bpfDetailedF1(row,panel){return panel.id===0&&['4.6.4','4.7.2','4.7.6','4.7.8','4.11.3','4.11.4'].includes(row.code);}
 function bpfF1Checks(row,scope){
+ const personnelChecks={
+  '4.11.3':['Curso de 40h com até 2 anos','Curso de 40h com mais de 2 anos'],
+  '4.11.4':[
+   'Certificados dos manipuladores — Captação',
+   'Certificados dos manipuladores — Condução',
+   'Certificados dos manipuladores — Reservatórios',
+   'Certificados dos manipuladores — Recepção',
+   'Certificados dos manipuladores — Higienização',
+   'Certificados dos manipuladores — Envase',
+   'Certificado do responsável pela industrialização'
+  ]
+ }[row.code];
+ if(personnelChecks)return personnelChecks.map((option,i)=>({
+  scope,index:0,phrase:scope.phrases[0],option,name:bpfPhraseName(scope,0)+'_Responsaveis_'+(i+1)
+ }));
  if(row.code==='4.7.8')return [
   {suffix:'SalaEquipamentos',option:'Sala de envase e Equipamentos'},
   {suffix:'EnvasadoraAutomatica',option:'Envasadora Automática'}
@@ -657,6 +672,7 @@ function bpfPanels(page,row){
  ];
  else parts=range(0,max-1).map(i=>{
   const part={label:'F'+(i+1),indices:[i],composite:false};
+  if(row.code==='4.11.1')part.label+=' — Supervisão e Capacitação';
   if(row.code==='4.12.6')part.label+=' — Certificado do Cilindro em Uso';
   if(row.code==='4.10.5')part.label+=' — '+['Composição equivalente','Laudo Res. RDC 717/22','Boletim LAMIN'][i];
   if(row.code==='4.10.4')part.checklist=i===0
@@ -668,7 +684,7 @@ function bpfPanels(page,row){
  });
  return parts.map((part,id)=>{
   if(bpfDetailedF1(row,{id}))return {
-   id,label:({'4.6.4':'F1 — Pré-lavagem','4.7.2':'F1 — Revestimentos e porta da sala de envase','4.7.6':'F1 — Uniformes da sala de envase','4.7.8':'F1 — Higienização da sala de envase e dos equipamentos'})[row.code],
+   id,label:({'4.6.4':'F1 — Pré-lavagem','4.7.2':'F1 — Revestimentos e porta da sala de envase','4.7.6':'F1 — Uniformes da sala de envase','4.7.8':'F1 — Higienização da sala de envase e dos equipamentos','4.11.3':'F1 — Curso de capacitação','4.11.4':'F1 — Certificados de capacitação'})[row.code],
    composite:true,entries:row.scopes.flatMap(scope=>bpfF1Checks(row,scope))
   };
   return {
@@ -771,7 +787,7 @@ function bpfUnifiedIsOther(row,panel,e){return row.code==='4.11.2'&&panel.id===1
 function bpfUnifiedOption(row,e){
  if(e.option||e.phrase.option)return e.option||e.phrase.option;
  if(row.code==='4.10.2')return ['Laboratório interno (próprio)','Laboratório externo (terceirizado)','Contrato de terceirização'][e.index];
- if(row.code==='4.11.2')return ['RT','Responsável legal','Proprietário','Químico','Biólogo','Outro'][e.index];
+ if(row.code==='4.11.2')return ['Responsável Técnico com CRT','Responsável legal','Proprietário','Químico','Biólogo','Outro'][e.index];
  if(row.code==='4.3.3')return [
    'Extravasor protegido por tela milimetrada',
    'Dispositivo inferior para esvaziamento e higienização',
@@ -1145,8 +1161,10 @@ function bpfOpenPhrases(row,page){
      if(page.page===8&&['4.6.3','4.6.7'].includes(row.code)&&!values[entry.name])values[entry.scope.name]='Off';
      if(bpfDetailedF1(row,panel)){
       const assessed=panel.entries.filter(e=>e.scope===entry.scope).map(e=>values[e.name]);
-      const attended=row.code==='4.7.8'?assessed.every(value=>value==='1'):assessed.includes('1');
-      const result=assessed.includes('0')?'0':attended?'1':'';
+      const requireAll=['4.7.8','4.11.4'].includes(row.code);
+      const attended=requireAll?assessed.every(value=>value==='1'):assessed.includes('1');
+      const failed=row.code==='4.11.3'?assessed.every(value=>value==='0'):assessed.includes('0');
+      const result=failed?'0':attended?'1':'';
       values[bpfPhraseName(entry.scope,0)]=result;
       if(!result){values[entry.scope.name]='Off';values[bpfNoteName(entry.scope,0)]='';}
      }
@@ -1221,7 +1239,8 @@ function bpfOpenPhrases(row,page){
      alert('Item '+row.code+' — '+panel.label+' — '+bpfAnswerLabel(answer)+': preencha o campo Outros.');return false;
     }
    }
-   const noSelected=panel.checklist?bpfChecklistSelected(page,row,panel,'0').length>0:bpfPanelRecords(row,panel).some(e=>values[e.name]==='0');
+   const noSelected=panel.checklist?bpfChecklistSelected(page,row,panel,'0').length>0:
+    bpfPanelRecords(row,panel).some(e=>values[e.name]==='0'&&(row.code!=='4.11.3'||values[bpfPhraseName(e.scope,0)]==='0'));
    const noNote=String(values[bpfGroupNoteName(page,row,panel,'0')]||'').trim();
    if(noSelected&&!noNote){
     const area=content.querySelector('textarea[data-note="'+bpfGroupNoteName(page,row,panel,'0')+'"]');
