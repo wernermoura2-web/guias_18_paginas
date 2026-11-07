@@ -230,6 +230,13 @@
  const riscoFinal={0:'Dropdown5',1:'Dropdown10',2:'Dropdown15',3:'Dropdown20',4:'Dropdown25',5:'Dropdown30',6:'Dropdown35',7:'Dropdown40',8:'Dropdown45',9:'Dropdown50',10:'Dropdown55',11:'Dropdown56',12:'Dropdown57'};
  const areas=[];
  function linesFor(page){return page===7||page===8?embalagem:general;}
+ function bpfNoteBelowProcessTable(page,widget){
+  if(page<=10 && typeof BPF_ITEM_CELLS!=='undefined'){
+   const bottoms=Object.entries(BPF_ITEM_CELLS).filter(([code])=>code.startsWith(page+'_')).map(([,cell])=>cell.bottom);
+   if(bottoms.length)return Math.max(...bottoms)+0.7;
+  }
+  return widget.size[1]-widget.rect[1]+3;
+ }
  function start(){
   const host=document.getElementById('pages'),data=window.Guia?.data;
   if(!host||!data?.widgets||host.children.length<18)return;
@@ -241,12 +248,12 @@
   for(const [pageText,name]of Object.entries(riscoFinal)){
    const page=+pageText,widget=data.widgets.find(w=>w.page===page&&w.name===name);
    if(!widget||host.children[page].querySelector('.bpf-nota-pcc-2-perigos'))continue;
-   const top=widget.size[1]-widget.rect[1]+3;
+   const top=bpfNoteBelowProcessTable(page,widget);
    areas.push({page,top});
    const note=document.createElement('div');
    note.className='bpf-nota-pcc-2-perigos';
    note.replaceChildren(...linesFor(page).map(s=>{const d=document.createElement('div');d.textContent=s;return d;}));
-   note.style.cssText='position:absolute;left:5.8%;top:'+(100*top/widget.size[1])+'%;width:88.4%;height:'+(100*19/widget.size[1])+'%;font:bold 0.96cqw Arial,sans-serif;line-height:1.08;text-align:center;white-space:normal;color:#a11414;pointer-events:none;z-index:8';
+   note.style.cssText='position:absolute;left:5.8%;top:'+(100*top/widget.size[1])+'%;width:88.4%;height:'+(100*((page===7||page===8)?21:16.5)/widget.size[1])+'%;font:bold 0.91cqw Arial,sans-serif;line-height:1.02;text-align:left;white-space:normal;color:#a11414;pointer-events:none;z-index:8';
    host.children[page].append(note);
   }
  }
