@@ -97,3 +97,22 @@ for name in ['individual.html','equipe.html']:
  p.write_text(s)
 for name in ['individual.html','equipe.html','index.html','sw-guia18.js']:
  p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f5','20261107-obs-f6'))
+
+# O ditado nativo do teclado continua funcionando no próprio textarea.
+import re
+for name in ['individual.html','equipe.html']:
+ p=ROOT/name;s=p.read_text()
+ if 'const SpeechEngine=' in s:
+  s,n=re.subn(r"const SpeechEngine=.*?(?=const host=document.querySelector\('#pages'\);)",'',s,flags=re.S)
+  assert n==1
+  mic_start=s.index("if(el.tagName==='TEXTAREA'&&!el.readOnly&&/OBSERV/i.test(f.label)&&!/ATENDIDO|RISCO/i.test(f.label)){const mic=")
+  mic_end=s.index("el.style.paddingRight='36px';}",mic_start)+len("el.style.paddingRight='36px';}")
+  s=s[:mic_start]+s[mic_end:]
+  s=re.sub(r'(?m)^[ \t]*(?:stopSpeech|cancelSpeech)\(\);[ \t]*\n','',s)
+  s=s.replace('stopSpeech();','').replace('cancelSpeech();','')
+  s=re.sub(r'\.mic(?:\.listening|:disabled)?\{[^{}]*\}','',s)
+  s=s.replace(',.help,.mic{display:none!important}',',.help{display:none!important}')
+ assert 'Ditar neste campo' not in s and 'SpeechRecognition' not in s
+ p.write_text(s)
+for name in ['individual.html','equipe.html','index.html','sw-guia18.js']:
+ p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f6','20261107-obs-f7'))
