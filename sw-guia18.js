@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-revisao-frases-20261107-v12';
+const CACHE='guia18-pcc-R-individual-20261107-v13';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
@@ -7,7 +7,7 @@ async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
   const tag='<script src="./interface-guia-amigavel.js?v=20261107-identidade-f21" defer></script>';
-  const altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js\?v=20261107-identidade-f21/g,'interface-guia-amigavel.js?v=20261107-frases-inspetores-v1');
+  const altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js\?v=20261107-identidade-f21/g,'interface-guia-amigavel.js?v=20261107-pcc-R-individual-v13');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
