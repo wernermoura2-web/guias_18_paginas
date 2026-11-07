@@ -1,0 +1,100 @@
+name: Ajustar exibição do botão R no Guia BPF
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publicar-regra-r-processos.yml']
+permissions:
+  contents: write
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar e testar a atualização
+        run: |
+          git apply <<'PATCH'
+          diff --git a/equipe.html b/equipe.html
+          index 5a523b8..790e9c2 100644
+          --- a/equipe.html
+          +++ b/equipe.html
+          @@ -2392,7 +2392,7 @@ async function bpfExportEditable(){
+            }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
+           }
+           document.querySelector('#print').onclick=bpfExportEditable;
+          -</script><script src="./interface-guia-amigavel.js?v=20261107-R-ampliado-v23" defer></script><script id="bpf-update-worker">
+          +</script><script src="./interface-guia-amigavel.js?v=20261107-R-processos-v24" defer></script><script id="bpf-update-worker">
+           if('serviceWorker' in navigator && location.protocol==='https:'){
+            navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
+           }
+          diff --git a/index.html b/index.html
+          index 2c07eb8..607dea3 100644
+          --- a/index.html
+          +++ b/index.html
+          @@ -61,7 +61,7 @@
+                   <span class="action-label">Instalar Guia BPF/APPCC</span>
+                   <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                 </button>
+          -      <a class="action" href="./equipe.html?v=20261107-guia-sim-nao-v48">
+          +      <a class="action" href="./equipe.html?v=20261107-guia-r-v49">
+                   <span class="iconwrap" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 5"/></svg></span>
+                   <span class="action-label">Abrir Guia BPF/APPCC</span>
+                   <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          diff --git a/individual.html b/individual.html
+          index 667ed7a..51b3195 100644
+          --- a/individual.html
+          +++ b/individual.html
+          @@ -2229,7 +2229,7 @@ async function bpfExportEditable(){
+            }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
+           }
+           document.querySelector('#print').onclick=bpfExportEditable;
+          -</script><script src="./interface-guia-amigavel.js?v=20261107-R-ampliado-v23" defer></script><script id="bpf-update-worker">
+          +</script><script src="./interface-guia-amigavel.js?v=20261107-R-processos-v24" defer></script><script id="bpf-update-worker">
+           if('serviceWorker' in navigator && location.protocol==='https:'){
+            navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
+           }
+          diff --git a/interface-guia-amigavel.js b/interface-guia-amigavel.js
+          index 0c0c339..b14996e 100644
+          --- a/interface-guia-amigavel.js
+          +++ b/interface-guia-amigavel.js
+          @@ -239,11 +239,11 @@
+            ];
+            const matriz=[...embalagem];
+            const curta=['REGRA PCC: PCC não atendido implica ALTO RISCO, inclusive por perigos microbiológicos ou resíduos químicos.'];
+          - // Centros das células AVALIAÇÃO (páginas 0–12) e RISCO (17) nos fundos
+          + // Centros das células AVALIAÇÃO (páginas 0–10) e RISCO (17) nos fundos
+            // do formulário, em porcentagem da altura de cada página.
+            const ruleCellCenters={
+             0:53.52,1:31.12,2:35.15,3:35.15,4:35.15,5:35.15,6:33.33,
+          -  7:39.59,8:39.59,9:39.86,10:39.86,11:68.96,12:76.80,17:62.63
+          +  7:39.59,8:39.59,9:39.86,10:39.86,17:62.63
+            };
+            const areas=[];
+            function linesFor(page){return page>=11?curta:page===7||page===8?embalagem:general;}
+          diff --git a/sw-guia18.js b/sw-guia18.js
+          index fdcdfb4..e5289be 100644
+          --- a/sw-guia18.js
+          +++ b/sw-guia18.js
+          @@ -1,5 +1,5 @@
+           /* Guia BPF: interface amigável e cache offline (06/11/2026). */
+          -const CACHE='guia18-20261107-guia-sim-nao-v48';
+          +const CACHE='guia18-20261107-guia-r-v49';
+           const ROOT=new URL('./',self.location.href);
+           const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js'];
+           const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
+          @@ -7,7 +7,7 @@ async function attachFriendlyMenu(response,url){
+             if(!IS_GUIDE(url)||!response||!response.ok)return response;
+             const original=await response.text();
+             const tag='<script src="./interface-guia-amigavel.js?v=20261107-identidade-f21" defer></script>';
+          -  const altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261107-R-ampliado-v23');
+          +  const altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261107-R-processos-v24');
+             const headers=new Headers(response.headers);
+             headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
+             headers.set('content-type','text/html; charset=utf-8');
+          PATCH
+          git diff --check
+          node scripts/test_pcc_alto_risco_20261107.cjs
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add equipe.html individual.html index.html sw-guia18.js interface-guia-amigavel.js
+          git commit -m 'Retirar botão R de Controle da Qualidade e Responsáveis e Manipuladores'
+          git push origin HEAD:main
