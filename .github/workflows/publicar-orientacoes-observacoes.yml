@@ -4,6 +4,8 @@ on:
     branches: [main]
     paths:
       - scripts/patch_observacoes_f_20261107.py
+      - scripts/patch_fotos_f_20261107.py
+      - scripts/test_fotos_f_20261107.cjs
       - .github/workflows/publicar-orientacoes-observacoes.yml
   workflow_dispatch:
 permissions:
@@ -14,6 +16,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: python3 scripts/patch_observacoes_f_20261107.py
+      - run: python3 scripts/patch_fotos_f_20261107.py
+      - run: node scripts/test_fotos_f_20261107.cjs
+      - run: node scripts/test_equipe_documentos_fotos_responsaveis.js
       - run: node scripts/test_anexo_f_obs_unica.js
       - name: Publicar guias atualizados
         run: |
