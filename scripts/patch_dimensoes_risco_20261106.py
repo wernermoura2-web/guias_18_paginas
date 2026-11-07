@@ -94,7 +94,8 @@ def resize_pdf(source,tmp):
 
 def patch_file(path,tmp):
  s=path.read_text()
- if 'bpf-dimensoes-20261106-v1' in s:return
+ if 'bpf-dimensoes-20261106-v1' in s:
+  path.write_text(s.replace('Todas as frases, inclusive sem resposta.','Somente frases preenchidas.'));return
  m=re.search(r'const GUIDE_DATA\s*=\s*',s);data,end=json.JSONDecoder().raw_decode(s[m.end():]);end+=m.end()
  raw=base64.b64decode(re.search(r'const BPF_EMBEDDED_PDF="([^"]+)"',s)[1]);original=fitz.open(stream=raw,filetype='pdf');newraw=process_pdf(raw,tmp);pdf=fitz.open(stream=newraw,filetype='pdf')
  heights={i:pdf[i].rect.height for i in range(len(pdf))}
@@ -122,7 +123,6 @@ def patch_file(path,tmp):
  s=s.replace("/valor < 100/.test(s)?(p<100?'ALTO':'BAIXO'):(p<=50?'ALTO':p<=75?'MÉDIO':'BAIXO')","(p<50?'ALTO':p<=75?'MÉDIO':'BAIXO')")
  # Every phrase is available when the annex is requested, even in a blank guide.
  s=s.replace("row.scopes.filter(scope=>scope.phrases[i]&&(values[bpfPhraseName(scope,i)]||String(values[bpfNoteName(scope,i)]||'').trim()))","row.scopes.filter(scope=>scope.phrases[i])")
- s=s.replace('Somente frases preenchidas.','Todas as frases, inclusive sem resposta.')
  path.write_text(s)
  (tmp/(path.stem+'.pdf')).write_bytes(newraw)
  print(path.name,'updated',len(newraw), 'PDF bytes')
