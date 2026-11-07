@@ -657,6 +657,7 @@ function bpfPanels(page,row){
  ];
  else parts=range(0,max-1).map(i=>{
   const part={label:'F'+(i+1),indices:[i],composite:false};
+  if(row.code==='4.12.6')part.label+=' — Certificado do Cilindro em Uso';
   if(row.code==='4.10.5')part.label+=' — '+['Composição equivalente','Laudo Res. RDC 717/22','Boletim LAMIN'][i];
   if(row.code==='4.10.4')part.checklist=i===0
    ?['IN 161/22 da ANVISA','Res. RDC 717/22 da ANVISA','Portaria SUVISA 4325/2025','Outros']
