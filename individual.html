@@ -560,7 +560,8 @@ function bpfApplyAnswers(v){for(const p of BPF_PHRASES)for(const r of p.rows){
   corrected=corrected||cleared;
  }
  const removedF4=r.code==='4.6.10'&&/F4 — (?:Sim|Não|Não se aplica) \(/.test(v[bpfSummaryName(p,r)]||'');
- if((corrected||removedF4)&&v===values)bpfSyncObservation(r,p);
+ const renamedCQ=r.code==='4.10.3'&&/F5 — Cinco análises mensais terceirizadas|F6 — Cinco unidades analisadas/.test(v[bpfSummaryName(p,r)]||'');
+ if((corrected||removedF4||renamedCQ)&&v===values)bpfSyncObservation(r,p);
 }if(v.BPF_PCCGenerated&&v.BPF_PCCDestination!=='18')bpfSyncPCCFinal();if(v.BPF_NCGenerated||BPF_PHRASES.some(p=>p.rows.some(r=>r.scopes.some(s=>s.phrases.some((_,i)=>v[bpfPhraseName(s,i)]==='0')))))bpfSyncNCLists();}
 
 function bpfScopeLabel(page,scope){
@@ -635,11 +636,11 @@ function bpfPanels(page,row){
    {label:'F2 — Habilitação nos conselhos profissionais',indices:range(3,5),composite:true,allowNA:true}
  ];
  else if(row.code==='4.10.3')parts=[
-   {label:'F1 — Produto acabado',indices:range(0,6),composite:true},
+   {label:'F1 — Produto acabado',indices:range(0,6),composite:true,frequency:true},
    {label:'F2 — Captação',indices:[7,8,14,17,18,19,9],composite:true,frequency:true},
    {label:'F3 — Reservatório',indices:[10,11,20,12,21,22,13],composite:true,frequency:true},
-   {label:'F5 — Cinco análises mensais terceirizadas de um lote envasado',indices:[15],composite:true,storageId:4},
-   {label:'F6 — Cinco unidades analisadas de todos os lotes envasados',indices:[16],composite:true,storageId:5}
+   {label:'F4 — Cinco análises mensais terceirizadas de um lote envasado',indices:[15],composite:true,storageId:4},
+   {label:'F5 — Cinco unidades analisadas de todos os lotes envasados',indices:[16],composite:true,storageId:5}
  ];
  else parts=range(0,max-1).map(i=>{
   const part={label:'F'+(i+1),indices:[i],composite:false};
@@ -664,10 +665,12 @@ function bpfCQReviewLabel(row,index){
  return panel.label.split(' — ')[0]+(panel.indices.length>1?' — '+row.phrases[index].option:'');
 }
 function bpfCQFrequencyKey(entry){return 'BPF_CQ_Frequencia_'+entry.name;}
+function bpfCQOtherFrequencyKey(entry){return bpfCQFrequencyKey(entry)+'_Outro';}
 function bpfCQOption(row,panel,entry){
  const option=bpfUnifiedOption(row,entry);
  const freq=panel.frequency?values[bpfCQFrequencyKey(entry)]:'';
- return ['Diário','Semanal','Outro'].includes(freq)?option+' — '+freq:option;
+ const other=freq==='Outro'?String(values[bpfCQOtherFrequencyKey(entry)]||'').replace(/\s+/g,' ').trim():'';
+ return ['Diário','Semanal','Outro'].includes(freq)?option+' — '+freq+(other?': '+other:''):option;
 }
 function bpfAnswerLabel(answer){return ({'1':'Sim','0':'Não','2':'NA'})[answer]||'';}
 function bpfGroupNoteName(page,row,panel,answer){
@@ -738,7 +741,10 @@ function bpfInitUnifiedFields(data){
   for(const panel of bpfPanels(page,row)){
    if(panel.frequency)for(const entry of panel.entries){
     const name=bpfCQFrequencyKey(entry);
-    data.fields[name]={name,type:'/Tx',flags:0,label:'Frequência — '+entry.phrase.option,options:[],calc:'',phrasePage:page.page};
+    const label=bpfUnifiedOption(row,entry);
+    data.fields[name]={name,type:'/Tx',flags:0,label:'Frequência — '+label,options:[],calc:'',phrasePage:page.page};
+    const other=bpfCQOtherFrequencyKey(entry);
+    data.fields[other]={name:other,type:'/Tx',flags:0,label:'Outra frequência — '+label,options:[],calc:'',phrasePage:page.page};
    }
    for(const [kind,label] of [['Choice','resposta única'],['Selected','opções selecionadas']]){
     const key=bpfUnifiedKey(page,row,panel,kind);
@@ -873,14 +879,28 @@ function bpfOpenUnifiedPhrases(row,page){
    line.append(checkbox,caption);
    if(panel.frequency){
     const frequency=document.createElement('select');
-    const key=bpfCQFrequencyKey(e);
-    frequency.setAttribute('aria-label','Frequência — '+bpfUnifiedOption(row,e));
+    const key=bpfCQFrequencyKey(e),otherKey=bpfCQOtherFrequencyKey(e),optionLabel=bpfUnifiedOption(row,e);
+    frequency.setAttribute('aria-label','Frequência — '+optionLabel);
     for(const value of ['','Diário','Semanal','Outro']){
      const option=document.createElement('option');option.value=value;option.textContent=value||'Frequência';frequency.append(option);
     }
     frequency.value=values[key]||'';
-    frequency.onchange=()=>{values[key]=frequency.value;changed();};
-    const controls=document.createElement('div');controls.append(line,frequency);checkArea.append(controls);
+    const other=document.createElement('input');other.type='text';other.className='bpf-unified-other';
+    other.dataset.frequencyOther='';other.placeholder='Especifique a frequência';
+    other.setAttribute('aria-label','Outra frequência — '+optionLabel);
+    other.value=String(values[otherKey]||'');
+    other.hidden=other.disabled=frequency.value!=='Outro';
+    frequency.onchange=()=>{
+     values[key]=frequency.value;
+     other.hidden=other.disabled=frequency.value!=='Outro';
+     if(other.hidden)values[otherKey]=other.value='';
+     changed();
+    };
+    other.oninput=()=>{values[otherKey]=other.value;changed();};
+    const controls=document.createElement('div');
+    const frequencies=document.createElement('div');
+    frequencies.style.cssText='display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:3px 0 4px 27px';
+    frequencies.append(frequency,other);controls.append(line,frequencies);checkArea.append(controls);
     continue;
    }
    if(bpfUnifiedIsOther(row,panel,e)){
@@ -922,8 +942,9 @@ function bpfOpenUnifiedPhrases(row,page){
    for(const inp of checkArea.querySelectorAll('input[type=checkbox]'))inp.checked=false;
    for(const inp of checkArea.querySelectorAll('input[type=text]'))inp.disabled=true;
    if(panel.frequency){
-    for(const e of panel.entries)values[bpfCQFrequencyKey(e)]='';
+    for(const e of panel.entries){values[bpfCQFrequencyKey(e)]='';values[bpfCQOtherFrequencyKey(e)]='';}
     for(const select of checkArea.querySelectorAll('select'))select.value='';
+    for(const other of checkArea.querySelectorAll('input[data-frequency-other]')){other.value='';other.hidden=true;}
    }
    for(const inp of radios.querySelectorAll('input[type=radio]'))inp.checked=false;
    updateNote();changed();recalc();
@@ -1868,7 +1889,10 @@ async function bpfAppendCompactAnnex(pdf){
    const {page:source,row,panel,entries,answer,note,other}=item;
    ensure(90);
    text('Página '+(source.page+1)+' | Item '+row.code+' | '+panel.label+' | Resultado: '+bpfAnswerLabel(answer),9,true);
-   table(entries.map(e=>[(row.scopes.length>1?bpfScopeLabel(source,e.scope):'Grupo')+' / F'+(e.option?panel.id+1:e.index+1),bpfAnswerLabel(answer),bpfCQOption(row,panel,e)]));
+   table(entries.map(e=>{
+    const label=row.code==='4.10.3'?panel.label.split(' — ')[0]:'F'+(e.option?panel.id+1:e.index+1);
+    return [(row.scopes.length>1?bpfScopeLabel(source,e.scope):'Grupo')+' / '+label,bpfAnswerLabel(answer),bpfCQOption(row,panel,e)];
+   }));
    if(note)text((answer==='1'?'OBS: ':'NC: ')+note,8.5);
    if(other)text('Outro conselho: '+other,8);
    continue;
