@@ -362,7 +362,7 @@ nav.onchange=show;
 """
 for name in ['individual.html','equipe.html']:
  p=ROOT/name;s=p.read_text()
- if 'function bpfMissingIdentification(' not in s:
+ if 'function bpfMissingIdentification(' not in s and 'function bpfDateToISO(' not in s:
   s=s.replace('</head>',REQUIRED_STYLE+'</head>',1)
   old="function show(){for(const [i,p]of [...host.children].entries())p.classList.toggle('active',i===Number(nav.value));requestAnimationFrame(()=>{sync()})}nav.onchange=show;"
   assert s.count(old)==1
@@ -370,3 +370,54 @@ for name in ['individual.html','equipe.html']:
  p.write_text(s)
 for name in ['individual.html','equipe.html','index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
  p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f10','20261107-obrigatorios-f11'))
+
+DATE_JS=r"""function bpfDateToISO(value){
+ const raw=String(value??'').trim();
+ const br=raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/);
+ const iso=raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+ if(!br&&!iso)return '';
+ const [year,month,day]=br?[br[3].length===2?'20'+br[3]:br[3],br[2].padStart(2,'0'),br[1].padStart(2,'0')]:iso.slice(1);
+ const result=year+'-'+month+'-'+day;
+ const date=new Date(result+'T00:00:00Z');
+ return +year>0&&!Number.isNaN(+date)&&date.toISOString().slice(0,10)===result?result:'';
+}
+function bpfDateToBR(value){
+ const iso=bpfDateToISO(value);
+ return iso?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4):'';
+}
+"""
+DATE_STYLE='''<style id="bpf-date-picker-style">
+@media screen{
+#pages .bpf-inspection-date{box-sizing:border-box;min-width:0;padding:1px 3px;font:inherit;font-size:clamp(10px,1.48cqw,15px);color:#132939;cursor:pointer}
+#pages .bpf-inspection-date::-webkit-calendar-picker-indicator{margin:0;padding:0;cursor:pointer}
+}
+</style>'''
+for name in ['individual.html','equipe.html']:
+ p=ROOT/name;s=p.read_text()
+ if 'function bpfDateToISO(' not in s:
+  s,n=re.subn(r'<style id="bpf-required-fields-style">.*?</style>','',s,count=1,flags=re.S)
+  assert n==1
+  start=s.index('function bpfMissingIdentification(')
+  end=s.index('nav.onchange=show;',start)+len('nav.onchange=show;')
+  s=s[:start]+"function show(){for(const [i,p]of [...host.children].entries())p.classList.toggle('active',i===Number(nav.value));requestAnimationFrame(()=>{sync()})}nav.onchange=show;"+s[end:]
+  needle='for(const [i,w]of D.widgets.entries()){'
+  assert s.count(needle)==1
+  s=s.replace(needle,DATE_JS+needle,1)
+  needle="  el.oninput=()=>{values[w.name]=el.value;changed();recalc();fit(el)};"
+  assert s.count(needle)==1
+  s=s.replace(needle,"""  if(w.name==='DATA'){
+   el=document.createElement('input');el.type='date';el.className='overlay text bpf-inspection-date';
+   el.addEventListener('click',()=>{try{el.showPicker?.()}catch(_){}});
+   el.oninput=el.onchange=()=>{const date=bpfDateToBR(el.value);if(values[w.name]!==date){values[w.name]=date;changed();recalc();}};
+  }else{
+"""+needle+"\n  }",1)
+  needle=" else if(el.classList.contains('printable'))el.textContent=values[n]==='Off'?'':values[n];"
+  assert s.count(needle)==1
+  s=s.replace(needle," else if(el.classList.contains('bpf-inspection-date')){const date=bpfDateToISO(values[n]);if(el.value!==date)el.value=date;}\n"+needle.replace("values[n];","(n==='DATA'?bpfDateToBR(values[n])||values[n]:values[n]);"),1)
+  s=s.replace('</head>',DATE_STYLE+'</head>',1)
+ old='normalizeTeam18(values[n])!==normalizeTeam18(incoming.values[n])'
+ new="(n==='DATA'?bpfDateToISO(values[n])||normalizeTeam18(values[n]):normalizeTeam18(values[n]))!==(n==='DATA'?bpfDateToISO(incoming.values[n])||normalizeTeam18(incoming.values[n]):normalizeTeam18(incoming.values[n]))"
+ if new not in s:s=s.replace(old,new,1)
+ p.write_text(s)
+for name in ['individual.html','equipe.html','index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ p=ROOT/name;p.write_text(p.read_text().replace('20261107-obrigatorios-f11','20261107-calendario-f12'))
