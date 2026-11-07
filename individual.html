@@ -421,6 +421,26 @@ function bpfMergeObservation(text,code,previous,summary){
  text=bpfSpaceItemObservations(text).trimEnd();
  return text+(summary?(text?'\n\n':'')+summary:'');
 }
+
+function bpfObservationMarker(answer,selected){
+ const classes=[...new Set(selected.map(entry=>String(entry.phrase?.appcc||'').trim()).filter(Boolean))];
+ return (answer==='0'?'NC':'OBS')+(classes.length?' (BPF/APPCC: '+classes.join(' / ')+')':'')+': ';
+}
+function bpfRefreshLegacyObservationMarkers(){
+ for(const page of BPF_PHRASES)for(const row of page.rows){
+  const key=bpfSummaryName(page,row),before=values[key];
+  if(typeof before!=='string'||!/(?:^|[;:] )\b(?:NC|OBS): /.test(before))continue;
+  const field=BPF_OBSERVATION_FIELDS[page.page+'_'+row.code],original=values[field];
+  if(typeof original!=='string'||!original.includes(before))continue;
+  bpfSyncObservation(row,page);
+  const after=values[key];
+  if(after&&after!==before){
+   const at=original.indexOf(before);
+   values[field]=original.slice(0,at)+after+original.slice(at+before.length);
+  }else{values[key]=before;values[field]=original;}
+ }
+}
+
 function bpfSyncObservation(row,page){
  if(bpfUnifiedRow(row))return bpfSyncUnifiedObservation(row,page);
  const name=BPF_OBSERVATION_FIELDS[page.page+'_'+row.code];if(!name)return;
@@ -433,7 +453,7 @@ function bpfSyncObservation(row,page){
    const note=answer==='2'?'':String(values[bpfGroupNoteName(page,row,panel,answer)]||'').replace(/\s+/g,' ').trim();
    if(answer==='1'&&!note)continue;
    const units=selected.map(e=>panel.composite?'F'+(e.index+1)+' '+bpfScopeLabel(page,e.scope):bpfScopeLabel(page,e.scope));
-   entries.push(panel.label+' — '+label+' ('+units.join(', ')+')'+(note?': '+(answer==='0'?'NC: ':'OBS: ')+note:''));
+   entries.push(panel.label+' — '+label+' ('+units.join(', ')+')'+(note?': '+bpfObservationMarker(answer,selected)+note:''));
   }
  }
  const key=bpfSummaryName(page,row),summary=entries.length?row.code+' '+entries.join('; ')+'.':'';
@@ -586,9 +606,10 @@ function bpfSyncUnifiedObservation(row,page){
   const note=String(values[bpfGroupNoteName(page,row,panel,answer)]||'').replace(/\s+/g,' ').trim();
   const other=String(values[bpfUnifiedOtherKey(page,row,panel)]||'').replace(/\s+/g,' ').trim();
   if(answer==='1'&&!note&&!other)continue;
-  const checks=panel.entries.filter(e=>selected.has(e.name)).map(e=>
+  const matched=panel.entries.filter(e=>selected.has(e.name));
+  const checks=matched.map(e=>
    (row.scopes.length>1?bpfScopeLabel(page,e.scope)+': ':'')+bpfUnifiedOption(row,e));
-  entries.push(panel.label+' — '+(answer==='1'?'Sim':'Não')+' ('+checks.join(', ')+')'+(note?'; '+(answer==='1'?'OBS: ':'NC: ')+note:'')+(other?'; Outro: '+other:''));
+  entries.push(panel.label+' — '+(answer==='1'?'Sim':'Não')+' ('+checks.join(', ')+')'+(note?'; '+bpfObservationMarker(answer,matched)+note:'')+(other?'; Outro: '+other:''));
  }
  const key=bpfSummaryName(page,row),summary=entries.length?row.code+' '+entries.join('; ')+'.':'';
  values[name]=bpfMergeObservation(values[name]||'',row.code,values[key]||'',summary);
@@ -966,7 +987,7 @@ const api={getField:n=>refs[n]||null,numFields:Object.keys(refs).length,getNthFi
 const compiled={};
 for(const n of D.order){const source=D.fields[n].calc.replace(/valor = 100/g,'valor === 100');try{compiled[n]=new Function('event','color','AFSimple_Calculate',source)}catch(e){errors.add(n+': '+e.message)}}
 function aggregate(names){const vals=names.map(n=>values[n]);return vals.includes('0')?'0':vals.includes('1')?'1':vals.includes('2')?'2':'Off'}
-function recalc(){bpfInspectorApplySaved();bpfApplyAnswers(values);bpfSpaceProcessObservations();for(let i=0;i<4;i++)values[conductions[i]]=values[sourceFields[i]];
+function recalc(){bpfInspectorApplySaved();bpfApplyAnswers(values);bpfRefreshLegacyObservationMarkers();bpfSpaceProcessObservations();for(let i=0;i<4;i++)values[conductions[i]]=values[sourceFields[i]];
  for(const [n,sources]of Object.entries(D.groups))values[n]=aggregate(sources);
  for(let pass=0;pass<4;pass++){
  const before=JSON.stringify(values);
@@ -1631,7 +1652,7 @@ async function bpfExportEditable(){
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
 }
 document.querySelector('#print').onclick=bpfExportEditable;
-</script><script src="./interface-guia-amigavel.js?v=20261107-rotulos-f17" defer></script><script id="bpf-update-worker">
+</script><script src="./interface-guia-amigavel.js?v=20261107-appcc-f18" defer></script><script id="bpf-update-worker">
 if('serviceWorker' in navigator && location.protocol==='https:'){
  navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 }
