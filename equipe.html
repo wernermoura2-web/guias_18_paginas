@@ -151,7 +151,9 @@ function bpfSyncNCLists(){
   if(values[bpfPhraseName(scope,i)]!=='0')return;
   const group=groups.find(g=>g.cats.includes(phrase.appcc));if(!group)return;
   const unit=bpfScopeLabel(page,scope);
-  group.lines.push('Frase '+(i+1)+', do item '+row.code+', do processo '+titles[page.page]+', na unidade '+unit+', classificada como '+phrase.appcc);
+  const grouped=bpfGroupedF2(row);
+  const label=grouped&&i>0?'2, opção '+(grouped.indices.indexOf(i)+1):String(i+1);
+  group.lines.push('Frase '+label+', do item '+row.code+', do processo '+titles[page.page]+', na unidade '+unit+', classificada como '+phrase.appcc);
  });
  let previous={};try{previous=JSON.parse(values.BPF_NCGenerated||'{}');}catch(e){}
  const current={};for(const group of groups)current[group.id]=group.title+' — Total: '+group.lines.length+'\n\n'+group.cats.map(code=>code+' — '+BPF_NC_DEFINITIONS[code].text.trim()).join('\n')+'\n\n'+(group.lines.length?group.lines.map((line,i)=>(i+1)+'. '+line).join('\n'):'Nenhuma não conformidade registrada.');
