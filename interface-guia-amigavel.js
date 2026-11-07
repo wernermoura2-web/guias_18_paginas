@@ -40,7 +40,8 @@
   .bpf-item-code{display:grid!important;grid-template-columns:minmax(0,1fr);grid-template-rows:42% 58%;justify-content:stretch!important;align-items:stretch!important;gap:0!important;padding:0!important;z-index:20!important;isolation:isolate;visibility:visible!important;opacity:1!important}
   .bpf-item-code>span{display:flex;align-items:center;justify-content:center;min-height:0;line-height:1;white-space:nowrap}
   .bpf-item-code>.bpf-f{position:relative;z-index:21!important;display:flex!important;align-items:center;justify-content:center;visibility:visible!important;opacity:1!important;box-sizing:border-box;width:100%!important;height:100%!important;min-height:0!important;min-width:0!important;padding:0!important;line-height:1!important;align-self:stretch}
-  .bpf-f-destaque{font-weight:800!important;color:#fff!important;background:#087aaa!important;border:1px solid #07577b!important;border-radius:3px!important;text-decoration:none!important;opacity:1!important}
+  .bpf-f-destaque,.bpf-regra-pcc-botao{font-weight:800!important;color:#fff!important;background:#087aaa!important;border:1px solid #07577b!important;border-radius:3px!important;text-decoration:none!important;opacity:1!important}
+  .bpf-regra-pcc-botao{position:absolute;left:8.1%;transform:translateY(-50%);z-index:40;display:grid;place-items:center;width:1.55%;aspect-ratio:1;padding:0;font-size:1.1cqw;line-height:1}
   /* bpf-f-dimensoes-20261106-v3: o tamanho da letra segue a altura real do item. */
   @media(max-width:520px){
     .bpf-ui-hub{padding:13px 12px;margin:12px 9px 16px;border-radius:15px}
@@ -49,7 +50,7 @@
     .bpf-ui-detail .bpf-ui-action{font-size:15px}
   }
  }
- @media print{.bpf-ui-hub{display:none!important}}
+ @media print{.bpf-ui-hub,.bpf-regra-pcc-botao{display:none!important}}
  `;
  const style=document.createElement('style');style.textContent=CSS;document.head.appendChild(style);
  const norm=s=>String(s||'').replace(/\s+/g,' ').trim();
@@ -237,7 +238,12 @@
  ];
  const matriz=[...embalagem];
  const curta=['REGRA PCC: PCC não atendido implica ALTO RISCO, inclusive por perigos microbiológicos ou resíduos químicos.'];
- const riscoFinal={0:'Dropdown5',1:'Dropdown10',2:'Dropdown15',3:'Dropdown20',4:'Dropdown25',5:'Dropdown30',6:'Dropdown35',7:'Dropdown40',8:'Dropdown45',9:'Dropdown50',10:'Dropdown55',11:'Dropdown56',12:'Dropdown57'};
+ // Centros das células AVALIAÇÃO (páginas 0–12) e RISCO (17) nos fundos
+ // do formulário, em porcentagem da altura de cada página.
+ const ruleCellCenters={
+  0:53.52,1:31.12,2:35.15,3:35.15,4:35.15,5:35.15,6:33.33,
+  7:39.59,8:39.59,9:39.86,10:39.86,11:68.96,12:76.80,17:62.63
+ };
  const areas=[];
  function linesFor(page){return page>=11?curta:page===7||page===8?embalagem:general;}
  function fixResiduePCC(){
@@ -336,45 +342,24 @@
   }
   if(!dlg.open)dlg.showModal();
  }
- function addR(el,page,left,top){
-  if(!el)return;
-  // Reposiciona também um botão previamente criado, sem duplicar.
-  let b=el.querySelector('.bpf-regra-pcc-botao');
-  if(!b){
-   b=document.createElement('button');b.type='button';b.className='bpf-regra-pcc-botao';
-   b.textContent='R';
-   b.title='Regra PCC — ver critérios de alto risco';
-   b.setAttribute('aria-label','Abrir Regra PCC');
-   b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showRule(page)});
-   el.appendChild(b);
-  }
-  // Pequeno e inteiramente dentro da primeira coluna, à esquerda da legenda.
-  b.style.cssText='position:absolute;left:'+left+'%;top:'+top+'%;width:1.85%;height:2%;min-width:14px;min-height:14px;max-width:19px;max-height:19px;z-index:40;background:#fff;color:#20394a;border:1.5px solid #223f51;border-radius:3px;font:bold 11px Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 1px 2px #0002';
+ function addR(el,page,center){
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='bpf-regra-pcc-botao';
+  button.textContent='R';
+  button.title='Regra PCC — ver critérios de alto risco';
+  button.setAttribute('aria-label','Abrir Regra PCC');
+  button.style.top=center+'%';
+  button.addEventListener('click',()=>showRule(page));
+  el.appendChild(button);
  }
  function start(){
   const host=document.getElementById('pages'),data=window.Guia?.data;
   if(!host||!data?.widgets||host.children.length<18)return;
   fixResiduePCC();
   for(const el of host.children)el.querySelectorAll('.bpf-nota-pcc-2-perigos,#bpf-regra-pcc-matriz').forEach(n=>n.remove());
-  for(const [index,name]of Object.entries(riscoFinal)){
-   const page=Number(index),el=host.children[page];
-   const risk=data.widgets.find(w=>w.page===page&&w.name===name);
-   if(!el||!risk)continue;
-   const H=risk.size[1];
-   // A faixa AVALIAÇÃO fica imediatamente abaixo do cabeçalho ATENDIMENTO/RISCO;
-   // avançar uma linha em relação à posição anterior evita o bloco % ATENDIDO.
-   const top=Math.max(1,Math.min(96,100*(H-risk.rect[3]+3)/H+2.7));
-   // A legenda AVALIAÇÃO é centralizada; manter o R na margem interna esquerda.
-   addR(el,page,5.0,top);
-  }
-  // Matriz: usar a altura da linha RISCO e posicionar R à esquerda da palavra.
-  const matrixEl=host.children[17];
-  const matrixRisk=data.widgets.find(w=>w.page===17&&w.name==='Dropdown58');
-  if(matrixEl&&matrixRisk){
-   const H=matrixRisk.size[1];
-   const center=H-(matrixRisk.rect[1]+matrixRisk.rect[3])/2;
-   const top=Math.max(1,Math.min(96,100*center/H-1));
-   addR(matrixEl,17,5.4,top);
+  for(const [page,center] of Object.entries(ruleCellCenters)){
+   addR(host.children[page],Number(page),center);
   }
  }
  // Não acrescentar frases sobre o formulário nem alterar as dimensões do PDF editável.
