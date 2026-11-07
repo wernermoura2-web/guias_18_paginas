@@ -194,40 +194,50 @@ for(const page of BPF_PHRASES)for(const row of page.rows){
 const BPF_NOTE_INSTRUCTION={text:'Orientações de preenchimento das observações das frases',guidance:'Registre as evidências verificadas para a frase ou as opções assinaladas: documentos e registros examinados, identificação, data, local, equipamento, lote ou amostra, quando pertinentes. Para Sim (OBS), descreva o que comprova o atendimento. Para Não (NC), descreva objetivamente a condição encontrada e o requisito não atendido, com a evidência correspondente. Para Não se aplica, quando permitido, justifique a não aplicabilidade. Em grupos, identifique a opção a que cada registro se refere. Utilize a orientação ao inspetor da respectiva frase para selecionar as verificações e evidências.'};
 const bpfNoteInstructionEntry={key:'instructions:phrase-observations',page:0,code:'Observações',index:0,label:'Orientações gerais',scopes:[],appcc:'Preenchimento',original:{...BPF_NOTE_INSTRUCTION},refs:[BPF_NOTE_INSTRUCTION]};
 BPF_INSPECTOR_ENTRIES.unshift(bpfNoteInstructionEntry);BPF_INSPECTOR_BY_KEY.set(bpfNoteInstructionEntry.key,bpfNoteInstructionEntry);
-function bpfAttachNoteTools(area,parent){
- const help=document.createElement('details');help.className='bpf-note-help';
- const summary=document.createElement('summary');summary.textContent='Como preencher esta observação';help.append(summary);
- const general=document.createElement('p');general.textContent=BPF_NOTE_INSTRUCTION.guidance;help.append(general);
 
+const BPF_FILL_EXAMPLES={"4.1.1/1": ["Na captação [identificação], a pavimentação ao redor da casa de proteção estava íntegra e a drenagem funcionava, sem empoçamento nos pontos vistoriados.", "Na captação [identificação], observou-se [trinca na pavimentação ou falha na drenagem] em [local], com [evidência]."], "4.1.1/2": ["O entorno da captação [identificação] estava limpo e sem focos de insalubridade nos pontos vistoriados.", "No entorno da captação [identificação], observou-se [sujidade ou foco de insalubridade] em [local]."], "4.1.2/1": ["A casa de proteção da captação [identificação] estava limpa, com a porta vedada e as aberturas protegidas.", "Na casa de proteção da captação [identificação], não havia borracha de vedação no entorno da porta [local]."], "4.1.2/2": ["Foi identificada torneira para coleta de amostra no início da canalização da captação [identificação].", "Não foi identificada torneira para coleta de amostra no início da canalização da captação [identificação]."], "4.1.3/1": ["A limpeza da casa é realizada [frequência], e a do poço [frequência], com [produto e concentração], conforme [POP ou registro].", "A limpeza e a desinfecção de [instalação ou equipamento] não foram comprovadas para o período [período]."], "4.1.3/2": ["Foi apresentado certificado de capacitação do funcionário [função], emitido em [data], com carga horária de [horas].", "Não foi apresentado comprovante de capacitação para quem realiza a higienização da captação [identificação]."], "4.1.3/3": ["Foram apresentados registros de limpeza e desinfecção da captação [identificação], com data e responsável pela execução.", "Não foram apresentados os registros de limpeza e desinfecção da captação [identificação] referentes a [período]."], "4.2.2/1": ["Foi apresentada documentação de adequação ao contato com alimentos para [material e trecho da canalização], referência [documento].", "Não foi apresentado certificado de grau alimentício da tubulação de [material] no trecho [local]. A documentação apresentada cobre apenas [componente]."], "4.2.2/2": ["As superfícies internas verificadas em [trecho] estavam íntegras e sem irregularidades visíveis.", "No trecho [local], foi observada [irregularidade, corrosão ou dano] na superfície em contato com a água."], "4.2.7/1": ["A higienização de [trecho] foi demonstrada conforme [procedimento], com [método e frequência].", "A higienização de [trecho] foi realizada sem [etapa ou condição prevista], conforme [evidência]."], "4.2.7/2": ["Foram apresentadas planilhas com os registros das operações de higienização da canalização referentes a [período].", "Não foram apresentados registros de higienização da canalização [identificação] no período [período]."], "4.2.8/1": ["O desmonte do trecho [identificação] é previsto a cada [frequência] e consta no registro de [data].", "Não foi realizado o desmonte do trecho [identificação], embora aplicável, conforme [registro ou relato]."], "4.3.2/1": ["O reservatório [identificação] é de aço inoxidável [especificação], conforme [documento verificado].", "Não foi apresentada comprovação de adequação ao contato com alimentos para [superfície] do reservatório [identificação]."], "4.3.2/2": ["O reservatório [identificação] apresentava superfícies íntegras nos pontos vistoriados.", "Foi observado vazamento na união da tubulação de saída do reservatório [identificação], no trecho para [destino]."], "4.3.3": ["No reservatório [identificação], verificou-se [dispositivo selecionado] em [local], conforme [inspeção visual ou registro].", "No reservatório [identificação], foi constatado [dispositivo ausente ou irregular]. Evidência: [descrição ou documento]."], "4.3.5/1": ["O reservatório [identificação] é higienizado a cada [frequência], com [método, produto e tempo de contato].", "A frequência de higienização observada para o reservatório [identificação] foi de [frequência], embora o procedimento preveja [frequência]."], "4.3.5/2": ["Foram apresentados registros individualizados da higienização do reservatório [identificação] referentes a [período].", "Os registros indicam higienização a cada [intervalo], mas a execução verificada ocorreu a cada [intervalo]."], "4.5.2": ["A recepção dos garrafões retornados ocorre em [local], separado da recepção de [demais insumos].", "A recepção de garrafões retornados e de [insumo] ocorre no mesmo espaço [local], conforme constatado na inspeção."], "4.5.4": ["Os garrafões foram avaliados individualmente no recebimento; os que apresentavam [defeito] foram segregados.", "No recebimento, foi observado garrafão com [defeito] sem segregação, em [local]."], "4.6.4": ["Antes da higienização automática, foi observada a pré-lavagem dos garrafões, com remoção de [sujidade] por [método].", "Foram observados garrafões com [sujidade] encaminhados à higienização automática sem pré-lavagem."], "4.7.2/2": ["A sala de envase estava limpa e conservada nos pontos vistoriados. O POP de higienização [código] foi apresentado.", "Na sala de envase, observou-se [sujidade ou dano] em [superfície e local], conforme [evidência]."], "4.7.5/1": ["O acesso à sala de envase ocorre pela antesala [identificação]. A porta fechava e ajustava ao batente.", "A mola da porta da antesala estava [condição] e a porta não ajustava ao batente, conforme verificado em [local]."], "4.7.5/2": ["A torneira do lavatório exclusivo da antesala foi acionada por pedal, sem contato manual, durante o teste.", "A torneira do lavatório da antesala exigia acionamento manual ou apresentou [falha observada]."], "4.7.5/5": ["A higiene das mãos foi observada no lavatório exclusivo da antesala, conforme o POP [código].", "O POP de higiene das mãos foi apresentado, mas verificou-se [etapa não executada] na antesala, em [momento]."], "4.10.1": ["Foram verificados registros de pH, condutividade e temperatura na fonte [identificação] referentes a [período].", "Não foram apresentados registros de [parâmetro] na fonte [identificação] para o período [período]."], "4.10.2/2": ["Foi apresentado contrato vigente de análises terceirizadas [referência], com escopo e condições de coleta e transporte.", "Foram apresentados comprovantes de serviços laboratoriais, mas não o contrato vigente de terceirização das análises."], "4.10.3/1": ["O laudo [número e data] do lote [identificação] registrou [resultado] para [parâmetro verificado].", "O laudo [número e data] do lote [identificação] registrou [resultado não conforme] para [parâmetro]."], "4.10.3/2": ["Foram apresentados resultados semanais de [parâmetro] para a captação [identificação], no período [período].", "Não foram apresentados resultados semanais de [parâmetro] para a captação [identificação] no período [período]."], "4.10.3/3": ["Foram apresentados resultados semanais de [parâmetro] para o reservatório [identificação], no período [período].", "Não foram apresentados resultados semanais de [parâmetro] para o reservatório [identificação] no período [período]."], "4.10.3/4": ["Foi apresentado laudo físico-químico anual [número e data] do produto [identificação], com [parâmetros verificados].", "Não foi apresentado laudo físico-químico anual para o produto [identificação] referente a [período]."], "4.10.3/5": ["O laudo [número] documenta cinco amostras do mesmo lote [identificação], encaminhadas ao laboratório terceirizado em [mês].", "Para [mês], o laudo [número] não comprovou a análise terceirizada de cinco amostras de um mesmo lote."], "4.10.3/6": ["Os registros de [período] comprovam cinco unidades analisadas do lote [identificação], abrangendo início, meio e término do envase.", "Para o lote [identificação], o registro mostrou [quantidade] unidades analisadas ou ausência de amostras de [etapa do envase]."], "4.11.2": ["A responsabilidade foi comprovada por [documento de designação ou habilitação], vigente em [data].", "Não foi apresentada comprovação de [designação ou habilitação profissional] para [atividade selecionada]."], "4.11.4": ["Foram apresentados certificados de capacitação dos manipuladores, com [data, carga horária e conteúdo].", "Não foram apresentados os certificados de capacitação de [equipe ou função] referentes a [período]."], "4.2.9/1": ["Foi apresentado o POP de higienização da canalização [código e revisão], com [método e parâmetros verificados].", "Não foi apresentado POP de higienização para a canalização [identificação], nem registros da operação."], "4.3.4/1": ["A inspeção visual do reservatório [identificação] foi registrada em [data], conforme POP [código].", "Não foi apresentado registro da inspeção visual do reservatório [identificação] no intervalo previsto em [POP]."], "4.3.6/2": ["O POP de higienização do reservatório [código] estava disponível para consulta no local [identificação].", "O POP [código] não estava disponível em [local], conforme verificado durante a inspeção."], "4.5.3/1": ["A inspeção de recebimento de [insumo] foi registrada em [data], com identificação do lote e critérios de aceitação.", "Foi apresentada ficha de estoque de [insumo], mas não o registro de inspeção na recepção do lote [identificação]."], "4.5.6/2": ["O destino do insumo reprovado [lote] foi registrado em [documento], datado e assinado pelo responsável.", "Foi informada a devolução do insumo reprovado [lote], mas não foi apresentado registro da devolução."], "4.5.8/2": ["Foi apresentado o POP de recepção [código], que define a destinação de [embalagem reprovada].", "O POP de recepção [código] não descreve o destino final de [embalagem ou insumo reprovado]."], "4.6.12/1": ["Foi apresentado o POP de higienização de embalagens [código], com [parâmetros verificados] e registros de execução.", "O POP de higienização de embalagens [código] não descrevia [etapa ou parâmetro observado]."], "4.10.5/2": ["Foi apresentado o laudo [número e data] do produto [identificação] e a documentação da fonte correspondente [referência].", "Não foi apresentado [laudo do produto ou laudo da fonte] para [identificação]."], "4.10.6/2": ["Foi apresentado registro da ação corretiva adotada em [data] para o desvio [descrição], com [evidência de execução].", "Foi constatado o desvio [descrição], mas não foram apresentadas evidências das medidas corretivas adotadas."]};
+function bpfFillExample(code,panel,answer){
+ if(answer!=='1'&&answer!=='0')return '';
+ const specific=BPF_FILL_EXAMPLES[code+'/'+(panel.id+1)]||BPF_FILL_EXAMPLES[code];
+ if(specific)return specific[answer==='1'?0:1];
+ const label=code+' — '+panel.label.split(' — ')[0];
+ if(answer==='1')return 'No item '+label+', verificou-se [condição observada] em [local, equipamento ou lote]. O atendimento foi comprovado por [evidência, identificação e data].';
+ return 'No item '+label+', constatou-se [requisito não atendido] em [local, equipamento ou lote]. Evidência: [descreva o fato observado ou o documento que demonstra o desvio].';
+}
+function bpfAttachNoteTools(area,parent,code,panel,getAnswer){
+ const help=document.createElement('details');help.className='bpf-note-help';
+ const summary=document.createElement('summary');summary.textContent='Exemplo de preenchimento';
+ const example=document.createElement('p');
+ const hint=document.createElement('small');hint.textContent='Adapte o exemplo ao que foi verificado e substitua os trechos entre colchetes.';
+ help.append(summary,example,hint);
  const tools=document.createElement('div');tools.className='bpf-note-tools';
- const paste=document.createElement('button');paste.type='button';paste.className='bpf-note-paste';paste.title='Colar texto';paste.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="5" rx="2"/><path d="M8 12h8m-8 4h5"/></svg>';paste.setAttribute('aria-label','Colar no campo de observação');
+ const paste=document.createElement('button');paste.type='button';paste.className='bpf-note-paste';paste.title='Colar texto';paste.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="5" rx="2"/><path d="M8 12h8m-8 4h5"/></svg>';
+ paste.title='Inserir exemplo completo';paste.setAttribute('aria-label','Inserir exemplo completo na observação');
  const status=document.createElement('span');status.setAttribute('role','status');
- paste.onclick=async()=>{
-  const fallback=message=>{
-   status.textContent=message+' Toque e segure no campo e escolha Colar.';
-   if(area.isConnected&&!area.disabled)area.focus();
-  };
+ const refresh=()=>{
+  const text=bpfFillExample(code,panel,getAnswer());
+  example.textContent=text||'Selecione Sim ou Não para ver o exemplo correspondente.';
+  hint.hidden=!text;paste.disabled=!text;
   status.textContent='';
-  if(area.disabled){status.textContent='Selecione Sim ou Não antes de colar.';return;}
-  const note=area.dataset.note;
-  let text;
-  try{text=await navigator.clipboard.readText();}
-  catch(error){fallback('Colagem automática indisponível.');return;}
-  if(!area.isConnected||area.disabled||area.dataset.note!==note)return;
-  if(typeof text!=='string'||!text.trim()){fallback('O Chrome não disponibilizou o texto copiado.');return;}
-  const start=area.selectionStart??area.value.length,end=area.selectionEnd??start;
-  const inserted=text.replace(/\r\n?/g,'\n');
-  const expected=area.value.slice(0,start)+inserted+area.value.slice(end);
-  area.value=expected;
-  area.setSelectionRange(start+inserted.length,start+inserted.length);
+ };
+ paste.onclick=()=>{
+  const text=bpfFillExample(code,panel,getAnswer());
+  if(!text||area.disabled)return;
+  const current=area.value;
+  const start=area.selectionStart??current.length,end=area.selectionEnd??start;
+  const append=start===end&&current.length>0;
+  const from=append?current.length:start,to=append?current.length:end;
+  const insert=(append?'\n':'')+text;
+  const next=current.slice(0,from)+insert+current.slice(to);
+  area.value=next;
+  area.setSelectionRange(from+insert.length,from+insert.length);
   area.dispatchEvent(new Event('input',{bubbles:true}));
-  if(area.value!==expected){fallback('A observação não recebeu o texto.');return;}
   area.focus();
-  status.textContent='Texto colado.';
+  status.textContent=area.value===next?'Exemplo inserido.':'';
  };
  tools.append(paste,status);parent.append(tools,help);
+ refresh();return refresh;
 }
-
 let bpfInspectorLastApplied=null,bpfInspectorLocalChecked=false;
 function bpfInspectorDecode(raw){
  if(!raw)return {};
@@ -612,12 +622,13 @@ function bpfOpenUnifiedPhrases(row,page){
   }
   const noteLabel=document.createElement('label');noteLabel.className='bpf-unified-observation';
   const area=document.createElement('textarea');area.rows=4;
-  noteLabel.append(area);card.append(noteLabel);bpfAttachNoteTools(area,card);
+  noteLabel.append(area);card.append(noteLabel);
   const selectedKey=bpfUnifiedKey(page,row,panel,'Selected');
   const answerKey=bpfUnifiedKey(page,row,panel,'Choice');
   const oldSelected=bpfUnifiedSelection(page,row,panel);
   let chosen=new Set(oldSelected);
   let answer=bpfUnifiedAnswer(page,row,panel);
+  const refreshExample=bpfAttachNoteTools(area,card,row.code,panel,()=>answer);
   if(!Object.hasOwn(values,selectedKey)||!values[selectedKey])values[selectedKey]=JSON.stringify([...chosen]);
   if(answer&&!values[answerKey])values[answerKey]=answer;
   if(((row.code==='4.10.2'&&panel.id===1)||(row.code==='4.10.3'&&panel.id>=3))&&answer&&!chosen.size){
@@ -632,6 +643,7 @@ function bpfOpenUnifiedPhrases(row,page){
    area.disabled=!answer;
    area.dataset.note=answer?bpfGroupNoteName(page,row,panel,answer):'';
    area.value=answer?String(values[area.dataset.note]||''):'';
+   refreshExample();
   };
   for(const [key,label]of [['1','Sim'],['0','Não']]){
    const line=document.createElement('label'),radio=document.createElement('input');radio.type='radio';radio.name=answerKey;radio.value=key;radio.checked=answer===key;
@@ -787,7 +799,7 @@ function bpfOpenPhrases(row,page){
     const label=document.createElement('label');label.className='bpf-note-title';label.textContent=noteHeading;
     const area=document.createElement('textarea');area.rows=4;area.dataset.note=bpfGroupNoteName(page,row,panel,answer);area.value=values[area.dataset.note]||'';
     area.oninput=()=>{values[area.dataset.note]=area.value;changed();};
-    label.append(area);box.append(label);bpfAttachNoteTools(area,box);
+    label.append(area);box.append(label);bpfAttachNoteTools(area,box,row.code,panel,()=>answer);
    }
    grid.append(box);
   }
@@ -1576,4 +1588,4 @@ async function bpfExportEditable(){
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
 }
 document.querySelector('#print').onclick=bpfExportEditable;
-</script><script src="./interface-guia-amigavel.js?v=20261107-obs-f8" defer></script></body></html>
+</script><script src="./interface-guia-amigavel.js?v=20261107-obs-f9" defer></script></body></html>
