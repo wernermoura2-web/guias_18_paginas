@@ -194,20 +194,36 @@ for(const page of BPF_PHRASES)for(const row of page.rows){
 const BPF_NOTE_INSTRUCTION={text:'Orientações de preenchimento das observações das frases',guidance:'Registre as evidências verificadas para a frase ou as opções assinaladas: documentos e registros examinados, identificação, data, local, equipamento, lote ou amostra, quando pertinentes. Para Sim (OBS), descreva o que comprova o atendimento. Para Não (NC), descreva objetivamente a condição encontrada e o requisito não atendido, com a evidência correspondente. Para Não se aplica, quando permitido, justifique a não aplicabilidade. Em grupos, identifique a opção a que cada registro se refere. Utilize a orientação ao inspetor da respectiva frase para selecionar as verificações e evidências.'};
 const bpfNoteInstructionEntry={key:'instructions:phrase-observations',page:0,code:'Observações',index:0,label:'Orientações gerais',scopes:[],appcc:'Preenchimento',original:{...BPF_NOTE_INSTRUCTION},refs:[BPF_NOTE_INSTRUCTION]};
 BPF_INSPECTOR_ENTRIES.unshift(bpfNoteInstructionEntry);BPF_INSPECTOR_BY_KEY.set(bpfNoteInstructionEntry.key,bpfNoteInstructionEntry);
-function bpfAttachNoteTools(area,parent,entries){
+function bpfAttachNoteTools(area,parent){
  const help=document.createElement('details');help.className='bpf-note-help';
  const summary=document.createElement('summary');summary.textContent='Como preencher esta observação';help.append(summary);
  const general=document.createElement('p');general.textContent=BPF_NOTE_INSTRUCTION.guidance;help.append(general);
- for(const text of [...new Set((entries||[]).map(e=>e.phrase.guidance).filter(Boolean))]){const p=document.createElement('p');p.textContent='Orientação ao inspetor: '+text;help.append(p);}
  parent.append(help);
  const tools=document.createElement('div');tools.className='bpf-note-tools';
  const paste=document.createElement('button');paste.type='button';paste.textContent='Colar';paste.setAttribute('aria-label','Colar no campo de observação');
  const status=document.createElement('span');status.setAttribute('role','status');
  paste.onclick=async()=>{
+  const fallback=message=>{
+   status.textContent=message+' Toque e segure dentro da caixa e escolha Colar, ou use Ctrl+V.';
+   if(area.isConnected&&!area.disabled)area.focus();
+  };
+  status.textContent='';
   if(area.disabled){status.textContent='Selecione Sim ou Não antes de colar.';return;}
-  try{const text=await navigator.clipboard.readText();const start=area.selectionStart??area.value.length,end=area.selectionEnd??start;
-   area.setRangeText(text,start,end,'end');area.dispatchEvent(new Event('input',{bubbles:true}));area.focus();status.textContent='Texto colado.';
-  }catch(error){area.focus();status.textContent='Toque e mantenha pressionado o campo e escolha Colar, ou use Ctrl+V.';}
+  const note=area.dataset.note;
+  let text;
+  try{text=await navigator.clipboard.readText();}
+  catch(error){fallback('O navegador não liberou a colagem pelo botão.');return;}
+  if(!area.isConnected||area.disabled||area.dataset.note!==note)return;
+  if(typeof text!=='string'||!text.trim()){fallback('O navegador não retornou texto copiado.');return;}
+  const start=area.selectionStart??area.value.length,end=area.selectionEnd??start;
+  const inserted=text.replace(/\r\n?/g,'\n');
+  const expected=area.value.slice(0,start)+inserted+area.value.slice(end);
+  area.value=expected;
+  area.setSelectionRange(start+inserted.length,start+inserted.length);
+  area.dispatchEvent(new Event('input',{bubbles:true}));
+  if(area.value!==expected){fallback('A observação não recebeu o texto.');return;}
+  area.focus();
+  status.textContent='Texto colado.';
  };
  tools.append(paste,status);parent.append(tools);
 }
@@ -596,7 +612,7 @@ function bpfOpenUnifiedPhrases(row,page){
   }
   const noteLabel=document.createElement('label');noteLabel.className='bpf-unified-observation';
   const area=document.createElement('textarea');area.rows=4;
-  noteLabel.append(area);card.append(noteLabel);bpfAttachNoteTools(area,card,panel.entries);
+  noteLabel.append(area);card.append(noteLabel);bpfAttachNoteTools(area,card);
   const selectedKey=bpfUnifiedKey(page,row,panel,'Selected');
   const answerKey=bpfUnifiedKey(page,row,panel,'Choice');
   const oldSelected=bpfUnifiedSelection(page,row,panel);
@@ -771,7 +787,7 @@ function bpfOpenPhrases(row,page){
     const label=document.createElement('label');label.className='bpf-note-title';label.textContent=noteHeading;
     const area=document.createElement('textarea');area.rows=4;area.dataset.note=bpfGroupNoteName(page,row,panel,answer);area.value=values[area.dataset.note]||'';
     area.oninput=()=>{values[area.dataset.note]=area.value;changed();};
-    label.append(area);box.append(label);bpfAttachNoteTools(area,box,panel.entries);
+    label.append(area);box.append(label);bpfAttachNoteTools(area,box);
    }
    grid.append(box);
   }
@@ -1563,4 +1579,4 @@ async function bpfExportEditable(){
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
 }
 document.querySelector('#print').onclick=bpfExportEditable;
-</script><script src="./interface-guia-amigavel.js?v=20261107-obs-f5" defer></script></body></html>
+</script><script src="./interface-guia-amigavel.js?v=20261107-obs-f6" defer></script></body></html>

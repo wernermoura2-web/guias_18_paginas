@@ -1,12 +1,12 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-menu-v34-bpf20261106-ui-amigavel-dimensoes-20261107-obs-f5';
+const CACHE='guia18-menu-v34-bpf20261106-ui-amigavel-dimensoes-20261107-obs-f6';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-192.png','./icon-bpf-512.png','./interface-guia-amigavel.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
-  const tag='<script src="./interface-guia-amigavel.js?v=20261107-obs-f5" defer></script>';
+  const tag='<script src="./interface-guia-amigavel.js?v=20261107-obs-f6" defer></script>';
   const altered=original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
