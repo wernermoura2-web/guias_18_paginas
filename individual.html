@@ -367,6 +367,9 @@ function bpfInspectorOpenReview(){
  document.body.append(dlg);document.body.classList.add('bpf-review-open');render();dlg.scrollTop=0;
 }
 function bpfInspectorInstallMenu(){
+ const button=document.createElement('button');button.type='button';button.id='bpf-review-open-button';button.textContent='Revisar frases dos inspetores';button.onclick=bpfInspectorOpenReview;
+ document.querySelector('#print').after(button);
+
  if(location.hash==='#revisar-inspetores')setTimeout(bpfInspectorOpenReview,100);
 }
 
@@ -1396,4 +1399,4 @@ async function bpfExportEditable(){
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
 }
 document.querySelector('#print').onclick=bpfExportEditable;
-</script><script src="./interface-guia-amigavel.js?v=20261107-obs-f4" defer></script></body></html>
+</script><script src="./interface-guia-amigavel.js?v=20261107-obs-f5" defer></script></body></html>
