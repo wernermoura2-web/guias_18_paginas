@@ -288,10 +288,10 @@
    phrases.forEach((f,i)=>{
     if(String(f.appcc||'').toUpperCase()!=='PCC')return;
     const ident=String(f.id||f.numero||f.indice||('F'+(i+1)));
-    const code=row.code;
+    const code=String(row.code||'').trim();
     const unique=code+':'+ident;
     if(found.some(x=>x.unique===unique))return;
-    found.push({unique,code,ident,detail:PCC_DETAIL[code]||'Controle específico do perigo significativo identificado na análise APPCC.'});
+    found.push({unique,code,ident,detail:PCC_DETAIL[code]||'Consultar a frase e a análise de perigos deste requisito para identificar o controle crítico específico.'});
    });
   }
   return found;
