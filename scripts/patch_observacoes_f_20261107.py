@@ -63,7 +63,7 @@ print('Updated both guides: core F layout, editable observation guidance and pas
 # somente a instrução geral no auxílio de preenchimento da observação.
 PASTE=r""" paste.onclick=async()=>{
   const fallback=message=>{
-   status.textContent=message+' Toque e segure dentro da caixa e escolha Colar, ou use Ctrl+V.';
+   status.textContent=message+' Toque e segure no campo e escolha Colar.';
    if(area.isConnected&&!area.disabled)area.focus();
   };
   status.textContent='';
@@ -71,9 +71,9 @@ PASTE=r""" paste.onclick=async()=>{
   const note=area.dataset.note;
   let text;
   try{text=await navigator.clipboard.readText();}
-  catch(error){fallback('O navegador não liberou a colagem pelo botão.');return;}
+  catch(error){fallback('Colagem automática indisponível.');return;}
   if(!area.isConnected||area.disabled||area.dataset.note!==note)return;
-  if(typeof text!=='string'||!text.trim()){fallback('O navegador não retornou texto copiado.');return;}
+  if(typeof text!=='string'||!text.trim()){fallback('O Chrome não disponibilizou o texto copiado.');return;}
   const start=area.selectionStart??area.value.length,end=area.selectionEnd??start;
   const inserted=text.replace(/\r\n?/g,'\n');
   const expected=area.value.slice(0,start)+inserted+area.value.slice(end);
@@ -116,3 +116,27 @@ for name in ['individual.html','equipe.html']:
  p.write_text(s)
 for name in ['individual.html','equipe.html','index.html','sw-guia18.js']:
  p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f6','20261107-obs-f7'))
+
+# Área de toque ampla e ícone legível, sem rótulo visual repetido.
+ICON_STYLE='''<style id="bpf-note-paste-icon-style">
+@media screen{
+#bpf-editor .bpf-note-tools{gap:10px;margin:8px 0 10px}
+#bpf-editor .bpf-note-tools .bpf-note-paste{display:inline-grid;place-items:center;flex:0 0 auto;width:44px;height:44px;box-sizing:border-box;padding:0;border:1px solid #9dbfce;border-radius:10px;background:#eef7fb;color:#0e5473;cursor:pointer}
+#bpf-editor .bpf-note-paste svg{display:block;width:22px;height:22px;pointer-events:none}
+#bpf-editor .bpf-note-tools .bpf-note-paste:hover{background:#deeff7;border-color:#5996b0}
+#bpf-editor .bpf-note-tools .bpf-note-paste:active{background:#cae5f1}
+#bpf-editor .bpf-note-paste:focus-visible{outline:2px solid #0e5473;outline-offset:2px}
+#bpf-editor .bpf-note-tools span{flex:1 1 180px;line-height:1.35}
+#bpf-editor .bpf-note-tools span:empty{display:none}
+}
+</style>'''
+ICON_JS="""paste.className='bpf-note-paste';paste.title='Colar texto';paste.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M8 5H6a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="8" y="2" width="8" height="5" rx="2"/><path d="M8 12h8m-8 4h5"/></svg>';"""
+for name in ['individual.html','equipe.html']:
+ p=ROOT/name;s=p.read_text()
+ if 'bpf-note-paste-icon-style' not in s:
+  assert "paste.textContent='Colar';" in s
+  s=s.replace('</head>',ICON_STYLE+'</head>',1).replace("paste.textContent='Colar';",ICON_JS,1)
+  s=s.replace(' parent.append(help);','',1).replace(' tools.append(paste,status);parent.append(tools);',' tools.append(paste,status);parent.append(tools,help);',1)
+ p.write_text(s)
+for name in ['individual.html','equipe.html','index.html','sw-guia18.js']:
+ p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f7','20261107-obs-f8'))
