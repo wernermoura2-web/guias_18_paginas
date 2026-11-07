@@ -157,3 +157,60 @@ for name in ['individual.html','equipe.html']:
  path.write_text(s.replace(RELEASE,FINAL))
 for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
  path=ROOT/name;path.write_text(path.read_text().replace(RELEASE,FINAL))
+
+PHOTO_CONTROLS_CSS='''<style id="bpf-photo-controls-style">
+@media screen{
+#pages .bpf-gallery-picture{padding:0;overflow:hidden}
+#pages .bpf-gallery-picture img{position:absolute;inset:0;width:100%;height:100%;max-width:none;max-height:none;object-fit:contain;object-position:center}
+#pages .bpf-gallery-control{z-index:4;background:transparent!important;border:0!important;box-shadow:none!important;color:#132d3f;padding:0;text-align:right;font:700 clamp(10px,1.52cqw,14px)/1.1 Arial,sans-serif;text-shadow:0 0 2px white,0 0 4px white,-1px -1px 0 white,1px 1px 0 white;cursor:pointer}
+#pages .bpf-gallery-remove{text-align:left}
+#pages .bpf-gallery-control:focus-visible{outline:2px solid #176080;outline-offset:-2px}
+#pages .bpf-gallery-control[hidden]{display:none!important}
+}
+@media print{.bpf-gallery-control{display:none!important}}
+</style>'''
+PHOTO_CONTROL_JS=r"""
+function bpfRefreshGalleryControls(){
+ for(const button of host.querySelectorAll('[data-bpf-gallery-slot]'))button.hidden=!images[button.dataset.bpfGallerySlot];
+}
+function bpfRemoveGalleryPhoto(name){
+ if(!images[name])return;
+ delete images[name];
+ values['BPF_PhotoProcess_'+name]='';values['BPF_PhotoLocation_'+name]='';
+ bpfSortPhotos(values,images);changed();sync();
+}
+"""
+for name in ['individual.html','equipe.html']:
+ path=ROOT/name;s=path.read_text()
+ if 'id="bpf-photo-controls-style"' not in s:
+  s=s.replace('</head>',PHOTO_CONTROLS_CSS+'</head>',1)
+  needle="el.textContent='Adicionar imagem';el.dataset.image=w.name;"
+  assert s.count(needle)==1
+  s=s.replace(needle,needle+"if(w.page===15||w.page===16)el.classList.add('bpf-gallery-picture');",1)
+  old="el.append(img);const span=document.createElement('span');span.textContent='Trocar imagem';el.append(span)"
+  s=s.replace(old,"el.append(img);if(!el.classList.contains('bpf-gallery-picture')){const span=document.createElement('span');span.textContent='Trocar imagem';el.append(span)}",1)
+  needle=" document.querySelector('#diagnostic').textContent="
+  assert s.count(needle)==1
+  s=s.replace(needle,' bpfRefreshGalleryControls();\n'+needle,1)
+  s=s.replace('function sync(){',PHOTO_CONTROL_JS+'\nfunction sync(){',1)
+  s=s.replace(' if(!images[name])return;button.disabled=true;', ' const original=images[name];if(!original)return;button.disabled=true;',1)
+  s=s.replace('image.src=images[name];await image.decode();','image.src=original;await image.decode();if(images[name]!==original)return;',1)
+  old=" const [x1,y1,x2,y2]=widget.rect;place(button,{...widget,rect:[x2-64,y2-17,x2-2,y2-2]});host.children[widget.page].append(button);"
+  new=""" const [x1,y1,x2,y2]=widget.rect;
+ const sheet=host.children[widget.page];
+ if(widget.page===15||widget.page===16){
+  button.classList.add('bpf-gallery-control');button.dataset.bpfGallerySlot=widget.name;
+  place(button,{...widget,rect:[x2-82,y2-25,x2-4,y2-2]});
+  const remove=document.createElement('button');remove.type='button';remove.className='overlay bpf-gallery-control bpf-gallery-remove';remove.textContent='Retirar foto';
+  remove.setAttribute('aria-label','Retirar foto '+widget.name);remove.dataset.bpfGallerySlot=widget.name;remove.onclick=()=>bpfRemoveGalleryPhoto(widget.name);
+  place(remove,{...widget,rect:[x1+4,y1+2,x1+88,y1+25]});
+  sheet.append(remove);
+ }else place(button,{...widget,rect:[x2-64,y2-17,x2-2,y2-2]});
+ sheet.append(button);"""
+  assert s.count(old)==1
+  s=s.replace(old,new,1)
+  needle="document.head.append(photoStyle);"
+  s=s.replace(needle,needle+'bpfRefreshGalleryControls();',1)
+ path.write_text(s.replace(FINAL,'20261107-fotos-f15'))
+for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ path=ROOT/name;path.write_text(path.read_text().replace(FINAL,'20261107-fotos-f15'))
