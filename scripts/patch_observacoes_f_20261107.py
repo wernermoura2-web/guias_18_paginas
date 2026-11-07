@@ -461,3 +461,57 @@ for name in ['individual.html','equipe.html']:
  p.write_text(s.replace('20261107-rotulos-f17','20261107-appcc-f18'))
 for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
  p=ROOT/name;p.write_text(p.read_text().replace('20261107-rotulos-f17','20261107-appcc-f18'))
+
+NC_DEFINITIONS_JS="""const BPF_NC_DEFINITIONS={
+ PCC:{text:'Ponto Crítico de Controle — etapa em que o controle é essencial para prevenir ou eliminar um perigo significativo à segurança do alimento, ou reduzi-lo a um nível aceitável, mediante limites críticos e monitoramento.',guidance:''},
+ PPRO:{text:'Programa de Pré-Requisito Operacional — medida ou conjunto de medidas para controlar um perigo significativo, acompanhadas por critérios de ação e monitoramento.',guidance:''},
+ PC:{text:'Ponto de Controle — etapa ou condição em que se verifica uma medida de controle, conforme a classificação adotada no Guia BPF.',guidance:''},
+ POP:{text:'Procedimento Operacional Padronizado — instrução escrita que descreve, em sequência, como realizar uma operação de rotina.',guidance:''},
+ PPR:{text:'Programa de Pré-Requisitos — condições e práticas básicas que mantêm um ambiente higiênico adequado à produção segura de alimentos.',guidance:''}
+};
+"""
+NC_EDIT_ENTRIES="""const BPF_NC_DEFINITION_ENTRIES=Object.entries(BPF_NC_DEFINITIONS).map(([code,definition])=>{
+ const entry={key:'definitions:nc:'+code,page:0,code,label:'Definição',scopes:[],original:{...definition},refs:[definition]};
+ BPF_INSPECTOR_ENTRIES.push(entry);BPF_INSPECTOR_BY_KEY.set(entry.key,entry);
+ return entry;
+});
+"""
+NC_EDIT_RENDER="""  definitions.replaceChildren();
+  const heading=document.createElement('h3');heading.textContent='Definições nas Observações Gerais';definitions.append(heading);
+  const instruction=document.createElement('p');instruction.className='review-help';instruction.textContent='Estes textos aparecem no início dos blocos de não conformidades. Clique em Salvar revisões para aplicar.';definitions.append(instruction);
+  for(const entry of BPF_NC_DEFINITION_ENTRIES){
+   const label=document.createElement('label');label.className='review-label';label.textContent=entry.code+' — Definição';
+   const area=document.createElement('textarea');area.rows=2;area.value=actual(entry).text;area.maxLength=1000;
+   area.setAttribute('aria-label','Definição de '+entry.code);
+   area.oninput=()=>update(entry,'text',area.value);
+   label.append(area);definitions.append(label);
+   const restore=document.createElement('button');restore.type='button';restore.className='secondary';restore.textContent='Restaurar '+entry.code;
+   restore.onclick=()=>{delete pending[entry.key];area.value=entry.original.text;updateCount();};
+   definitions.append(restore);
+  }
+"""
+for name in ['individual.html','equipe.html']:
+ p=ROOT/name;s=p.read_text()
+ if 'const BPF_NC_DEFINITIONS=' not in s:
+  old='function bpfSyncNCLists(){'
+  assert s.count(old)==1
+  s=s.replace(old,NC_DEFINITIONS_JS+'\n'+old,1)
+  old="group.title+' — Total: '+group.lines.length+'\\n'+(group.lines.length?"
+  assert s.count(old)==1
+  s=s.replace(old,"group.title+' — Total: '+group.lines.length+'\\n'+group.cats.map(code=>code+' — '+BPF_NC_DEFINITIONS[code].text.trim()).join('\\n')+'\\n\\n'+(group.lines.length?",1)
+  old='BPF_INSPECTOR_ENTRIES.unshift(bpfNoteInstructionEntry);BPF_INSPECTOR_BY_KEY.set(bpfNoteInstructionEntry.key,bpfNoteInstructionEntry);'
+  assert s.count(old)==1
+  s=s.replace(old,old+'\n'+NC_EDIT_ENTRIES,1)
+  old="  if(change.text.length>10000||change.guidance.length>10000)continue;"
+  s=s.replace(old,old+"\n  if(key.startsWith('definitions:nc:')&&(!change.text.trim()||change.text.length>1000))continue;",1)
+  old=" const filters=document.createElement('div');filters.className='review-filter';dlg.append(filters);"
+  assert s.count(old)==1
+  s=s.replace(old," const definitions=document.createElement('section');definitions.className='review-card';dlg.append(definitions);\n"+old,1)
+  old=' function render(){\n  list.replaceChildren();'
+  assert s.count(old)==1
+  s=s.replace(old,' function render(){\n'+NC_EDIT_RENDER+'  list.replaceChildren();',1)
+  s=s.replace('const filtered=BPF_INSPECTOR_ENTRIES.filter(e=>','const filtered=BPF_INSPECTOR_ENTRIES.filter(e=>!BPF_NC_DEFINITION_ENTRIES.includes(e)&&',1)
+  s=s.replace("+' frase(s) revisada(s) de '+BPF_INSPECTOR_ENTRIES.length","+' revisão(ões) de '+BPF_INSPECTOR_ENTRIES.length",1)
+ p.write_text(s.replace('20261107-appcc-f18','20261107-definicoes-f19'))
+for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ p=ROOT/name;p.write_text(p.read_text().replace('20261107-appcc-f18','20261107-definicoes-f19'))
