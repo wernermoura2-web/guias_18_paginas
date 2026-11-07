@@ -1,0 +1,180 @@
+name: Atualizar listas do plano de amostragem no Guia BPF
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publicar-f4104-plano.yml']
+permissions:
+  contents: write
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar e testar a atualização
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          
+          for name in ("equipe.html", "individual.html"):
+              path = Path(name)
+              with path.open(newline="") as f:
+                  html = f.read()
+          
+              def replace(old, new):
+                  global html
+                  assert html.count(old) == 1, (name, old[:120])
+                  html = html.replace(old, new, 1)
+          
+              replace(
+                  "  if(row.code==='4.6.10'&&i===2){part.storageId=3;part.exampleId=2;}",
+                  """  if(row.code==='4.10.4')part.checklist=i===0
+             ?['IN 161/22 da ANVISA','Res. RDC 717/22 da ANVISA','Portaria SUVISA 4325/2025','Outros']
+             :['Reanálise','Parada do Envase','Higienização','Recolhimento','Quarentena','Aprovação','Outros'];
+            if(row.code==='4.6.10'&&i===2){part.storageId=3;part.exampleId=2;}""",
+              )
+              replace(
+                  """function bpfInitGroupFields(data){
+           for(const page of BPF_PHRASES)for(const row of page.rows)for(const panel of bpfPanels(page,row)){""",
+                  """function bpfInitGroupFields(data){
+           for(const page of BPF_PHRASES)for(const row of page.rows)for(const panel of bpfPanels(page,row)){
+            if(panel.checklist)for(const [kind,label] of [['Selected','opções registradas'],['Other','Outros']]){
+             const name=bpfUnifiedKey(page,row,panel,kind);
+             data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' '+panel.label+' — '+label,options:[],calc:'',phrasePage:page.page};
+            }""",
+              )
+              replace(
+                  """function bpfUnifiedOtherKey(page,row,panel){return bpfUnifiedKey(page,row,panel,'Other');}""",
+                  r"""function bpfUnifiedOtherKey(page,row,panel){return bpfUnifiedKey(page,row,panel,'Other');}
+          function bpfChecklistSelected(page,row,panel){
+           try{
+            const saved=JSON.parse(values[bpfUnifiedKey(page,row,panel,'Selected')]||'[]');
+            return Array.isArray(saved)?panel.checklist.filter(option=>saved.includes(option)):[];
+           }catch(_){return [];}
+          }
+          function bpfChecklistLabels(page,row,panel){
+           const other=String(values[bpfUnifiedOtherKey(page,row,panel)]||'').replace(/\s+/g,' ').trim();
+           return bpfChecklistSelected(page,row,panel).map(option=>option==='Outros'&&other?'Outros: '+other:option);
+          }""",
+              )
+              replace(
+                  """ for(const panel of bpfPanels(page,row)){
+            for(const [answer,label] of [['1','Sim'],['0','Não'],['2','Não se aplica']]){""",
+                  """ for(const panel of bpfPanels(page,row)){
+            if(panel.checklist){
+             const options=bpfChecklistLabels(page,row,panel);
+             if(options.length)entries.push(panel.label+' — '+options.join(', '));
+            }
+            for(const [answer,label] of [['1','Sim'],['0','Não'],['2','Não se aplica']]){""",
+              )
+              replace(
+                  """  if(!entry){content.append(card);continue;}
+            const grid=document.createElement('div');grid.className='bpf-answer-grid';card.append(grid);""",
+                  """  if(panel.checklist){
+             const title=panel.id===0?'Referências do plano de amostragem':'Medidas registradas';
+             const list=document.createElement('fieldset');list.className='bpf-answer-box';
+             const heading=document.createElement('legend');heading.textContent=title;list.append(heading);
+             const selectedKey=bpfUnifiedKey(page,row,panel,'Selected'),otherKey=bpfUnifiedOtherKey(page,row,panel);
+             const selected=new Set(bpfChecklistSelected(page,row,panel));
+             const other=document.createElement('input');other.type='text';other.dataset.checklistOther=otherKey;
+             other.placeholder=panel.id===0?'Identifique as outras referências':'Descreva as outras medidas';
+             other.setAttribute('aria-label',other.placeholder);
+             other.style.cssText='width:100%;margin-top:6px;padding:8px;font:inherit';
+             other.value=String(values[otherKey]||'');other.hidden=other.disabled=!selected.has('Outros');
+             other.oninput=()=>{values[otherKey]=other.value;changed();};
+             for(const option of panel.checklist){
+              const label=document.createElement('label');label.className='bpf-answer-item';
+              const check=document.createElement('input');check.type='checkbox';check.checked=selected.has(option);
+              check.onchange=()=>{
+               if(check.checked)selected.add(option);else selected.delete(option);
+               values[selectedKey]=JSON.stringify([...selected]);
+               other.hidden=other.disabled=!selected.has('Outros');
+               if(other.hidden)values[otherKey]=other.value='';
+               changed();
+              };
+              const text=document.createElement('span');text.textContent=option;label.append(check,text);list.append(label);
+             }
+             const previous=bpfAnswerLabel(values[entry.name]);
+             if(previous){
+              const history=document.createElement('p');history.className='bpf-guidance';
+              history.textContent='Avaliação anterior deste F: '+previous+'.';card.append(history);
+             }
+             list.append(other);card.append(list);content.append(card);continue;
+            }
+            if(!entry){content.append(card);continue;}
+            const grid=document.createElement('div');grid.className='bpf-answer-grid';card.append(grid);""",
+              )
+              replace("  }else if(row.code!=='4.10.2'){", "  }else if(row.code!=='4.10.2'&&row.code!=='4.10.4'){")
+              replace(
+                  """  for(const panel of panels){
+             const noSelected=bpfPanelRecords(row,panel).some(e=>values[e.name]==='0');""",
+                  """  for(const panel of panels){
+             if(panel.checklist){
+              const key=bpfUnifiedOtherKey(page,row,panel);
+              if(bpfChecklistSelected(page,row,panel).includes('Outros')&&!String(values[key]||'').trim()){
+               content.querySelector('input[data-checklist-other="'+key+'"]')?.focus();
+               alert('Item '+row.code+' — '+panel.label+': preencha o campo Outros.');return false;
+              }
+              continue;
+             }
+             const noSelected=bpfPanelRecords(row,panel).some(e=>values[e.name]==='0');""",
+              )
+              replace(
+                  """  for(const panel of panels)for(const e of bpfPanelRecords(row,panel)){
+             const v=values[e.name];""",
+                  """  for(const panel of panels)for(const e of panel.checklist?[]:bpfPanelRecords(row,panel)){
+             const v=values[e.name];""",
+              )
+              replace(
+                  """  const groupedPanels=bpfPanels(page,row).filter(panel=>bpfSplitPanel(row,panel));""",
+                  """  const panels=bpfPanels(page,row);
+            for(const panel of panels.filter(panel=>panel.checklist)){
+             const checklist=bpfChecklistLabels(page,row,panel);
+             if(checklist.length)result.push({page,row,panel,checklist});
+            }
+            const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));""",
+              )
+              replace(
+                  """ for(const item of rows){
+            if(item.grouped){""",
+                  """ for(const item of rows){
+            if(item.checklist){
+             ensure(35);
+             text('Página '+(item.page.page+1)+' | Item '+item.row.code+' | '+item.panel.label,9,true);
+             for(const option of item.checklist)text('- '+option,8.5);
+             continue;
+            }
+            if(item.grouped){""",
+              )
+          
+              data = json.JSONDecoder().raw_decode(html.split("const GUIDE_DATA=", 1)[1])[0]
+              percent = data["fields"]["fill_10_7"]
+              old = json.dumps(percent, ensure_ascii=False, separators=(",", ":"))
+              assert 'var g4 = +this.getField("Group203").value;' in percent["calc"]
+              percent["calc"] = percent["calc"].replace(
+                  'var g4 = +this.getField("Group203").value;',
+                  'var respostaPlano = String(this.getField("Group203").value);\r\nvar planoAvaliado = respostaPlano === "0" || respostaPlano === "1";\r\nvar g4 = planoAvaliado ? Number(respostaPlano) : 0;',
+              ).replace(
+                  '// Conta quantos campos foram respondidos',
+                  'if (!planoAvaliado) total--;\r\n\r\n// Conta quantos campos foram respondidos',
+              )
+              replace(old, json.dumps(percent, ensure_ascii=False, separators=(",", ":")))
+              with path.open("w", newline="") as f:
+                  f.write(html)
+          
+          for name in ("index.html", "sw-guia18.js"):
+              path = Path(name)
+              source = path.read_text()
+              old = "20261107-controle-f4103-v45"
+              assert source.count(old) == 1, name
+              path.write_text(source.replace(old, "20261107-plano-f4104-v46"))
+          PY
+          git diff --check
+          node scripts/test_pcc_alto_risco_20261107.cjs
+      - name: Enviar atualização ao repositório
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add equipe.html individual.html index.html sw-guia18.js
+          git commit -m 'Registrar referências e medidas no item 4.10.4'
+          git push origin HEAD:main
