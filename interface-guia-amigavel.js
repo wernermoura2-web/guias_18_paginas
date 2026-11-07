@@ -379,6 +379,6 @@
   if(window.Guia)window.Guia.recalc=corrected;
  }
  installGeneralRiskCount();
- document.addEventListener('click',e=>{if(e.target.closest?.('#print'))installPdfPatch();},true);
+ // O PDF mantém os campos originais de observação, sem sobreposição de texto PCC.
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
