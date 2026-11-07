@@ -91,6 +91,7 @@ for name in ['individual.html','equipe.html']:
  s=s.replace('bpfAttachNoteTools(area,card,panel.entries)','bpfAttachNoteTools(area,card)').replace('bpfAttachNoteTools(area,box,panel.entries)','bpfAttachNoteTools(area,box)')
  prefix=' for(const text of [...new Set((entries||[]).map(e=>e.phrase.guidance)'
  s=''.join(line for line in s.splitlines(keepends=True) if not line.startswith(prefix))
+ if 'const BPF_FILL_EXAMPLES=' in s:continue
  start=s.index(' paste.onclick=async()=>{',s.index('function bpfAttachNoteTools'))
  end=s.index(' tools.append(paste,status);',start)
  s=s[:start]+PASTE+s[end:]
@@ -140,3 +141,117 @@ for name in ['individual.html','equipe.html']:
  p.write_text(s)
 for name in ['individual.html','equipe.html','index.html','sw-guia18.js']:
  p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f7','20261107-obs-f8'))
+
+# Exemplos adaptados dos guias BPF preenchidos; campos variáveis são marcados
+# para revisão no local. Para itens sem registro útil, modelos do requisito.
+EXAMPLES = {
+ '4.1.1/1': ['Na captação [identificação], a pavimentação ao redor da casa de proteção estava íntegra e a drenagem funcionava, sem empoçamento nos pontos vistoriados.', 'Na captação [identificação], observou-se [trinca na pavimentação ou falha na drenagem] em [local], com [evidência].'],
+ '4.1.1/2': ['O entorno da captação [identificação] estava limpo e sem focos de insalubridade nos pontos vistoriados.', 'No entorno da captação [identificação], observou-se [sujidade ou foco de insalubridade] em [local].'],
+ '4.1.2/1': ['A casa de proteção da captação [identificação] estava limpa, com a porta vedada e as aberturas protegidas.', 'Na casa de proteção da captação [identificação], não havia borracha de vedação no entorno da porta [local].'],
+ '4.1.2/2': ['Foi identificada torneira para coleta de amostra no início da canalização da captação [identificação].', 'Não foi identificada torneira para coleta de amostra no início da canalização da captação [identificação].'],
+ '4.1.3/1': ['A limpeza da casa é realizada [frequência], e a do poço [frequência], com [produto e concentração], conforme [POP ou registro].', 'A limpeza e a desinfecção de [instalação ou equipamento] não foram comprovadas para o período [período].'],
+ '4.1.3/2': ['Foi apresentado certificado de capacitação do funcionário [função], emitido em [data], com carga horária de [horas].', 'Não foi apresentado comprovante de capacitação para quem realiza a higienização da captação [identificação].'],
+ '4.1.3/3': ['Foram apresentados registros de limpeza e desinfecção da captação [identificação], com data e responsável pela execução.', 'Não foram apresentados os registros de limpeza e desinfecção da captação [identificação] referentes a [período].'],
+ '4.2.2/1': ['Foi apresentada documentação de adequação ao contato com alimentos para [material e trecho da canalização], referência [documento].', 'Não foi apresentado certificado de grau alimentício da tubulação de [material] no trecho [local]. A documentação apresentada cobre apenas [componente].'],
+ '4.2.2/2': ['As superfícies internas verificadas em [trecho] estavam íntegras e sem irregularidades visíveis.', 'No trecho [local], foi observada [irregularidade, corrosão ou dano] na superfície em contato com a água.'],
+ '4.2.7/1': ['A higienização de [trecho] foi demonstrada conforme [procedimento], com [método e frequência].', 'A higienização de [trecho] foi realizada sem [etapa ou condição prevista], conforme [evidência].'],
+ '4.2.7/2': ['Foram apresentadas planilhas com os registros das operações de higienização da canalização referentes a [período].', 'Não foram apresentados registros de higienização da canalização [identificação] no período [período].'],
+ '4.2.8/1': ['O desmonte do trecho [identificação] é previsto a cada [frequência] e consta no registro de [data].', 'Não foi realizado o desmonte do trecho [identificação], embora aplicável, conforme [registro ou relato].'],
+ '4.2.9': ['Foi apresentado o POP de higienização da canalização [código e revisão], com [método e parâmetros verificados].', 'Não foi apresentado POP de higienização para a canalização [identificação], nem registros da operação.'],
+ '4.3.2/1': ['O reservatório [identificação] é de aço inoxidável [especificação], conforme [documento verificado].', 'Não foi apresentada comprovação de adequação ao contato com alimentos para [superfície] do reservatório [identificação].'],
+ '4.3.2/2': ['O reservatório [identificação] apresentava superfícies íntegras nos pontos vistoriados.', 'Foi observado vazamento na união da tubulação de saída do reservatório [identificação], no trecho para [destino].'],
+ '4.3.3': ['No reservatório [identificação], verificou-se [dispositivo selecionado] em [local], conforme [inspeção visual ou registro].', 'No reservatório [identificação], foi constatado [dispositivo ausente ou irregular]. Evidência: [descrição ou documento].'],
+ '4.3.4': ['A inspeção visual do reservatório [identificação] foi registrada em [data], conforme POP [código].', 'Não foi apresentado registro da inspeção visual do reservatório [identificação] no intervalo previsto em [POP].'],
+ '4.3.5/1': ['O reservatório [identificação] é higienizado a cada [frequência], com [método, produto e tempo de contato].', 'A frequência de higienização observada para o reservatório [identificação] foi de [frequência], embora o procedimento preveja [frequência].'],
+ '4.3.5/2': ['Foram apresentados registros individualizados da higienização do reservatório [identificação] referentes a [período].', 'Os registros indicam higienização a cada [intervalo], mas a execução verificada ocorreu a cada [intervalo].'],
+ '4.3.6': ['O POP de higienização do reservatório [código] estava disponível para consulta no local [identificação].', 'O POP [código] não estava disponível em [local], conforme verificado durante a inspeção.'],
+ '4.5.2': ['A recepção dos garrafões retornados ocorre em [local], separado da recepção de [demais insumos].', 'A recepção de garrafões retornados e de [insumo] ocorre no mesmo espaço [local], conforme constatado na inspeção.'],
+ '4.5.3': ['A inspeção de recebimento de [insumo] foi registrada em [data], com identificação do lote e critérios de aceitação.', 'Foi apresentada ficha de estoque de [insumo], mas não o registro de inspeção na recepção do lote [identificação].'],
+ '4.5.4': ['Os garrafões foram avaliados individualmente no recebimento; os que apresentavam [defeito] foram segregados.', 'No recebimento, foi observado garrafão com [defeito] sem segregação, em [local].'],
+ '4.5.6': ['O destino do insumo reprovado [lote] foi registrado em [documento], datado e assinado pelo responsável.', 'Foi informada a devolução do insumo reprovado [lote], mas não foi apresentado registro da devolução.'],
+ '4.5.8': ['Foi apresentado o POP de recepção [código], que define a destinação de [embalagem reprovada].', 'O POP de recepção [código] não descreve o destino final de [embalagem ou insumo reprovado].'],
+ '4.6.4': ['Antes da higienização automática, foi observada a pré-lavagem dos garrafões, com remoção de [sujidade] por [método].', 'Foram observados garrafões com [sujidade] encaminhados à higienização automática sem pré-lavagem.'],
+ '4.6.12': ['Foi apresentado o POP de higienização de embalagens [código], com [parâmetros verificados] e registros de execução.', 'O POP de higienização de embalagens [código] não descrevia [etapa ou parâmetro observado].'],
+ '4.7.2/2': ['A sala de envase estava limpa e conservada nos pontos vistoriados. O POP de higienização [código] foi apresentado.', 'Na sala de envase, observou-se [sujidade ou dano] em [superfície e local], conforme [evidência].'],
+ '4.7.5/1': ['O acesso à sala de envase ocorre pela antesala [identificação]. A porta fechava e ajustava ao batente.', 'A mola da porta da antesala estava [condição] e a porta não ajustava ao batente, conforme verificado em [local].'],
+ '4.7.5/2': ['A torneira do lavatório exclusivo da antesala foi acionada por pedal, sem contato manual, durante o teste.', 'A torneira do lavatório da antesala exigia acionamento manual ou apresentou [falha observada].'],
+ '4.7.5/5': ['A higiene das mãos foi observada no lavatório exclusivo da antesala, conforme o POP [código].', 'O POP de higiene das mãos foi apresentado, mas verificou-se [etapa não executada] na antesala, em [momento].'],
+ '4.10.1': ['Foram verificados registros de pH, condutividade e temperatura na fonte [identificação] referentes a [período].', 'Não foram apresentados registros de [parâmetro] na fonte [identificação] para o período [período].'],
+ '4.10.2/2': ['Foi apresentado contrato vigente de análises terceirizadas [referência], com escopo e condições de coleta e transporte.', 'Foram apresentados comprovantes de serviços laboratoriais, mas não o contrato vigente de terceirização das análises.'],
+ '4.10.3/1': ['O laudo [número e data] do lote [identificação] registrou [resultado] para [parâmetro verificado].', 'O laudo [número e data] do lote [identificação] registrou [resultado não conforme] para [parâmetro].'],
+ '4.10.3/2': ['Foram apresentados resultados semanais de [parâmetro] para a captação [identificação], no período [período].', 'Não foram apresentados resultados semanais de [parâmetro] para a captação [identificação] no período [período].'],
+ '4.10.3/3': ['Foram apresentados resultados semanais de [parâmetro] para o reservatório [identificação], no período [período].', 'Não foram apresentados resultados semanais de [parâmetro] para o reservatório [identificação] no período [período].'],
+ '4.10.3/4': ['Foi apresentado laudo físico-químico anual [número e data] do produto [identificação], com [parâmetros verificados].', 'Não foi apresentado laudo físico-químico anual para o produto [identificação] referente a [período].'],
+ '4.10.3/5': ['O laudo [número] documenta cinco amostras do mesmo lote [identificação], encaminhadas ao laboratório terceirizado em [mês].', 'Para [mês], o laudo [número] não comprovou a análise terceirizada de cinco amostras de um mesmo lote.'],
+ '4.10.3/6': ['Os registros de [período] comprovam cinco unidades analisadas do lote [identificação], abrangendo início, meio e término do envase.', 'Para o lote [identificação], o registro mostrou [quantidade] unidades analisadas ou ausência de amostras de [etapa do envase].'],
+ '4.10.5': ['Foi apresentado o laudo [número e data] do produto [identificação] e a documentação da fonte correspondente [referência].', 'Não foi apresentado [laudo do produto ou laudo da fonte] para [identificação].'],
+ '4.10.6': ['Foi apresentado registro da ação corretiva adotada em [data] para o desvio [descrição], com [evidência de execução].', 'Foi constatado o desvio [descrição], mas não foram apresentadas evidências das medidas corretivas adotadas.'],
+ '4.11.2': ['A responsabilidade foi comprovada por [documento de designação ou habilitação], vigente em [data].', 'Não foi apresentada comprovação de [designação ou habilitação profissional] para [atividade selecionada].'],
+ '4.11.4': ['Foram apresentados certificados de capacitação dos manipuladores, com [data, carga horária e conteúdo].', 'Não foram apresentados os certificados de capacitação de [equipe ou função] referentes a [período].'],
+}
+import json
+for code, number in {'4.2.9':1,'4.3.4':1,'4.3.6':2,'4.5.3':1,'4.5.6':2,'4.5.8':2,'4.6.12':1,'4.10.5':2,'4.10.6':2}.items():
+ EXAMPLES[f'{code}/{number}']=EXAMPLES.pop(code)
+
+EXAMPLE_JS=r"""
+const BPF_FILL_EXAMPLES=__EXAMPLES__;
+function bpfFillExample(code,panel,answer){
+ if(answer!=='1'&&answer!=='0')return '';
+ const specific=BPF_FILL_EXAMPLES[code+'/'+(panel.id+1)]||BPF_FILL_EXAMPLES[code];
+ if(specific)return specific[answer==='1'?0:1];
+ const label=code+' — '+panel.label.split(' — ')[0];
+ if(answer==='1')return 'No item '+label+', verificou-se [condição observada] em [local, equipamento ou lote]. O atendimento foi comprovado por [evidência, identificação e data].';
+ return 'No item '+label+', constatou-se [requisito não atendido] em [local, equipamento ou lote]. Evidência: [descreva o fato observado ou o documento que demonstra o desvio].';
+}
+function bpfAttachNoteTools(area,parent,code,panel,getAnswer){
+ const help=document.createElement('details');help.className='bpf-note-help';
+ const summary=document.createElement('summary');summary.textContent='Exemplo de preenchimento';
+ const example=document.createElement('p');
+ const hint=document.createElement('small');hint.textContent='Adapte o exemplo ao que foi verificado e substitua os trechos entre colchetes.';
+ help.append(summary,example,hint);
+ const tools=document.createElement('div');tools.className='bpf-note-tools';
+ const paste=document.createElement('button');paste.type='button';__ICON__
+ paste.title='Inserir exemplo completo';paste.setAttribute('aria-label','Inserir exemplo completo na observação');
+ const status=document.createElement('span');status.setAttribute('role','status');
+ const refresh=()=>{
+  const text=bpfFillExample(code,panel,getAnswer());
+  example.textContent=text||'Selecione Sim ou Não para ver o exemplo correspondente.';
+  hint.hidden=!text;paste.disabled=!text;
+  status.textContent='';
+ };
+ paste.onclick=()=>{
+  const text=bpfFillExample(code,panel,getAnswer());
+  if(!text||area.disabled)return;
+  const current=area.value;
+  const start=area.selectionStart??current.length,end=area.selectionEnd??start;
+  const append=start===end&&current.length>0;
+  const from=append?current.length:start,to=append?current.length:end;
+  const insert=(append?'\n':'')+text;
+  const next=current.slice(0,from)+insert+current.slice(to);
+  area.value=next;
+  area.setSelectionRange(from+insert.length,from+insert.length);
+  area.dispatchEvent(new Event('input',{bubbles:true}));
+  area.focus();
+  status.textContent=area.value===next?'Exemplo inserido.':'';
+ };
+ tools.append(paste,status);parent.append(tools,help);
+ refresh();return refresh;
+}
+""".replace('__EXAMPLES__',json.dumps(EXAMPLES,ensure_ascii=False)).replace('__ICON__',ICON_JS)
+for name in ['individual.html','equipe.html']:
+ p=ROOT/name;s=p.read_text()
+ if 'const BPF_FILL_EXAMPLES=' not in s:
+  start=s.index('function bpfAttachNoteTools(')
+  end=s.index('let bpfInspectorLastApplied',start)
+  s=s[:start]+EXAMPLE_JS+s[end:]
+  s=s.replace('noteLabel.append(area);card.append(noteLabel);bpfAttachNoteTools(area,card);','noteLabel.append(area);card.append(noteLabel);',1)
+  needle='let answer=bpfUnifiedAnswer(page,row,panel);'
+  assert needle in s
+  s=s.replace(needle,needle+'\n  const refreshExample=bpfAttachNoteTools(area,card,row.code,panel,()=>answer);',1)
+  needle="area.value=answer?String(values[area.dataset.note]||''):'';"
+  assert needle in s
+  s=s.replace(needle,needle+'\n   refreshExample();',1)
+  s=s.replace('bpfAttachNoteTools(area,box);','bpfAttachNoteTools(area,box,row.code,panel,()=>answer);',1)
+ p.write_text(s)
+for name in ['individual.html','equipe.html','index.html','sw-guia18.js']:
+ p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f8','20261107-obs-f9'))
