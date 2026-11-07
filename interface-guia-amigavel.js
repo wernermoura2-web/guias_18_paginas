@@ -286,6 +286,28 @@
   newLoad.__bpfPccTwoHazards=true;
   lib.PDFDocument.load=newLoad;
  }
+ function installGeneralRiskCount(){
+  // Classificação do estabelecimento: mantém a contagem aprovada dos oito processos.
+  const previous=window.recalc;
+  if(typeof previous!=='function'||previous.__bpfCount8Processes)return;
+  function corrected(...args){
+   const result=previous.apply(this,args);
+   const v=window.Guia?.values;
+   if(v){
+    const fields=['Dropdown60','Dropdown61','Dropdown62','Dropdown63','Dropdown64','Dropdown65','Dropdown66','Dropdown67'];
+    const levels=fields.map(field=>v[field]);
+    const altos=levels.filter(level=>level==='ALTO').length;
+    v.Dropdown58=levels.every(level=>!level)?'':altos>=6?'ALTO':altos>=4?'MÉDIO':'BAIXO';
+    v.Group279=v.Dropdown58==='BAIXO'?'0':v.Dropdown58==='MÉDIO'?'1':v.Dropdown58==='ALTO'?'2':'Off';
+    if(typeof window.sync==='function')window.sync();
+   }
+   return result;
+  }
+  corrected.__bpfCount8Processes=true;
+  window.recalc=corrected;
+  if(window.Guia)window.Guia.recalc=corrected;
+ }
+ installGeneralRiskCount();
  document.addEventListener('click',e=>{if(e.target.closest?.('#print'))installPdfPatch();},true);
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
