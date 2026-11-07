@@ -213,18 +213,18 @@
 })();
 
 
-/* BPF_PCC_DUAS_NATUREZAS_20261107: justificativa sanitária visível no HTML e no PDF.
+/* BPF_PCC_DUAS_NATUREZAS_20261107_REV4: justificativa sanitária visível no HTML e no PDF.
    A regra de classificação automática PCC já é calculada no formulário principal. */
 (()=>{'use strict';
  if(window.__BPF_PCC_DUAS_NATUREZAS_20261107)return;
  window.__BPF_PCC_DUAS_NATUREZAS_20261107=true;
  const general=[
-  'REGRA PCC: O não atendimento de qualquer item classificado como PCC torna automaticamente o processo ALTO RISCO, independentemente da pontuação.',
+  'REGRA PCC: O não cumprimento da higienização prevista em qualquer item classificado como PCC torna automaticamente o processo de ALTO RISCO, independentemente da pontuação.',
   'Justificativa: falta de controle do perigo de contaminação microbiológica da água.'
  ];
  const embalagem=[
-  'REGRA PCC: O não atendimento de qualquer item classificado como PCC torna automaticamente o processo ALTO RISCO, independentemente da pontuação.',
-  'Justificativa: perigo de contaminação microbiológica da água ou de contaminação química por resíduos de saneantes e detergentes cuja eliminação não foi comprovada após a higienização/desinfecção das embalagens.'
+  'REGRA PCC: O não cumprimento da higienização prevista em qualquer item classificado como PCC torna automaticamente o processo de ALTO RISCO, independentemente da pontuação.',
+  'Justificativa: perigo de contaminação microbiológica da água e de contaminação química por resíduos de saneantes e detergentes, quando não comprovada sua eliminação após o enxágue das embalagens higienizadas ou desinfetadas.'
  ];
  const matriz=[...general];
  const riscoFinal={0:'Dropdown5',1:'Dropdown10',2:'Dropdown15',3:'Dropdown20',4:'Dropdown25',5:'Dropdown30',6:'Dropdown35',7:'Dropdown40',8:'Dropdown45',9:'Dropdown50',10:'Dropdown55',11:'Dropdown56',12:'Dropdown57'};
@@ -236,7 +236,7 @@
   const existing=document.getElementById('bpf-regra-pcc-matriz');
   if(existing){
    existing.replaceChildren(...matriz.map(s=>{const d=document.createElement('div');d.textContent=s;return d;}));
-   existing.style.cssText='position:absolute;left:5.8%;top:64.95%;width:88.4%;height:2.12%;font:bold 0.96cqw Arial,sans-serif;line-height:1.08;text-align:center;white-space:normal;color:#a11414;pointer-events:none;z-index:8';
+   existing.style.cssText='position:absolute;left:5.8%;top:63.60%;width:88.4%;height:2.65%;font:bold 0.96cqw Arial,sans-serif;line-height:1.08;text-align:center;white-space:normal;color:#a11414;pointer-events:none;z-index:8';
   }
   for(const [pageText,name]of Object.entries(riscoFinal)){
    const page=+pageText,widget=data.widgets.find(w=>w.page===page&&w.name===name);
@@ -275,8 +275,8 @@
      }
      const pageMatriz=originalPages[17];
      // Substitui a nota antiga, desenhada pelo HTML, pela explicação dos dois perigos.
-     pageMatriz.drawRectangle({x:36,y:282,width:523,height:13,color:lib.rgb(1,1,1)});
-     put(pageMatriz,matriz,548);
+     pageMatriz.drawRectangle({x:36,y:282,width:523,height:22,color:lib.rgb(1,1,1)});
+     put(pageMatriz,matriz,539);
      for(const {page,top}of areas)put(originalPages[page],linesFor(page),top);
     }
     return oldSave(...options);
