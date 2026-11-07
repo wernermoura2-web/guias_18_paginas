@@ -273,3 +273,100 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
  p.write_text(s)
 for name in ['individual_atualizado.html','equipe_atualizado.html']:
  p=ROOT/name;s=p.read_text().replace('20261105-publicado-final',RELEASE);p.write_text(s)
+
+REQUIRED_STYLE='''<style id="bpf-required-fields-style">
+@media screen{
+.bpf-required-alert{box-sizing:border-box;max-width:1040px;margin:12px auto;padding:12px 16px;border:1px solid #c05f4d;border-left-width:5px;border-radius:8px;background:#fff4f0;color:#74271b;line-height:1.4}
+.bpf-required-alert ul{margin:6px 0 0;padding-left:22px}
+#pages [data-bpf-missing]{outline:2px solid #b03024!important;outline-offset:-2px;background-color:#fff0e8!important}
+}
+@media print{.bpf-required-alert{display:none!important}}
+</style>'''
+REQUIRED_JS=r"""
+function bpfMissingIdentification(page,v){
+ const nonempty=n=>String(v[n]??'').trim()!==''&&v[n]!=='Off'&&v[n]!=='/Off';
+ const checked=n=>['1','0','2'].includes(String(v[n]));
+ const evaluated=(column)=>{
+  const model=BPF_PHRASES.find(p=>p.page===page);
+  return !!model?.rows.some(r=>r.scopes.some(s=>Number(s.col)===column&&(checked(s.name)||s.phrases.some((_,i)=>checked(bpfPhraseName(s,i))))));
+ };
+ const missing=[];
+ const add=(name,label,valid=nonempty(name))=>{if(!valid)missing.push({name,label});};
+ if(page===0){
+  for(const [name,label] of [['ENVASADORA','Envasadora'],['ENDEREÇO','Endereço'],['DATA','Data']])add(name,label);
+  const columns=[1,2,3,4].map(i=>({i,type:'Group'+i,name:'fill_'+(i+1),brands:'fill_'+(i+5),flow:'fill_'+(i+9)}));
+  const active=columns.filter(c=>[c.type,c.name,c.brands,c.flow].some(nonempty)||evaluated(c.i));
+  for(const c of active.length?active:[columns[0]]){
+   const label='Captação '+c.i+' — ';
+   add(c.type,label+'tipo (poço ou surgência)',['Escolha1','Escolha2'].includes(v[c.type]));
+   add(c.name,label+'nome');
+   add(c.brands,label+'marcas envasadas');
+   add(c.flow,label+'vazão (m³/h)');
+  }
+ }else if(page>=2&&page<=5){
+  for(let col=1;col<=4;col++){
+   const n=(page-2)*4+col,suffix=n===1?'':'_'+n;
+   const code='RESERVATÓRIOCÓD DO EQUIP'+suffix,capacity='RESERVATÓRIOCAPACIDADE m 3'+suffix;
+   if(nonempty(code)||nonempty(capacity)||evaluated(col)){
+    add(code,'Reservatório '+col+' — código do equipamento');
+    add(capacity,'Reservatório '+col+' — capacidade (m³)');
+   }
+  }
+ }
+ return missing;
+}
+const bpfRequiredAlert=document.createElement('div');
+bpfRequiredAlert.className='bpf-required-alert';bpfRequiredAlert.setAttribute('role','alert');bpfRequiredAlert.hidden=true;
+host.before(bpfRequiredAlert);
+let bpfShownPage=Number(nav.value)||0;
+function bpfClearMissingFields(){
+ for(const field of host.querySelectorAll('[data-bpf-missing]')){delete field.dataset.bpfMissing;field.removeAttribute('aria-invalid');}
+ bpfRequiredAlert.hidden=true;bpfRequiredAlert.replaceChildren();
+}
+function bpfDisplayMissingFields(page,missing){
+ bpfClearMissingFields();
+ if(!missing.length)return [];
+ const title=document.createElement('strong');
+ title.textContent='Preencha os campos obrigatórios antes de avançar:';
+ const list=document.createElement('ul'),marked=[];
+ for(const {name,label} of missing){
+  const item=document.createElement('li');item.textContent=label;list.append(item);
+  for(const field of host.children[page].querySelectorAll('[data-field="'+CSS.escape(name)+'"]:not(.printable)')){
+   field.dataset.bpfMissing='';field.setAttribute('aria-invalid','true');marked.push(field);
+  }
+ }
+ bpfRequiredAlert.append(title,list);bpfRequiredAlert.hidden=false;
+ return marked;
+}
+function show(){
+ const to=Number(nav.value);
+ if(to>bpfShownPage){
+  const missing=bpfMissingIdentification(bpfShownPage,values);
+  if(missing.length){
+   nav.value=String(bpfShownPage);
+   const fields=bpfDisplayMissingFields(bpfShownPage,missing);
+   alert('Preencha os campos obrigatórios antes de avançar:\n\n'+missing.map(x=>'• '+x.label).join('\n'));
+   fields[0]?.focus({preventScroll:true});
+   fields[0]?.scrollIntoView({block:'center',inline:'nearest'});
+   return;
+  }
+ }
+ bpfShownPage=to;bpfClearMissingFields();
+ for(const [i,p] of [...host.children].entries())p.classList.toggle('active',i===to);
+ requestAnimationFrame(()=>{sync()});
+}
+host.addEventListener('input',()=>{
+ if(!bpfRequiredAlert.hidden)bpfDisplayMissingFields(bpfShownPage,bpfMissingIdentification(bpfShownPage,values));
+});
+nav.onchange=show;
+"""
+for name in ['individual.html','equipe.html']:
+ p=ROOT/name;s=p.read_text()
+ if 'function bpfMissingIdentification(' not in s:
+  s=s.replace('</head>',REQUIRED_STYLE+'</head>',1)
+  old="function show(){for(const [i,p]of [...host.children].entries())p.classList.toggle('active',i===Number(nav.value));requestAnimationFrame(()=>{sync()})}nav.onchange=show;"
+  assert s.count(old)==1
+  s=s.replace(old,REQUIRED_JS,1)
+ p.write_text(s)
+for name in ['individual.html','equipe.html','index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f10','20261107-obrigatorios-f11'))
