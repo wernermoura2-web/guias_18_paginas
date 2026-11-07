@@ -4,11 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b5c91">
-  <meta name="description" content="Guia BPF de avaliação do risco sanitário.">
-  <title>Guia BPF | Avaliação do Risco Sanitário</title>
-  <link rel="icon" type="image/png" sizes="192x192" href="./icon-bpf-192.png?v=bpf1">
-  <link rel="apple-touch-icon" href="./icon-bpf-192.png?v=bpf1">
-  <link rel="manifest" href="./manifest.webmanifest?v=bpf2">
+  <meta name="description" content="Guia BPF/APPCC de avaliação de risco de envasadoras de água mineral do Estado do Rio de Janeiro — SUVISA.">
+  <title>Guia BPF/APPCC | Avaliação de Risco — SUVISA RJ</title>
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-bpf-appcc-192.png">
+  <link rel="apple-touch-icon" href="./icon-bpf-appcc-192.png">
+  <link rel="manifest" href="./manifest.webmanifest?v=appcc-rj1">
   <style>
     :root{font-family:Arial,Helvetica,sans-serif;color:#153c52;background:#eff6fa;font-synthesis:none}
     *{box-sizing:border-box}
@@ -17,10 +17,14 @@
     .hero:after{content:"";position:absolute;right:-75px;top:-95px;width:235px;height:235px;border:35px solid rgba(255,255,255,.06);border-radius:50%;pointer-events:none}
     .hero-inner{max-width:570px;margin:auto;position:relative;z-index:1}
     .brand{display:flex;align-items:center;gap:12px;margin-bottom:22px}
-    .brand img{width:44px;height:44px;border-radius:11px;background:#fff;object-fit:cover;box-shadow:0 3px 12px #073e6130}
+    .brand img{width:64px;height:64px;border-radius:14px;background:transparent;object-fit:cover;box-shadow:0 3px 12px #073e6130}
     .brand span{font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;opacity:.93}
     h1{font-size:clamp(29px,7.7vw,42px);letter-spacing:-1.3px;line-height:1.12;margin:0 0 8px}
     .subtitle{margin:0;font-size:17px;line-height:1.45;color:#e8f6ff}
+    .method{display:flex;align-items:center;gap:9px 12px;flex-wrap:wrap;margin:15px 0 0;font-size:13px;line-height:1.4;color:#e8f6ff}
+    .method strong{padding:4px 9px;border:1px solid #a8deee80;border-radius:6px;background:#052f4f55;color:white;letter-spacing:.06em;font-size:12px}
+    .method span{flex:1 1 200px}
+    .institution{margin:14px 0 0;padding-top:12px;border-top:1px solid #b5e7f155;font-size:14px;line-height:1.4;color:white;font-weight:700}
     main{max-width:614px;margin:-35px auto 0;padding:0 18px 38px;position:relative;z-index:2}
     .panel{border-radius:23px;background:white;padding:17px;box-shadow:0 12px 36px rgba(8,64,96,.10);display:grid;gap:12px}
     .action{appearance:none;width:100%;border:1px solid #dce9f0;border-radius:15px;min-height:82px;padding:14px 16px;background:#fff;color:#16435a;display:flex;align-items:center;gap:15px;text-align:left;text-decoration:none;font-family:inherit;font-size:18px;font-weight:700;line-height:1.25;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}
@@ -38,29 +42,31 @@
     @media(min-width:640px){.hero{padding:58px 28px 82px}main{margin-top:-43px}.panel{padding:22px;gap:14px}.action{min-height:88px}}
     @media(prefers-reduced-motion:reduce){.action{transition:none}}
   </style>
-<meta name="bpf-modelo-revisao" content="20261107-destaque-f20">
+<meta name="bpf-modelo-revisao" content="20261107-identidade-f21">
 </head>
 <body>
   <header class="hero">
     <div class="hero-inner">
-      <div class="brand"><img src="./icon-bpf-192.png?v=bpf1" width="44" height="44" alt=""><span>Guia Estadual</span></div>
+      <div class="brand"><img src="./icon-bpf-appcc-192.png" width="64" height="64" alt=""><span>Estado do Rio de Janeiro</span></div>
       <h1>Guia de Avaliação de Risco</h1>
-      <p class="subtitle">BPF · Água Mineral</p>
+      <p class="subtitle">Envasadoras de água mineral</p>
+      <p class="method"><strong>BPF/APPCC</strong><span>Boas Práticas de Fabricação e Análise de Perigos e Pontos Críticos de Controle</span></p>
+      <p class="institution">Superintendência de Vigilância Sanitária do Estado do Rio de Janeiro (SUVISA)</p>
     </div>
   </header>
   <main>
     <nav class="panel" aria-label="Acessos do guia">
       <button id="install-guia18" class="action primary" type="button">
         <span class="iconwrap" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 17v3h16v-3"/></svg></span>
-        <span class="action-label">Instalar Guia BPF</span>
+        <span class="action-label">Instalar Guia BPF/APPCC</span>
         <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
       </button>
-      <a class="action" href="./equipe.html?v=20261107-destaque-f20">
+      <a class="action" href="./equipe.html?v=20261107-identidade-f21">
         <span class="iconwrap" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 5"/></svg></span>
         <span class="action-label">Guia em equipe</span>
         <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
       </a>
-      <a class="action" href="./individual.html?v=20261107-destaque-f20#revisar-inspetores">
+      <a class="action" href="./individual.html?v=20261107-identidade-f21#revisar-inspetores">
         <span class="iconwrap" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 4h12M8 10h12M8 16h5M3 4h1M3 10h1M3 16h1"/><path d="m15 19 2 2 4-4"/></svg></span>
         <span class="action-label">Revisão das frases</span>
         <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
@@ -75,9 +81,9 @@
       const standalone=()=>window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
       const message=t=>{status.textContent=t;status.classList.add('show');};
       window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();promptEvent=event;});
-      window.addEventListener('appinstalled',()=>{promptEvent=null;message('Guia BPF instalado.');});
+      window.addEventListener('appinstalled',()=>{promptEvent=null;message('Guia BPF/APPCC instalado.');});
       button.addEventListener('click',async()=>{
-        if(standalone()){message('O Guia BPF já está aberto como aplicativo.');return;}
+        if(standalone()){message('O Guia BPF/APPCC já está aberto como aplicativo.');return;}
         if(!promptEvent){message('No Chrome, abra o menu ⋮ e escolha “Adicionar à tela inicial” ou “Instalar aplicativo”.');return;}
         const event=promptEvent;promptEvent=null;button.disabled=true;
         try{await event.prompt();const result=await event.userChoice;message(result.outcome==='accepted'?'Instalação solicitada.':'Instalação cancelada.');}
