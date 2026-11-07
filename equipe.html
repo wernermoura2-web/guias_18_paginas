@@ -672,9 +672,10 @@ function bpfPanels(page,row){
  ];
  else parts=range(0,max-1).map(i=>{
   const part={label:'F'+(i+1),indices:[i],composite:false};
-  if(row.code==='4.11.1')part.label+=' — Supervisão e Capacitação';
+  if(row.code==='4.11.1')part.answerCaption='Supervisão e Capacitação';
   if(row.code==='4.12.6')part.label+=' — Certificado do Cilindro em Uso';
-  if(row.code==='4.10.5')part.label+=' — '+['Composição equivalente','Laudo Res. RDC 717/22','Boletim LAMIN'][i];
+  if(row.code==='4.10.5')part.answerCaption=['Composição equivalente','Laudo Res. RDC 717/22','Boletim LAMIN'][i];
+  if(part.answerCaption)part.label+=' — '+part.answerCaption;
   if(row.code==='4.10.4')part.checklist=i===0
    ?['IN 161/22 da ANVISA','Res. RDC 717/22 da ANVISA','Portaria SUVISA 4325/2025','Outros']
    :['Reanálise','Parada do Envase','Higienização','Recolhimento','Quarentena','Aprovação','Outros'];
@@ -1155,7 +1156,7 @@ function bpfOpenPhrases(row,page){
     }
     const detail=bpfSplitPanel(row,panel)?bpfUnifiedOption(row,entry):panel.composite?'F'+(entry.index+1)+' — '+entry.phrase.text:'';
     const scopeText=[11,12].includes(page.page)&&!panel.composite?bpfAnswerLabel(answer):panel.composite&&row.scopes.length===1?'':bpfScopeLabel(page,entry.scope)+(panel.composite?' — ':'');
-    const caption=document.createElement('span');caption.textContent=splitHygiene?bpfScopeLabel(page,entry.scope):scopeText+detail;
+    const caption=document.createElement('span');caption.textContent=panel.answerCaption??(splitHygiene?bpfScopeLabel(page,entry.scope):scopeText+detail);
     input.onchange=()=>{
      values[entry.name]=input.checked?answer:values[entry.name]===answer?'':values[entry.name];
      if(page.page===8&&['4.6.3','4.6.7'].includes(row.code)&&!values[entry.name])values[entry.scope.name]='Off';
