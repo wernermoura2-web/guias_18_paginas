@@ -42,9 +42,19 @@ for name in ['individual.html','equipe.html']:
   s=s.replace("const head=document.createElement('h3');head.textContent=(titles[entry.page]", "const head=document.createElement('h3');head.textContent=entry===bpfNoteInstructionEntry?entry.original.text:(titles[entry.page]",1)
   s=s.replace("for(const [field,titleText]of [['text','Texto da frase F'],['guidance','Orientação ao inspetor']])", "for(const [field,titleText]of (entry===bpfNoteInstructionEntry?[['guidance','Orientação de preenchimento']]:[['text','Texto da frase F'],['guidance','Orientação ao inspetor']]))",1)
   s=s.replace("restore.textContent='Restaurar original deste F';","restore.textContent=entry.key===bpfNoteInstructionEntry.key?'Restaurar orientação original':'Restaurar original deste F';")
+ if 'bpf-review-open-button' not in s:
+  marker='function bpfInspectorInstallMenu(){'
+  assert marker in s
+  s=s.replace(marker,marker+"""
+ const button=document.createElement('button');button.type='button';button.id='bpf-review-open-button';button.textContent='Revisar frases dos inspetores';button.onclick=bpfInspectorOpenReview;
+ document.querySelector('#print').after(button);
+""",1)
+ s=s.replace('20261107-obs-f4','20261107-obs-f5')
  # direct loading makes F sizing independent from a previously installed service worker
- if 'src="./interface-guia-amigavel.js' not in s:s=s.replace('</body>','<script src="./interface-guia-amigavel.js?v=20261107-obs-f4" defer></script></body>',1)
+ if 'src="./interface-guia-amigavel.js' not in s:s=s.replace('</body>','<script src="./interface-guia-amigavel.js?v=20261107-obs-f5" defer></script></body>',1)
  p.write_text(s)
-p=ROOT/'sw-guia18.js';s=p.read_text().replace('20261106-f3','20261107-obs-f4');p.write_text(s)
-p=ROOT/'index.html';p.write_text(p.read_text().replace('20261106-f3','20261107-obs-f4'))
+p=ROOT/'sw-guia18.js';s=p.read_text().replace('20261106-f3','20261107-obs-f4');p.write_text(s.replace('20261107-obs-f4','20261107-obs-f5'))
+p=ROOT/'index.html';s=p.read_text().replace('20261106-f3','20261107-obs-f5').replace('20261107-obs-f4','20261107-obs-f5')
+s=s.replace('href="./individual.html?v=20261107-obs-f5"', 'href="./individual.html?v=20261107-obs-f5#revisar-inspetores"')
+p.write_text(s)
 print('Updated both guides: core F layout, editable observation guidance and paste controls.')
