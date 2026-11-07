@@ -1,0 +1,176 @@
+[
+  {
+    "code": "4.1.1",
+    "f": 1,
+    "appcc": "PPR",
+    "text": "A área circundante à casa de proteção da captação deve ser pavimentada, mantida limpa e livre de focos de insalubridade."
+  },
+  {
+    "code": "4.1.1",
+    "f": 2,
+    "appcc": "PPR",
+    "text": "Deve dispor de um sistema de drenagem de águas pluviais de modo a impedir a infiltração de contaminantes, não comprometendo a qualidade sanitária da água mineral natural e da água natural."
+  },
+  {
+    "code": "4.2.7",
+    "f": 2,
+    "appcc": "PPR",
+    "text": "Devem ser mantidos registros das operações de higienização da canalização."
+  },
+  {
+    "code": "4.2.8",
+    "f": 1,
+    "appcc": "PPRO",
+    "text": "A higienização deve contemplar, quando aplicável, o desmonte da canalização e prever a frequência de realização desta operação."
+  },
+  {
+    "code": "4.2.9",
+    "f": 2,
+    "appcc": "POP",
+    "text": "Os POP devem conter informações sobre: natureza da superfície a ser higienizada, métodos de higienização, princípios ativos utilizados e sua concentração, tempo de contato dos agentes químicos e ou físicos utilizados na operação de higienização, temperatura, frequência e outras informações que se fizerem necessárias."
+  },
+  {
+    "code": "4.3.2",
+    "f": 3,
+    "appcc": "PPR",
+    "text": "As superfícies que entram em contato com a água mineral natural ou com a água natural devem estar em adequado estado de conservação, livres de vazamentos e permitir a inspeção interna.",
+    "guidance": "Verificar superfícies internas, corrosão, fissuras, revestimentos e facilidade de higienização; conferir registros de manutenção.",
+    "examples": [
+      "Superfícies internas acessíveis íntegras, lisas e higienizáveis, sem corrosão ou fissuras observadas.",
+      "Reservatório apresenta superfície interna deteriorada e de difícil higienização, com corrosão ou fissuras."
+    ]
+  },
+  {
+    "code": "4.3.3",
+    "f": 3,
+    "appcc": "PPRO",
+    "text": "Os elementos filtrantes devem ser verificados e trocados na frequência definida pelo estabelecimento industrial, sendo mantidos os registros."
+  },
+  {
+    "code": "4.3.4",
+    "f": 1,
+    "appcc": "PC",
+    "text": "A inspeção visual do reservatório deve ser efetuada na frequência definida pelo estabelecimento industrial."
+  },
+  {
+    "code": "4.3.6",
+    "f": 1,
+    "appcc": "POP",
+    "text": "Devem ser implementados Procedimentos Operacionais Padronizados-POP referentes às operações de higienização do reservatório."
+  },
+  {
+    "code": "4.3.6",
+    "f": 3,
+    "appcc": "POP",
+    "text": "Os POP devem conter informações sobre: natureza da superfície a ser higienizada, métodos de higienização, princípios ativos dos agentes químicos utilizados e sua concentração, tempo de contato dos agentes químicos e ou físicos utilizados na operação de higienização, temperatura, frequência e outras informações que se fizerem necessárias.",
+    "guidance": "Conferir métodos, concentração, contato, temperatura e frequência no POP; verificar amostragem, critérios e responsável pela liberação do reservatório.",
+    "examples": [
+      "POP de higienização de reservatórios descreve método, saneantes, parâmetros, frequência e critérios de liberação.",
+      "POP de reservatórios omite informações essenciais, como concentração de saneante e tempo de contato."
+    ]
+  },
+  {
+    "code": "4.5.8",
+    "f": 1,
+    "appcc": "POP",
+    "text": "Devem ser implementados Procedimentos Operacionais Padronizados - POP referentes à operação de recepção das embalagens."
+  },
+  {
+    "code": "4.5.8",
+    "f": 3,
+    "appcc": "POP",
+    "text": "Os Procedimentos Operacionais Padronizados - POP referentes à operação de recepção das embalagens devem conter informações sobre inspeção individual, aceitação e reprovação de embalagens.",
+    "guidance": "Conferir POP de recepção implantado, com inspeção individual, critérios de aceitação e reprovação; comparar com a prática observada.",
+    "examples": [
+      "POP de recepção implantado, incluindo inspeção individual, critérios de aceitação e reprovação de embalagens.",
+      "Não existe POP implantado para recepção e triagem das embalagens retornáveis."
+    ]
+  },
+  {
+    "code": "4.6.3",
+    "f": 1,
+    "appcc": "PCC",
+    "text": "As embalagens de primeiro uso, quando não fabricadas no próprio estabelecimento industrial, devem ser submetidas ao enxágue em maquinário automático, utilizando-se solução desinfetante, exceto as embalagens descartáveis do tipo copo."
+  },
+  {
+    "code": "4.6.5",
+    "f": 2,
+    "appcc": "PCC",
+    "text": "As embalagens retornadas para um novo ciclo de uso devem ser submetidas à desinfecção em maquinário automático."
+  },
+  {
+    "code": "4.6.6",
+    "f": 1,
+    "appcc": "PCC",
+    "text": "O enxágue das embalagens retornadas para um novo ciclo de uso deve garantir a eliminação dos resíduos dos produtos químicos utilizados na higienização."
+  },
+  {
+    "code": "4.6.7",
+    "f": 1,
+    "appcc": "PPRO",
+    "text": "O enxágue final das embalagens retornadas para um novo ciclo de uso e daquelas de primeiro uso deve ser feito com a água mineral natural ou com a água natural a ser envasada, exceto as embalagens descartáveis do tipo copo."
+  },
+  {
+    "code": "4.6.10",
+    "f": 1,
+    "appcc": "PPR",
+    "text": "A passagem das embalagens da área de higienização para a sala de envase deve ser feita por meio de abertura destinada exclusivamente para este fim."
+  },
+  {
+    "code": "4.6.10",
+    "f": 2,
+    "appcc": "PPRO",
+    "text": "Não é permitido o transporte manual das embalagens da área de higienização para a sala de envase."
+  },
+  {
+    "code": "4.6.10",
+    "f": 3,
+    "appcc": "PPRO",
+    "text": "Essa abertura deve ser dimensionada somente para permitir a passagem das embalagens e permanecer fechada durante a paralisação do processo de envase.",
+    "guidance": "Observar ausência de transporte manual e fechamento da passagem nas paradas; conferir procedimento, monitoramento.",
+    "examples": [
+      "Embalagens seguem sem transporte manual e abertura permanece fechada durante interrupções do envase.",
+      "Foi observado transporte manual de embalagens higienizadas ou passagem aberta durante paralisação."
+    ]
+  },
+  {
+    "code": "4.6.10",
+    "f": 4,
+    "appcc": "PPRO",
+    "text": "Essa abertura deve permanecer fechada durante a paralisação do processo de envase.",
+    "guidance": "Observar ausência de transporte manual e fechamento da passagem nas paradas; conferir procedimento, monitoramento.",
+    "examples": [
+      "Embalagens seguem sem transporte manual e abertura permanece fechada durante interrupções do envase.",
+      "Foi observado transporte manual de embalagens higienizadas ou passagem aberta durante paralisação."
+    ]
+  },
+  {
+    "code": "4.6.12",
+    "f": 1,
+    "appcc": "POP",
+    "text": "Devem ser implementados Procedimentos Operacionais Padronizados-POP referentes às operações de higienização das embalagens. Orientação ao inspetor\nConferir no POP superfícies, métodos, princípios ativos, concentrações, tempo e temperatura; comparar com os parâmetros executados na linha."
+  },
+  {
+    "code": "4.6.12",
+    "f": 3,
+    "appcc": "POP",
+    "text": "Os POP devem conter informações sobre: natureza da superfície a ser higienizada, métodos de higienização, princípios ativos utilizados e sua concentração, tempo de contato dos agentes químicos e ou físicos utilizados na operação de higienização, temperatura e outras informações que se fizerem necessárias.",
+    "guidance": "Conferir no POP superfícies, métodos, princípios ativos, concentrações, tempo e temperatura; comparar com os parâmetros executados na linha.",
+    "examples": [
+      "POP de higienização de embalagens define materiais, produtos, concentrações, contato, temperatura e sequência de operações.",
+      "POP da higienização das embalagens omite critérios essenciais, como concentração do saneante ou tempo de contato."
+    ]
+  },
+  {
+    "code": "4.7.5",
+    "f": 1,
+    "appcc": "PPR",
+    "text": "O acesso à sala de envase deve ser restrito e realizado exclusivamente por uma antessala."
+  },
+  {
+    "code": "4.7.5",
+    "f": 2,
+    "appcc": "PPR",
+    "text": "A antessala da sala de envase deve possuir lavatório exclusivo para higiene das mãos, com torneira acionada sem contato manual."
+  }
+]

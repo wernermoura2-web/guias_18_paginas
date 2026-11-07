@@ -1,0 +1,21 @@
+name: Incorporar revisão do Word no Guia BPF
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publicar-revisao-word.yml']
+permissions:
+  contents: write
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/aplicar_revisao_docx.py
+      - run: git diff --check && node scripts/test_pcc_alto_risco_20261107.cjs
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add individual.html equipe.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Incorporar frases revisadas e trechos em vermelho do Word'
+          git push origin HEAD:main
