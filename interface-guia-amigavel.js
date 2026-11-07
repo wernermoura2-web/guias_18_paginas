@@ -258,6 +258,8 @@
  }
 
  const PCC_DETAIL={
+ '4.1.3':'Limpeza e, quando necessária, desinfecção das edificações, instalações, canalizações e equipamentos da captação, para prevenir a introdução de contaminantes microbiológicos na água durante a captação. O procedimento deve ser adequado ao sistema e executado sob condições controladas.',
+ '4.3.5':'Limpeza e, quando necessária, desinfecção dos reservatórios e seus componentes, para evitar formação de biofilmes e contaminação microbiológica da água armazenada. Quando forem usados detergentes ou saneantes, também deve ser controlada a remoção de resíduos químicos.',
  '4.6.3':'Controle da eficácia da higienização das embalagens retornáveis, para prevenir a sobrevivência de microrganismos e a contaminação microbiológica da água.',
  '4.6.5':'Controle das condições críticas de higienização, para evitar a permanência de contaminantes nas embalagens.',
  '4.6.6':'Comprovação, por testes indicadores, da eliminação dos resíduos de detergentes e saneantes após a higienização, para prevenir a contaminação química da água.',
