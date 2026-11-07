@@ -512,7 +512,7 @@ function bpfSyncObservation(row,page){
  values[key]=summary;
 }
 function bpfDismissEditor(){const editor=document.querySelector('#bpf-editor');if(editor?.bpfCommit?.()===false)return false;editor?.remove();return true;}
-function bpfAggregateAnswers(v,scope){const a=scope.phrases.flatMap((f,i)=>{const answer=v[bpfPhraseName(scope,i)]||'';return !answer&&f.fieldSuffix?.startsWith('CQ_')?[]:[answer];});if(!a.some(Boolean))return null;if(a.includes('0'))return '0';if(a.some(x=>!x))return 'Off';return a.every(x=>x==='2')?'2':'1';}
+function bpfAggregateAnswers(v,scope){const a=scope.phrases.flatMap((f,i)=>{const answer=v[bpfPhraseName(scope,i)]||'';return !answer&&typeof f.fieldSuffix==='string'&&f.fieldSuffix.startsWith('CQ_')?[]:[answer];});if(!a.some(Boolean))return null;if(a.includes('0'))return '0';if(a.some(x=>!x))return 'Off';return a.every(x=>x==='2')?'2':'1';}
 function bpfNARequiresF1No(row,index){
  const popItems=['4.3.6','4.5.8','4.6.12'];
  return (index===1&&(row.code==='4.2.9'||popItems.includes(row.code)))||(index===2&&popItems.includes(row.code));
