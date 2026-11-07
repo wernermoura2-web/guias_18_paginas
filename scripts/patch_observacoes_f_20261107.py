@@ -515,3 +515,50 @@ for name in ['individual.html','equipe.html']:
  p.write_text(s.replace('20261107-appcc-f18','20261107-definicoes-f19'))
 for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
  p=ROOT/name;p.write_text(p.read_text().replace('20261107-appcc-f18','20261107-definicoes-f19'))
+
+NC_STYLE='''<style id="bpf-nc-headings-style">
+.bpf-nc-heading{display:block;box-sizing:border-box;margin:0 0 .3em;padding:.28em .55em;border:1px solid #a5becd;border-left:3px solid #41728b;border-radius:3px;background:#e3eff6;color:#143d55;font-size:1.17em;font-weight:750;line-height:1.25}
+.bpf-nc-heading:not(:first-child){margin-top:.35em}
+@media screen{
+#pages .bpf-nc-formatted{display:block;z-index:3;padding:5px 7px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;background:#f6fbfe;border:1px solid #b3c6d2;cursor:text;text-align:left}
+#pages .page:has(textarea[data-field="OBS 1"]:focus) .bpf-nc-formatted[data-field="OBS 1"],
+#pages .page:has(textarea[data-field="obs_gerais_continuacao"]:focus) .bpf-nc-formatted[data-field="obs_gerais_continuacao"]{display:none}
+}
+@media print{.bpf-nc-heading{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
+</style>'''
+NC_VIEW_JS=r"""
+function bpfRenderNCObservation(el,text){
+ if(el.bpfRenderedObservation===text)return;
+ el.bpfRenderedObservation=text;
+ const pattern=/^(NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES) \([^\n]+\) — Total: \d+)$/gm;
+ let at=0,match,formatted=false;
+ const fragment=document.createDocumentFragment();
+ while((match=pattern.exec(text))){
+  if(match.index>at)fragment.append(document.createTextNode(text.slice(at,match.index)));
+  const title=document.createElement('strong');title.className='bpf-nc-heading';title.textContent=match[1];fragment.append(title);
+  at=pattern.lastIndex;
+  if(text[at]==='\n')at++;
+  if(text[at]==='\n')at++;
+  formatted=true;
+ }
+ if(at<text.length)fragment.append(document.createTextNode(text.slice(at)));
+ el.replaceChildren(fragment);
+ el.classList.toggle('bpf-nc-formatted',formatted);
+ el.setAttribute('aria-hidden','true');
+ el.onclick=formatted?()=>el.parentElement.querySelector('textarea[data-field="'+CSS.escape(el.dataset.field)+'"]')?.focus():null;
+}
+"""
+for name in ['individual.html','equipe.html']:
+ p=ROOT/name;s=p.read_text()
+ if 'id="bpf-nc-headings-style"' not in s:
+  s=s.replace('</head>',NC_STYLE+'</head>',1)
+  old="group.title+' — Total: '+group.lines.length+'\\n'+group.cats.map"
+  assert s.count(old)==1
+  s=s.replace(old,"group.title+' — Total: '+group.lines.length+'\\n\\n'+group.cats.map",1)
+  old="else if(el.classList.contains('printable'))el.textContent=values[n]==='Off'?'':(n==='DATA'?bpfDateToBR(values[n])||values[n]:values[n]);"
+  assert s.count(old)==1
+  s=s.replace(old,"else if(el.classList.contains('printable')){const text=values[n]==='Off'?'':(n==='DATA'?bpfDateToBR(values[n])||values[n]:values[n]);if(n==='OBS 1'||n==='obs_gerais_continuacao')bpfRenderNCObservation(el,String(text||''));else el.textContent=text;}",1)
+  s=s.replace('function sync(){',NC_VIEW_JS+'\nfunction sync(){',1)
+ p.write_text(s.replace('20261107-definicoes-f19','20261107-destaque-f20'))
+for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ p=ROOT/name;p.write_text(p.read_text().replace('20261107-definicoes-f19','20261107-destaque-f20'))
