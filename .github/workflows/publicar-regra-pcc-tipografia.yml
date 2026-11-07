@@ -31,3 +31,5 @@ jobs:
             git commit -m 'Guia BPF: reduzir fonte da regra PCC e remover negrito'
             git push origin HEAD:main
           fi
+
+# Execucao revisada: corrigir camada rasterizada da faixa vermelha (v3)
