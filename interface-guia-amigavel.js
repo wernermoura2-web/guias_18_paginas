@@ -258,8 +258,9 @@
  }
 
  const PCC_DETAIL={
- '4.1.3':'Limpeza e, quando necessária, desinfecção das edificações, instalações, canalizações e equipamentos da captação, para prevenir a introdução de contaminantes microbiológicos na água durante a captação. O procedimento deve ser adequado ao sistema e executado sob condições controladas.',
- '4.3.5':'Limpeza e, quando necessária, desinfecção dos reservatórios e seus componentes, para evitar formação de biofilmes e contaminação microbiológica da água armazenada. Quando forem usados detergentes ou saneantes, também deve ser controlada a remoção de resíduos químicos.',
+ '4.2.7':'Higienização da canalização de condução da água, para prevenir a formação de biofilmes e a contaminação microbiológica e, quando empregados detergentes ou saneantes, evitar resíduos químicos.',
+ '4.1.3':'Higienização das instalações, canalizações e equipamentos de captação, para prevenir a introdução de contaminantes microbiológicos na água e, quando utilizados produtos químicos, impedir a permanência de seus resíduos.',
+ '4.3.5':'Higienização dos reservatórios de armazenamento, para prevenir biofilmes e a contaminação microbiológica da água e, quando utilizados detergentes ou saneantes, evitar resíduos químicos.',
  '4.6.3':'Controle da eficácia da higienização das embalagens retornáveis, para prevenir a sobrevivência de microrganismos e a contaminação microbiológica da água.',
  '4.6.5':'Controle das condições críticas de higienização, para evitar a permanência de contaminantes nas embalagens.',
  '4.6.6':'Comprovação, por testes indicadores, da eliminação dos resíduos de detergentes e saneantes após a higienização, para prevenir a contaminação química da água.',
@@ -339,7 +340,7 @@
   if(!el||el.querySelector('.bpf-regra-pcc-botao'))return;
   const b=document.createElement('button');b.type='button';b.className='bpf-regra-pcc-botao';
   b.textContent='R';b.title='Regra PCC — ver critérios de alto risco';b.setAttribute('aria-label','Abrir Regra PCC');
-  b.style.cssText='position:absolute;left:'+left+'%;top:'+top+'%;width:3.5%;height:3.4%;min-width:22px;min-height:20px;z-index:40;background:#fff;color:#20394a;border:2px solid #223f51;border-radius:4px;font:bold 1.7cqw Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 1px 3px #0003';
+  b.style.cssText='position:absolute;left:'+left+'%;top:'+top+'%;width:3%;height:3%;min-width:22px;min-height:20px;z-index:40;background:#fff;color:#20394a;border:2px solid #223f51;border-radius:4px;font:bold 1.7cqw Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 1px 3px #0003';
   b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showRule(page)});
   el.appendChild(b);
  }
@@ -353,7 +354,7 @@
    const risk=data.widgets.find(w=>w.page===page&&w.name===name);
    if(!el||!risk)continue;
    const W=risk.size[0],H=risk.size[1];
-   const left=Math.max(1,Math.min(93,100*(risk.rect[0]-28)/W));
+   const left=3.4; // Alinhar R à coluna AVALIAÇÃO, sem sobrepor a faixa de percentuais.
    const top=Math.max(1,Math.min(94,100*(H-risk.rect[3]+3)/H));
    addR(el,page,left,top);
   }
