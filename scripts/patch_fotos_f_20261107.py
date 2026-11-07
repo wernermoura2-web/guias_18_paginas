@@ -231,3 +231,81 @@ for name in ['individual.html','equipe.html']:
  path.write_text(s.replace('20261107-fotos-f15','20261107-fotos-f16'))
 for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
  path=ROOT/name;path.write_text(path.read_text().replace('20261107-fotos-f15','20261107-fotos-f16'))
+
+LABEL_CROP_CSS='''<style id="bpf-label-crop-style">
+#bpf-label-crop{box-sizing:border-box;width:min(620px,calc(100% - 24px));max-height:calc(100dvh - 24px);padding:16px;border:1px solid #52778c;border-radius:12px;color:#163649;background:#fff;font:15px/1.35 system-ui,sans-serif}
+#bpf-label-crop::backdrop{background:#102b3bb0}
+#bpf-label-crop h2{margin:0 0 6px;font-size:20px}
+#bpf-label-crop p{margin:0 0 10px}
+#bpf-label-crop canvas{display:block;max-width:100%;max-height:38dvh;margin:auto;object-fit:contain}
+.bpf-crop-bounds{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 12px;margin:10px 0}
+.bpf-crop-bounds label{display:grid;font-size:13px}
+.bpf-crop-bounds input{width:100%;min-width:0;margin:4px 0;min-height:24px;accent-color:#1d6688}
+.bpf-crop-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.bpf-crop-actions button{font:600 14px system-ui,sans-serif;padding:8px 12px;min-height:40px;border:1px solid #86a9bb;border-radius:7px;background:#fff;color:#163649;cursor:pointer}
+.bpf-crop-actions button:last-child{background:#176080;color:white;border-color:#176080}
+</style>'''
+LABEL_CROP_JS=r"""
+function bpfCropLabel(bitmap){
+ const dialog=document.createElement('dialog');dialog.id='bpf-label-crop';dialog.setAttribute('aria-labelledby','bpf-label-crop-title');
+ const title=document.createElement('h2');title.id='bpf-label-crop-title';title.textContent='Recortar foto do rótulo';
+ const hint=document.createElement('p');hint.textContent='Ajuste as bordas. Só a área dentro do contorno será inserida.';
+ const preview=document.createElement('canvas');preview.setAttribute('aria-label','Prévia da área selecionada');
+ const pw=bitmap.width,ph=bitmap.height,ratio=Math.min(1,800/Math.max(pw,ph));
+ preview.width=Math.max(1,Math.round(pw*ratio));preview.height=Math.max(1,Math.round(ph*ratio));
+ const bounds=document.createElement('div');bounds.className='bpf-crop-bounds';
+ const sliders=[];
+ for(const [label,max] of [['Esquerda',pw],['Direita',pw],['Superior',ph],['Inferior',ph]]){
+  const wrap=document.createElement('label');wrap.textContent=label;
+  const slider=document.createElement('input');slider.type='range';slider.min='0';slider.max=String(max-1);slider.value='0';slider.step='1';
+  slider.addEventListener('input',()=>draw());wrap.append(slider);bounds.append(wrap);sliders.push(slider);
+ }
+ function selected(){
+  const [left,right,top,bottom]=sliders.map(slider=>Number(slider.value));
+  return [left,top,pw-left-right,ph-top-bottom];
+ }
+ function draw(){
+  for(const [a,b,total] of [[0,1,pw],[2,3,ph]]){
+   sliders[a].max=String(total-1-Number(sliders[b].value));
+   sliders[b].max=String(total-1-Number(sliders[a].value));
+  }
+  const [x,y,w,h]=selected(),sx=preview.width/pw,sy=preview.height/ph,ctx=preview.getContext('2d');
+  ctx.clearRect(0,0,preview.width,preview.height);
+  ctx.drawImage(bitmap,0,0,preview.width,preview.height);
+  ctx.fillStyle='rgba(0,0,0,.55)';ctx.fillRect(0,0,preview.width,preview.height);
+  ctx.drawImage(bitmap,x,y,w,h,x*sx,y*sy,w*sx,h*sy);
+  ctx.strokeStyle='#00a6e3';ctx.lineWidth=2;ctx.strokeRect(x*sx+1,y*sy+1,Math.max(0,w*sx-2),Math.max(0,h*sy-2));
+ }
+ const actions=document.createElement('div');actions.className='bpf-crop-actions';
+ const button=(text,action)=>{const b=document.createElement('button');b.type='button';b.textContent=text;b.onclick=action;actions.append(b);return b;};
+ let result=null;
+ button('Restaurar bordas',()=>{for(const slider of sliders){slider.max=String((sliders.indexOf(slider)<2?pw:ph)-1);slider.value='0';}draw();});
+ button('Cancelar',()=>dialog.close());
+ button('Inserir rótulo',()=>{result=selected();dialog.close();});
+ dialog.append(title,hint,preview,bounds,actions);
+ document.body.append(dialog);draw();
+ return new Promise(resolve=>{
+  dialog.addEventListener('close',()=>{dialog.remove();resolve(result);},{once:true});
+  dialog.showModal();
+ });
+}
+"""
+for name in ['individual.html','equipe.html']:
+ path=ROOT/name;s=path.read_text()
+ if 'id="bpf-label-crop-style"' not in s:
+  s=s.replace('</head>',LABEL_CROP_CSS+'</head>',1)
+  needle='let bpfPhotoContext=null;'
+  assert s.count(needle)==1
+  s=s.replace(needle,LABEL_CROP_JS+'\n'+needle,1)
+  old="const bitmap=await createImageBitmap(file);const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));"
+  new="""const bitmap=await createImageBitmap(file);
+ const label=/^(?:Imagem[1-3]_af_image|Rotulo_Pagina_[23]_[1-3])$/.test(target);
+ const rect=label?await bpfCropLabel(bitmap):[0,0,bitmap.width,bitmap.height];
+ if(!rect){bitmap.close();return;}
+ const [cropX,cropY,cropW,cropH]=rect;
+ const scale=Math.min(1,1600/Math.max(cropW,cropH));"""
+  assert s.count(old)==1
+  s=s.replace(old,new,1).replace('Math.round(bitmap.width*scale)','Math.max(1,Math.round(cropW*scale))',1).replace('Math.round(bitmap.height*scale)','Math.max(1,Math.round(cropH*scale))',1).replace('ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);const n=','ctx.drawImage(bitmap,cropX,cropY,cropW,cropH,0,0,canvas.width,canvas.height);const n=',1)
+ path.write_text(s.replace('20261107-fotos-f16','20261107-rotulos-f17'))
+for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ path=ROOT/name;path.write_text(path.read_text().replace('20261107-fotos-f16','20261107-rotulos-f17'))
