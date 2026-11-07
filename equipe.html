@@ -1025,6 +1025,62 @@ const api={getField:n=>refs[n]||null,numFields:Object.keys(refs).length,getNthFi
 const compiled={};
 for(const n of D.order){const source=D.fields[n].calc.replace(/valor = 100/g,'valor === 100');try{compiled[n]=new Function('event','color','AFSimple_Calculate',source)}catch(e){errors.add(n+': '+e.message)}}
 function aggregate(names){const vals=names.map(n=>values[n]);return vals.includes('0')?'0':vals.includes('1')?'1':vals.includes('2')?'2':'Off'}
+
+/* Regra de criticidade APPCC: PCC com resposta Nao prevalece sobre percentuais. */
+const BPF_PCC_RISK_MAP=[
+ {pages:[0],units:{0:['Dropdown1','Dropdown2','Dropdown3','Dropdown4']},finals:{0:'Dropdown5'},matrix:'Dropdown67',score:'Dropdown300'},
+ {pages:[1],units:{1:['Dropdown6','Dropdown113','Dropdown8','Dropdown9']},finals:{1:'Dropdown10'},matrix:'Dropdown66',score:'Dropdown301'},
+ {pages:[2,3,4,5],units:{2:['Dropdown11','Dropdown12','Dropdown13','Dropdown14'],3:['Dropdown16','Dropdown17','Dropdown18','Dropdown19'],4:['Dropdown21','Dropdown22','Dropdown23','Dropdown24'],5:['Dropdown26','Dropdown27','Dropdown28','Dropdown29']},finals:{2:'Dropdown15',3:'Dropdown20',4:'Dropdown25',5:'Dropdown30'},matrix:'Dropdown65',score:'Dropdown302'},
+ {pages:[6],units:{6:['Dropdown31','Dropdown32','Dropdown33','Dropdown34']},finals:{6:'Dropdown35'},matrix:'Dropdown64',score:'Dropdown303'},
+ {pages:[7,8],units:{7:['Dropdown36','Dropdown37','Dropdown38','Dropdown39'],8:['Dropdown41','Dropdown42','Dropdown43','Dropdown44']},finals:{7:'Dropdown40',8:'Dropdown45'},matrix:'Dropdown63',score:'Dropdown304'},
+ {pages:[9,10],units:{9:['Dropdown46','Dropdown47','Dropdown48','Dropdown49'],10:['Dropdown51','Dropdown52','Dropdown53','Dropdown54']},finals:{9:'Dropdown50',10:'Dropdown55'},matrix:'Dropdown61',score:'Dropdown305'},
+ {pages:[11],units:{},finals:{11:'Dropdown56'},matrix:'Dropdown60',score:'Dropdown306'},
+ {pages:[12],units:{},finals:{12:'Dropdown57'},matrix:'Dropdown62',score:'Dropdown307'}
+];
+function bpfPCCNaoAtendidos(){
+ const failures=new Map();
+ for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
+  for(let i=0;i<scope.phrases.length;i++){
+   if(scope.phrases[i].appcc!=='PCC'||values[bpfPhraseName(scope,i)]!=='0')continue;
+   if(!failures.has(page.page))failures.set(page.page,new Set());
+   failures.get(page.page).add(Number(scope.col));
+  }
+ }
+ return failures;
+}
+function bpfOverridePCCRisk(){
+ const failures=bpfPCCNaoAtendidos();
+ for(const cfg of BPF_PCC_RISK_MAP){
+  let failed=false;
+  for(const page of cfg.pages){
+   const units=failures.get(page);
+   if(!units||!units.size)continue;
+   failed=true;
+   if(cfg.finals[page])values[cfg.finals[page]]='ALTO';
+   for(const unit of units){
+    const dropdown=cfg.units[page]?.[unit-1];
+    if(!dropdown)continue;
+    values[dropdown]='ALTO';
+    // Tambem atualizar a celula correspondente da unidade na matriz.
+    const percentage=D.fields[dropdown]?.calc?.match(/this\.getField\("([^"]+)"\)/)?.[1];
+    if(!percentage)continue;
+    for(const widget of D.widgets){
+     if(widget.page!==17)continue;
+     const f=D.fields[widget.name];
+     if(f?.type!=='/Ch'||!f.options?.includes('3')||!f.options?.includes('1'))continue;
+     if(/var controle1/.test(f.calc||''))continue;
+     const inputs=[...(f.calc||'').matchAll(/this\.getField\("([^"]+)"\)/g)].map(m=>m[1]);
+     if(inputs.length===1&&inputs[0]===percentage)values[widget.name]='3';
+    }
+   }
+  }
+  if(failed){
+   values[cfg.matrix]='ALTO';
+   values[cfg.score]='3';
+  }
+ }
+}
+
 function recalc(){bpfInspectorApplySaved();bpfApplyAnswers(values);bpfRefreshLegacyObservationMarkers();bpfSpaceProcessObservations();for(let i=0;i<4;i++)values[conductions[i]]=values[sourceFields[i]];
  for(const [n,sources]of Object.entries(D.groups))values[n]=aggregate(sources);
  for(let pass=0;pass<4;pass++){
@@ -1046,6 +1102,7 @@ function recalc(){bpfInspectorApplySaved();bpfApplyAnswers(values);bpfRefreshLeg
  if(before===JSON.stringify(values))break;
  }
  for(const n of D.order){const match=D.fields[n].calc.match(/var controle1\s*=\s*this\.getField\("([^"]+)"\)/);if(match){const v=values[match[1]];values[n]=v==='1'?'S':v==='0'?'N':v==='2'?'NA':'';}}
+ bpfOverridePCCRisk();
  const levels=['Dropdown60','Dropdown61','Dropdown62','Dropdown63','Dropdown64','Dropdown65','Dropdown66','Dropdown67'].map(n=>values[n]);
  values.Dropdown58=levels.includes('ALTO')?'ALTO':levels.includes('MÉDIO')?'MÉDIO':levels.includes('BAIXO')?'BAIXO':'';
  values.Group279=values.Dropdown58==='BAIXO'?'0':values.Dropdown58==='MÉDIO'?'1':values.Dropdown58==='ALTO'?'2':'Off';
@@ -1056,6 +1113,13 @@ D.backgrounds.forEach((src,i)=>{
  const page=document.createElement('section');page.className='page';page.dataset.page=i;page.style.aspectRatio='595.32 / '+BPF_PAGE_HEIGHTS[i];
  const bg=document.createElement('img');bg.className='background';bg.src=src;bg.alt='Guia revisão 6, página '+(i+1);page.append(bg);host.append(page);
 });
+
+/* Nota metodologica visivel na matriz e na impressao do guia. */
+const bpfRiskRule=document.createElement('div');
+bpfRiskRule.id='bpf-regra-pcc-matriz';
+bpfRiskRule.textContent="REGRA PCC: Qualquer PCC não atendido classifica o processo como ALTO RISCO, independentemente do percentual.";
+bpfRiskRule.style.cssText='position:absolute;left:7%;top:65.55%;width:86%;height:1.65%;font:bold 0.86cqw Arial,sans-serif;text-align:center;line-height:1.1;white-space:nowrap;color:#a11414;pointer-events:none';
+host.children[17].append(bpfRiskRule);
 function place(el,w){const [x1,y1,x2,y2]=w.rect,[pw,ph]=w.size;Object.assign(el.style,{left:100*x1/pw+'%',top:100*(ph-y2)/ph+'%',width:100*(x2-x1)/pw+'%',height:100*(y2-y1)/ph+'%'});}
 function bpfDateToISO(value){
  const raw=String(value??'').trim();
@@ -1864,6 +1928,10 @@ function bpfPreparePhotoPdf(pdf,form,font){
 async function bpfExportEditable(){
  const button=document.querySelector('#print'),status=document.querySelector('#status');if(button.disabled)return;button.disabled=true;
  try{if(document.querySelector('#bpf-editor')?.bpfCommit?.()===false)return;document.activeElement?.blur();recalc();status.textContent='Preparando PDF preenchível…';const templateBytes=Uint8Array.from(atob(BPF_EMBEDDED_PDF),c=>c.charCodeAt(0));const pdf=await PDFLib.PDFDocument.load(templateBytes),form=pdf.getForm(),observationFont=await pdf.embedFont(PDFLib.StandardFonts.Helvetica),observationNames=new Set([...Object.values(BPF_OBSERVATION_FIELDS),'CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1_2','CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1','OBS 1']);
+
+ const bpfPccRuleFont=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold),bpfPccRulePage=pdf.getPage(17);
+ const bpfPccRuleText="REGRA PCC: Qualquer PCC nao atendido classifica o processo como ALTO RISCO, independentemente do percentual.",bpfPccRuleSize=Math.min(7.4,510/bpfPccRuleFont.widthOfTextAtSize(bpfPccRuleText,7.4)*7.4);
+ bpfPccRulePage.drawText(bpfPccRuleText,{x:42,y:285.5,size:bpfPccRuleSize,font:bpfPccRuleFont,color:PDFLib.rgb(0.56,0.07,0.07)});
  bpfPreparePhotoPdf(pdf,form,observationFont);
  const pdfFlow=bpfPdfGeneralSplit(bpfGeneralFullText(),observationFont,form,pdf);
  for(const f of form.getFields()){const name=f.getName(),value=name==='OBS 1'?pdfFlow.first:name==='obs_gerais_continuacao'?pdfFlow.second:values[name];if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=(name==='OBS 1'||name==='obs_gerais_continuacao')?pdfFlow.size:Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
