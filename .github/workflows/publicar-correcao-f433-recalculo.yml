@@ -1,0 +1,75 @@
+name: Corrigir recálculo das frases no Guia BPF
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publicar-correcao-f433-recalculo.yml']
+permissions:
+  contents: write
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar a correção nos dois modos
+        run: |
+          git apply <<'PATCH'
+          diff --git a/equipe.html b/equipe.html
+          index 1140db6..1e104c8 100644
+          --- a/equipe.html
+          +++ b/equipe.html
+          @@ -512,7 +512,7 @@ function bpfSyncObservation(row,page){
+            values[key]=summary;
+           }
+           function bpfDismissEditor(){const editor=document.querySelector('#bpf-editor');if(editor?.bpfCommit?.()===false)return false;editor?.remove();return true;}
+          -function bpfAggregateAnswers(v,scope){const a=scope.phrases.flatMap((f,i)=>{const answer=v[bpfPhraseName(scope,i)]||'';return !answer&&f.fieldSuffix?.startsWith('CQ_')?[]:[answer];});if(!a.some(Boolean))return null;if(a.includes('0'))return '0';if(a.some(x=>!x))return 'Off';return a.every(x=>x==='2')?'2':'1';}
+          +function bpfAggregateAnswers(v,scope){const a=scope.phrases.flatMap((f,i)=>{const answer=v[bpfPhraseName(scope,i)]||'';return !answer&&typeof f.fieldSuffix==='string'&&f.fieldSuffix.startsWith('CQ_')?[]:[answer];});if(!a.some(Boolean))return null;if(a.includes('0'))return '0';if(a.some(x=>!x))return 'Off';return a.every(x=>x==='2')?'2':'1';}
+           function bpfNARequiresF1No(row,index){
+            const popItems=['4.3.6','4.5.8','4.6.12'];
+            return (index===1&&(row.code==='4.2.9'||popItems.includes(row.code)))||(index===2&&popItems.includes(row.code));
+          diff --git a/index.html b/index.html
+          index 10d8c44..66f54c8 100644
+          --- a/index.html
+          +++ b/index.html
+          @@ -61,7 +61,7 @@
+                   <span class="action-label">Instalar Guia BPF/APPCC</span>
+                   <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                 </button>
+          -      <a class="action" href="./equipe.html?v=20261107-reservatorio-f433-v38">
+          +      <a class="action" href="./equipe.html?v=20261107-reservatorio-f433-v39">
+                   <span class="iconwrap" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 5"/></svg></span>
+                   <span class="action-label">Abrir Guia BPF/APPCC</span>
+                   <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          diff --git a/individual.html b/individual.html
+          index 1841d88..1ab33c8 100644
+          --- a/individual.html
+          +++ b/individual.html
+          @@ -512,7 +512,7 @@ function bpfSyncObservation(row,page){
+            values[key]=summary;
+           }
+           function bpfDismissEditor(){const editor=document.querySelector('#bpf-editor');if(editor?.bpfCommit?.()===false)return false;editor?.remove();return true;}
+          -function bpfAggregateAnswers(v,scope){const a=scope.phrases.flatMap((f,i)=>{const answer=v[bpfPhraseName(scope,i)]||'';return !answer&&f.fieldSuffix?.startsWith('CQ_')?[]:[answer];});if(!a.some(Boolean))return null;if(a.includes('0'))return '0';if(a.some(x=>!x))return 'Off';return a.every(x=>x==='2')?'2':'1';}
+          +function bpfAggregateAnswers(v,scope){const a=scope.phrases.flatMap((f,i)=>{const answer=v[bpfPhraseName(scope,i)]||'';return !answer&&typeof f.fieldSuffix==='string'&&f.fieldSuffix.startsWith('CQ_')?[]:[answer];});if(!a.some(Boolean))return null;if(a.includes('0'))return '0';if(a.some(x=>!x))return 'Off';return a.every(x=>x==='2')?'2':'1';}
+           function bpfNARequiresF1No(row,index){
+            const popItems=['4.3.6','4.5.8','4.6.12'];
+            return (index===1&&(row.code==='4.2.9'||popItems.includes(row.code)))||(index===2&&popItems.includes(row.code));
+          diff --git a/sw-guia18.js b/sw-guia18.js
+          index f0d2798..55674a9 100644
+          --- a/sw-guia18.js
+          +++ b/sw-guia18.js
+          @@ -1,5 +1,5 @@
+           /* Guia BPF: interface amigável e cache offline (06/11/2026). */
+          -const CACHE='guia18-20261107-reservatorio-f433-v38';
+          +const CACHE='guia18-20261107-reservatorio-f433-v39';
+           const ROOT=new URL('./',self.location.href);
+           const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js'];
+           const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
+          PATCH
+          git diff --check
+          node scripts/test_pcc_alto_risco_20261107.cjs
+      - name: Enviar correção ao repositório
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add equipe.html individual.html index.html sw-guia18.js
+          git commit -m 'Aceitar identificadores numéricos no recálculo das frases'
+          git push origin HEAD:main
