@@ -10,8 +10,8 @@ for(const filename of ['individual.html','equipe.html']){
  const a=s.indexOf('const BPF_PCC_RISK_MAP='),b=s.indexOf('function recalc(){',a);
  assert(a>=0&&b>a,filename+' helper');
  assert(s.includes(' bpfOverridePCCRisk();\n const levels='),filename+' recalc em tempo real');
- assert(s.includes("bpfPccRulePage.drawText"),filename+' PDF');
- assert(s.includes("bpf-regra-pcc-matriz"),filename+' matriz na tela');
+ assert(s.includes("pccPage.drawText(BPF_MATRIX_PCC_TEXT"),filename+' PDF');
+ assert(s.includes("bpf-faixa-pcc-matriz"),filename+' matriz na tela');
  const source=s.slice(a,b);
  function run(pageNum,answer,expectedGroup,expectedScore,expectedPage){
   const page=phrases.find(x=>x.page===pageNum);
