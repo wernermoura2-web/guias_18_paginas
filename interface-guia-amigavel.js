@@ -37,7 +37,11 @@
   .bpf-ui-backup{border:1px solid #cddfe8;border-radius:13px;padding:0;margin:14px 0;background:#f6fafd;overflow:hidden}
   .bpf-ui-backup>summary{padding:14px 17px;cursor:pointer;font-size:16px;font-weight:700;color:#184c66}
   .bpf-ui-backup>div{padding:12px 14px}
-  .bpf-f-destaque{font-size:18px!important;font-weight:800!important;color:#fff!important;background:#087aaa!important;border:2px solid #07577b!important;border-radius:6px!important;min-height:33px!important;min-width:31px!important;text-decoration:none!important;opacity:1!important}
+  .bpf-item-code{display:grid!important;grid-template-rows:42% 58%;gap:0!important;padding:0!important}
+  .bpf-item-code>span{display:flex;align-items:center;justify-content:center;min-height:0;line-height:1;white-space:nowrap}
+  .bpf-item-code>.bpf-f{box-sizing:border-box;width:100%!important;height:100%!important;min-height:0!important;min-width:0!important;padding:0!important;line-height:1!important;align-self:stretch}
+  .bpf-f-destaque{font-weight:800!important;color:#fff!important;background:#087aaa!important;border:1px solid #07577b!important;border-radius:3px!important;text-decoration:none!important;opacity:1!important}
+  /* bpf-f-dimensoes-20261106-v2: o tamanho da letra segue a altura real do item. */
   @media(max-width:520px){
     .bpf-ui-hub{padding:13px 12px;margin:12px 9px 16px;border-radius:15px}
     .bpf-ui-actions{gap:7px}
