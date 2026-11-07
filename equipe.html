@@ -1147,6 +1147,7 @@ function clearScope(w){
  changed();recalc();
 }
 
+const BPF_GALLERY_SLOTS=D.widgets.filter(w=>[15,16].includes(w.page)&&/^(?:Imagem|Foto_Extra_)(?:[1-9]|1[0-2])$/.test(w.name)).map(w=>w.name);
 const BPF_PHOTO_PROCESS_CODES=['4.1','4.2','4.3','4.5','4.6','4.7','4.10','4.11'];
 function bpfPhotoRank(process){
  const code=String(process||'').split(/\s/)[0];
@@ -1154,7 +1155,7 @@ function bpfPhotoRank(process){
  return index<0?BPF_PHOTO_PROCESS_CODES.length:index;
 }
 function bpfSortPhotos(v,pictures,lastSlot=''){
- const slots=TEAM18_PHOTO_SLOTS;
+ const slots=BPF_GALLERY_SLOTS;
  const process=n=>'BPF_PhotoProcess_'+n,location=n=>'BPF_PhotoLocation_'+n;
  const entries=slots.filter(n=>pictures[n]).map((n,i)=>({n,i,data:pictures[n],process:v[process(n)]||'',location:v[location(n)]||''}));
  const destinations=slots.filter(n=>pictures[n]||!(v[process(n)]||v[location(n)]));
@@ -1177,7 +1178,7 @@ function bpfAddPhotoFromF(editor,row,page){
  bar.append(button,status);editor.append(bar);
 }
 function bpfFreePhotoSlot(){
- return TEAM18_PHOTO_SLOTS.find(n=>!images[n]&&!values['BPF_PhotoProcess_'+n]&&!values['BPF_PhotoLocation_'+n]);
+ return BPF_GALLERY_SLOTS.find(n=>!images[n]&&!values['BPF_PhotoProcess_'+n]&&!values['BPF_PhotoLocation_'+n]);
 }
 
 let bpfPhotoContext=null;
@@ -1188,7 +1189,7 @@ document.querySelector('#imageInput').onchange=async e=>{
  try{const bitmap=await createImageBitmap(file);const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));const canvas=document.createElement('canvas');canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,0,0,canvas.width,canvas.height);const n=photo?bpfFreePhotoSlot():target;if(!n){bitmap.close();if(photo)photo.status.textContent='Não há posições livres nas páginas Fotos.';return;}
   images[n]=canvas.toDataURL('image/jpeg',.85);bitmap.close();
   if(photo){values['BPF_PhotoProcess_'+n]=photo.process;values['BPF_PhotoLocation_'+n]=photo.location;bpfSortPhotos(values,images,n);photo.status.textContent='Foto inserida nas páginas Fotos.';}
-  else if(TEAM18_PHOTO_SLOTS.includes(n))bpfSortPhotos(values,images,n);
+  else if(BPF_GALLERY_SLOTS.includes(n))bpfSortPhotos(values,images,n);
   changed();sync()}catch(err){alert('Não foi possível abrir a imagem. Use JPG ou PNG.')}
 };
 document.querySelector('#removeImage').onclick=()=>{const names=Object.keys(images);if(!names.length)return alert('Nenhuma imagem anexada.');const list=names.map((n,i)=>(i+1)+': '+n).join('\n');const ix=Number(prompt('Qual imagem remover?\n'+list))-1;if(names[ix]){delete images[names[ix]];changed();sync()}};
@@ -1704,9 +1705,9 @@ function bpfPreparePhotoPdf(pdf,form,font){
   const fields=D.widgets.filter(w=>w.page===i);
   for(const widget of fields){
    const [x,y,x2,y2]=widget.rect,width=x2-x,height=y2-y,name=widget.name;
-   if(TEAM18_PHOTO_SLOTS.includes(name)){
+   if(BPF_GALLERY_SLOTS.includes(name)){
     page.drawRectangle({x,y,width,height,borderColor:edge,borderWidth:.6});
-    page.drawText('Foto '+(TEAM18_PHOTO_SLOTS.indexOf(name)+1),{x:x+2,y:y2+2,size:7,font,color:blue});
+    page.drawText('Foto '+(BPF_GALLERY_SLOTS.indexOf(name)+1),{x:x+2,y:y2+2,size:7,font,color:blue});
    }else if(name.startsWith('BPF_Photo')){
     const field=form.createTextField(name);
     field.addToPage(page,{x,y,width,height,font,borderColor:edge,borderWidth:.5,textColor:blue,backgroundColor:white});
@@ -1731,7 +1732,7 @@ async function bpfExportEditable(){
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
 }
 document.querySelector('#print').onclick=bpfExportEditable;
-</script><script src="./interface-guia-amigavel.js?v=20261107-fotos-f15" defer></script><script id="bpf-update-worker">
+</script><script src="./interface-guia-amigavel.js?v=20261107-fotos-f16" defer></script><script id="bpf-update-worker">
 if('serviceWorker' in navigator && location.protocol==='https:'){
  navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 }
