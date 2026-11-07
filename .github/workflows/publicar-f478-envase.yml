@@ -1,0 +1,189 @@
+name: Separar as verificações do F1 do item 4.7.8
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publicar-f478-envase.yml']
+permissions:
+  contents: write
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar e conferir a correção
+        run: |
+          git apply <<'PATCH'
+          diff --git a/equipe.html b/equipe.html
+          index 4687b5b..78a8d02 100644
+          --- a/equipe.html
+          +++ b/equipe.html
+          @@ -579,8 +579,12 @@ function bpfGroupedF2(row){
+           function bpfSplitPanel(row,panel){
+            return bpfDetailedF1(row,panel)||(['4.3.3','4.10.2'].includes(row.code)&&panel.id===0)||(panel.id===1&&!!bpfGroupedF2(row));
+           }
+          -function bpfDetailedF1(row,panel){return panel.id===0&&['4.6.4','4.7.2','4.7.6'].includes(row.code);}
+          +function bpfDetailedF1(row,panel){return panel.id===0&&['4.6.4','4.7.2','4.7.6','4.7.8'].includes(row.code);}
+           function bpfF1Checks(row,scope){
+          + if(row.code==='4.7.8')return [
+          +  {suffix:'SalaEquipamentos',option:'Sala de envase e Equipamentos'},
+          +  {suffix:'EnvasadoraAutomatica',option:'Envasadora Automática'}
+          + ].map(({suffix,option})=>({scope,index:0,phrase:scope.phrases[0],option,name:bpfPhraseName(scope,0)+'_'+suffix}));
+            const prewash=row.code==='4.6.4';
+            const uniforms=row.code==='4.7.6';
+            const options=uniforms?[
+          @@ -645,7 +649,7 @@ function bpfPanels(page,row){
+            });
+            return parts.map((part,id)=>{
+             if(bpfDetailedF1(row,{id}))return {
+          -   id,label:({'4.6.4':'F1 — Pré-lavagem','4.7.2':'F1 — Revestimentos e porta da sala de envase','4.7.6':'F1 — Uniformes da sala de envase'})[row.code],
+          +   id,label:({'4.6.4':'F1 — Pré-lavagem','4.7.2':'F1 — Revestimentos e porta da sala de envase','4.7.6':'F1 — Uniformes da sala de envase','4.7.8':'F1 — Higienização da sala de envase e dos equipamentos'})[row.code],
+              composite:true,entries:row.scopes.flatMap(scope=>bpfF1Checks(row,scope))
+             };
+             return {
+          @@ -1008,6 +1012,8 @@ function bpfOpenPhrases(row,page){
+              if(answer==='2'&&page.page===8&&['4.6.3','4.6.7'].includes(row.code)){
+               const hint=document.createElement('p');hint.textContent='Para copos descartáveis, marque Não se aplica na linha correspondente.';box.append(hint);
+              }
+          +   const splitHygiene=row.code==='4.7.8'&&panel.id===0;
+          +   const optionGroups=new Map();
+              for(const entry of panel.entries){
+               if(answer==='2'&&!entry.phrase.allowNA&&values[entry.name]!=='2')continue;
+               const label=document.createElement('label');label.className='bpf-answer-item';
+          @@ -1019,13 +1025,14 @@ function bpfOpenPhrases(row,page){
+               }
+               const detail=bpfSplitPanel(row,panel)?bpfUnifiedOption(row,entry):panel.composite?'F'+(entry.index+1)+' — '+entry.phrase.text:'';
+               const scopeText=[11,12].includes(page.page)&&!panel.composite?bpfAnswerLabel(answer):panel.composite&&row.scopes.length===1?'':bpfScopeLabel(page,entry.scope)+(panel.composite?' — ':'');
+          -    const caption=document.createElement('span');caption.textContent=scopeText+detail;
+          +    const caption=document.createElement('span');caption.textContent=splitHygiene?bpfScopeLabel(page,entry.scope):scopeText+detail;
+               input.onchange=()=>{
+                values[entry.name]=input.checked?answer:values[entry.name]===answer?'':values[entry.name];
+                if(page.page===8&&['4.6.3','4.6.7'].includes(row.code)&&!values[entry.name])values[entry.scope.name]='Off';
+                if(bpfDetailedF1(row,panel)){
+                 const assessed=panel.entries.filter(e=>e.scope===entry.scope).map(e=>values[e.name]);
+          -      const result=assessed.includes('0')?'0':assessed.includes('1')?'1':'';
+          +      const attended=row.code==='4.7.8'?assessed.every(value=>value==='1'):assessed.includes('1');
+          +      const result=assessed.includes('0')?'0':attended?'1':'';
+                 values[bpfPhraseName(entry.scope,0)]=result;
+                 if(!result){values[entry.scope.name]='Off';values[bpfNoteName(entry.scope,0)]='';}
+                }
+          @@ -1043,7 +1050,16 @@ function bpfOpenPhrases(row,page){
+                for(const other of content.querySelectorAll('input[type=checkbox]'))other.checked=values[other.dataset.answerName]===other.dataset.answer;
+                for(const {control,entry:naEntry} of dependentNA)control.disabled=!bpfAllowsDependentNA(row,naEntry,values);
+               };
+          -    label.append(input,caption);box.append(label);
+          +    label.append(input,caption);
+          +    if(splitHygiene){
+          +     if(!optionGroups.has(entry.option)){
+          +      const group=document.createElement('fieldset');
+          +      group.style.cssText='min-width:0;margin:8px 0;padding:4px 6px;border:1px solid #b8cbd8;border-radius:4px';
+          +      const title=document.createElement('legend');title.textContent=entry.option;group.append(title);
+          +      optionGroups.set(entry.option,group);box.append(group);
+          +     }
+          +     optionGroups.get(entry.option).append(label);
+          +    }else box.append(label);
+              }
+              if(noteHeading){
+               const label=document.createElement('label');label.className='bpf-note-title';label.textContent=noteHeading;
+          diff --git a/index.html b/index.html
+          index ac4c982..5fba7d6 100644
+          --- a/index.html
+          +++ b/index.html
+          @@ -61,7 +61,7 @@
+                   <span class="action-label">Instalar Guia BPF/APPCC</span>
+                   <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                 </button>
+          -      <a class="action" href="./equipe.html?v=20261107-higienizacao-copos-v43">
+          +      <a class="action" href="./equipe.html?v=20261107-envase-f478-v44">
+                   <span class="iconwrap" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 5"/></svg></span>
+                   <span class="action-label">Abrir Guia BPF/APPCC</span>
+                   <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          diff --git a/individual.html b/individual.html
+          index d5a96e2..3970519 100644
+          --- a/individual.html
+          +++ b/individual.html
+          @@ -579,8 +579,12 @@ function bpfGroupedF2(row){
+           function bpfSplitPanel(row,panel){
+            return bpfDetailedF1(row,panel)||(['4.3.3','4.10.2'].includes(row.code)&&panel.id===0)||(panel.id===1&&!!bpfGroupedF2(row));
+           }
+          -function bpfDetailedF1(row,panel){return panel.id===0&&['4.6.4','4.7.2','4.7.6'].includes(row.code);}
+          +function bpfDetailedF1(row,panel){return panel.id===0&&['4.6.4','4.7.2','4.7.6','4.7.8'].includes(row.code);}
+           function bpfF1Checks(row,scope){
+          + if(row.code==='4.7.8')return [
+          +  {suffix:'SalaEquipamentos',option:'Sala de envase e Equipamentos'},
+          +  {suffix:'EnvasadoraAutomatica',option:'Envasadora Automática'}
+          + ].map(({suffix,option})=>({scope,index:0,phrase:scope.phrases[0],option,name:bpfPhraseName(scope,0)+'_'+suffix}));
+            const prewash=row.code==='4.6.4';
+            const uniforms=row.code==='4.7.6';
+            const options=uniforms?[
+          @@ -645,7 +649,7 @@ function bpfPanels(page,row){
+            });
+            return parts.map((part,id)=>{
+             if(bpfDetailedF1(row,{id}))return {
+          -   id,label:({'4.6.4':'F1 — Pré-lavagem','4.7.2':'F1 — Revestimentos e porta da sala de envase','4.7.6':'F1 — Uniformes da sala de envase'})[row.code],
+          +   id,label:({'4.6.4':'F1 — Pré-lavagem','4.7.2':'F1 — Revestimentos e porta da sala de envase','4.7.6':'F1 — Uniformes da sala de envase','4.7.8':'F1 — Higienização da sala de envase e dos equipamentos'})[row.code],
+              composite:true,entries:row.scopes.flatMap(scope=>bpfF1Checks(row,scope))
+             };
+             return {
+          @@ -1008,6 +1012,8 @@ function bpfOpenPhrases(row,page){
+              if(answer==='2'&&page.page===8&&['4.6.3','4.6.7'].includes(row.code)){
+               const hint=document.createElement('p');hint.textContent='Para copos descartáveis, marque Não se aplica na linha correspondente.';box.append(hint);
+              }
+          +   const splitHygiene=row.code==='4.7.8'&&panel.id===0;
+          +   const optionGroups=new Map();
+              for(const entry of panel.entries){
+               if(answer==='2'&&!entry.phrase.allowNA&&values[entry.name]!=='2')continue;
+               const label=document.createElement('label');label.className='bpf-answer-item';
+          @@ -1019,13 +1025,14 @@ function bpfOpenPhrases(row,page){
+               }
+               const detail=bpfSplitPanel(row,panel)?bpfUnifiedOption(row,entry):panel.composite?'F'+(entry.index+1)+' — '+entry.phrase.text:'';
+               const scopeText=[11,12].includes(page.page)&&!panel.composite?bpfAnswerLabel(answer):panel.composite&&row.scopes.length===1?'':bpfScopeLabel(page,entry.scope)+(panel.composite?' — ':'');
+          -    const caption=document.createElement('span');caption.textContent=scopeText+detail;
+          +    const caption=document.createElement('span');caption.textContent=splitHygiene?bpfScopeLabel(page,entry.scope):scopeText+detail;
+               input.onchange=()=>{
+                values[entry.name]=input.checked?answer:values[entry.name]===answer?'':values[entry.name];
+                if(page.page===8&&['4.6.3','4.6.7'].includes(row.code)&&!values[entry.name])values[entry.scope.name]='Off';
+                if(bpfDetailedF1(row,panel)){
+                 const assessed=panel.entries.filter(e=>e.scope===entry.scope).map(e=>values[e.name]);
+          -      const result=assessed.includes('0')?'0':assessed.includes('1')?'1':'';
+          +      const attended=row.code==='4.7.8'?assessed.every(value=>value==='1'):assessed.includes('1');
+          +      const result=assessed.includes('0')?'0':attended?'1':'';
+                 values[bpfPhraseName(entry.scope,0)]=result;
+                 if(!result){values[entry.scope.name]='Off';values[bpfNoteName(entry.scope,0)]='';}
+                }
+          @@ -1043,7 +1050,16 @@ function bpfOpenPhrases(row,page){
+                for(const other of content.querySelectorAll('input[type=checkbox]'))other.checked=values[other.dataset.answerName]===other.dataset.answer;
+                for(const {control,entry:naEntry} of dependentNA)control.disabled=!bpfAllowsDependentNA(row,naEntry,values);
+               };
+          -    label.append(input,caption);box.append(label);
+          +    label.append(input,caption);
+          +    if(splitHygiene){
+          +     if(!optionGroups.has(entry.option)){
+          +      const group=document.createElement('fieldset');
+          +      group.style.cssText='min-width:0;margin:8px 0;padding:4px 6px;border:1px solid #b8cbd8;border-radius:4px';
+          +      const title=document.createElement('legend');title.textContent=entry.option;group.append(title);
+          +      optionGroups.set(entry.option,group);box.append(group);
+          +     }
+          +     optionGroups.get(entry.option).append(label);
+          +    }else box.append(label);
+              }
+              if(noteHeading){
+               const label=document.createElement('label');label.className='bpf-note-title';label.textContent=noteHeading;
+          diff --git a/sw-guia18.js b/sw-guia18.js
+          index 7ee97e9..7253cdf 100644
+          --- a/sw-guia18.js
+          +++ b/sw-guia18.js
+          @@ -1,5 +1,5 @@
+           /* Guia BPF: interface amigável e cache offline (06/11/2026). */
+          -const CACHE='guia18-20261107-higienizacao-copos-v43';
+          +const CACHE='guia18-20261107-envase-f478-v44';
+           const ROOT=new URL('./',self.location.href);
+           const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js'];
+           const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
+          PATCH
+          git diff --check
+          node scripts/test_pcc_alto_risco_20261107.cjs
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add equipe.html individual.html index.html sw-guia18.js
+          git commit -m 'Separar as verificações do F1 do item 4.7.8'
+          git push origin HEAD:main
