@@ -58,3 +58,42 @@ p=ROOT/'index.html';s=p.read_text().replace('20261106-f3','20261107-obs-f5').rep
 s=s.replace('href="./individual.html?v=20261107-obs-f5"', 'href="./individual.html?v=20261107-obs-f5#revisar-inspetores"')
 p.write_text(s)
 print('Updated both guides: core F layout, editable observation guidance and paste controls.')
+
+# A orientação específica da frase já aparece antes dos campos. Preserve
+# somente a instrução geral no auxílio de preenchimento da observação.
+PASTE=r""" paste.onclick=async()=>{
+  const fallback=message=>{
+   status.textContent=message+' Toque e segure dentro da caixa e escolha Colar, ou use Ctrl+V.';
+   if(area.isConnected&&!area.disabled)area.focus();
+  };
+  status.textContent='';
+  if(area.disabled){status.textContent='Selecione Sim ou Não antes de colar.';return;}
+  const note=area.dataset.note;
+  let text;
+  try{text=await navigator.clipboard.readText();}
+  catch(error){fallback('O navegador não liberou a colagem pelo botão.');return;}
+  if(!area.isConnected||area.disabled||area.dataset.note!==note)return;
+  if(typeof text!=='string'||!text.trim()){fallback('O navegador não retornou texto copiado.');return;}
+  const start=area.selectionStart??area.value.length,end=area.selectionEnd??start;
+  const inserted=text.replace(/\r\n?/g,'\n');
+  const expected=area.value.slice(0,start)+inserted+area.value.slice(end);
+  area.value=expected;
+  area.setSelectionRange(start+inserted.length,start+inserted.length);
+  area.dispatchEvent(new Event('input',{bubbles:true}));
+  if(area.value!==expected){fallback('A observação não recebeu o texto.');return;}
+  area.focus();
+  status.textContent='Texto colado.';
+ };
+"""
+for name in ['individual.html','equipe.html']:
+ p=ROOT/name;s=p.read_text()
+ s=s.replace('function bpfAttachNoteTools(area,parent,entries){','function bpfAttachNoteTools(area,parent){')
+ s=s.replace('bpfAttachNoteTools(area,card,panel.entries)','bpfAttachNoteTools(area,card)').replace('bpfAttachNoteTools(area,box,panel.entries)','bpfAttachNoteTools(area,box)')
+ prefix=' for(const text of [...new Set((entries||[]).map(e=>e.phrase.guidance)'
+ s=''.join(line for line in s.splitlines(keepends=True) if not line.startswith(prefix))
+ start=s.index(' paste.onclick=async()=>{',s.index('function bpfAttachNoteTools'))
+ end=s.index(' tools.append(paste,status);',start)
+ s=s[:start]+PASTE+s[end:]
+ p.write_text(s)
+for name in ['individual.html','equipe.html','index.html','sw-guia18.js']:
+ p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f5','20261107-obs-f6'))
