@@ -358,8 +358,15 @@
    const top=Math.max(1,Math.min(94,100*(H-risk.rect[3]+3)/H));
    addR(el,page,left,top);
   }
-  // R da matriz, ao lado da avaliação de risco, sem interferir no campo de observações.
-  addR(host.children[17],17,4,63);
+  // Matriz: ancorar o R à linha RISCO efetiva, em vez de percentual fixo da página.
+  const matrixEl=host.children[17];
+  const matrixRisk=data.widgets.find(w=>w.page===17&&w.name==='Dropdown58');
+  if(matrixEl&&matrixRisk){
+   const H=matrixRisk.size[1];
+   const center=H-(matrixRisk.rect[1]+matrixRisk.rect[3])/2;
+   const top=Math.max(1,Math.min(94,100*center/H-1.5));
+   addR(matrixEl,17,3.4,top);
+  }
  }
  // Não acrescentar frases sobre o formulário nem alterar as dimensões do PDF editável.
  // O aviso da Regra PCC é acessível pelo botão R na versão HTML.
