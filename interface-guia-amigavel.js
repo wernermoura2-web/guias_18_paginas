@@ -205,8 +205,17 @@
    if(!el.hasAttribute('aria-label'))el.setAttribute('aria-label','Abrir frases do item');
   }
  }
- let completed=false,queued=false;
- function apply(){hideIntro();if(!completed)completed=makeHub();wrapBackups();emphasizeF()}
+ let completed=false,queued=false,frasesOpened=false;
+ function openRequestedPhraseReview(){
+  if(frasesOpened||new URLSearchParams(location.search).get('revisar-frases')!=='1')return;
+  const target=lookup(/^Revisar frases dos inspetores$/i);
+  if(!target)return;
+  frasesOpened=true;
+  target.click();
+  const params=new URLSearchParams(location.search);params.delete('revisar-frases');
+  history.replaceState(history.state,'',location.pathname+(params.size?'?'+params:'')+location.hash);
+ }
+ function apply(){hideIntro();if(!completed)completed=makeHub();wrapBackups();emphasizeF();openRequestedPhraseReview()}
  function schedule(){if(queued)return;queued=true;setTimeout(()=>{queued=false;apply()},220)}
  function start(){apply();new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true})}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
