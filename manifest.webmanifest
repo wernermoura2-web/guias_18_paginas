@@ -1,7 +1,7 @@
 {
   "id": "/guias_18_paginas/",
-  "name": "Guia BPF",
-  "short_name": "Guia BPF",
+  "name": "Guia BPF/APPCC — Envasadoras de Água Mineral | SUVISA RJ",
+  "short_name": "BPF/APPCC",
   "lang": "pt-BR",
   "start_url": "/guias_18_paginas/",
   "scope": "/guias_18_paginas/",
@@ -10,16 +10,17 @@
   "theme_color": "#0b5c91",
   "icons": [
     {
-      "src": "./icon-bpf-192.png",
+      "src": "./icon-bpf-appcc-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icon-bpf-512.png",
+      "src": "./icon-bpf-appcc-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     }
-  ]
+  ],
+  "description": "Guia de Avaliação de Risco de Envasadoras de Água Mineral do Estado do Rio de Janeiro — SUVISA."
 }

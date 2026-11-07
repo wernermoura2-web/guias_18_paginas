@@ -562,3 +562,28 @@ for name in ['individual.html','equipe.html']:
  p.write_text(s.replace('20261107-definicoes-f19','20261107-destaque-f20'))
 for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
  p=ROOT/name;p.write_text(p.read_text().replace('20261107-definicoes-f19','20261107-destaque-f20'))
+
+IDENTITY_VERSION='20261107-identidade-f21'
+INSTITUTION='Superintendência de Vigilância Sanitária do Estado do Rio de Janeiro (SUVISA)'
+for name in ['individual.html','equipe.html','index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ p=ROOT/name;s=p.read_text().replace('20261107-destaque-f20',IDENTITY_VERSION)
+ if name=='index.html' and 'class="institution"' not in s:
+  s=s.replace('<meta name="description" content="Guia BPF de avaliação do risco sanitário.">','<meta name="description" content="Guia BPF/APPCC de avaliação de risco de envasadoras de água mineral do Estado do Rio de Janeiro — SUVISA.">')
+  s=s.replace('<title>Guia BPF | Avaliação do Risco Sanitário</title>','<title>Guia BPF/APPCC | Avaliação de Risco — SUVISA RJ</title>')
+  s=s.replace('./icon-bpf-192.png?v=bpf1','./icon-bpf-appcc-192.png').replace('./manifest.webmanifest?v=bpf2','./manifest.webmanifest?v=appcc-rj1')
+  s=s.replace('width:44px;height:44px;border-radius:11px;background:#fff','width:64px;height:64px;border-radius:14px;background:transparent')
+  s=s.replace('width="44" height="44" alt=""><span>Guia Estadual</span>','width="64" height="64" alt=""><span>Estado do Rio de Janeiro</span>')
+  s=s.replace('<p class="subtitle">BPF · Água Mineral</p>','<p class="subtitle">Envasadoras de água mineral</p>\n      <p class="method"><strong>BPF/APPCC</strong><span>Boas Práticas de Fabricação e Análise de Perigos e Pontos Críticos de Controle</span></p>\n      <p class="institution">'+INSTITUTION+'</p>')
+  s=s.replace('    main{', '''    .method{display:flex;align-items:center;gap:9px 12px;flex-wrap:wrap;margin:15px 0 0;font-size:13px;line-height:1.4;color:#e8f6ff}
+    .method strong{padding:4px 9px;border:1px solid #a8deee80;border-radius:6px;background:#052f4f55;color:white;letter-spacing:.06em;font-size:12px}
+    .method span{flex:1 1 200px}
+    .institution{margin:14px 0 0;padding-top:12px;border-top:1px solid #b5e7f155;font-size:14px;line-height:1.4;color:white;font-weight:700}
+    main{''',1)
+  s=s.replace('Instalar Guia BPF','Instalar Guia BPF/APPCC').replace('Guia BPF instalado.','Guia BPF/APPCC instalado.').replace('O Guia BPF já','O Guia BPF/APPCC já')
+ elif name in ('individual.html','equipe.html'):
+  s=s.replace('<title>Guia BPF —','<title>Guia BPF/APPCC — SUVISA RJ —',1)
+  s=s.replace('<p>Guia BPF · Água mineral</p>','<p>BPF/APPCC · Envasadoras de água mineral</p><p>'+INSTITUTION+'</p>',1)
+  s=s.replace('./icon-bpf-192.png?v=bpf1','./icon-bpf-appcc-192.png').replace('./manifest.webmanifest?v=bpf2','./manifest.webmanifest?v=appcc-rj1')
+ elif name=='sw-guia18.js':
+  s=s.replace("'./icon-bpf-192.png','./icon-bpf-512.png'","'./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png'")
+ p.write_text(s)

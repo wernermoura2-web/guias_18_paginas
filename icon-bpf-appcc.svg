@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>Guia BPF/APPCC: garrafa de água e lista de inspeção</title>
+  <defs>
+    <linearGradient id="base" x2="1" y2="1" gradientUnits="objectBoundingBox">
+      <stop stop-color="#073d61"/><stop offset="1" stop-color="#087e95"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="104" fill="url(#base)"/>
+  <path d="M0 359c97-34 183-18 256 9s161 25 256-11v51a104 104 0 0 1-104 104H104A104 104 0 0 1 0 408Z" fill="#0b526e"/>
+  <rect x="259" y="108" width="143" height="233" rx="24" fill="#eefaff" stroke="#bce8f1" stroke-width="5"/>
+  <rect x="293" y="96" width="75" height="32" rx="12" fill="#76d9db"/>
+  <path d="m284 163 9 9 15-17m-24 58 9 9 15-17m-24 58 9 9 15-17" fill="none" stroke="#007285" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M326 164h50m-50 50h50m-50 50h50" fill="none" stroke="#87aab9" stroke-width="7" stroke-linecap="round"/>
+  <rect x="282" y="302" width="28" height="10" rx="5" fill="#00846e"/>
+  <rect x="316" y="302" width="28" height="10" rx="5" fill="#e0a637"/>
+  <rect x="350" y="302" width="28" height="10" rx="5" fill="#c65f59"/>
+  <path d="M137 119v36l-24 39a35 35 0 0 0-5 19v103c0 14 11 25 25 25h68c14 0 25-11 25-25V213a35 35 0 0 0-5-19l-24-39v-36Z" fill="#c8f5ff" stroke="#f4feff" stroke-width="7" stroke-linejoin="round"/>
+  <rect x="132" y="95" width="70" height="32" rx="8" fill="#fff"/>
+  <path d="M147 105v12m20-12v12m20-12v12" stroke="#a5d4e1" stroke-width="4" stroke-linecap="round"/>
+  <path d="M112 244c22-12 40-12 60 0 16 9 33 11 50 2v49H112Z" fill="#319eb7"/>
+  <path d="M167 249c-6 9-17 20-17 30a17 17 0 0 0 34 0c0-10-11-21-17-30Z" fill="#f5feff"/>
+  <path d="M125 315h84" stroke="#65c3d7" stroke-width="5" stroke-linecap="round"/>
+  <text x="256" y="429" text-anchor="middle" fill="white" font-family="DejaVu Sans,sans-serif" font-size="48" font-weight="700" letter-spacing="1">BPF/APPCC</text>
+</svg>
