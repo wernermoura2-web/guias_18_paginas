@@ -421,3 +421,43 @@ for name in ['individual.html','equipe.html']:
  p.write_text(s)
 for name in ['individual.html','equipe.html','index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
  p=ROOT/name;p.write_text(p.read_text().replace('20261107-obrigatorios-f11','20261107-calendario-f12'))
+
+APPCC_MARKER_JS=r"""
+function bpfObservationMarker(answer,selected){
+ const classes=[...new Set(selected.map(entry=>String(entry.phrase?.appcc||'').trim()).filter(Boolean))];
+ return (answer==='0'?'NC':'OBS')+(classes.length?' (BPF/APPCC: '+classes.join(' / ')+')':'')+': ';
+}
+function bpfRefreshLegacyObservationMarkers(){
+ for(const page of BPF_PHRASES)for(const row of page.rows){
+  const key=bpfSummaryName(page,row),before=values[key];
+  if(typeof before!=='string'||!/(?:^|[;:] )\b(?:NC|OBS): /.test(before))continue;
+  const field=BPF_OBSERVATION_FIELDS[page.page+'_'+row.code],original=values[field];
+  if(typeof original!=='string'||!original.includes(before))continue;
+  bpfSyncObservation(row,page);
+  const after=values[key];
+  if(after&&after!==before){
+   const at=original.indexOf(before);
+   values[field]=original.slice(0,at)+after+original.slice(at+before.length);
+  }else{values[key]=before;values[field]=original;}
+ }
+}
+"""
+for name in ['individual.html','equipe.html']:
+ p=ROOT/name;s=p.read_text()
+ if 'function bpfObservationMarker(' not in s:
+  s=s.replace('function bpfSyncObservation(row,page){',APPCC_MARKER_JS+'\nfunction bpfSyncObservation(row,page){',1)
+  old="(answer==='0'?'NC: ':'OBS: ')+note"
+  assert s.count(old)==1
+  s=s.replace(old,"bpfObservationMarker(answer,selected)+note",1)
+  old="  const checks=panel.entries.filter(e=>selected.has(e.name)).map(e=>"
+  assert old in s
+  s=s.replace(old,"  const matched=panel.entries.filter(e=>selected.has(e.name));\n  const checks=matched.map(e=>",1)
+  old="(note?'; '+(answer==='1'?'OBS: ':'NC: ')+note:'')"
+  assert old in s
+  s=s.replace(old,"(note?'; '+bpfObservationMarker(answer,matched)+note:'')",1)
+  needle="function recalc(){bpfInspectorApplySaved();bpfApplyAnswers(values);"
+  assert needle in s
+  s=s.replace(needle,needle+'bpfRefreshLegacyObservationMarkers();',1)
+ p.write_text(s.replace('20261107-rotulos-f17','20261107-appcc-f18'))
+for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ p=ROOT/name;p.write_text(p.read_text().replace('20261107-rotulos-f17','20261107-appcc-f18'))
