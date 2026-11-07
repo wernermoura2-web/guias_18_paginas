@@ -1,0 +1,71 @@
+name: Sincronizar a tabela de higienização de descartáveis
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publicar-sincronizacao-higienizacao.yml']
+permissions:
+  contents: write
+jobs:
+  aplicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Aplicar e conferir a correção
+        run: |
+          git apply <<'PATCH'
+          diff --git a/equipe.html b/equipe.html
+          index c011db6..4687b5b 100644
+          --- a/equipe.html
+          +++ b/equipe.html
+          @@ -1022,6 +1022,7 @@ function bpfOpenPhrases(row,page){
+               const caption=document.createElement('span');caption.textContent=scopeText+detail;
+               input.onchange=()=>{
+                values[entry.name]=input.checked?answer:values[entry.name]===answer?'':values[entry.name];
+          +     if(page.page===8&&['4.6.3','4.6.7'].includes(row.code)&&!values[entry.name])values[entry.scope.name]='Off';
+                if(bpfDetailedF1(row,panel)){
+                 const assessed=panel.entries.filter(e=>e.scope===entry.scope).map(e=>values[e.name]);
+                 const result=assessed.includes('0')?'0':assessed.includes('1')?'1':'';
+          diff --git a/index.html b/index.html
+          index f32a820..ac4c982 100644
+          --- a/index.html
+          +++ b/index.html
+          @@ -61,7 +61,7 @@
+                   <span class="action-label">Instalar Guia BPF/APPCC</span>
+                   <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                 </button>
+          -      <a class="action" href="./equipe.html?v=20261107-higienizacao-copos-v42">
+          +      <a class="action" href="./equipe.html?v=20261107-higienizacao-copos-v43">
+                   <span class="iconwrap" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6m1 4a5 5 0 0 1 3 5"/></svg></span>
+                   <span class="action-label">Abrir Guia BPF/APPCC</span>
+                   <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          diff --git a/individual.html b/individual.html
+          index 3fbfdd6..d5a96e2 100644
+          --- a/individual.html
+          +++ b/individual.html
+          @@ -1022,6 +1022,7 @@ function bpfOpenPhrases(row,page){
+               const caption=document.createElement('span');caption.textContent=scopeText+detail;
+               input.onchange=()=>{
+                values[entry.name]=input.checked?answer:values[entry.name]===answer?'':values[entry.name];
+          +     if(page.page===8&&['4.6.3','4.6.7'].includes(row.code)&&!values[entry.name])values[entry.scope.name]='Off';
+                if(bpfDetailedF1(row,panel)){
+                 const assessed=panel.entries.filter(e=>e.scope===entry.scope).map(e=>values[e.name]);
+                 const result=assessed.includes('0')?'0':assessed.includes('1')?'1':'';
+          diff --git a/sw-guia18.js b/sw-guia18.js
+          index a3ff64b..7ee97e9 100644
+          --- a/sw-guia18.js
+          +++ b/sw-guia18.js
+          @@ -1,5 +1,5 @@
+           /* Guia BPF: interface amigável e cache offline (06/11/2026). */
+          -const CACHE='guia18-20261107-higienizacao-copos-v42';
+          +const CACHE='guia18-20261107-higienizacao-copos-v43';
+           const ROOT=new URL('./',self.location.href);
+           const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js'];
+           const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
+          PATCH
+          git diff --check
+          node scripts/test_pcc_alto_risco_20261107.cjs
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add equipe.html individual.html index.html sw-guia18.js
+          git commit -m 'Limpar marca da tabela ao desmarcar a resposta no F'
+          git push origin HEAD:main
