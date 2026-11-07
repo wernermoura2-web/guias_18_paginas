@@ -136,6 +136,14 @@ function bpfGeneralFlow(full){
  }
 }
 
+const BPF_NC_DEFINITIONS={
+ PCC:{text:'Ponto Crítico de Controle — etapa em que o controle é essencial para prevenir ou eliminar um perigo significativo à segurança do alimento, ou reduzi-lo a um nível aceitável, mediante limites críticos e monitoramento.',guidance:''},
+ PPRO:{text:'Programa de Pré-Requisito Operacional — medida ou conjunto de medidas para controlar um perigo significativo, acompanhadas por critérios de ação e monitoramento.',guidance:''},
+ PC:{text:'Ponto de Controle — etapa ou condição em que se verifica uma medida de controle, conforme a classificação adotada no Guia BPF.',guidance:''},
+ POP:{text:'Procedimento Operacional Padronizado — instrução escrita que descreve, em sequência, como realizar uma operação de rotina.',guidance:''},
+ PPR:{text:'Programa de Pré-Requisitos — condições e práticas básicas que mantêm um ambiente higiênico adequado à produção segura de alimentos.',guidance:''}
+};
+
 function bpfSyncNCLists(){
  const field='OBS 1';if(!Object.hasOwn(values,field))return;
  const groups=[{id:'criticas',title:'NÃO CONFORMIDADES CRÍTICAS (PCC)',cats:['PCC'],lines:[]},{id:'maiores',title:'NÃO CONFORMIDADES MAIORES (PPRO e PC)',cats:['PPRO','PC'],lines:[]},{id:'menores',title:'NÃO CONFORMIDADES MENORES (POP e PPR)',cats:['POP','PPR'],lines:[]}];
@@ -146,7 +154,7 @@ function bpfSyncNCLists(){
   group.lines.push('Frase '+(i+1)+', do item '+row.code+', do processo '+titles[page.page]+', na unidade '+unit+', classificada como '+phrase.appcc);
  });
  let previous={};try{previous=JSON.parse(values.BPF_NCGenerated||'{}');}catch(e){}
- const current={};for(const group of groups)current[group.id]=group.title+' — Total: '+group.lines.length+'\n'+(group.lines.length?group.lines.map((line,i)=>(i+1)+'. '+line).join('\n'):'Nenhuma não conformidade registrada.');
+ const current={};for(const group of groups)current[group.id]=group.title+' — Total: '+group.lines.length+'\n'+group.cats.map(code=>code+' — '+BPF_NC_DEFINITIONS[code].text.trim()).join('\n')+'\n\n'+(group.lines.length?group.lines.map((line,i)=>(i+1)+'. '+line).join('\n'):'Nenhuma não conformidade registrada.');
  let priorText=bpfGeneralFullText().replace(/\r\n?/g,'\n');
  for(const [id,original] of Object.entries(previous)){
   if(!Object.hasOwn(current,id)||typeof original!=='string'||original===current[id])continue;
@@ -194,6 +202,12 @@ for(const page of BPF_PHRASES)for(const row of page.rows){
 const BPF_NOTE_INSTRUCTION={text:'Orientações de preenchimento das observações das frases',guidance:'Registre as evidências verificadas para a frase ou as opções assinaladas: documentos e registros examinados, identificação, data, local, equipamento, lote ou amostra, quando pertinentes. Para Sim (OBS), descreva o que comprova o atendimento. Para Não (NC), descreva objetivamente a condição encontrada e o requisito não atendido, com a evidência correspondente. Para Não se aplica, quando permitido, justifique a não aplicabilidade. Em grupos, identifique a opção a que cada registro se refere. Utilize a orientação ao inspetor da respectiva frase para selecionar as verificações e evidências.'};
 const bpfNoteInstructionEntry={key:'instructions:phrase-observations',page:0,code:'Observações',index:0,label:'Orientações gerais',scopes:[],appcc:'Preenchimento',original:{...BPF_NOTE_INSTRUCTION},refs:[BPF_NOTE_INSTRUCTION]};
 BPF_INSPECTOR_ENTRIES.unshift(bpfNoteInstructionEntry);BPF_INSPECTOR_BY_KEY.set(bpfNoteInstructionEntry.key,bpfNoteInstructionEntry);
+const BPF_NC_DEFINITION_ENTRIES=Object.entries(BPF_NC_DEFINITIONS).map(([code,definition])=>{
+ const entry={key:'definitions:nc:'+code,page:0,code,label:'Definição',scopes:[],original:{...definition},refs:[definition]};
+ BPF_INSPECTOR_ENTRIES.push(entry);BPF_INSPECTOR_BY_KEY.set(entry.key,entry);
+ return entry;
+});
+
 
 const BPF_FILL_EXAMPLES={"4.1.1/1": ["Na captação [identificação], a pavimentação ao redor da casa de proteção estava íntegra e a drenagem funcionava, sem empoçamento nos pontos vistoriados.", "Na captação [identificação], observou-se [trinca na pavimentação ou falha na drenagem] em [local], com [evidência]."], "4.1.1/2": ["O entorno da captação [identificação] estava limpo e sem focos de insalubridade nos pontos vistoriados.", "No entorno da captação [identificação], observou-se [sujidade ou foco de insalubridade] em [local]."], "4.1.2/1": ["A casa de proteção da captação [identificação] estava limpa, com a porta vedada e as aberturas protegidas.", "Na casa de proteção da captação [identificação], não havia borracha de vedação no entorno da porta [local]."], "4.1.2/2": ["Foi identificada torneira para coleta de amostra no início da canalização da captação [identificação].", "Não foi identificada torneira para coleta de amostra no início da canalização da captação [identificação]."], "4.1.3/1": ["A limpeza da casa é realizada [frequência], e a do poço [frequência], com [produto e concentração], conforme [POP ou registro].", "A limpeza e a desinfecção de [instalação ou equipamento] não foram comprovadas para o período [período]."], "4.1.3/2": ["Foi apresentado certificado de capacitação do funcionário [função], emitido em [data], com carga horária de [horas].", "Não foi apresentado comprovante de capacitação para quem realiza a higienização da captação [identificação]."], "4.1.3/3": ["Foram apresentados registros de limpeza e desinfecção da captação [identificação], com data e responsável pela execução.", "Não foram apresentados os registros de limpeza e desinfecção da captação [identificação] referentes a [período]."], "4.2.2/1": ["Foi apresentada documentação de adequação ao contato com alimentos para [material e trecho da canalização], referência [documento].", "Não foi apresentado certificado de grau alimentício da tubulação de [material] no trecho [local]. A documentação apresentada cobre apenas [componente]."], "4.2.2/2": ["As superfícies internas verificadas em [trecho] estavam íntegras e sem irregularidades visíveis.", "No trecho [local], foi observada [irregularidade, corrosão ou dano] na superfície em contato com a água."], "4.2.7/1": ["A higienização de [trecho] foi demonstrada conforme [procedimento], com [método e frequência].", "A higienização de [trecho] foi realizada sem [etapa ou condição prevista], conforme [evidência]."], "4.2.7/2": ["Foram apresentadas planilhas com os registros das operações de higienização da canalização referentes a [período].", "Não foram apresentados registros de higienização da canalização [identificação] no período [período]."], "4.2.8/1": ["O desmonte do trecho [identificação] é previsto a cada [frequência] e consta no registro de [data].", "Não foi realizado o desmonte do trecho [identificação], embora aplicável, conforme [registro ou relato]."], "4.3.2/1": ["O reservatório [identificação] é de aço inoxidável [especificação], conforme [documento verificado].", "Não foi apresentada comprovação de adequação ao contato com alimentos para [superfície] do reservatório [identificação]."], "4.3.2/2": ["O reservatório [identificação] apresentava superfícies íntegras nos pontos vistoriados.", "Foi observado vazamento na união da tubulação de saída do reservatório [identificação], no trecho para [destino]."], "4.3.3": ["No reservatório [identificação], verificou-se [dispositivo selecionado] em [local], conforme [inspeção visual ou registro].", "No reservatório [identificação], foi constatado [dispositivo ausente ou irregular]. Evidência: [descrição ou documento]."], "4.3.5/1": ["O reservatório [identificação] é higienizado a cada [frequência], com [método, produto e tempo de contato].", "A frequência de higienização observada para o reservatório [identificação] foi de [frequência], embora o procedimento preveja [frequência]."], "4.3.5/2": ["Foram apresentados registros individualizados da higienização do reservatório [identificação] referentes a [período].", "Os registros indicam higienização a cada [intervalo], mas a execução verificada ocorreu a cada [intervalo]."], "4.5.2": ["A recepção dos garrafões retornados ocorre em [local], separado da recepção de [demais insumos].", "A recepção de garrafões retornados e de [insumo] ocorre no mesmo espaço [local], conforme constatado na inspeção."], "4.5.4": ["Os garrafões foram avaliados individualmente no recebimento; os que apresentavam [defeito] foram segregados.", "No recebimento, foi observado garrafão com [defeito] sem segregação, em [local]."], "4.6.4": ["Antes da higienização automática, foi observada a pré-lavagem dos garrafões, com remoção de [sujidade] por [método].", "Foram observados garrafões com [sujidade] encaminhados à higienização automática sem pré-lavagem."], "4.7.2/2": ["A sala de envase estava limpa e conservada nos pontos vistoriados. O POP de higienização [código] foi apresentado.", "Na sala de envase, observou-se [sujidade ou dano] em [superfície e local], conforme [evidência]."], "4.7.5/1": ["O acesso à sala de envase ocorre pela antesala [identificação]. A porta fechava e ajustava ao batente.", "A mola da porta da antesala estava [condição] e a porta não ajustava ao batente, conforme verificado em [local]."], "4.7.5/2": ["A torneira do lavatório exclusivo da antesala foi acionada por pedal, sem contato manual, durante o teste.", "A torneira do lavatório da antesala exigia acionamento manual ou apresentou [falha observada]."], "4.7.5/5": ["A higiene das mãos foi observada no lavatório exclusivo da antesala, conforme o POP [código].", "O POP de higiene das mãos foi apresentado, mas verificou-se [etapa não executada] na antesala, em [momento]."], "4.10.1": ["Foram verificados registros de pH, condutividade e temperatura na fonte [identificação] referentes a [período].", "Não foram apresentados registros de [parâmetro] na fonte [identificação] para o período [período]."], "4.10.2/2": ["Foi apresentado contrato vigente de análises terceirizadas [referência], com escopo e condições de coleta e transporte.", "Foram apresentados comprovantes de serviços laboratoriais, mas não o contrato vigente de terceirização das análises."], "4.10.3/1": ["O laudo [número e data] do lote [identificação] registrou [resultado] para [parâmetro verificado].", "O laudo [número e data] do lote [identificação] registrou [resultado não conforme] para [parâmetro]."], "4.10.3/2": ["Foram apresentados resultados semanais de [parâmetro] para a captação [identificação], no período [período].", "Não foram apresentados resultados semanais de [parâmetro] para a captação [identificação] no período [período]."], "4.10.3/3": ["Foram apresentados resultados semanais de [parâmetro] para o reservatório [identificação], no período [período].", "Não foram apresentados resultados semanais de [parâmetro] para o reservatório [identificação] no período [período]."], "4.10.3/4": ["Foi apresentado laudo físico-químico anual [número e data] do produto [identificação], com [parâmetros verificados].", "Não foi apresentado laudo físico-químico anual para o produto [identificação] referente a [período]."], "4.10.3/5": ["O laudo [número] documenta cinco amostras do mesmo lote [identificação], encaminhadas ao laboratório terceirizado em [mês].", "Para [mês], o laudo [número] não comprovou a análise terceirizada de cinco amostras de um mesmo lote."], "4.10.3/6": ["Os registros de [período] comprovam cinco unidades analisadas do lote [identificação], abrangendo início, meio e término do envase.", "Para o lote [identificação], o registro mostrou [quantidade] unidades analisadas ou ausência de amostras de [etapa do envase]."], "4.11.2": ["A responsabilidade foi comprovada por [documento de designação ou habilitação], vigente em [data].", "Não foi apresentada comprovação de [designação ou habilitação profissional] para [atividade selecionada]."], "4.11.4": ["Foram apresentados certificados de capacitação dos manipuladores, com [data, carga horária e conteúdo].", "Não foram apresentados os certificados de capacitação de [equipe ou função] referentes a [período]."], "4.2.9/1": ["Foi apresentado o POP de higienização da canalização [código e revisão], com [método e parâmetros verificados].", "Não foi apresentado POP de higienização para a canalização [identificação], nem registros da operação."], "4.3.4/1": ["A inspeção visual do reservatório [identificação] foi registrada em [data], conforme POP [código].", "Não foi apresentado registro da inspeção visual do reservatório [identificação] no intervalo previsto em [POP]."], "4.3.6/2": ["O POP de higienização do reservatório [código] estava disponível para consulta no local [identificação].", "O POP [código] não estava disponível em [local], conforme verificado durante a inspeção."], "4.5.3/1": ["A inspeção de recebimento de [insumo] foi registrada em [data], com identificação do lote e critérios de aceitação.", "Foi apresentada ficha de estoque de [insumo], mas não o registro de inspeção na recepção do lote [identificação]."], "4.5.6/2": ["O destino do insumo reprovado [lote] foi registrado em [documento], datado e assinado pelo responsável.", "Foi informada a devolução do insumo reprovado [lote], mas não foi apresentado registro da devolução."], "4.5.8/2": ["Foi apresentado o POP de recepção [código], que define a destinação de [embalagem reprovada].", "O POP de recepção [código] não descreve o destino final de [embalagem ou insumo reprovado]."], "4.6.12/1": ["Foi apresentado o POP de higienização de embalagens [código], com [parâmetros verificados] e registros de execução.", "O POP de higienização de embalagens [código] não descrevia [etapa ou parâmetro observado]."], "4.10.5/2": ["Foi apresentado o laudo [número e data] do produto [identificação] e a documentação da fonte correspondente [referência].", "Não foi apresentado [laudo do produto ou laudo da fonte] para [identificação]."], "4.10.6/2": ["Foi apresentado registro da ação corretiva adotada em [data] para o desvio [descrição], com [evidência de execução].", "Foi constatado o desvio [descrição], mas não foram apresentadas evidências das medidas corretivas adotadas."]};
 function bpfFillExample(code,panel,answer){
@@ -249,6 +263,7 @@ function bpfInspectorDecode(raw){
   if(!item||!change||typeof change!=='object')continue;
   if(typeof change.text!=='string'||typeof change.guidance!=='string')continue;
   if(change.text.length>10000||change.guidance.length>10000)continue;
+  if(key.startsWith('definitions:nc:')&&(!change.text.trim()||change.text.length>1000))continue;
   if(change.text!==item.original.text||change.guidance!==item.original.guidance)
    entries[key]={text:change.text,guidance:change.guidance};
  }
@@ -307,6 +322,7 @@ function bpfInspectorOpenReview(){
  const input=document.createElement('input');input.type='file';input.accept='.json,application/json';input.style.display='none';dlg.append(input);
  const restoreAll=document.createElement('button');restoreAll.textContent='Retornar tudo ao original';restoreAll.className='danger';top.append(restoreAll);
  const cancel=document.createElement('button');cancel.textContent='Fechar';cancel.className='secondary';top.append(cancel);
+ const definitions=document.createElement('section');definitions.className='review-card';dlg.append(definitions);
  const filters=document.createElement('div');filters.className='review-filter';dlg.append(filters);
  const process=document.createElement('select');process.setAttribute('aria-label','Filtrar por processo');
  const all=document.createElement('option');all.value='';all.textContent='Todos os processos';process.append(all);
@@ -321,7 +337,7 @@ function bpfInspectorOpenReview(){
  const list=document.createElement('div');dlg.append(list);
  function actual(item){return pending[item.key]||item.original;}
  function updateCount(){
-  count.textContent=Object.keys(pending).length+' frase(s) revisada(s) de '+BPF_INSPECTOR_ENTRIES.length;
+  count.textContent=Object.keys(pending).length+' revisão(ões) de '+BPF_INSPECTOR_ENTRIES.length;
  }
  function update(item,field,value){
   const candidate={...actual(item),[field]:value};
@@ -330,9 +346,22 @@ function bpfInspectorOpenReview(){
   updateCount();
  }
  function render(){
+  definitions.replaceChildren();
+  const heading=document.createElement('h3');heading.textContent='Definições nas Observações Gerais';definitions.append(heading);
+  const instruction=document.createElement('p');instruction.className='review-help';instruction.textContent='Estes textos aparecem no início dos blocos de não conformidades. Clique em Salvar revisões para aplicar.';definitions.append(instruction);
+  for(const entry of BPF_NC_DEFINITION_ENTRIES){
+   const label=document.createElement('label');label.className='review-label';label.textContent=entry.code+' — Definição';
+   const area=document.createElement('textarea');area.rows=2;area.value=actual(entry).text;area.maxLength=1000;
+   area.setAttribute('aria-label','Definição de '+entry.code);
+   area.oninput=()=>update(entry,'text',area.value);
+   label.append(area);definitions.append(label);
+   const restore=document.createElement('button');restore.type='button';restore.className='secondary';restore.textContent='Restaurar '+entry.code;
+   restore.onclick=()=>{delete pending[entry.key];area.value=entry.original.text;updateCount();};
+   definitions.append(restore);
+  }
   list.replaceChildren();
   const keyword=find.value.trim().toLocaleLowerCase('pt-BR'),pageFilter=process.value;
-  const filtered=BPF_INSPECTOR_ENTRIES.filter(e=>
+  const filtered=BPF_INSPECTOR_ENTRIES.filter(e=>!BPF_NC_DEFINITION_ENTRIES.includes(e)&&
    (!pageFilter||String(e.page)===pageFilter)&&(!ck.checked||!!pending[e.key])&&
    (!keyword||[e.code,e.label,titles[e.page]||'',e.original.text,e.original.guidance,actual(e).text,actual(e).guidance].some(x=>String(x).toLocaleLowerCase('pt-BR').includes(keyword))));
   const info=document.createElement('p');info.className='review-help';info.textContent=filtered.length+' frase(s) exibida(s). Escolha o processo ou busque o item para revisar todos os Fs.';list.append(info);
@@ -1652,7 +1681,7 @@ async function bpfExportEditable(){
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
 }
 document.querySelector('#print').onclick=bpfExportEditable;
-</script><script src="./interface-guia-amigavel.js?v=20261107-appcc-f18" defer></script><script id="bpf-update-worker">
+</script><script src="./interface-guia-amigavel.js?v=20261107-definicoes-f19" defer></script><script id="bpf-update-worker">
 if('serviceWorker' in navigator && location.protocol==='https:'){
  navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 }
