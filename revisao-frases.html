@@ -1,58 +1,78 @@
 <!doctype html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b476b">
-<title>Revisão das frases e orientações ao inspetor — BPF/APPCC</title>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b476b"><title>Revisão das frases e orientações ao inspetor · BPF/APPCC</title>
 <style>
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;overflow:hidden;background:#f3f8fb;font-family:Arial,Helvetica,sans-serif}
-#editor{display:block;width:100%;height:100%;border:0;background:#f3f8fb}
-#fallback{position:absolute;inset:0;z-index:-1;padding:20px;background:#f3f8fb;color:#17405a}
-#fallback a{color:#086da1}
-</style>
-</head>
+*{box-sizing:border-box}html,body{height:100%;margin:0;background:#f3f8fb;font:15px Arial,Helvetica,sans-serif;color:#183f52}
+#carregando{position:fixed;inset:0;background:#f3f8fb;z-index:3;display:flex;align-items:center;justify-content:center;padding:25px;text-align:center}
+#carregando[hidden]{display:none}
+#revisao{width:100%;height:100dvh;border:0;display:block;background:#f3f8fb}
+a{color:#006b9a}
+</style></head>
 <body>
-<div id="fallback"><strong>Revisão das frases e orientações ao inspetor</strong><p><a href="./index.html">Voltar ao menu do aplicativo</a></p></div>
-<iframe id="editor" title="Revisão das frases e orientações ao inspetor" src="./individual.html?revisar-frases=1&amp;v=20261107-pagina-independente-v3"></iframe>
+<main id="carregando" role="status"><div><h1>Revisão das frases e orientações ao inspetor</h1><p>Abrindo o editor de frases…</p><p id="erro" hidden>Não foi possível abrir automaticamente. <a href="./index.html">Retornar ao menu</a>.</p></div></main>
+<iframe id="revisao" title="Editor de frases e orientações ao inspetor" src="./individual.html?revisar-frases=1&amp;v=20261107-editor-isolado-v4"></iframe>
 <script>
 (()=>{
- 'use strict';
- const frame=document.getElementById('editor');
- const goHome=()=>window.location.replace('./index.html?v=20261107-pagina-independente-v3');
- let attached=null,openSeen=false;
- function sync(){
-  let doc;try{doc=frame.contentDocument;}catch(_){return}
-  if(!doc||!doc.body||doc===attached)return;
-  attached=doc;
-  const style=doc.createElement('style');
-  style.textContent='dialog::backdrop{background:#f3f8fb!important} body:has(dialog[open]){background:#f3f8fb!important}';
-  doc.head.appendChild(style);
-  const titleMatches=()=>[...doc.querySelectorAll('h1,h2,h3,h4,strong')].filter(el=>/Revisão das frases e orientações ao inspetor/i.test(el.textContent||''));
-  const isEditorVisible=()=>titleMatches().some(el=>!!el.getClientRects().length);
-  function closeClicked(e){
-   const btn=e.target.closest?.('button,[role="button"]');
-   if(!btn||!/^Fechar$/i.test((btn.innerText||btn.textContent||'').trim()))return;
-   if(!isEditorVisible())return;
-   window.setTimeout(goHome,60);
-  }
-  doc.addEventListener('click',closeClicked,true);
-  const observer=new MutationObserver(()=>{
-   const visible=isEditorVisible();
-   if(visible)openSeen=true;
-   else if(openSeen){observer.disconnect();goHome()}
-  });
-  observer.observe(doc.body,{subtree:true,childList:true,attributes:true,attributeFilter:['open','style','class','hidden','aria-hidden']});
-  window.setTimeout(()=>{
-   if(openSeen)return;
-   const btn=[...doc.querySelectorAll('button,a,[role="button"]')].find(el=>/Revisar frases dos inspetores/i.test((el.innerText||el.textContent||'').trim()));
-   if(btn)btn.click();
-  },900);
+'use strict';
+const frame=document.getElementById('revisao'),loading=document.getElementById('carregando');
+let childDoc=null,editorSeen=false,returning=false,tries=0,lastClick=0;
+function home(){
+ if(returning)return;
+ returning=true;
+ window.location.replace('./index.html?v=20261107-editor-isolado-v4');
+}
+function visible(el){return !!(el&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden')}
+function findEditor(doc){
+ const titles=[...doc.querySelectorAll('h1,h2,h3,h4,strong,b')].filter(e=>/Revisão das frases e orientações ao inspetor/i.test(e.textContent||'')&&visible(e));
+ for(const title of titles){
+  const modal=title.closest('dialog,[role="dialog"],[aria-modal="true"]');
+  if(modal&&visible(modal))return modal;
  }
- frame.addEventListener('load',sync);
- window.setTimeout(sync,400);
+ return doc.querySelector('dialog[open]')||null;
+}
+function installStyles(doc){
+ if(doc.getElementById('revisao-frases-tela-isolada'))return;
+ const style=doc.createElement('style');
+ style.id='revisao-frases-tela-isolada';
+ style.textContent=`
+ html,body{background:#f3f8fb!important;min-height:100vh!important}
+ body.revisao-isolada> :not(dialog):not([role="dialog"]):not([aria-modal="true"]){visibility:hidden!important;pointer-events:none!important}
+ body.revisao-isolada dialog[open],body.revisao-isolada [role="dialog"],body.revisao-isolada [aria-modal="true"]{
+ visibility:visible!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-width:none!important;max-height:none!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:auto!important;z-index:2147483647!important;background:#f7fbfe!important;
+ }
+ body.revisao-isolada dialog::backdrop{background:#f3f8fb!important}
+ `;
+ doc.head.appendChild(style);
+}
+function tick(){
+ if(returning)return;
+ let doc;try{doc=frame.contentDocument;}catch(e){return}
+ if(!doc?.body)return;
+ if(doc!==childDoc){
+  childDoc=doc;editorSeen=false;tries=0;lastClick=0;installStyles(doc);
+  doc.addEventListener('click',e=>{
+   const control=e.target.closest?.('button,[role="button"],a');
+   if(!control||!/^Fechar$/i.test((control.innerText||control.textContent||'').trim()))return;
+   if(findEditor(doc))setTimeout(home,50);
+  },true);
+ }
+ const modal=findEditor(doc);
+ if(modal){
+  editorSeen=true;doc.body.classList.add('revisao-isolada');loading.hidden=true;
+  return;
+ }
+ if(editorSeen){home();return}
+ tries++;
+ if(tries>100){
+  document.querySelector('#carregando p').textContent='A abertura automática não foi concluída.';
+  document.getElementById('erro').hidden=false;return;
+ }
+ // Aguardar os controles do guia estarem prontos. Repetir abertura enquanto o editor nao estiver visivel.
+ const candidates=[...doc.querySelectorAll('button,a,[role="button"],input[type="button"]')];
+ const button=candidates.find(e=>/Revisar frases dos inspetores/i.test((e.innerText||e.textContent||e.value||'').trim()));
+ if(button&&Date.now()-lastClick>1300){lastClick=Date.now();button.click()}
+}
+frame.addEventListener('load',tick);
+setInterval(tick,250);
 })();
-</script>
-</body>
-</html>
+</script></body></html>
