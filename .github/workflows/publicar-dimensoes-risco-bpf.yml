@@ -1,0 +1,31 @@
+name: Publicar dimensoes e matriz de risco BPF
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/patch_dimensoes_risco_20261106.py
+      - .github/workflows/publicar-dimensoes-risco-bpf.yml
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pymupdf pypdf reportlab
+      - run: python scripts/patch_dimensoes_risco_20261106.py
+      - run: node scripts/test_autofit_processos_html_pdf.js
+      - run: node scripts/test_anexo_f_obs_unica.js
+      - name: Salvar modelos atualizados
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add individual.html equipe.html sw-guia18.js
+          if ! git diff --cached --quiet; then
+            git commit -m 'Guia BPF: ampliar observacoes e classificar alto risco abaixo de 50%'
+            git push origin HEAD:main
+          fi
