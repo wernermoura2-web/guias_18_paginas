@@ -41,7 +41,7 @@
   .bpf-item-code>span{display:flex;align-items:center;justify-content:center;min-height:0;line-height:1;white-space:nowrap}
   .bpf-item-code>.bpf-f{position:relative;z-index:21!important;display:flex!important;align-items:center;justify-content:center;visibility:visible!important;opacity:1!important;box-sizing:border-box;width:100%!important;height:100%!important;min-height:0!important;min-width:0!important;padding:0!important;line-height:1!important;align-self:stretch}
   .bpf-f-destaque,.bpf-regra-pcc-botao{font-weight:800!important;color:#fff!important;background:#087aaa!important;border:1px solid #07577b!important;border-radius:3px!important;text-decoration:none!important;opacity:1!important}
-  .bpf-regra-pcc-botao{position:absolute;left:8.1%;transform:translateY(-50%);z-index:40;display:grid;place-items:center;width:1.55%;aspect-ratio:1;padding:0;font-size:1.1cqw;line-height:1}
+  .bpf-regra-pcc-botao{position:absolute;left:7.45%;transform:translateY(-50%);z-index:40;display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:1.45%;height:1.45cqw;min-width:0;min-height:0;padding:0!important;font:bold .98cqw/1 Arial,sans-serif;white-space:nowrap;text-align:center;border:1px solid #07577b;border-radius:.2cqw;background:#087aaa;color:#fff;box-shadow:none} .page[data-page="17"] .bpf-regra-pcc-botao{left:7.35%;width:1.3%;height:1.3cqw;font-size:.9cqw}
   /* bpf-f-dimensoes-20261106-v3: o tamanho da letra segue a altura real do item. */
   @media(max-width:520px){
     .bpf-ui-hub{padding:13px 12px;margin:12px 9px 16px;border-radius:15px}
