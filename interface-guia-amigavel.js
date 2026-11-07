@@ -337,12 +337,19 @@
   if(!dlg.open)dlg.showModal();
  }
  function addR(el,page,left,top){
-  if(!el||el.querySelector('.bpf-regra-pcc-botao'))return;
-  const b=document.createElement('button');b.type='button';b.className='bpf-regra-pcc-botao';
-  b.textContent='R';b.title='Regra PCC — ver critérios de alto risco';b.setAttribute('aria-label','Abrir Regra PCC');
-  b.style.cssText='position:absolute;left:'+left+'%;top:'+top+'%;width:2.15%;height:2.15%;min-width:17px;min-height:17px;max-width:24px;max-height:24px;z-index:40;background:#fff;color:#20394a;border:2px solid #223f51;border-radius:4px;font:bold 1.25cqw Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 1px 3px #0003';
-  b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showRule(page)});
-  el.appendChild(b);
+  if(!el)return;
+  // Reposiciona também um botão previamente criado, sem duplicar.
+  let b=el.querySelector('.bpf-regra-pcc-botao');
+  if(!b){
+   b=document.createElement('button');b.type='button';b.className='bpf-regra-pcc-botao';
+   b.textContent='R';
+   b.title='Regra PCC — ver critérios de alto risco';
+   b.setAttribute('aria-label','Abrir Regra PCC');
+   b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showRule(page)});
+   el.appendChild(b);
+  }
+  // Pequeno e inteiramente dentro da primeira coluna, à esquerda da legenda.
+  b.style.cssText='position:absolute;left:'+left+'%;top:'+top+'%;width:1.85%;height:2%;min-width:14px;min-height:14px;max-width:19px;max-height:19px;z-index:40;background:#fff;color:#20394a;border:1.5px solid #223f51;border-radius:3px;font:bold 11px Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 1px 2px #0002';
  }
  function start(){
   const host=document.getElementById('pages'),data=window.Guia?.data;
@@ -353,19 +360,21 @@
    const page=Number(index),el=host.children[page];
    const risk=data.widgets.find(w=>w.page===page&&w.name===name);
    if(!el||!risk)continue;
-   const W=risk.size[0],H=risk.size[1];
-   const left=18.5; // Dentro do canto direito da celula AVALIAÇÃO; longe das faixas de risco.
-   const top=Math.max(1,Math.min(94,100*(H-risk.rect[3]+3)/H));
-   addR(el,page,left,top);
+   const H=risk.size[1];
+   // A faixa AVALIAÇÃO fica imediatamente abaixo do cabeçalho ATENDIMENTO/RISCO;
+   // avançar uma linha em relação à posição anterior evita o bloco % ATENDIDO.
+   const top=Math.max(1,Math.min(96,100*(H-risk.rect[3]+3)/H+2.7));
+   // A legenda AVALIAÇÃO é centralizada; manter o R na margem interna esquerda.
+   addR(el,page,5.0,top);
   }
-  // Matriz: ancorar o R à linha RISCO efetiva, em vez de percentual fixo da página.
+  // Matriz: usar a altura da linha RISCO e posicionar R à esquerda da palavra.
   const matrixEl=host.children[17];
   const matrixRisk=data.widgets.find(w=>w.page===17&&w.name==='Dropdown58');
   if(matrixEl&&matrixRisk){
    const H=matrixRisk.size[1];
    const center=H-(matrixRisk.rect[1]+matrixRisk.rect[3])/2;
-   const top=Math.max(1,Math.min(94,100*center/H-1.5));
-   addR(matrixEl,17,18.5,top); // Dentro da borda direita da coluna RISCO.
+   const top=Math.max(1,Math.min(96,100*center/H-1));
+   addR(matrixEl,17,5.4,top);
   }
  }
  // Não acrescentar frases sobre o formulário nem alterar as dimensões do PDF editável.
