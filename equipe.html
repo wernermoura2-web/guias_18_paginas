@@ -480,11 +480,11 @@ function bpfSyncObservation(row,page){
  for(const panel of bpfPanels(page,row)){
   for(const [answer,label] of [['1','Sim'],['0','Não'],['2','Não se aplica']]){
    if(answer==='2'&&panel.composite)continue;
-   const selected=panel.entries.filter(e=>values[e.name]===answer);
+   const selected=bpfPanelRecords(row,panel).filter(e=>values[e.name]===answer);
    if(!selected.length)continue;
    const note=answer==='2'?'':String(values[bpfGroupNoteName(page,row,panel,answer)]||'').replace(/\s+/g,' ').trim();
    if(answer==='1'&&!note)continue;
-   const units=selected.map(e=>row.code==='4.3.3'?bpfScopeLabel(page,e.scope)+': '+bpfUnifiedOption(row,e):panel.composite?'F'+(e.index+1)+' '+bpfScopeLabel(page,e.scope):bpfScopeLabel(page,e.scope));
+   const units=selected.map(e=>bpfSplitF1(row)?bpfScopeLabel(page,e.scope)+': '+bpfUnifiedOption(row,e):panel.composite?'F'+(e.index+1)+' '+bpfScopeLabel(page,e.scope):bpfScopeLabel(page,e.scope));
    entries.push(panel.label+' — '+label+' ('+units.join(', ')+')'+(note?': '+bpfObservationMarker(answer,selected)+note:''));
   }
  }
@@ -551,7 +551,25 @@ function bpfScopeLabel(page,scope){
  if(page.page<=10)return 'Linha '+scope.col;
  return 'Estabelecimento';
 }
+function bpfSplitF1(row){return row.code==='4.3.3'||row.code==='4.6.4';}
+function bpfPrewashChecks(scope){
+ return [
+  '1) Remoção do rótulo',
+  '2) Remoção dos resíduos da substância adesiva',
+  '3) Remoção das sujidades da superfície interna',
+  '4) Remoção das sujidades da superfície externa'
+ ].map((option,i)=>({scope,index:0,phrase:scope.phrases[0],option,name:bpfPhraseName(scope,0)+'_PreLavagem_'+(i+1)}));
+}
+function bpfPanelRecords(row,panel){
+ if(row.code!=='4.6.4')return panel.entries;
+ // Registros anteriores à divisão informam apenas o resultado geral do F1.
+ const legacy=row.scopes.filter(scope=>!panel.entries.some(e=>e.scope===scope&&values[e.name])).map(scope=>({
+  scope,index:0,phrase:scope.phrases[0],name:bpfPhraseName(scope,0),option:'Avaliação geral do F1 (registro anterior)'
+ }));
+ return [...panel.entries,...legacy];
+}
 function bpfPanels(page,row){
+ if(row.code==='4.6.4')return [{id:0,label:'F1 — Pré-lavagem',composite:true,entries:row.scopes.flatMap(bpfPrewashChecks)}];
  const max=Math.max(row.phrases.length,...row.scopes.map(s=>s.phrases.length));
  const range=(a,b)=>Array.from({length:b-a+1},(_,i)=>a+i);
  let parts;
@@ -582,6 +600,12 @@ function bpfGroupNoteName(page,row,panel,answer){
  return 'BPF_FGroupNote_'+page.page+'_'+row.code.replace(/[^0-9a-z]/gi,'_')+'_G'+(panel.id+1)+'_'+(answer==='1'?'OBS':'NC');
 }
 function bpfInitGroupFields(data){
+ for(const page of BPF_PHRASES)for(const row of page.rows){
+  if(row.code!=='4.6.4')continue;
+  for(const scope of row.scopes)for(const {name,option} of bpfPrewashChecks(scope)){
+   data.fields[name]={name,type:'/Ch',flags:0,label:row.code+' F1 — '+option,options:['','1','0'],calc:'',phrasePage:page.page};
+  }
+ }
  for(const page of BPF_PHRASES)for(const row of page.rows)for(const panel of bpfPanels(page,row))for(const [answer,label] of [['1','OBS'],['0','NC']]){
    const key=bpfGroupNoteName(page,row,panel,answer);
    data.fields[key]={name:key,type:'/Tx',flags:4096,label:row.code+' '+panel.label+' '+label,options:[],calc:'',phrasePage:page.page};
@@ -591,7 +615,7 @@ function bpfSeedGroupNotes(page,row,panels){
  for(const panel of panels)for(const answer of ['1','0']){
   const key=bpfGroupNoteName(page,row,panel,answer);
   if(String(values[key]||'').trim())continue;
-  const oldNotes=panel.entries.filter(e=>values[e.name]===answer).map(e=>String(values[bpfNoteName(e.scope,e.index)]||'').trim()).filter(Boolean);
+  const oldNotes=bpfPanelRecords(row,panel).filter(e=>values[e.name]===answer&&(row.code!=='4.6.4'||values[bpfPhraseName(e.scope,0)]===answer)).map(e=>String(values[bpfNoteName(e.scope,e.index)]||'').trim()).filter(Boolean);
   const unique=[...new Set(oldNotes)];
   if(unique.length)values[key]=unique.length===1?unique[0]:unique.join('\n');
  }
@@ -621,6 +645,7 @@ function bpfUnifiedAnswer(page,row,panel){
 }
 function bpfUnifiedIsOther(row,panel,e){return row.code==='4.11.2'&&panel.id===1&&e.index===5;}
 function bpfUnifiedOption(row,e){
+ if(row.code==='4.6.4')return e.option;
  if(row.code==='4.10.2')return ['Laboratório próprio','Laboratório terceirizado','Contrato de terceirização'][e.index];
  if(row.code==='4.11.2')return ['RT','Responsável legal','Proprietário','Químico','Biólogo','Outro'][e.index];
  if(row.code==='4.3.3')return [
@@ -860,12 +885,12 @@ function bpfOpenPhrases(row,page){
  for(const panel of panels){
   const card=document.createElement('fieldset');card.className='bpf-group';
   const legend=document.createElement('legend');legend.textContent=panel.label+(panel.composite?' — caixas selecionáveis':' — BPF/APPCC: '+(panel.entries[0]?.phrase.appcc||''));card.append(legend);
-  if(!panel.composite){
+  if(!panel.composite||row.code==='4.6.4'){
    const e=panel.entries[0];if(e){const p=document.createElement('p');p.className='bpf-group-description';p.textContent=e.phrase.text;card.append(p);}
   }
   const guidanceEntries=[...new Map(panel.entries.filter(e=>e.phrase.guidance).map(e=>[e.index,e])).values()];
   if(guidanceEntries.length){
-   if(panel.composite){
+   if(panel.composite&&row.code!=='4.6.4'){
     const details=document.createElement('details');details.className='bpf-inspector-details';
     const summary=document.createElement('summary');summary.textContent='Orientações ao inspetor';details.append(summary);
     for(const e of guidanceEntries){const p=document.createElement('p');p.textContent='F'+(e.index+1)+': '+e.phrase.guidance;details.append(p);}
@@ -874,12 +899,20 @@ function bpfOpenPhrases(row,page){
     const guide=document.createElement('p');guide.className='bpf-guidance';guide.textContent='Orientação ao inspetor: '+guidanceEntries[0].phrase.guidance;card.append(guide);
    }
   }
+  if(row.code==='4.6.4'){
+   const legacy=bpfPanelRecords(row,panel).filter(e=>e.name===bpfPhraseName(e.scope,0)&&['1','0'].includes(values[e.name]));
+   if(legacy.length){
+    const info=document.createElement('p');info.className='bpf-guidance';
+    info.textContent='Avaliação geral já registrada: '+legacy.map(e=>bpfScopeLabel(page,e.scope)+' — '+(values[e.name]==='1'?'Sim':'Não')).join('; ')+'. Ao selecionar uma verificação, a avaliação da linha passa a usar as marcações detalhadas.';
+    card.append(info);
+   }
+  }
   const grid=document.createElement('div');grid.className='bpf-answer-grid';card.append(grid);
   const allowed=[['1','Sim','OBS — observação única das opções marcadas Sim'],['0','Não','NC — não conformidade das opções marcadas Não']];
   if(!panel.composite&&panel.entries.some(e=>e.phrase.allowNA||values[e.name]==='2'))allowed.push(['2','Não se aplica',null]);
   for(const [answer,heading,noteHeading] of allowed){
    const box=document.createElement('fieldset');box.className='bpf-answer-box';
-   const header=document.createElement('legend');header.textContent=row.code==='4.3.3'?'F1 — '+heading:heading;box.append(header);
+   const header=document.createElement('legend');header.textContent=bpfSplitF1(row)?'F1 — '+heading:heading;box.append(header);
    if(answer==='2'&&bpfNARequiresF1No(row,panel.id)){
     const hint=document.createElement('p');hint.textContent='Disponível quando o F1 da mesma unidade estiver marcado como Não.';box.append(hint);
    }
@@ -892,11 +925,17 @@ function bpfOpenPhrases(row,page){
      input.disabled=!bpfAllowsDependentNA(row,entry,values);
      dependentNA.push({control:input,entry});
     }
-    const detail=row.code==='4.3.3'?bpfUnifiedOption(row,entry):panel.composite?'F'+(entry.index+1)+' — '+entry.phrase.text:'';
+    const detail=bpfSplitF1(row)?bpfUnifiedOption(row,entry):panel.composite?'F'+(entry.index+1)+' — '+entry.phrase.text:'';
     const scopeText=panel.composite&&row.scopes.length===1?'':bpfScopeLabel(page,entry.scope)+(panel.composite?' — ':'');
     const caption=document.createElement('span');caption.textContent=scopeText+detail;
     input.onchange=()=>{
      values[entry.name]=input.checked?answer:values[entry.name]===answer?'':values[entry.name];
+     if(row.code==='4.6.4'){
+      const assessed=panel.entries.filter(e=>e.scope===entry.scope).map(e=>values[e.name]);
+      const result=assessed.includes('0')?'0':assessed.includes('1')?'1':'';
+      values[bpfPhraseName(entry.scope,0)]=result;
+      if(!result){values[entry.scope.name]='Off';values[bpfNoteName(entry.scope,0)]='';}
+     }
      if(row.code==='4.3.3'&&!entry.scope.phrases.some((_,i)=>['1','0'].includes(values[bpfPhraseName(entry.scope,i)]))){
       entry.scope.phrases.forEach((_,i)=>{values[bpfPhraseName(entry.scope,i)]='';});
       values[entry.scope.name]='Off';
@@ -944,7 +983,7 @@ function bpfOpenPhrases(row,page){
    }
   }
   for(const panel of panels){
-   const noSelected=panel.entries.some(e=>values[e.name]==='0');
+   const noSelected=bpfPanelRecords(row,panel).some(e=>values[e.name]==='0');
    const noNote=String(values[bpfGroupNoteName(page,row,panel,'0')]||'').trim();
    if(noSelected&&!noNote){
     const area=content.querySelector('textarea[data-note="'+bpfGroupNoteName(page,row,panel,'0')+'"]');
@@ -954,8 +993,9 @@ function bpfOpenPhrases(row,page){
    }
   }
   // Mantém os campos individuais internos para cálculos, JSON antigo e Anexo F.
-  for(const panel of panels)for(const e of panel.entries){
+  for(const panel of panels)for(const e of bpfPanelRecords(row,panel)){
    const v=values[e.name];
+   if(row.code==='4.6.4'&&v!==values[bpfPhraseName(e.scope,0)])continue;
    if(v==='1'||v==='0')values[bpfNoteName(e.scope,e.index)]=String(values[bpfGroupNoteName(page,row,panel,v)]||'');
    else if(v==='2'||row.code==='4.3.3')values[bpfNoteName(e.scope,e.index)]='';
   }
@@ -1774,10 +1814,10 @@ function bpfAnnexCompactRecords(source,index,records){
 function bpfAnnexRows(){
  const result=[];
  for(const page of BPF_PHRASES)for(const row of page.rows){
-  if(row.code==='4.3.3'){
+  if(bpfSplitF1(row)){
    const panel=bpfPanels(page,row)[0];
    for(const answer of ['1','0']){
-    const entries=panel.entries.filter(e=>values[e.name]===answer);
+    const entries=bpfPanelRecords(row,panel).filter(e=>values[e.name]===answer);
     if(!entries.length)continue;
     const note=String(values[bpfGroupNoteName(page,row,panel,answer)]||'').trim();
     result.push({page,row,grouped:true,panel,entries,answer,note});
@@ -1826,7 +1866,7 @@ async function bpfAppendCompactAnnex(pdf){
    const {page:source,row,panel,entries,answer,note,other}=item;
    ensure(90);
    text('Página '+(source.page+1)+' | Item '+row.code+' | '+panel.label+' | Resultado: '+(answer==='1'?'Sim':'Não'),9,true);
-   table(entries.map(e=>[(row.scopes.length>1?bpfScopeLabel(source,e.scope):'Grupo')+' / F'+(e.index+1),answer==='1'?'Sim':'Não',bpfUnifiedOption(row,e)]));
+   table(entries.map(e=>[(row.scopes.length>1?bpfScopeLabel(source,e.scope):'Grupo')+' / F'+(row.code==='4.6.4'?1:e.index+1),answer==='1'?'Sim':'Não',bpfUnifiedOption(row,e)]));
    if(note)text((answer==='1'?'OBS: ':'NC: ')+note,8.5);
    if(other)text('Outro conselho: '+other,8);
    continue;
