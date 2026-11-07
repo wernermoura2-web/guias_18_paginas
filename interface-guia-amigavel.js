@@ -211,3 +211,83 @@
  function start(){apply();new MutationObserver(schedule).observe(document.body,{subtree:true,childList:true})}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
+
+
+/* BPF_PCC_DUAS_NATUREZAS_20261107: justificativa sanitária visível no HTML e no PDF.
+   A regra de classificação automática PCC já é calculada no formulário principal. */
+(()=>{'use strict';
+ if(window.__BPF_PCC_DUAS_NATUREZAS_20261107)return;
+ window.__BPF_PCC_DUAS_NATUREZAS_20261107=true;
+ const general=[
+  'REGRA PCC: O não atendimento de item de higienização classificado como PCC torna o processo ALTO RISCO.',
+  'Perigos sem controle: contaminação microbiológica da água e química por resíduos de saneantes e detergentes.'
+ ];
+ const embalagem=[
+  general[0],
+  'PCC do enxágue: comprovar eliminação de resíduos de saneantes e detergentes das embalagens; perigos microbiológico e químico.'
+ ];
+ const matriz=[
+  general[0],
+  'Perigos sem controle: contaminação MICROBIOLÓGICA da água e QUÍMICA por resíduos de saneantes e detergentes.'
+ ];
+ const riscoFinal={0:'Dropdown5',1:'Dropdown10',2:'Dropdown15',3:'Dropdown20',4:'Dropdown25',5:'Dropdown30',6:'Dropdown35',7:'Dropdown40',8:'Dropdown45',9:'Dropdown50',10:'Dropdown55',11:'Dropdown56',12:'Dropdown57'};
+ const areas=[];
+ function linesFor(page){return page===7||page===8?embalagem:general;}
+ function start(){
+  const host=document.getElementById('pages'),data=window.Guia?.data;
+  if(!host||!data?.widgets||host.children.length<18)return;
+  const existing=document.getElementById('bpf-regra-pcc-matriz');
+  if(existing){
+   existing.replaceChildren(...matriz.map(s=>{const d=document.createElement('div');d.textContent=s;return d;}));
+   existing.style.cssText='position:absolute;left:5.8%;top:64.95%;width:88.4%;height:2.12%;font:bold 0.83cqw Arial,sans-serif;line-height:1.18;text-align:center;white-space:nowrap;color:#a11414;pointer-events:none;z-index:8';
+  }
+  for(const [pageText,name]of Object.entries(riscoFinal)){
+   const page=+pageText,widget=data.widgets.find(w=>w.page===page&&w.name===name);
+   if(!widget||host.children[page].querySelector('.bpf-nota-pcc-2-perigos'))continue;
+   const top=widget.size[1]-widget.rect[1]+3;
+   areas.push({page,top});
+   const note=document.createElement('div');
+   note.className='bpf-nota-pcc-2-perigos';
+   note.replaceChildren(...linesFor(page).map(s=>{const d=document.createElement('div');d.textContent=s;return d;}));
+   note.style.cssText='position:absolute;left:5.8%;top:'+(100*top/widget.size[1])+'%;width:88.4%;height:'+(100*19/widget.size[1])+'%;font:bold 0.83cqw Arial,sans-serif;line-height:1.15;text-align:center;white-space:nowrap;color:#a11414;pointer-events:none;z-index:8';
+   host.children[page].append(note);
+  }
+ }
+ function installPdfPatch(){
+  const lib=window.PDFLib;if(!lib?.PDFDocument?.load||lib.PDFDocument.load.__bpfPccTwoHazards)return;
+  const oldLoad=lib.PDFDocument.load;
+  async function newLoad(...args){
+   const pdf=await oldLoad.apply(this,args);
+   if(pdf.getPageCount()<22)return pdf;
+   let added=false;
+   const oldSave=pdf.save.bind(pdf);
+   pdf.save=async function(...options){
+    if(!added){
+     added=true;
+     const font=await pdf.embedFont(lib.StandardFonts.HelveticaBold);
+     const red=lib.rgb(0.56,0.07,0.07);
+     function put(page,lines,top){
+      const maxWidth=523,standardSize=7.2;
+      for(let i=0;i<lines.length;i++){
+       const line=lines[i];
+       const width=font.widthOfTextAtSize(line,standardSize);
+       const size=Math.min(standardSize,standardSize*maxWidth/width);
+       page.drawText(line,{x:36,y:page.getHeight()-top-7-i*9.1,size,font,color:red});
+      }
+     }
+     const pageMatriz=pdf.getPage(17);
+     // Substitui a nota antiga, desenhada pelo HTML, pela explicação dos dois perigos.
+     pageMatriz.drawRectangle({x:36,y:282,width:523,height:13,color:lib.rgb(1,1,1)});
+     put(pageMatriz,matriz,548);
+     for(const {page,top}of areas)put(pdf.getPage(page),linesFor(page),top);
+    }
+    return oldSave(...options);
+   };
+   return pdf;
+  }
+  newLoad.__bpfPccTwoHazards=true;
+  lib.PDFDocument.load=newLoad;
+ }
+ document.addEventListener('click',e=>{if(e.target.closest?.('#print'))installPdfPatch();},true);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
+})();
