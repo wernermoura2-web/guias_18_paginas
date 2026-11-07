@@ -256,84 +256,110 @@
   }
   if(modified&&typeof window.Guia?.recalc==='function')window.Guia.recalc();
  }
+
+ const PCC_DETAIL={
+ '4.6.3':'Controle da eficácia da higienização das embalagens retornáveis, para prevenir a sobrevivência de microrganismos e a contaminação microbiológica da água.',
+ '4.6.5':'Controle das condições críticas de higienização, para evitar a permanência de contaminantes nas embalagens.',
+ '4.6.6':'Comprovação, por testes indicadores, da eliminação dos resíduos de detergentes e saneantes após a higienização, para prevenir a contaminação química da água.',
+ '4.6.8':'Controle da higienização das embalagens e dos componentes envolvidos, para impedir a contaminação microbiológica da água.',
+ '4.7.1':'Controle sanitário da operação de envase, para prevenir a contaminação microbiológica da água.',
+ '4.7.4':'Controle das condições sanitárias da sala de envase que representem perigo significativo de contaminação.',
+ '4.7.5':'Controle da higiene dos manipuladores na área de envase, visando evitar contaminação microbiológica.',
+ '4.7.8':'Higienização de reservatórios, conexões, tubulações, mangueiras e bicos de envase, para prevenir contaminação microbiológica e, quando aplicável, resíduos químicos.'
+ };
+ const PCC_RULE='O não atendimento de qualquer requisito classificado como PCC, quando caracterizar perda de controle de perigo significativo, determina automaticamente a classificação do respectivo processo como ALTO RISCO, independentemente da pontuação ou do percentual de atendimento.';
+ function relevantPccs(page){
+  const dataset=(typeof BPF_PHRASES!=='undefined'&&Array.isArray(BPF_PHRASES))?BPF_PHRASES:[];
+  let rows=dataset[page]?.rows||[];
+  // Se os índices do formulário e da lista de frases não coincidirem,
+  // identificar as linhas pelos códigos que efetivamente aparecem na página.
+  const pageEl=document.getElementById('pages')?.children[page];
+  const shown=pageEl?.innerText||'';
+  const indexedCodes=rows.map(r=>r.code).filter(Boolean);
+  if(!indexedCodes.some(code=>shown.includes(code))){
+   rows=dataset.flatMap(p=>p.rows||[]).filter(r=>r.code&&shown.includes(r.code));
+  }
+  const found=[];
+  for(const row of rows)for(const scope of (row.scopes||[])){
+   const phrases=scope.phrases||[];
+   phrases.forEach((f,i)=>{
+    if(String(f.appcc||'').toUpperCase()!=='PCC')return;
+    const ident=String(f.id||f.numero||f.indice||('F'+(i+1)));
+    const code=row.code;
+    const unique=code+':'+ident;
+    if(found.some(x=>x.unique===unique))return;
+    found.push({unique,code,ident,detail:PCC_DETAIL[code]||'Controle específico do perigo significativo identificado na análise APPCC.'});
+   });
+  }
+  return found;
+ }
+ function ruleFor(page){
+  const pccs=relevantPccs(page);
+  if(page===17){
+   return {
+    title:'Regra PCC — Matriz de Risco',
+    explanation:'Na matriz, qualquer processo com PCC não atendido e perda de controle de perigo significativo deve ser classificado como ALTO RISCO. A avaliação considera os perigos microbiológicos e químicos, inclusive resíduos de saneantes e detergentes usados nas embalagens.',
+    pccs:[]
+   };
+  }
+  if(!pccs.length){
+   return {title:'Regra PCC — Processo',explanation:'Não foi identificado PCC neste processo a partir das classificações APPCC disponíveis. A regra automática de ALTO RISCO aplica-se quando houver PCC classificado no processo e perda do seu controle.',pccs:[]};
+  }
+  return {
+   title:'Regra PCC — '+pccs.map(x=>x.code).filter((c,i,a)=>a.indexOf(c)===i).join(', '),
+   explanation:'Itens PCC deste processo e perigos associados:',
+   pccs
+  };
+ }
+ function showRule(page){
+  let dlg=document.getElementById('bpf-pcc-regra-dialog');
+  if(!dlg){
+   dlg=document.createElement('dialog');dlg.id='bpf-pcc-regra-dialog';
+   dlg.setAttribute('aria-labelledby','bpf-pcc-regra-titulo');
+   dlg.style.cssText='width:min(94vw,740px);max-height:85dvh;overflow:auto;border:1px solid #c6dce8;border-radius:14px;padding:24px;background:#f7fbfe;color:#193f55;box-shadow:0 16px 50px #0b294355;font:15px/1.52 Arial,Helvetica,sans-serif';
+   dlg.innerHTML='<h2 id="bpf-pcc-regra-titulo" style="font-size:21px;margin:0 0 13px"></h2><p id="bpf-pcc-regra-criterio" style="font-weight:600;margin:0 0 12px"></p><p id="bpf-pcc-regra-descricao" style="margin:0 0 12px"></p><div id="bpf-pcc-regra-itens" style="margin:0 0 16px"></div><button type="button" id="bpf-pcc-fechar" style="background:#12648b;color:white;border:0;border-radius:8px;padding:10px 22px;font-weight:bold;cursor:pointer">Fechar</button>';
+   document.body.appendChild(dlg);
+   dlg.querySelector('#bpf-pcc-fechar').addEventListener('click',()=>dlg.close());
+  }
+  const rule=ruleFor(page);
+  dlg.querySelector('#bpf-pcc-regra-titulo').textContent=rule.title;
+  dlg.querySelector('#bpf-pcc-regra-criterio').textContent=PCC_RULE;
+  dlg.querySelector('#bpf-pcc-regra-descricao').textContent=rule.explanation;
+  const list=dlg.querySelector('#bpf-pcc-regra-itens');list.replaceChildren();
+  for(const item of rule.pccs){
+   const p=document.createElement('p');p.style.margin='0 0 9px';
+   const b=document.createElement('strong');b.textContent=item.code+' ('+item.ident+') — ';
+   p.append(b,document.createTextNode(item.detail));list.append(p);
+  }
+  if(!dlg.open)dlg.showModal();
+ }
+ function addR(el,page,left,top){
+  if(!el||el.querySelector('.bpf-regra-pcc-botao'))return;
+  const b=document.createElement('button');b.type='button';b.className='bpf-regra-pcc-botao';
+  b.textContent='R';b.title='Regra PCC — ver critérios de alto risco';b.setAttribute('aria-label','Abrir Regra PCC');
+  b.style.cssText='position:absolute;left:'+left+'%;top:'+top+'%;width:3.5%;height:3.4%;min-width:22px;min-height:20px;z-index:40;background:#fff;color:#20394a;border:2px solid #223f51;border-radius:4px;font:bold 1.7cqw Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;box-shadow:0 1px 3px #0003';
+  b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();showRule(page)});
+  el.appendChild(b);
+ }
  function start(){
   const host=document.getElementById('pages'),data=window.Guia?.data;
   if(!host||!data?.widgets||host.children.length<18)return;
   fixResiduePCC();
-  const oldNote=host.children[17].querySelector('#bpf-regra-pcc-matriz');
-  if(oldNote){
-   oldNote.replaceChildren(...matriz.map(s=>{const d=document.createElement('div');d.textContent=s;return d;}));
-   oldNote.style.cssText='position:absolute;left:6%;top:65.0%;width:88%;height:3.2%;font:bold 1.03cqw Arial,sans-serif;line-height:1.1;text-align:left;white-space:normal;color:#a11414;pointer-events:none;z-index:10;background:white';
+  for(const el of host.children)el.querySelectorAll('.bpf-nota-pcc-2-perigos,#bpf-regra-pcc-matriz').forEach(n=>n.remove());
+  for(const [index,name]of Object.entries(riscoFinal)){
+   const page=Number(index),el=host.children[page];
+   const risk=data.widgets.find(w=>w.page===page&&w.name===name);
+   if(!el||!risk)continue;
+   const W=risk.size[0],H=risk.size[1];
+   const left=Math.max(1,Math.min(93,100*(risk.rect[0]-28)/W));
+   const top=Math.max(1,Math.min(94,100*(H-risk.rect[3]+3)/H));
+   addR(el,page,left,top);
   }
-  for(const [pageStr,name]of Object.entries(riscoFinal)){
-   const page=+pageStr,pageEl=host.children[page],riskWidget=data.widgets.find(w=>w.page===page&&w.name===name);
-   if(!riskWidget||pageEl.querySelector('.bpf-nota-pcc-2-perigos'))continue;
-   const obs=data.widgets.find(w=>w.page===page&&/^OBSERVAÇÕES GERAISRow1/.test(w.name));
-   const size=riskWidget.size[1],reserve=39;
-   const top=obs?size-obs.rect[3]+2:size-72;
-   areas.push({page,top,obsName:obs?.name||null});
-   if(obs){
-    for(const el of pageEl.querySelectorAll('[data-field]')){
-     if(el.dataset.field!==obs.name)continue;
-     el.style.top=100*(size-obs.rect[3]+reserve)/size+'%';
-     el.style.height=100*(obs.rect[3]-obs.rect[1]-reserve)/size+'%';
-    }
-   }
-   const note=document.createElement('div');note.className='bpf-nota-pcc-2-perigos';
-   note.replaceChildren(...linesFor(page).map(t=>{const div=document.createElement('div');div.textContent=t;return div;}));
-   note.style.cssText='position:absolute;left:6%;top:'+(100*top/size)+'%;width:88%;height:'+(100*(obs?35:10)/size)+'%;font:bold '+(obs?'1.0':'0.98')+'cqw Arial,sans-serif;line-height:1.12;text-align:left;white-space:normal;overflow:hidden;color:#9a1515;background:#fff;pointer-events:none;z-index:10';
-   pageEl.append(note);
-  }
+  // R da matriz, ao lado da avaliação de risco, sem interferir no campo de observações.
+  addR(host.children[17],17,4,63);
  }
- function installPdfPatch(){
-  const lib=window.PDFLib;if(!lib?.PDFDocument?.load||lib.PDFDocument.load.__bpfPccTwoHazardsRev5)return;
-  const oldLoad=lib.PDFDocument.load;
-  async function newLoad(...args){
-   const pdf=await oldLoad.apply(this,args);
-   if(pdf.getPageCount()<22)return pdf;
-   const originalPages=pdf.getPages().slice(0,18);
-   const form=pdf.getForm();
-   for(const {obsName}of areas){
-    if(!obsName)continue;
-    const field=form.getFieldMaybe(obsName);
-    if(!field)continue;
-    for(const widget of field.acroField.getWidgets()){
-     const rect=widget.getRectangle();
-     widget.setRectangle({x:rect.x,y:rect.y,width:rect.width,height:Math.max(20,rect.height-39)});
-    }
-   }
-   let done=false;const oldSave=pdf.save.bind(pdf);
-   pdf.save=async function(...options){
-    if(!done){
-     done=true;
-     const font=await pdf.embedFont(lib.StandardFonts.HelveticaBold),red=lib.rgb(.56,.07,.07);
-     function put(page,sourceLines,top,compact=false){
-      const size=compact?6.4:7.15,sp=compact?7.2:8.4,maxWidth=522;
-      let lines=[];
-      for(const sentence of sourceLines){
-       let line='';
-       for(const word of sentence.split(/\s+/)){
-        const proposed=line?line+' '+word:word;
-        if(line&&font.widthOfTextAtSize(proposed,size)>maxWidth){lines.push(line);line=word;}else line=proposed;
-       }
-       if(line)lines.push(line);
-      }
-      const maxLines=compact?1:4;
-      if(lines.length>maxLines)throw Error('Nota PCC excede espaco da pagina '+(page===originalPages[17]?'matriz':'processo'));
-      for(let i=0;i<lines.length;i++)page.drawText(lines[i],{x:37,y:page.getHeight()-top-7-i*sp,size,font,color:red});
-     }
-     const matrix=originalPages[17];
-     matrix.drawRectangle({x:36,y:260,width:523,height:33,color:lib.rgb(1,1,1)});
-     put(matrix,matriz,548);
-     for(const {page,top,obsName}of areas)put(originalPages[page],linesFor(page),top,!obsName);
-    }
-    return oldSave(...options);
-   };
-   return pdf;
-  }
-  newLoad.__bpfPccTwoHazardsRev5=true;
-  lib.PDFDocument.load=newLoad;
- }
+ // Não acrescentar frases sobre o formulário nem alterar as dimensões do PDF editável.
+ // O aviso da Regra PCC é acessível pelo botão R na versão HTML.
  function installGeneralRiskCount(){
   const previous=window.recalc;
   if(typeof previous!=='function'||previous.__bpfCount8Processes)return;
