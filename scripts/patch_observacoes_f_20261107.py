@@ -255,3 +255,21 @@ for name in ['individual.html','equipe.html']:
  p.write_text(s)
 for name in ['individual.html','equipe.html','index.html','sw-guia18.js']:
  p=ROOT/name;p.write_text(p.read_text().replace('20261107-obs-f8','20261107-obs-f9'))
+
+# Revalide HTML ao navegar, inclusive pelos atalhos de versões anteriores.
+# Preserve o acesso offline e não recarregue formulários já abertos.
+RELEASE='20261107-obs-f10'
+for name in ['individual.html','equipe.html','index.html','sw-guia18.js']:
+ p=ROOT/name;s=p.read_text().replace('20261107-obs-f9',RELEASE)
+ if name=='sw-guia18.js':
+  s=s.replace('const response=await fetch(req);',"const isHtml=req.mode==='navigate'||IS_GUIDE(url)||url.pathname===ROOT.pathname||url.pathname.endsWith('/index.html');\n   const response=await fetch(req,isHtml?{cache:'reload'}:undefined);")
+  s=s.replace('c.addAll(CORE)',"c.addAll(CORE.map(path=>new Request(new URL(path,ROOT),{cache:'reload'})))")
+ elif name in ('individual.html','equipe.html') and 'id="bpf-update-worker"' not in s:
+  s=s.replace('</body>',"""<script id="bpf-update-worker">
+if('serviceWorker' in navigator && location.protocol==='https:'){
+ navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
+}
+</script></body>""",1)
+ p.write_text(s)
+for name in ['individual_atualizado.html','equipe_atualizado.html']:
+ p=ROOT/name;s=p.read_text().replace('20261105-publicado-final',RELEASE);p.write_text(s)
