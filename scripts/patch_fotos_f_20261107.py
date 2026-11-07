@@ -131,3 +131,29 @@ for name in ['individual.html','equipe.html']:
  path.write_text(s.replace('20261107-calendario-f12',RELEASE))
 for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
  path=ROOT/name;path.write_text(path.read_text().replace('20261107-calendario-f12',RELEASE))
+
+# Limpe referências antigas de widgets e deixe respiro entre as linhas.
+FINAL='20261107-fotos-f14'
+for name in ['individual.html','equipe.html']:
+ path=ROOT/name;s=path.read_text()
+ if 'const BPF_PHOTO_LAYOUT_V2=' not in s:
+  start=s.index('const GUIDE_DATA=')+len('const GUIDE_DATA=')
+  d,length=json.JSONDecoder().raw_decode(s[start:])
+  for widget in d['widgets']:
+   if widget['page'] not in (15,16):continue
+   if widget['name'].startswith('BPF_Photo'):
+    widget['rect'][1]+=6;widget['rect'][3]+=6
+   else:widget['rect'][1]+=6
+  for page in (15,16):
+   pre,enc=d['backgrounds'][page].split(',',1)
+   svg=base64.b64decode(enc).decode().replace('height="133"','height="127"')
+   d['backgrounds'][page]=pre+','+base64.b64encode(svg.encode()).decode()
+  s=s[:start]+json.dumps(d,ensure_ascii=False,separators=(',',':'))+s[start+length:]
+  old="function bpfPreparePhotoPdf(pdf,form,font){"
+  s=s.replace(old,"const BPF_PHOTO_LAYOUT_V2=true;\n"+old,1)
+  needle='  page.drawRectangle({x:0,y:0,width:w,height:h,color:white});'
+  assert needle in s
+  s=s.replace(needle,"  page.node.set(PDFLib.PDFName.of('Annots'),pdf.context.obj([]));\n"+needle,1)
+ path.write_text(s.replace(RELEASE,FINAL))
+for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ path=ROOT/name;path.write_text(path.read_text().replace(RELEASE,FINAL))
