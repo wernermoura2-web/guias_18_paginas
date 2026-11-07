@@ -12,7 +12,7 @@ for(const file of ['individual.html','equipe.html']){
  const scripts=[...s.matchAll(/<script(?=[\s>])[^>]*>([\s\S]*?)<\/script>/g)].map(x=>x[1]);
  for(const js of scripts)if(js.trim())new vm.Script(js);
  const lib=scripts.find(x=>x.includes('Z_STREAM_END'));assert(lib);vm.runInContext(lib,context);
- vm.runInContext(s.slice(s.indexOf('const BPF_PHOTO_PROCESS_CODES='),s.indexOf('let bpfPhotoContext=')),context);
+ vm.runInContext(s.slice(s.indexOf('const BPF_GALLERY_SLOTS='),s.indexOf('let bpfPhotoContext=')),context);
  context.bpfSortPhotos(values,pictures,'Foto_Extra_12');
  assert.deepEqual(slots.slice(0,3).map(n=>pictures[n]),['captacao1','captacao2','conducao']);
  assert.equal(values.BPF_PhotoLocation_Imagem1,'captacao1');

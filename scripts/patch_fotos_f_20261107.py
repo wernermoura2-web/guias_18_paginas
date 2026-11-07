@@ -214,3 +214,20 @@ for name in ['individual.html','equipe.html']:
  path.write_text(s.replace(FINAL,'20261107-fotos-f15'))
 for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
  path=ROOT/name;path.write_text(path.read_text().replace(FINAL,'20261107-fotos-f15'))
+
+# O catálogo de fotos pertence aos dois modos, independente da importação em equipe.
+for name in ['individual.html','equipe.html']:
+ path=ROOT/name;s=path.read_text()
+ if 'const BPF_GALLERY_SLOTS=' not in s:
+  marker='const BPF_PHOTO_PROCESS_CODES='
+  s=s.replace(marker,"const BPF_GALLERY_SLOTS=D.widgets.filter(w=>[15,16].includes(w.page)&&/^(?:Imagem|Foto_Extra_)(?:[1-9]|1[0-2])$/.test(w.name)).map(w=>w.name);\n"+marker,1)
+  for old,new in [
+    ('const slots=TEAM18_PHOTO_SLOTS;','const slots=BPF_GALLERY_SLOTS;'),
+    ('return TEAM18_PHOTO_SLOTS.find(','return BPF_GALLERY_SLOTS.find('),
+    ('TEAM18_PHOTO_SLOTS.includes(n)','BPF_GALLERY_SLOTS.includes(n)'),
+    ('TEAM18_PHOTO_SLOTS.includes(name)','BPF_GALLERY_SLOTS.includes(name)'),
+    ('TEAM18_PHOTO_SLOTS.indexOf(name)','BPF_GALLERY_SLOTS.indexOf(name)')]:
+   s=s.replace(old,new,1)
+ path.write_text(s.replace('20261107-fotos-f15','20261107-fotos-f16'))
+for name in ['index.html','sw-guia18.js','individual_atualizado.html','equipe_atualizado.html']:
+ path=ROOT/name;path.write_text(path.read_text().replace('20261107-fotos-f15','20261107-fotos-f16'))

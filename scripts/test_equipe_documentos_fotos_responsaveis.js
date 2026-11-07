@@ -27,7 +27,7 @@ const ctx={D,values,images,document:doc,nonempty18:v=>v!==''&&v!=='Off'&&v!==und
 vm.createContext(ctx);
 vm.runInContext(get('const PROCESSES18=','const scopedFields18='),ctx);
 vm.runInContext(get('const TEAM18_DOC_FIELDS=','const TEAM18={queue:[]'),ctx);
-vm.runInContext(get('const BPF_PHOTO_PROCESS_CODES=','let bpfPhotoContext='),ctx);
+vm.runInContext(get('const BPF_GALLERY_SLOTS=','let bpfPhotoContext='),ctx);
 vm.runInContext('const TEAM18={queue:[],preview:null,busy:false};',ctx);
 vm.runInContext(get('function cleanTeam18(raw){','let team18=makeTeam18();'),ctx);
 vm.runInContext(get('function showMergeTeam18(){','function checkSourceLinks18('),ctx);
