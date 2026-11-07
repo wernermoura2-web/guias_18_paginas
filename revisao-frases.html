@@ -10,7 +10,7 @@ a{color:#006b9a}
 </style></head>
 <body>
 <main id="carregando" role="status"><div><h1>Revisão das frases e orientações ao inspetor</h1><p>Abrindo o editor de frases…</p><p id="erro" hidden>Não foi possível abrir automaticamente. <a href="./index.html">Retornar ao menu</a>.</p></div></main>
-<iframe id="revisao" title="Editor de frases e orientações ao inspetor" src="./individual.html?revisar-frases=1&amp;v=20261107-revisao-obs-nc-v1"></iframe>
+<iframe id="revisao" title="Editor de frases e orientações ao inspetor" src="./individual.html?revisar-frases=1&amp;v=20261107-definicoes-originais-v1"></iframe>
 <script>
 (()=>{
 'use strict';
@@ -19,7 +19,7 @@ let childDoc=null,editorSeen=false,returning=false,tries=0,lastClick=0;
 function home(){
  if(returning)return;
  returning=true;
- window.location.replace('./index.html?v=20261107-revisao-obs-nc-v1');
+ window.location.replace('./index.html?v=20261107-definicoes-originais-v1');
 }
 function visible(el){return !!(el&&el.getClientRects().length&&getComputedStyle(el).visibility!=='hidden')}
 function findEditor(doc){
