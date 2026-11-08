@@ -7,17 +7,19 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261108-etiquetas-superiores-v67');
+q.delete('modo'); q.set('v','20261108-etiquetas-v68');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
 // Somente o recurso visual é acrescentado. Os F ficam sob controle do formulário original.
-const files=['bpf-etiquetas-appcc-20261108.js?v=20261108-etiquetas-superiores-v67'];
+const files=['bpf-etiquetas-appcc-20261108.js?v=20261108-etiquetas-v68'];
 let inserted=false;
 frame.addEventListener('load',()=>{
  try{
   const doc=frame.contentDocument;
   if(!doc||!doc.documentElement)throw Error('O formulário não abriu.');
+  // Ignorar o carregamento inicial about:blank: as etiquetas devem entrar no formulário verdadeiro.
+  if(!doc.URL.includes('/'+mode+'.html'))return;
   if(inserted)return;
   inserted=true;
   let index=0;
