@@ -8,7 +8,7 @@
 'use strict';
 const qs=new URLSearchParams(location.search),mode=qs.get('modo')==='individual'?'individual':'equipe';
 const target=mode+'.html',src=new URL('./'+target,location.href);
-qs.delete('modo');qs.delete('v');qs.set('v','20261108-F1-direto-v60');
+qs.delete('modo');qs.delete('v');qs.set('v','20261108-etiquetas-appcc-v62');
 src.search=qs.toString();
 document.getElementById('direct').href=src.href;
 try{
