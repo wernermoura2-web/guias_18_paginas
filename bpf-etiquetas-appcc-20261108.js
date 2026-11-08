@@ -29,7 +29,34 @@ document.head.appendChild(css);
 const fixes=document.createElement('style');
 fixes.id='bpf-layout-impressao-v70';
 fixes.textContent=`
-/* Preservar integralmente o conjunto original número + botão F. */
+/* Restaurar o conjunto ORIGINAL: número em cima, botão F embaixo.
+   Esse bloco neutraliza a regra defeituosa v71; não modifica nenhum F ou resposta. */
+@media screen {
+ #pages .page>.bpf-item-code {
+   display:grid!important;
+   grid-template-columns:minmax(0,1fr)!important;
+   grid-template-rows:42% 58%!important;
+   gap:0!important;
+   overflow:hidden!important;
+ }
+ #pages .page>.bpf-item-code>span:not(.bpf-f) {
+   display:flex!important;
+   visibility:visible!important;
+   align-items:center!important;
+   justify-content:center!important;
+   min-height:0!important;
+   grid-row:1!important;
+ }
+ #pages .page>.bpf-item-code>.bpf-f {
+   display:flex!important;
+   visibility:visible!important;
+   grid-row:2!important;
+   width:100%!important;
+   max-width:100%!important;
+   height:100%!important;
+   min-height:0!important;
+ }
+}
 @media screen {
  #bpf-editor textarea{min-height:13.5em!important;line-height:1.5!important;}
  #bpf-editor .bpf-guidance{line-height:1.5!important;padding-top:22.5px!important;padding-bottom:22.5px!important;}
