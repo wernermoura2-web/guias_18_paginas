@@ -29,23 +29,13 @@ document.head.appendChild(css);
 const fixes=document.createElement('style');
 fixes.id='bpf-layout-impressao-v70';
 fixes.textContent=`
-@media screen,print {
- /* Remover miniaturas APPCC repetidas sob a tabela superior, preservar F. */
- #pages .page>.bpf-item-code{grid-template-rows:1fr!important;}
- #pages .page>.bpf-item-code>span:not(.bpf-f){display:none!important;}
- #pages .page>.bpf-item-code>.bpf-f{grid-row:1!important;height:100%!important;min-height:100%!important;}
- /* Aumentar em 50% o entrelinhamento das frases sem esticar letras. */
- #pages .page>.text, #pages .page>.printable {line-height:1.5!important;overflow-wrap:anywhere!important;}
+/* Preservar integralmente o conjunto original número + botão F. */
+@media screen {
  #bpf-editor textarea{min-height:13.5em!important;line-height:1.5!important;}
  #bpf-editor .bpf-guidance{line-height:1.5!important;padding-top:22.5px!important;padding-bottom:22.5px!important;}
 }
 @media print {
- #pages>.page{display:block!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
- #pages>.page>.background{display:block!important;visibility:visible!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
- #pages .page>.bpf-item-code>span:not(.bpf-f){display:none!important;}
- #pages .page>.bpf-etiqueta-overlay-v69{display:flex!important;visibility:visible!important;opacity:1!important;z-index:50!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
- #pages .page>.printable{display:block!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;color:#000!important;}
- #pages .page>.text{visibility:visible!important;color:#000!important;}
+ #pages .page>.bpf-etiqueta-overlay-v69{display:flex!important;visibility:visible!important;opacity:1!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
 }
 `;
 document.head.appendChild(fixes);
