@@ -1,7 +1,7 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261108-revisao-f-v55';
+const CACHE='guia18-20261108-revisao94F-substituir-v54';
 const ROOT=new URL('./',self.location.href);
-const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./revisao-orientacoes-20261107.json'];
+const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./revisao-orientacoes-20261107.json','./bpf-revisao-substituicao.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
@@ -12,10 +12,13 @@ async function attachFriendlyMenu(response,url){
   const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
   const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261108-v55"></script>';
   if(altered.includes(anchor)&&!altered.includes('bpf-revisao-frases-ativa-20261107.js'))altered=altered.replace(anchor,'</script>'+active+'<script>/* Shared by the browser forms and Acrobat.');
+  // Carregar a revisão diretamente nos editores F dos dois modos. O texto legal permanece intacto.
+  const overlayTag='<script src="./bpf-revisao-substituicao.js?v=20261108-substituir94F" defer></script>';
+  const patched=altered.includes('bpf-revisao-substituicao.js')?altered:altered.replace(/<\/body\s*>/i,overlayTag+'</body>');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
-  return new Response(altered,{status:response.status,statusText:response.statusText,headers});
+  return new Response(patched,{status:response.status,statusText:response.statusText,headers});
 }
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(path=>new Request(new URL(path,ROOT),{cache:'reload'})))).then(()=>self.skipWaiting())));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('guia18-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
