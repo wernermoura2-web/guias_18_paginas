@@ -13,13 +13,13 @@ css.textContent=`
  display:flex!important;align-items:center!important;justify-content:center!important;
  gap:.17cqw!important;border:.19cqw solid var(--bpf-borda)!important;
  border-radius:.43cqw!important;background:var(--bpf-fundo)!important;
- color:#000!important;font:800 .72cqw/1.1 Arial,Helvetica,sans-serif!important;
+ color:#000!important;font:800 1.08cqw/1.1 Arial,Helvetica,sans-serif!important;
  white-space:nowrap!important;overflow:hidden!important;
  text-align:center!important;pointer-events:none!important;
  -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
 }
-.page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:.59cqw!important;gap:.08cqw!important}
-.page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:.46cqw!important;gap:.05cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:.885cqw!important;gap:.08cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:.69cqw!important;gap:.05cqw!important}
 .page .bpf-etiqueta-overlay-v69>span {color:#000!important}
 `;
 document.head.appendChild(css);
