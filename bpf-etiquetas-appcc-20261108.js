@@ -82,7 +82,9 @@ function fitBadge(badge){
    if(required<=available)lo=mid;else hi=mid;
  }
  // !important inline prevalece sobre os estilos "longa" e "extralonga".
- badge.style.setProperty('font-size',lo.toFixed(2)+'px','important');
+ // Somente o item 4.5.3 possui três classificações: reduzir para caber por inteiro.
+ const finalSize=badge.dataset.etiquetaId?.endsWith('-4-5-3')?lo*.62:lo;
+ badge.style.setProperty('font-size',finalSize.toFixed(2)+'px','important');
  badge.style.setProperty('gap','0px','important');
 }
 function apply(){
@@ -176,7 +178,8 @@ window.addEventListener('resize',()=>requestAnimationFrame(apply),{passive:true}
       const y=(widget.rect[1]+widget.rect[3])/2-height/2;
       const size=Math.max(3,Math.min(9.6,(width-4)/font.widthOfTextAtSize(label,1)));
       page.drawRectangle({x,y,width,height,color:bg[grade],borderColor:bd[grade],borderWidth:1});
-      page.drawText(label,{x:x+(width-font.widthOfTextAtSize(label,size))/2,y:y+(height-size)/2+.65,size,font,color:Lib.rgb(0,0,0)});
+      const textSize=row.code==='4.5.3'?size*.75:size;
+      page.drawText(label,{x:x+(width-font.widthOfTextAtSize(label,textSize))/2,y:y+(height-textSize)/2+.65,size:textSize,font,color:Lib.rgb(0,0,0)});
       count++;
      }
     }
