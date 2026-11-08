@@ -40,8 +40,8 @@ async function attachFriendlyMenu(response,url){
   // navegador e PDF editável devem receber o mesmo complemento.
   const upperTag='<script defer src="./bpf-etiquetas-appcc-20261108.js?v=20261108-F-pdf-direto-v78"></script>';
   const fFixTag='<script defer src="./bpf-correcao-f-pdf-v72.js?v=20261108-F-pdf-direto-v78"></script>';
-  if(!altered.includes('bpf-etiquetas-appcc-20261108.js'))altered=altered.replace(/<\\/body\\s*>/i,upperTag+'</body>');
-  if(!altered.includes('bpf-correcao-f-pdf-v72.js'))altered=altered.replace(/<\\/body\\s*>/i,fFixTag+'</body>');
+  if(!altered.includes('bpf-etiquetas-appcc-20261108.js'))altered=altered.replace('</body>',upperTag+'</body>');
+  if(!altered.includes('bpf-correcao-f-pdf-v72.js'))altered=altered.replace('</body>',fFixTag+'</body>');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
