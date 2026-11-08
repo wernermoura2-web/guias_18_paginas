@@ -1,1 +1,32 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Guia BPF — Uso individual</title><meta http-equiv="refresh" content="0;url=./individual.html?v=20261107-identidade-f21"></head><body><p>Abrindo o Guia BPF — Uso individual. <a href="./individual.html?v=20261107-identidade-f21">Abrir diretamente</a>.</p><script>location.replace("./individual.html?v=20261107-identidade-f21"+location.hash);</script></body></html>
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Guia BPF/APPCC — Individual</title>
+<meta name="theme-color" content="#0b5c91">
+<style>body{font:16px Arial,sans-serif;background:#f0f7fb;color:#16415a;max-width:650px;margin:12vh auto;padding:25px;line-height:1.5}h1{font-size:23px}a{color:#075d8c}</style>
+</head><body>
+<h1>Abrindo o Guia BPF/APPCC — individual</h1>
+<p id="msg" role="status">Atualizando o Guia para exibir as verificações reunidas no F1.</p>
+<p><a id="direto" href="./individual.html?v=20261107-F1-integrado-v58">Abrir o guia</a></p>
+<script>
+(async()=>{
+ const target='./individual.html?v=20261107-F1-integrado-v58'+location.hash;
+ document.getElementById('direto').href=target;
+ const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+ try{
+  if('serviceWorker' in navigator){
+   const reg=await Promise.race([navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}),delay(5000).then(()=>null)]);
+   if(reg){
+    await Promise.race([reg.update().catch(()=>{}),delay(5500)]);
+    await Promise.race([
+     new Promise(resolve=>{
+      if(navigator.serviceWorker.controller){resolve();return;}
+      navigator.serviceWorker.addEventListener('controllerchange',resolve,{once:true});
+     }),
+     delay(5000)
+    ]);
+   }
+  }
+ }catch(e){document.getElementById('msg').textContent='Abrindo o formulário com a versão mais recente disponível.'}
+ location.replace(target);
+})();
+</script></body></html>
