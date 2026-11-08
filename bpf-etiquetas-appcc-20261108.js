@@ -21,11 +21,8 @@ css.textContent=`
 .page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:1.48cqw!important;gap:.08cqw!important}
 .page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:1.15cqw!important;gap:.05cqw!important}
 .page .bpf-etiqueta-overlay-v69>span {color:#000!important}
-/* Fallback discreto enquanto a página não tiver dimensões.
-   Assim nenhuma etiqueta fica enorme ou cortada antes da medição. */
-.page .bpf-etiqueta-overlay-v69 {font-size:.78cqw!important}
-.page .bpf-etiqueta-overlay-v69.bpf-longa {font-size:.65cqw!important}
-.page .bpf-etiqueta-overlay-v69.bpf-extralonga {font-size:.55cqw!important}
+/* Fonte geral restaurada ao padrão das etiquetas da versão de referência.
+   Somente o 4.5.3 recebe redução discreta pelo ajuste JS de largura. */
 .page .bpf-etiqueta-overlay-v69>span {flex:0 0 auto!important;min-width:0!important}
 .page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"] {letter-spacing:-.012em!important}
 `;
@@ -38,37 +35,9 @@ document.head.appendChild(css);
 const fixes=document.createElement('style');
 fixes.id='bpf-layout-impressao-v72';
 fixes.textContent=`
+/* Não alterar .bpf-item-code nem .bpf-f:
+   o guia original já define 42% para a numeração e 58% para o F. */
 @media screen {
- /* Restaurar número na parte superior e botão F na inferior,
-    impedindo que o fundo azul cubra o código do item. */
- #pages .page>.bpf-item-code {
-   display:grid!important;
-   grid-template-columns:minmax(0,1fr)!important;
-   grid-template-rows:27% 73%!important;
-   gap:0!important;
-   overflow:hidden!important;
- }
- #pages .page>.bpf-item-code>span:not(.bpf-f) {
-   display:flex!important;
-   visibility:visible!important;
-   grid-row:1!important;
-   align-items:center!important;
-   justify-content:center!important;
-   align-self:stretch!important;
-   min-height:0!important;
-   overflow:hidden!important;
- }
- #pages .page>.bpf-item-code>.bpf-f {
-   display:flex!important;
-   visibility:visible!important;
-   grid-row:2!important;
-   align-self:stretch!important;
-   width:100%!important;
-   height:100%!important;
-   min-height:0!important;
-   margin:0!important;
-   box-sizing:border-box!important;
- }
  #bpf-editor textarea {line-height:1.5!important;}
  #bpf-editor .bpf-guidance {line-height:1.5!important;}
 }
@@ -235,7 +204,7 @@ observePages();
       const y=(widget.rect[1]+widget.rect[3])/2-height/2;
       const size=Math.max(3,Math.min(9.6,(width-4)/font.widthOfTextAtSize(label,1)));
       page.drawRectangle({x,y,width,height,color:bg[grade],borderColor:bd[grade],borderWidth:1});
-      const textSize=row.code==='4.5.3'?size*.75:size;
+      const textSize=size; // sem redução extra na etiqueta do PDF
       page.drawText(label,{x:x+(width-font.widthOfTextAtSize(label,textSize))/2,y:y+(height-textSize)/2+.65,size:textSize,font,color:Lib.rgb(0,0,0)});
       count++;
      }
