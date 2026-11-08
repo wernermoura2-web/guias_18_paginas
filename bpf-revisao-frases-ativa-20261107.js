@@ -29,12 +29,15 @@ function patchPhrase(row,index,record,keepSpecificText,firstGuide){
  if(!source)return;
  const previousText=String(source.text||'');
  if(!keepSpecificText)source.text=record.desdobramento;
- source.guidance=firstGuide?record.orientacao_inspetor:'';
+ const revised=String(record.orientacao_inspetor||'').trim();
+ const guidanceFor=(specific)=>keepSpecificText&&specific&&revised&&!revised.includes(specific)
+  ?revised+'\\nVerificação específica: '+specific:revised||specific;
+ source.guidance=guidanceFor(String(source.guidance||'').trim());
  for(const scope of row.scopes){
   const f=scope.phrases[index];if(!f)continue;
-  // Preserve line-specific formulations (retornáveis, descartáveis, rótulos e saneantes).
+  // Manter o detalhamento especifico de cada F ou linha, sem perder a orientacao atualizada.
   if(!keepSpecificText&&String(f.text||'')===previousText)f.text=record.desdobramento;
-  f.guidance=firstGuide?record.orientacao_inspetor:'';
+  f.guidance=guidanceFor(String(f.guidance||'').trim());
  }
 }
 try{
