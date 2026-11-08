@@ -24,7 +24,8 @@ css.textContent=`
 /* 4.5.3: três classificações. A fonte precisa caber mesmo quando
    a página ainda está oculta (clientWidth = 0); usar cqw e não medição em JS. */
 .page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"] {
- font-size:.68cqw!important;
+ font-size:.84cqw!important;
+ letter-spacing:-.018em!important;
  gap:0!important;
 }
 .page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"]>span {
