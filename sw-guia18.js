@@ -1,7 +1,7 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
 const CACHE='guia18-20261107-F1-integrado-v58';
 const ROOT=new URL('./',self.location.href);
-const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./revisao-orientacoes-20261107.json'];
+const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
@@ -30,6 +30,8 @@ async function attachFriendlyMenu(response,url){
     ["'4.11.4':'F1 — Certificados de capacitação'","'4.11.4':'F1 — Certificados dos manipuladores e do responsável pela industrialização'"]
   ];
   for(const [before,after] of F1_LABELS)if(altered.includes(before))altered=altered.replace(before,after);
+  const direct='<script defer src="./bpf-f1-correcao-direta-20261108.js?v=20261108-direto-v60"></script>';
+  if(!altered.includes('bpf-f1-correcao-direta-20261108.js'))altered=altered.replace(/<\/head\s*>/i,direct+'</head>');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
