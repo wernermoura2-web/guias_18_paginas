@@ -21,17 +21,13 @@ css.textContent=`
 .page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:1.48cqw!important;gap:.08cqw!important}
 .page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:1.15cqw!important;gap:.05cqw!important}
 .page .bpf-etiqueta-overlay-v69>span {color:#000!important}
-/* 4.5.3: três classificações. A fonte precisa caber mesmo quando
-   a página ainda está oculta (clientWidth = 0); usar cqw e não medição em JS. */
-.page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"] {
- font-size:.84cqw!important;
- letter-spacing:-.018em!important;
- gap:0!important;
-}
-.page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"]>span {
- font-size:inherit!important;
- flex-shrink:0!important;
-}
+/* Fallback discreto enquanto a página não tiver dimensões.
+   Assim nenhuma etiqueta fica enorme ou cortada antes da medição. */
+.page .bpf-etiqueta-overlay-v69 {font-size:.78cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-longa {font-size:.65cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-extralonga {font-size:.55cqw!important}
+.page .bpf-etiqueta-overlay-v69>span {flex:0 0 auto!important;min-width:0!important}
+.page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"] {letter-spacing:-.012em!important}
 `;
 document.head.appendChild(css);
 
@@ -43,6 +39,36 @@ const fixes=document.createElement('style');
 fixes.id='bpf-layout-impressao-v72';
 fixes.textContent=`
 @media screen {
+ /* Restaurar número na parte superior e botão F na inferior,
+    impedindo que o fundo azul cubra o código do item. */
+ #pages .page>.bpf-item-code {
+   display:grid!important;
+   grid-template-columns:minmax(0,1fr)!important;
+   grid-template-rows:27% 73%!important;
+   gap:0!important;
+   overflow:hidden!important;
+ }
+ #pages .page>.bpf-item-code>span:not(.bpf-f) {
+   display:flex!important;
+   visibility:visible!important;
+   grid-row:1!important;
+   align-items:center!important;
+   justify-content:center!important;
+   align-self:stretch!important;
+   min-height:0!important;
+   overflow:hidden!important;
+ }
+ #pages .page>.bpf-item-code>.bpf-f {
+   display:flex!important;
+   visibility:visible!important;
+   grid-row:2!important;
+   align-self:stretch!important;
+   width:100%!important;
+   height:100%!important;
+   min-height:0!important;
+   margin:0!important;
+   box-sizing:border-box!important;
+ }
  #bpf-editor textarea {line-height:1.5!important;}
  #bpf-editor .bpf-guidance {line-height:1.5!important;}
 }
@@ -79,28 +105,23 @@ const pageWidth=595.32;
 const measureCanvas=document.createElement('canvas');
 const measureContext=measureCanvas.getContext('2d');
 function fitBadge(badge){
- // Corrigir 4.5.3 de forma independente do estado visível/oculto da página.
- if(badge.dataset.etiquetaId?.endsWith('-4-5-3')){
-   badge.style.removeProperty('font-size');
-   badge.style.setProperty('gap','0px','important');
-   return;
- }
  const children=Array.from(badge.children);
  if(children.length!==3)return;
  const w=badge.clientWidth,h=badge.clientHeight;
  if(w<10||h<5||!measureContext)return;
- const available=Math.max(1,w-Math.max(3,w*.065));
- const text=children.map(el=>el.textContent.trim()).join(' ');
- let lo=3,hi=Math.min(h*.84,18);
- for(let n=0;n<15;n++){
+ const available=Math.max(1,w-Math.max(4,w*.075));
+ const label=children.map(el=>el.textContent.trim()).join('');
+ const is453=badge.dataset.etiquetaId?.endsWith('-4-5-3');
+ let lo=3,hi=Math.min(h*.78,18);
+ for(let n=0;n<17;n++){
    const mid=(lo+hi)/2;
    measureContext.font='900 '+mid+'px Arial,Helvetica,sans-serif';
-   const required=measureContext.measureText(text).width+Math.max(2,w*.022);
-   if(required<=available)lo=mid;else hi=mid;
+   if(measureContext.measureText(label).width <= available)lo=mid;
+   else hi=mid;
  }
- // !important inline prevalece sobre os estilos "longa" e "extralonga".
- // Demais etiquetas seguem o ajuste responsivo normal.
- badge.style.setProperty('font-size',lo.toFixed(2)+'px','important');
+ // Só o 4.5.3 recebe redução sutil, com margem para as três classes.
+ const size=is453?lo*.92:lo;
+ badge.style.setProperty('font-size',size.toFixed(2)+'px','important');
  badge.style.setProperty('gap','0px','important');
 }
 function apply(){
@@ -158,6 +179,26 @@ function apply(){
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
 let count=0;const interval=setInterval(()=>{apply();if(++count>30)clearInterval(interval)},1000);
 window.addEventListener('resize',()=>requestAnimationFrame(apply),{passive:true});
+// As 22 páginas são alternadas no celular: recalcular a fonte quando cada
+// página passa de oculta para visível (sem mudar os textos nem as respostas).
+const observedPages=new WeakSet();
+const pageObserver=new ResizeObserver(entries=>{
+ for(const entry of entries){
+   if(entry.contentRect.width>20){
+     entry.target.querySelectorAll('.bpf-etiqueta-overlay-v69').forEach(fitBadge);
+   }
+ }
+});
+function observePages(){
+ document.querySelectorAll('#pages>.page').forEach(page=>{
+   if(!observedPages.has(page)){
+     observedPages.add(page);
+     pageObserver.observe(page);
+   }
+ });
+}
+observePages();
+
 
 // As etiquetas desenhadas na tela não entram automaticamente no PDF editável:
 // o exportador usa o modelo PDF incorporado. Aplicar as mesmas classificações
