@@ -387,3 +387,80 @@
  // O PDF mantém os campos originais de observação, sem sobreposição de texto PCC.
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
 })();
+
+
+/* Revisão F1 reunificados v58: opções editáveis no formulário, sem inserir F2,
+   sem mudar o texto legal dos itens, os valores da inspeção ou a categoria APPCC. */
+(()=>{'use strict';
+ if(window.__BPF_F1_CRITERIOS_58)return;
+ window.__BPF_F1_CRITERIOS_58=true;
+ const options={
+  '4.10.1':['Implementação do controle de qualidade','Documentação do controle de qualidade'],
+  '4.11.1':['Supervisão dos manipuladores','Capacitação periódica dos manipuladores'],
+  '4.11.3':['Capacitação do responsável pela industrialização — curso mínimo de 40 horas','Curso concluído há mais de 2 anos — atualização/reciclagem comprovada (não marcar se não aplicável)'],
+  '4.11.4':['Certificados dos manipuladores — Captação','Certificados dos manipuladores — Condução','Certificados dos manipuladores — Reservatórios','Certificados dos manipuladores — Recepção','Certificados dos manipuladores — Higienização','Certificados dos manipuladores — Envase','Certificado do responsável pela industrialização — data, carga horária e conteúdo']
+ };
+ const titles={
+  '4.10.1':'F1 — Implementação e documentação do controle de qualidade',
+  '4.11.1':'F1 — Supervisão e capacitação periódica',
+  '4.11.3':'F1 — Capacitação de 40 horas e atualização após 2 anos',
+  '4.11.4':'F1 — Certificados dos manipuladores e do responsável pela industrialização'
+ };
+ const explanations={
+  '4.10.1':'Verificar separadamente a IMPLEMENTAÇÃO e a DOCUMENTAÇÃO do controle de qualidade. Ambos os critérios aplicáveis devem ser atendidos para o F1 ser conforme.',
+  '4.11.1':'Verificar separadamente a SUPERVISÃO dos manipuladores e a CAPACITAÇÃO PERIÓDICA, incluindo registros, conteúdos, datas e participantes.',
+  '4.11.3':'Verificar a capacitação de no mínimo 40 horas. Se o curso tiver mais de dois anos, verificar a atualização/reciclagem. Para curso com até dois anos, não marcar a segunda opção. Uma falha em critério aplicável torna F1 NÃO.',
+  '4.11.4':'Verificar os CERTIFICADOS DOS MANIPULADORES nos processos aplicáveis e o CERTIFICADO DO RESPONSÁVEL PELA INDUSTRIALIZAÇÃO. Manter uma única frase F1.'
+ };
+ function install(){
+  if(typeof window.bpfF1Checks!=='function'||typeof window.bpfPanels!=='function')return false;
+  if(window.bpfF1Checks.__crit58)return true;
+  const sourceChecks=window.bpfF1Checks;
+  function checked(row,scope){
+   const list=sourceChecks.call(this,row,scope);
+   const labels=options[row?.code];
+   if(labels)list.forEach((entry,i)=>{if(labels[i])entry.option=labels[i]});
+   return list;
+  }
+  checked.__crit58=true;
+  window.bpfF1Checks=checked;
+  const sourcePanels=window.bpfPanels;
+  function panels(page,row){
+   const list=sourcePanels.call(this,page,row);
+   if(titles[row?.code]&&list.length)list[0].label=titles[row.code];
+   return list;
+  }
+  panels.__crit58=true;
+  window.bpfPanels=panels;
+  try{
+   if(typeof BPF_PHRASES!=='undefined')for(const page of BPF_PHRASES)for(const row of page.rows){
+    if(!explanations[row.code]||row.phrases.length!==1)continue;
+    row.phrases[0].guidance=explanations[row.code];
+    for(const scope of row.scopes)if(scope.phrases.length===1)scope.phrases[0].guidance=explanations[row.code];
+   }
+  }catch(e){window.__BPF_F1_GUIA_ERRO=String(e)}
+  return true;
+ }
+ if(!install())document.addEventListener('DOMContentLoaded',install,{once:true});
+ document.addEventListener('change',event=>{
+  const input=event.target;
+  const editor=input?.closest?.('#bpf-editor');
+  if(!editor||!String(editor.getAttribute('aria-label')).includes('4.11.3')||!input.matches('input[data-answer-name]'))return;
+  try{
+   if(typeof BPF_PHRASES==='undefined'||typeof bpfPhraseName!=='function')return;
+   const data=window.Guia?.values;
+   if(!data)return;
+   const page=BPF_PHRASES.find(p=>p.rows.some(r=>r.code==='4.11.3'));
+   const row=page?.rows.find(r=>r.code==='4.11.3');
+   if(!row)return;
+   const panel=window.bpfPanels(page,row)[0];
+   const entry=panel.entries.find(e=>e.name===input.dataset.answerName);
+   if(!entry)return;
+   const applicable=panel.entries.filter(e=>e.scope===entry.scope);
+   const first=data[applicable[0]?.name],second=data[applicable[1]?.name];
+   const result=(first==='0'||second==='0')?'0':first==='1'?'1':'';
+   data[bpfPhraseName(entry.scope,0)]=result;
+   if(window.Guia&&typeof window.Guia.recalc==='function')window.Guia.recalc();
+  }catch(e){window.__BPF_F1_GUIA_ERRO=String(e)}
+ });
+})();
