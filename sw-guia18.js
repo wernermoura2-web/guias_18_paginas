@@ -12,7 +12,7 @@ async function attachFriendlyMenu(response,url){
   const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
   const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261108-criterios-F1-v57"></script>';
   if(altered.includes(anchor)&&!altered.includes('bpf-revisao-frases-ativa-20261107.js'))altered=altered.replace(anchor,'</script>'+active+'<script>/* Shared by the browser forms and Acrobat.');
-  altered=altered.replace(/bpf-revisao-frases-ativa-20261107\\.js(?:\\?v=[^\"'<> ]*)?/g,'bpf-revisao-frases-ativa-20261107.js?v=20261108-criterios-F1-v57');
+  altered=altered.replace(/bpf-revisao-frases-ativa-20261107\.js(?:\?v=[^"'<> ]*)?/g,'bpf-revisao-frases-ativa-20261107.js?v=20261108-criterios-F1-v57');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
