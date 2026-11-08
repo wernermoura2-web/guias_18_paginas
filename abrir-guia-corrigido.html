@@ -2,7 +2,7 @@
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Abrir Guia BPF/APPCC atualizado</title><meta name="theme-color" content="#0b5c91">
 <style>body{font:16px Arial,sans-serif;color:#17445c;background:#edf5fa;margin:0;display:grid;place-items:center;min-height:100dvh;padding:24px;box-sizing:border-box}.card{background:white;max-width:530px;padding:28px;border-radius:16px;box-shadow:0 7px 24px #2344}a{color:#076897}</style></head>
-<body><div class="card" role="status"><h1>Guia de Avaliação de Risco — BPF/APPCC</h1><p id="status">Abrindo o formulário com os F1 revisados…</p><p id="fallback" hidden><a id="direct" href="./equipe.html">Abrir o guia sem atualização adicional</a></p></div>
+<body><div class="card" role="status"><h1>Guia de Avaliação de Risco — BPF/APPCC</h1><p id="status" hidden></p><p id="fallback" hidden><a id="direct" href="./equipe.html">Abrir o guia sem atualização adicional</a></p></div>
 <script>
 (async function(){
 'use strict';
@@ -29,6 +29,7 @@ try{
  history.replaceState(history.state,'',src.pathname+src.search+src.hash);
  document.open();document.write(html);document.close();
 }catch(error){
+ document.getElementById('status').hidden=false;
  document.getElementById('status').textContent='Não foi possível abrir a versão revisada: '+String(error.message||error);
  document.getElementById('fallback').hidden=false;
 }
