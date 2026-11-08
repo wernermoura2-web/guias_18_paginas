@@ -704,12 +704,16 @@
     {
       "item": "4.10.1",
       "f": "F1",
-      "descricao_F": "Implementação e documentação do controle de qualidade",
+      "descricao_F": "F1 — Implementação E documentação do controle de qualidade",
       "classificacao_appcc": "PPR",
-      "desdobramento": "O estabelecimento deve implementar e documentar o controle de qualidade da água mineral natural, da água natural, das embalagens e, quando utilizado, do dióxido de carbono.",
-      "orientacao_inspetor": "Verificar a implementação efetiva do controle de qualidade: estrutura, equipamentos, execução dos ensaios, pessoal, rotinas de coleta e registros de resultados. Confrontar a prática com os procedimentos. Examinar Manual do Laboratório, equipamentos, calibrações e qualificação térmica, esterilidade/fertilidade dos meios, metodologias analíticas e registros de execução. A existência de documento isoladamente não demonstra implementação.\nConferir Manual do Laboratório e POPs, versão e aprovação, metodologias analíticas, plano de amostragem, qualificação e calibração dos equipamentos, controle de esterilidade e fertilidade dos meios, registros analíticos, responsabilidades e conservação documental. Diferenciar falta de documentação de falta de implementação.",
-      "obs_sim": "O laboratório próprio executava os ensaios declarados com equipamentos [identificação], método [referência], controle de meios e registros analíticos do período [datas].\nForam apresentados Manual do Laboratório, POPs, metodologias, certificados de calibração e registros de esterilidade/fertilidade dos meios em uso.",
-      "nc_nao": "No laboratório [identificação], não foi comprovada a calibração de pHmetro, condutivímetro e termômetro, nem a qualificação de [estufa/autoclave] necessária ao escopo executado.\nO laboratório executava ensaios, mas não foi apresentado [manual/POP/metodologia/certificado de calibração] atualizado e rastreável ao equipamento [código]."
+      "desdobramento": "F1 — Verificar os DOIS critérios: (1) IMPLEMENTAÇÃO do controle de qualidade, demonstrada por atividades de coleta, ensaios, equipamentos, profissionais, controles e registros executados; (2) DOCUMENTAÇÃO do controle de qualidade, demonstrada por Manual do Laboratório, POPs, procedimentos e métodos, plano de amostragem, resultados, calibrações e demais registros aplicáveis. Resposta única ao F1: SIM somente se ambos os critérios aplicáveis estiverem atendidos.",
+      "orientacao_inspetor": "No mesmo F1, conferir IMPLEMENTAÇÃO e DOCUMENTAÇÃO separadamente. Implementação: constatar execução dos controles, ensaios, equipamentos, pessoal, calibrações e registros reais. Documentação: verificar Manual do Laboratório, POPs, métodos, plano de amostragem, formulários, resultados, certificados e rastreabilidade. Registrar qual dos dois critérios foi atendido ou não. Não aceitar documentação sem execução nem execução sem documentação exigida.",
+      "obs_sim": "IMPLEMENTAÇÃO: controle de qualidade executado para [água/embalagens/CO₂, se aplicável], comprovado por [ensaios, equipamentos, profissionais e registros], período [datas]. DOCUMENTAÇÃO: apresentados [Manual do Laboratório, POPs, métodos, plano de amostragem, resultados e certificados] com identificação [números/datas].",
+      "nc_nao": "Selecionar o(s) critério(s) não atendido(s): IMPLEMENTAÇÃO — não comprovada a execução de [ensaio/controle/calibração/atividade] no período [datas]. DOCUMENTAÇÃO — ausente ou incompleto [manual/POP/método/plano/registro/laudo/certificado] do controle de qualidade.",
+      "criterios_F1": [
+        "Implementação do controle de qualidade",
+        "Documentação do controle de qualidade"
+      ]
     },
     {
       "item": "4.10.2",
@@ -864,12 +868,16 @@
     {
       "item": "4.11.1",
       "f": "F1",
-      "descricao_F": "Supervisão e capacitação periódica dos manipuladores — SIM/NÃO",
+      "descricao_F": "F1 — Supervisão E capacitação periódica dos manipuladores",
       "classificacao_appcc": "PPR",
-      "desdobramento": "Os manipuladores devem ser supervisionados no cumprimento das boas práticas e receber capacitação periódica em higiene pessoal, manipulação higiênica, doenças transmitidas por alimentos e BPF aplicáveis às atividades.",
-      "orientacao_inspetor": "Observar diretamente os postos de trabalho e identificar responsável pela supervisão, rotina de acompanhamento, ocorrências e correções. Não presumir supervisão somente pela existência de treinamento.\nConferir programa, conteúdo, frequência, listas de presença, datas e identificação dos participantes; comparar com atividades exercidas por eles e verificar aplicação na prática.",
-      "obs_sim": "Foi observada supervisão da higienização e da manipulação na linha [código] por [função], com registros de orientação e correção de desvios.\nForam apresentados registros de treinamento periódico em BPF dos operadores de [processo], com data, carga horária, conteúdo e lista de presença.",
-      "nc_nao": "Durante a operação da linha [código], foram observadas práticas de manipulação incompatíveis com o POP sem intervenção ou supervisão efetiva.\nNão foram apresentados comprovantes de capacitação periódica para os funcionários responsáveis pela higienização de [processo] no período [datas]."
+      "desdobramento": "F1 — Verificar os DOIS critérios: (1) SUPERVISÃO do cumprimento das Boas Práticas pelos manipuladores durante as atividades; (2) CAPACITAÇÃO PERIÓDICA dos manipuladores em higiene pessoal, manipulação higiênica, doenças transmitidas por alimentos e BPF, com evidências da realização. Resposta única ao F1: SIM somente se ambos os critérios aplicáveis estiverem atendidos.",
+      "orientacao_inspetor": "No mesmo F1, verificar SUPERVISÃO e CAPACITAÇÃO PERIÓDICA separadamente. Supervisão: observar práticas e responsável pelo acompanhamento, ações de correção e registros. Capacitação periódica: conferir calendário, conteúdo, datas, instrutor, carga horária, lista de presença e vínculo dos participantes com os processos executados. Registrar qual critério está conforme ou não.",
+      "obs_sim": "SUPERVISÃO: constatado acompanhamento das atividades dos manipuladores de [processo] por [função/responsável], com [registros/observação direta]. CAPACITAÇÃO PERIÓDICA: comprovados treinamentos dos manipuladores de [processos] em [datas], com [conteúdo, carga horária e lista de presença].",
+      "nc_nao": "Selecionar o(s) critério(s) não atendido(s): SUPERVISÃO — ausente ou ineficaz nas operações de [processo], com evidências [fatos]. CAPACITAÇÃO PERIÓDICA — não comprovada para [manipuladores/processos], período [datas], ou conteúdo/registro insuficiente.",
+      "criterios_F1": [
+        "Supervisão dos manipuladores",
+        "Capacitação periódica dos manipuladores"
+      ]
     },
     {
       "item": "4.11.2",
@@ -894,22 +902,30 @@
     {
       "item": "4.11.3",
       "f": "F1",
-      "descricao_F": "Curso de capacitação do responsável pela industrialização — SIM/NÃO",
+      "descricao_F": "F1 — Capacitação de 40 horas e conferência de curso com mais de dois anos",
       "classificacao_appcc": "PPR",
-      "desdobramento": "O responsável pela industrialização deve ter concluído curso de capacitação com carga horária mínima de 40 horas e os conteúdos previstos no requisito. Conferir a data de conclusão e, quando aplicável, a atualização da capacitação segundo o critério adotado no Guia.",
-      "orientacao_inspetor": "Conferir certificado, nome, entidade, data de conclusão, carga horária mínima de 40 horas e conteúdo exigido. Registrar separadamente curso concluído até dois anos e curso concluído há mais de dois anos; quando a data ultrapassar dois anos, verificar existência de atualização válida segundo a regra adotada.\nVerificar data do curso original, documentos de reciclagem/atualização, carga horária, conteúdo e vínculo do profissional com a função. Assinalar NA com justificativa quando houver curso dentro dos dois anos.",
-      "obs_sim": "Foi apresentado certificado do curso BPF/APPCC de [responsável], concluído em [data], com 40 horas e conteúdos previstos no guia.\nO curso inicial foi concluído em [data], há mais de dois anos, e a atualização foi comprovada pelo certificado [identificação e data].",
-      "nc_nao": "O responsável [função] apresentou apenas certificado de curso de curta duração, sem comprovação de formação mínima de 40 horas.\nO único certificado apresentado refere-se a curso concluído em [data], há mais de dois anos, sem comprovação da atualização prevista no Guia."
+      "desdobramento": "F1 — Verificar os DOIS critérios em uma única frase: (1) CAPACITAÇÃO INICIAL do responsável pela industrialização, comprovada por curso com CARGA HORÁRIA MÍNIMA DE 40 HORAS e conteúdos pertinentes; (2) CURSO CONCLUÍDO HÁ MAIS DE DOIS ANOS: verificar a data de conclusão e a comprovação de atualização/reciclagem conforme o critério adotado no Guia. Se o curso tiver até dois anos, registrar que a segunda verificação não se aplica. O F1 permanece único.",
+      "orientacao_inspetor": "Conferir o certificado de 40 HORAS do responsável pela industrialização: identificação do participante, entidade, data, carga horária e conteúdos. Comparar a data de conclusão com a data da inspeção. Se o curso tiver MAIS DE DOIS ANOS, conferir documento de atualização/reciclagem aplicável e registrar sua data; se tiver até dois anos, indicar 'não se aplica' para esse subcritério. Não criar outro F pontuável.",
+      "obs_sim": "CAPACITAÇÃO DE 40 HORAS: apresentado certificado de [responsável pela industrialização], [entidade], concluído em [data], carga horária [40 horas ou mais] e conteúdo [temas]. CURSO COM MAIS DE DOIS ANOS: [atualização comprovada por certificado de data e identificação / não se aplica, pois curso concluído em data há até dois anos].",
+      "nc_nao": "Selecionar o(s) critério(s) não atendido(s): CAPACITAÇÃO DE 40 HORAS — inexistente certificado ou carga horária inferior a 40 horas para [responsável]. CURSO COM MAIS DE DOIS ANOS — curso de [data] sem comprovação da atualização/reciclagem exigida pelo critério adotado no Guia.",
+      "criterios_F1": [
+        "Capacitação de 40 horas do responsável pela industrialização",
+        "Curso concluído há mais de dois anos: atualização/reciclagem (ou não se aplica)"
+      ]
     },
     {
       "item": "4.11.4",
       "f": "F1",
-      "descricao_F": "Certificados dos manipuladores e do responsável pela industrialização — SIM/NÃO",
+      "descricao_F": "F1 — Certificados dos manipuladores E do responsável pela industrialização",
       "classificacao_appcc": "PPR",
-      "desdobramento": "O estabelecimento deve dispor de certificados dos manipuladores que atuam nos processos operacionais e do responsável pela industrialização, devidamente identificados e datados, com carga horária e conteúdo programático, conforme os requisitos aplicáveis.",
-      "orientacao_inspetor": "Para cada processo, registrar SIM/NÃO/NA justificável: (1) captação; (2) condução; (3) reservatórios; (4) recepção; (5) higienização das embalagens; (6) envase. Conferir data, carga horária, conteúdo programático, nome e função do participante, bem como compatibilidade com os POPs executados.\nConferir vínculo do responsável com o estabelecimento, identificação completa no certificado, programa, carga horária, data de conclusão e atualização segundo os critérios de 4.11.3; sem duplicar a avaliação da validade do curso.",
-      "obs_sim": "Foram apresentados certificados de capacitação dos operadores dos processos [selecionar], com período, instrutor, carga horária e conteúdo.\nFoi apresentado certificado de [responsável], concluído em [data], com [carga horária] e conteúdo [temas].",
-      "nc_nao": "O estabelecimento não apresentou comprovação de capacitação dos manipuladores nos processos [selecionar], embora executassem os POPs correspondentes.\nNão foi apresentado certificado de capacitação de [responsável pela industrialização], com carga horária e programa verificáveis."
+      "desdobramento": "F1 — Verificar os DOIS critérios: (1) CERTIFICADOS DE CAPACITAÇÃO DOS MANIPULADORES que atuam em captação, condução, reservatórios, recepção, higienização e envase, conforme aplicável; (2) CERTIFICADO DE CAPACITAÇÃO DO RESPONSÁVEL PELA INDUSTRIALIZAÇÃO, com nome, data, carga horária e conteúdo. Resposta única ao F1: SIM somente se ambos os critérios aplicáveis estiverem atendidos.",
+      "orientacao_inspetor": "No mesmo F1, conferir CERTIFICADOS DOS MANIPULADORES por processo aplicável (captação, condução, reservatórios, recepção, higienização das embalagens e envase) e CERTIFICADO DO RESPONSÁVEL PELA INDUSTRIALIZAÇÃO. Registrar nome, função, data, carga horária, conteúdo, processo e vínculo. O critério de curso de 40 horas e curso com mais de dois anos permanece avaliado no 4.11.3, sem gerar F2 no 4.11.4.",
+      "obs_sim": "CERTIFICADOS DOS MANIPULADORES: apresentados para [processos e funcionários], com [datas, carga horária e conteúdo]. CERTIFICADO DO RESPONSÁVEL PELA INDUSTRIALIZAÇÃO: apresentado para [nome], concluído em [data], com [carga horária e conteúdos].",
+      "nc_nao": "Selecionar o(s) critério(s) não atendido(s): CERTIFICADOS DOS MANIPULADORES — não apresentados para [funcionários/processos]. CERTIFICADO DO RESPONSÁVEL PELA INDUSTRIALIZAÇÃO — não apresentado ou sem comprovação de [data/carga horária/conteúdo] de [nome/função].",
+      "criterios_F1": [
+        "Certificados dos manipuladores",
+        "Certificado do responsável pela industrialização"
+      ]
     }
   ]
 }
