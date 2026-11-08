@@ -24,44 +24,19 @@ css.textContent=`
 `;
 document.head.appendChild(css);
 
-/* A identificacao APPCC fica somente na tabela superior.
-   Nas linhas inferiores mantemos o botao F, sem a miniatura repetida. */
+/* As etiquetas pertencem somente à tabela superior.
+   Não modificar os botões F, a numeração nem o leiaute de suas células. */
 const fixes=document.createElement('style');
-fixes.id='bpf-layout-impressao-v70';
+fixes.id='bpf-layout-impressao-v72';
 fixes.textContent=`
-/* Restaurar o conjunto ORIGINAL: número em cima, botão F embaixo.
-   Esse bloco neutraliza a regra defeituosa v71; não modifica nenhum F ou resposta. */
 @media screen {
- #pages .page>.bpf-item-code {
-   display:grid!important;
-   grid-template-columns:minmax(0,1fr)!important;
-   grid-template-rows:42% 58%!important;
-   gap:0!important;
-   overflow:hidden!important;
- }
- #pages .page>.bpf-item-code>span:not(.bpf-f) {
-   display:flex!important;
-   visibility:visible!important;
-   align-items:center!important;
-   justify-content:center!important;
-   min-height:0!important;
-   grid-row:1!important;
- }
- #pages .page>.bpf-item-code>.bpf-f {
-   display:flex!important;
-   visibility:visible!important;
-   grid-row:2!important;
-   width:100%!important;
-   max-width:100%!important;
-   height:100%!important;
-   min-height:0!important;
- }
-}
-@media screen {
- #bpf-editor textarea{min-height:13.5em!important;line-height:1.5!important;}
- #bpf-editor .bpf-guidance{line-height:1.5!important;padding-top:22.5px!important;padding-bottom:22.5px!important;}
+ #bpf-editor textarea{line-height:1.5!important;min-height:9em!important;}
+ #bpf-editor .bpf-guidance{line-height:1.5!important;}
 }
 @media print {
+ #pages .page>.text{display:none!important;}
+ #pages .page>.printable{display:block!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;color:#000!important;}
+ #pages .page>.bpf-item-code{display:none!important;}
  #pages .page>.bpf-etiqueta-overlay-v69{display:flex!important;visibility:visible!important;opacity:1!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
 }
 `;
@@ -124,4 +99,50 @@ function apply(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
 let count=0;const interval=setInterval(()=>{apply();if(++count>30)clearInterval(interval)},1000);
+
+// As etiquetas desenhadas na tela não entram automaticamente no PDF editável:
+// o exportador usa o modelo PDF incorporado. Aplicar as mesmas classificações
+// ao documento efetivamente salvo, sem alterar os F ou os campos editáveis.
+(function prepareEditablePdfOverlay(){
+ const Lib=window.PDFLib;
+ if(!Lib?.PDFDocument||window.__bpfPdfOverlayV72)return;
+ window.__bpfPdfOverlayV72=true;
+ const oldSave=Lib.PDFDocument.prototype.save;
+ Lib.PDFDocument.prototype.save=async function(options){
+  if(!this.__bpfStampedV72&&this.getPageCount()>=22){
+   this.__bpfStampedV72=true;
+   try{
+    const font=await this.embedFont(Lib.StandardFonts.HelveticaBold);
+    const byScope=new Map();
+    for(const w of GUIDE_DATA.widgets||[]){
+     if(w.rect&&!byScope.has(w.page+'_'+w.name))byScope.set(w.page+'_'+w.name,w);
+    }
+    const bg=[Lib.rgb(.86,.96,.87),Lib.rgb(1,.95,.71),Lib.rgb(1,.85,.86)];
+    const bd=[Lib.rgb(.09,.61,.20),Lib.rgb(.94,.67,.02),Lib.rgb(.91,.08,.12)];
+    let count=0;
+    for(const data of BPF_PHRASES||[]){
+     if(data.page>=this.getPageCount())continue;
+     const page=this.getPage(data.page);
+     for(const row of data.rows||[]){
+      const widget=(row.scopes||[]).map(scope=>byScope.get(data.page+'_'+scope.name)).find(Boolean);
+      if(!widget)continue;
+      const cats=[...new Set((row.phrases||[]).map(p=>String(p.appcc||'').trim().toUpperCase()).filter(c=>Object.hasOwnProperty.call(rank,c)))];
+      if(!cats.length)continue;
+      cats.sort((a,b)=>rank[b]-rank[a]);
+      const grade=Math.max(...cats.map(c=>rank[c]));
+      const label=row.code+'  |  '+cats.join(' e ');
+      const width=65.1, height=13.5, x=87.2;
+      const y=(widget.rect[1]+widget.rect[3])/2-height/2;
+      const size=Math.max(3,Math.min(6.2,(width-3)/font.widthOfTextAtSize(label,1)));
+      page.drawRectangle({x,y,width,height,color:bg[grade],borderColor:bd[grade],borderWidth:1});
+      page.drawText(label,{x:x+(width-font.widthOfTextAtSize(label,size))/2,y:y+(height-size)/2+.65,size,font,color:Lib.rgb(0,0,0)});
+      count++;
+     }
+    }
+    console.info('Classificações APPCC incluídas no PDF:',count);
+   }catch(err){console.error('Falha ao inserir as classificações no PDF',err);}
+  }
+  return oldSave.call(this,options);
+ };
+})();
 })();
