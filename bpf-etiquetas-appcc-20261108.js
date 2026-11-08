@@ -44,6 +44,21 @@ fixes.textContent=`
 `;
 document.head.appendChild(fixes);
 
+/* Corrige impressão como PDF pelo navegador sem modificar os botões F. */
+const printTextFix=document.createElement('style');
+printTextFix.id='bpf-print-textos-v76';
+printTextFix.textContent=`@media print {
+ #pages>.page>.printable:not([style*="display: none"]){
+   display:block!important;visibility:visible!important;opacity:1!important;
+   white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;
+   color:#000!important;
+ }
+ #pages>.page>.text{display:none!important}
+ #pages>.page>.background{visibility:visible!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important}
+}`;
+document.head.appendChild(printTextFix);
+window.addEventListener('beforeprint',()=>{try{if(typeof sync==='function')sync()}catch(err){console.warn('Preparação da impressão:',err)}}, {capture:true});
+
 const rank={PPR:0,POP:0,PC:1,PPRO:1,PCC:2};
 const outlines=['#159a33','#f0b400','#e91a20'];
 const fills=['linear-gradient(110deg,#dbf7dc,#a9eeb5)','linear-gradient(110deg,#fff7bc,#ffe47a)','linear-gradient(110deg,#ffd6da,#ffa9b0)'];
