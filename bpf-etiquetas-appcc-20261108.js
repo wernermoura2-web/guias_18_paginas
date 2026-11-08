@@ -16,8 +16,8 @@ const ranks={PPR:0,POP:0,PC:1,PPRO:1,PCC:2};
 const colors=['#159a33','#e9b000','#ed1717'];
 const patt=/^4\.\d{1,2}\.\d{1,2}$/;
 function apply(){
- const model=window.BPF_PHRASES;
- if(!Array.isArray(model))return;
+ if(typeof BPF_PHRASES==='undefined'||!Array.isArray(BPF_PHRASES))return;
+ const model=BPF_PHRASES;
  const pages=document.querySelectorAll('#pages>.page');
  model.forEach(data=>{
   const pg=pages[data.page];if(!pg)return;
@@ -32,8 +32,9 @@ function apply(){
    if(!parent||parent.closest('.bpf-item-code,.bpf-f,.bpf-etiqueta-superior-v66,button,a,[role="button"],input,textarea,[contenteditable="true"]'))continue;
    // A tabela dos processos aparece antes do título AVALIAÇÃO.
    const cell=parent.closest('td,th');
-   if(!cell)continue;
-   if(cell.closest('.bpf-evaluation,.bpf-avaliacao,[class*="assessment"],[class*="avaliacao"]'))continue;
+   if((cell||parent).closest('.bpf-evaluation,.bpf-avaliacao,[class*="assessment"],[class*="avaliacao"]'))continue;
+   const evaluation=[...pg.querySelectorAll('*')].find(el=>el.children.length===0&&/^AVALIAÇÃO$/i.test((el.textContent||'').trim()));
+   if(evaluation&&(evaluation.compareDocumentPosition(parent)&Node.DOCUMENT_POSITION_FOLLOWING))continue;
    const row=rows.get(code);
    const cats=[...new Set((row.phrases||[]).map(f=>String(f.appcc||'').trim().toUpperCase()).filter(k=>Object.prototype.hasOwnProperty.call(ranks,k)))];
    if(!cats.length)continue;
