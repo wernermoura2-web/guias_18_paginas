@@ -1,0 +1,48 @@
+name: Aplicar quatro F1 reunificados diretamente no Guia BPF
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/patch_f1_unificados_20261108.py'
+      - '.github/workflows/aplicar-f1-unificados-20261108.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: f1-unificados-guia
+  cancel-in-progress: false
+jobs:
+  atualizar-f1:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter arquivos do guia
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Substituir opções do F1 nas duas versões
+        run: python3 scripts/patch_f1_unificados_20261108.py
+      - name: Validar sintaxe e integridade dos textos originais
+        run: |
+          python3 scripts/patch_f1_unificados_20261108.py
+          git diff --check
+          python3 - <<'PY'
+          from pathlib import Path
+          for path in ('individual.html', 'equipe.html'):
+              text=Path(path).read_text(encoding='utf-8')
+              assert 'Capacitação periódica dos manipuladores' in text
+              assert 'Documentação do controle de qualidade' in text
+              assert 'Capacitação de 40 horas — curso concluído há mais de 2 anos' in text
+              assert 'Certificado de capacitação do responsável pela industrialização' in text
+              print(path, 'OK')
+          PY
+      - name: Publicar nos guias individual e equipe
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add individual.html equipe.html
+          if git diff --cached --quiet; then
+            echo "F1 já atualizado."
+          else
+            git commit -m "Guia BPF: corrigir textos e opções SIM/NÃO dos quatro F1"
+            git push origin HEAD:main
+          fi
