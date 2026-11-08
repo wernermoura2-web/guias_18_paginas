@@ -104,29 +104,7 @@ function patchAfterGuideReady(){
    }
   }
  }
- // F2 separados e detalhamento original preservado sem repetir a mesma subverificação no F1.
- if(typeof bpfF1Checks==='function'){
-  const old=bpfF1Checks;
-  bpfF1Checks=function(row,scope){
-   const entries=old(row,scope);
-   if(['4.10.1','4.11.1','4.11.3'].includes(row.code))return entries.slice(0,1);
-   if(row.code==='4.11.4')return entries.slice(0,6);
-   return entries;
-  };
- }
- // Migrar respostas dos antigos subcampos F1 para F2 somente quando F2 não tiver resposta.
- if(typeof values!=='undefined'&&typeof bpfPhraseName==='function'){
-  const moves={'4.10.1':['ControleQualidade',2],'4.11.1':['Responsaveis',2],
-   '4.11.3':['Responsaveis',2],'4.11.4':['Responsaveis',7]};
-  for(const page of BPF_PHRASES)for(const row of page.rows){
-   const move=moves[row.code];if(!move)continue;
-   for(const scope of row.scopes){
-    const old=bpfPhraseName(scope,0)+'_'+move[0]+'_'+move[1];
-    const next=bpfPhraseName(scope,1);
-    if(!values[next]&&['1','0','2'].includes(values[old]))values[next]=values[old];
-   }
-  }
- }
+ // Manter todos os critérios originais dentro do único F1. Não ocultar subcritérios nem transferir respostas para F2 inexistentes.
  if(typeof bpfInspectorApplySaved==='function'){
   // Existing user-specific revisions remain recoverable; new texts are the Guide defaults.
   if(typeof bpfInspectorLastApplied!=='undefined')bpfInspectorLastApplied=null;
