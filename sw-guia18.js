@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261108-revisao94F-ativa-v55';
+const CACHE='guia18-20261107-reunificar-quatro-F-v54';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./revisao-orientacoes-20261107.json'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
