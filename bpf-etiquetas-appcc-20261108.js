@@ -21,6 +21,16 @@ css.textContent=`
 .page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:1.48cqw!important;gap:.08cqw!important}
 .page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:1.15cqw!important;gap:.05cqw!important}
 .page .bpf-etiqueta-overlay-v69>span {color:#000!important}
+/* 4.5.3: três classificações. A fonte precisa caber mesmo quando
+   a página ainda está oculta (clientWidth = 0); usar cqw e não medição em JS. */
+.page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"] {
+ font-size:.68cqw!important;
+ gap:0!important;
+}
+.page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"]>span {
+ font-size:inherit!important;
+ flex-shrink:0!important;
+}
 `;
 document.head.appendChild(css);
 
@@ -68,6 +78,12 @@ const pageWidth=595.32;
 const measureCanvas=document.createElement('canvas');
 const measureContext=measureCanvas.getContext('2d');
 function fitBadge(badge){
+ // Corrigir 4.5.3 de forma independente do estado visível/oculto da página.
+ if(badge.dataset.etiquetaId?.endsWith('-4-5-3')){
+   badge.style.removeProperty('font-size');
+   badge.style.setProperty('gap','0px','important');
+   return;
+ }
  const children=Array.from(badge.children);
  if(children.length!==3)return;
  const w=badge.clientWidth,h=badge.clientHeight;
@@ -82,9 +98,8 @@ function fitBadge(badge){
    if(required<=available)lo=mid;else hi=mid;
  }
  // !important inline prevalece sobre os estilos "longa" e "extralonga".
- // Somente o item 4.5.3 possui três classificações: reduzir para caber por inteiro.
- const finalSize=badge.dataset.etiquetaId?.endsWith('-4-5-3')?lo*.62:lo;
- badge.style.setProperty('font-size',finalSize.toFixed(2)+'px','important');
+ // Demais etiquetas seguem o ajuste responsivo normal.
+ badge.style.setProperty('font-size',lo.toFixed(2)+'px','important');
  badge.style.setProperty('gap','0px','important');
 }
 function apply(){
