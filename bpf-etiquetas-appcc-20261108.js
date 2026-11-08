@@ -1,67 +1,83 @@
-/* GUIA BPF/APPCC: etiquetas somente nos números superiores. Não modifica F, respostas ou dados. */
+/* Etiquetas APPCC sobre as linhas da TABELA SUPERIOR, que sao imagem do PDF.
+   Usa a posicao das respostas do formulario para alinhar os numeros.
+   Nao modifica frases, F, dados, calculos ou a area de AVALIACAO inferior. */
 (function(){
 'use strict';
-if(window.__bpfEtiquetasV68)return;
-window.__bpfEtiquetasV68=true;
+if(window.__bpfEtiquetasSuperioresV69)return;
+window.__bpfEtiquetasSuperioresV69=true;
 const css=document.createElement('style');
-css.id='bpf-etiquetas-superiores-v68';
+css.id='bpf-etiquetas-superiores-v69';
 css.textContent=`
-.page .bpf-etiqueta-superior-v68{display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:.20cqw!important;box-sizing:border-box!important;max-width:96%!important;min-width:0!important;min-height:1.15cqw!important;padding:.12cqw .3cqw!important;margin:0 auto!important;border:.17cqw solid var(--bpf-cor)!important;border-radius:.43cqw!important;background:linear-gradient(110deg,#a4d6f3,#3d9bd8)!important;color:#000!important;font:800 .58cqw/1.1 Arial,Helvetica,sans-serif!important;white-space:nowrap!important;vertical-align:middle!important;text-align:center!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
-.page .bpf-etiqueta-superior-v68.bpf-etiqueta-longa{font-size:.43cqw!important;gap:.10cqw!important;padding-inline:.12cqw!important}
-.page .bpf-etiqueta-superior-v68.bpf-etiqueta-extra-longa{font-size:.34cqw!important;gap:.06cqw!important}
-.page .bpf-etiqueta-superior-v68 *{color:#000!important}
+.page .bpf-etiqueta-overlay-v69 {
+ position:absolute!important;z-index:12!important;box-sizing:border-box!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ gap:.17cqw!important;border:.19cqw solid var(--bpf-borda)!important;
+ border-radius:.43cqw!important;background:var(--bpf-fundo)!important;
+ color:#000!important;font:800 .72cqw/1.1 Arial,Helvetica,sans-serif!important;
+ white-space:nowrap!important;overflow:hidden!important;
+ text-align:center!important;pointer-events:none!important;
+ -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+}
+.page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:.59cqw!important;gap:.08cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:.46cqw!important;gap:.05cqw!important}
+.page .bpf-etiqueta-overlay-v69>span {color:#000!important}
 `;
 document.head.appendChild(css);
-const ranks={PPR:0,POP:0,PC:1,PPRO:1,PCC:2};
-const colors=['#159a33','#e9b000','#ed1717'];
-const patt=/^4\.\d{1,2}\.\d{1,2}$/;
+const rank={PPR:0,POP:0,PC:1,PPRO:1,PCC:2};
+const outlines=['#159a33','#f0b400','#e91a20'];
+const fills=['linear-gradient(110deg,#dbf7dc,#a9eeb5)','linear-gradient(110deg,#fff7bc,#ffe47a)','linear-gradient(110deg,#ffd6da,#ffa9b0)'];
+const pageWidth=595.32;
 function apply(){
  if(typeof BPF_PHRASES==='undefined'||!Array.isArray(BPF_PHRASES))return;
- const model=BPF_PHRASES;
+ if(typeof GUIDE_DATA==='undefined'||!Array.isArray(GUIDE_DATA.widgets))return;
  const pages=document.querySelectorAll('#pages>.page');
- window.__bpfEtiquetaDiagnostico={paginas:pages.length,modelos:model.length,candidatos:0,aplicadas:0};
- model.forEach(data=>{
-  const pg=pages[data.page];if(!pg)return;
-  const rows=new Map((data.rows||[]).map(r=>[r.code,r]));
-  const done=new Set([...pg.querySelectorAll('.bpf-etiqueta-superior-v68')].map(e=>e.dataset.item));
-  const walker=document.createTreeWalker(pg,NodeFilter.SHOW_TEXT);
-  const todo=[];let node;
-  while((node=walker.nextNode())){
-   const code=node.nodeValue.trim();
-   if(!patt.test(code)||!rows.has(code)||done.has(code))continue;
-   const parent=node.parentElement;
-   if(!parent||parent.closest('.bpf-f,.bpf-etiqueta-superior-v68,button,a,[role="button"],input,textarea,[contenteditable="true"]'))continue;
-   // A tabela dos processos aparece antes do título AVALIAÇÃO.
-   const cell=parent.closest('td,th');
-   if((cell||parent).closest('.bpf-evaluation,.bpf-avaliacao,[class*="assessment"],[class*="avaliacao"]'))continue;
-   const evaluation=[...pg.querySelectorAll('*')].find(el=>el.children.length===0&&/^AVALIAÇÃO$/i.test((el.textContent||'').trim()));
-   if(evaluation&&(evaluation.compareDocumentPosition(parent)&Node.DOCUMENT_POSITION_FOLLOWING))continue;
-   const row=rows.get(code);
-   const cats=[...new Set((row.phrases||[]).map(f=>String(f.appcc||'').trim().toUpperCase()).filter(k=>Object.prototype.hasOwnProperty.call(ranks,k)))];
+ if(!pages.length)return;
+ const widgets=new Map();
+ for(const w of GUIDE_DATA.widgets){
+  const k=w.page+'_'+w.name;
+  if(w.rect&&!widgets.has(k))widgets.set(k,w);
+ }
+ const diag={pages:pages.length,total:0,aplicadas:0,semCoordenadas:[]};
+ for(const data of BPF_PHRASES){
+  const page=pages[data.page];if(!page)continue;
+  for(const row of data.rows){
+   const id='bpf-etiqueta-superior-v69-'+data.page+'-'+row.code.replace(/\./g,'-');
+   if(page.querySelector('[data-etiqueta-id="'+id+'"]'))continue;
+   diag.total++;
+   let widget=null;
+   for(const scope of row.scopes||[]){
+    widget=widgets.get(data.page+'_'+scope.name);
+    if(widget)break;
+   }
+   if(!widget){diag.semCoordenadas.push(data.page+':'+row.code);continue}
+   const cats=[...new Set((row.phrases||[]).map(p=>String(p.appcc||'').trim().toUpperCase()).filter(c=>Object.prototype.hasOwnProperty.call(rank,c)))];
    if(!cats.length)continue;
-   const level=Math.max(...cats.map(k=>ranks[k]));
-   window.__bpfEtiquetaDiagnostico.candidatos++;
-   todo.push({node,code,cats,level});
-   done.add(code);
-  }
-  todo.forEach(({node,code,cats,level})=>{
-   if(!node.isConnected)return;
+   cats.sort((a,b)=>rank[b]-rank[a]);
+   const grade=Math.max(...cats.map(c=>rank[c]));
    const label=cats.join(' e ');
+   // Coordenadas da primeira coluna de itens (pontos do PDF).
+   // As respostas de cada linha determinam o alinhamento vertical exato.
+   const height=widget.size?.[1]||841.92;
+   const centerY=height-(widget.rect[1]+widget.rect[3])/2;
+   const left=87.2,width=65.1,badgeHeight=13.5;
    const badge=document.createElement('span');
-   badge.className='bpf-etiqueta-superior-v68'+(label.length>9?' bpf-etiqueta-longa':'')+(label.length>16?' bpf-etiqueta-extra-longa':'');
-   badge.dataset.item=code;
-   badge.style.setProperty('--bpf-cor',colors[level]);
-   badge.title=code+' — '+cats.join(', ')+' — NC '+['menor','maior','crítica'][level];
-   const left=document.createElement('span'),sep=document.createElement('span'),right=document.createElement('span');
-   left.textContent=code;sep.textContent='|';right.textContent=label;
-   badge.append(left,sep,right);
-   node.parentNode.replaceChild(badge,node);
-   window.__bpfEtiquetaDiagnostico.aplicadas++;
-  });
- });
+   badge.className='bpf-etiqueta-overlay-v69'+(label.length>=9?' bpf-longa':'')+(label.length>16?' bpf-extralonga':'');
+   badge.dataset.etiquetaId=id;
+   badge.style.left=(100*left/pageWidth)+'%';
+   badge.style.width=(100*width/pageWidth)+'%';
+   badge.style.top=(100*(centerY-badgeHeight/2)/height)+'%';
+   badge.style.height=(100*badgeHeight/height)+'%';
+   badge.style.setProperty('--bpf-borda',outlines[grade]);
+   badge.style.setProperty('--bpf-fundo',fills[grade]);
+   badge.title='Item '+row.code+' — '+cats.join(', ')+' — não conformidade '+['menor','maior','crítica'][grade];
+   const number=document.createElement('span'),divider=document.createElement('span'),suffix=document.createElement('span');
+   number.textContent=row.code;divider.textContent='|';suffix.textContent=label;
+   badge.append(number,divider,suffix);page.append(badge);
+   diag.aplicadas++;
+  }
+ }
+ window.__bpfEtiquetasDiagnosticoV69=diag;
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});
-else apply();
-let rounds=0;
-const interval=setInterval(()=>{apply();if(++rounds>=45)clearInterval(interval)},1000);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+let count=0;const interval=setInterval(()=>{apply();if(++count>30)clearInterval(interval)},1000);
 })();
