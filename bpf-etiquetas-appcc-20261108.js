@@ -26,18 +26,20 @@ document.head.appendChild(css);
 
 /* As etiquetas pertencem somente à tabela superior.
    Não modificar os botões F, a numeração nem o leiaute de suas células. */
+// O componente F e o número do item são inteiramente controlados pelo guia original.
+// Nenhum CSS deste complemento deve afetar .bpf-item-code, .bpf-f ou seus filhos.
 const fixes=document.createElement('style');
 fixes.id='bpf-layout-impressao-v72';
 fixes.textContent=`
 @media screen {
- #bpf-editor textarea{line-height:1.5!important;min-height:9em!important;}
- #bpf-editor .bpf-guidance{line-height:1.5!important;}
+ #bpf-editor textarea {line-height:1.5!important;}
+ #bpf-editor .bpf-guidance {line-height:1.5!important;}
 }
 @media print {
- #pages .page>.text{display:none!important;}
- #pages .page>.printable{display:block!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;color:#000!important;}
- #pages .page>.bpf-item-code{display:none!important;}
- #pages .page>.bpf-etiqueta-overlay-v69{display:flex!important;visibility:visible!important;opacity:1!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+ #pages .page>.bpf-etiqueta-overlay-v69 {
+   display:flex!important;visibility:visible!important;opacity:1!important;
+   print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;
+ }
 }
 `;
 document.head.appendChild(fixes);
