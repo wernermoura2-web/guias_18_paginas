@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Abrir Guia BPF/APPCC atualizado</title><meta name="theme-color" content="#0b5c91">
+<style>body{font:16px Arial,sans-serif;color:#17445c;background:#edf5fa;margin:0;display:grid;place-items:center;min-height:100dvh;padding:24px;box-sizing:border-box}.card{background:white;max-width:530px;padding:28px;border-radius:16px;box-shadow:0 7px 24px #2344}a{color:#076897}</style></head>
+<body><div class="card" role="status"><h1>Guia de Avaliação de Risco — BPF/APPCC</h1><p id="status">Abrindo o formulário com os F1 revisados…</p><p id="fallback" hidden><a id="direct" href="./equipe.html">Abrir o guia sem atualização adicional</a></p></div>
+<script>
+(async function(){
+'use strict';
+const qs=new URLSearchParams(location.search),mode=qs.get('modo')==='individual'?'individual':'equipe';
+const target=mode+'.html',src=new URL('./'+target,location.href);
+qs.delete('modo');qs.delete('v');qs.set('v','20261108-F1-direto-v60');
+src.search=qs.toString();
+document.getElementById('direct').href=src.href;
+try{
+ const response=await fetch(src.href,{cache:'no-store'});
+ if(!response.ok)throw new Error('HTTP '+response.status);
+ let html=await response.text();
+ if(!html.includes('<html')&&!html.includes('<HTML'))throw new Error('Formulário inválido');
+ const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
+ const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261108-F1-direto-v60"><\/script>';
+ if(!html.includes('bpf-revisao-frases-ativa-20261107.js')){
+   html=html.includes(anchor)?html.replace(anchor,'</script>'+active+'<script>/* Shared by the browser forms and Acrobat.'):html.replace(/<\/head\s*>/i,active+'</head>');
+ }
+ const script='<script defer src="./bpf-f1-correcao-direta-20261108.js?v=20261108-F1-direto-v60"><\/script>';
+ if(!html.includes('bpf-f1-correcao-direta-20261108.js'))html=html.replace(/<\/head\s*>/i,script+'</head>');
+ // Conservar o endereço esperado pelo aplicativo: mesma origem, mesmos formulários e armazenamento.
+ history.replaceState(history.state,'',src.pathname+src.search+src.hash);
+ document.open();document.write(html);document.close();
+}catch(error){
+ document.getElementById('status').textContent='Não foi possível abrir a versão revisada: '+String(error.message||error);
+ document.getElementById('fallback').hidden=false;
+}
+})();
+</script></body></html>
