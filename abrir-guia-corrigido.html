@@ -16,10 +16,10 @@ try{
  if(!response.ok)throw new Error('HTTP '+response.status);
  let html=await response.text();
  if(!html.includes('<html')&&!html.includes('<HTML'))throw new Error('Formulário inválido');
- const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
+ const close='<'+'/script>'; const anchor=close+'<script>/* Shared by the browser forms and Acrobat.';
  const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261108-F1-direto-v60"><\/script>';
  if(!html.includes('bpf-revisao-frases-ativa-20261107.js')){
-   html=html.includes(anchor)?html.replace(anchor,'</script>'+active+'<script>/* Shared by the browser forms and Acrobat.'):html.replace(/<\/head\s*>/i,active+'</head>');
+   html=html.includes(anchor)?html.replace(anchor,close+active+'<script>/* Shared by the browser forms and Acrobat.'):html.replace(/<\/head\s*>/i,active+'</head>');
  }
  const script='<script defer src="./bpf-f1-correcao-direta-20261108.js?v=20261108-F1-direto-v60"><\/script>';
  if(!html.includes('bpf-f1-correcao-direta-20261108.js'))html=html.replace(/<\/head\s*>/i,script+'</head>');
