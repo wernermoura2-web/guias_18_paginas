@@ -23,6 +23,30 @@ css.textContent=`
 .page .bpf-etiqueta-overlay-v69>span {color:#000!important}
 `;
 document.head.appendChild(css);
+
+/* A identificacao APPCC fica somente na tabela superior.
+   Nas linhas inferiores mantemos o botao F, sem a miniatura repetida. */
+const fixes=document.createElement('style');
+fixes.id='bpf-layout-impressao-v70';
+fixes.textContent=`
+@media screen {
+ #pages .page>.bpf-item-code{grid-template-rows:1fr!important;}
+ #pages .page>.bpf-item-code>span{display:none!important;}
+ #pages .page>.bpf-item-code>.bpf-f{grid-row:1!important;height:100%!important;min-height:100%!important;}
+ #bpf-editor textarea{min-height:9em!important;line-height:1.5!important;}
+ #bpf-editor .bpf-guidance{line-height:1.5!important;padding-top:15px!important;padding-bottom:15px!important;}
+}
+@media print {
+ #pages>.page{display:block!important;overflow:visible!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+ #pages>.page>.background{display:block!important;visibility:visible!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+ #pages .page>.bpf-item-code{display:none!important;}
+ #pages .page>.bpf-etiqueta-overlay-v69{display:flex!important;visibility:visible!important;opacity:1!important;z-index:50!important;print-color-adjust:exact!important;-webkit-print-color-adjust:exact!important;}
+ #pages .page>.printable{display:block!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;color:#000!important;}
+ #pages .page>.text{display:none!important;}
+}
+`;
+document.head.appendChild(fixes);
+
 const rank={PPR:0,POP:0,PC:1,PPRO:1,PCC:2};
 const outlines=['#159a33','#f0b400','#e91a20'];
 const fills=['linear-gradient(110deg,#dbf7dc,#a9eeb5)','linear-gradient(110deg,#fff7bc,#ffe47a)','linear-gradient(110deg,#ffd6da,#ffa9b0)'];
