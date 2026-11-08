@@ -82,6 +82,8 @@ async function addLabelsToPdf(pdf){
  window.__bpfLastPdfLabelsV72=count;
 }
 function installPdfHook(){
+ // Outro complemento da mesma versao ja insere as etiquetas no PDF: evitar duplicacao.
+ if(window.__bpfPdfOverlayV72)return true;
  if(typeof PDFLib==='undefined'||!PDFLib.PDFDocument?.prototype)return false;
  const proto=PDFLib.PDFDocument.prototype;
  if(proto.__bpfPrintHookV72)return true;
