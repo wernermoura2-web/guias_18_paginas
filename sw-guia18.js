@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261108-f1-direto-v58';
+const CACHE='guia18-20261107-F1-integrado-v58';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./revisao-orientacoes-20261107.json'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
@@ -17,6 +17,19 @@ async function attachFriendlyMenu(response,url){
       :altered.replace(/<\/body\s*>/i,active+'</body>');
   }
   altered=altered.replace(/bpf-revisao-frases-ativa-20261107\.js(?:\?v=[^"'<> ]*)?/g,'bpf-revisao-frases-ativa-20261107.js?v=20261108-F1-subcriterios-restaurados-v59');
+  // Corrigir rótulos das verificações existentes dentro de F1 (nenhuma nova frase F).
+  // A descrição legal de cada item e as respostas salvas permanecem inalteradas.
+  const F1_LABELS=[
+    ["'4.10.1':['Implementação','Documentação']","'4.10.1':['Implementação do controle de qualidade','Documentação do controle de qualidade (manual, POPs, métodos e registros)']"],
+    ["'4.11.1':['Supervisão','Capacitação']","'4.11.1':['Supervisão dos manipuladores','Capacitação periódica dos manipuladores']"],
+    ["'4.11.3':['Curso de 40h com até 2 anos','Curso de 40h com mais de 2 anos']","'4.11.3':['Capacitação de 40 horas — curso concluído há até 2 anos','Capacitação de 40 horas — curso concluído há mais de 2 anos (conferir atualização)']"],
+    ["'Certificado do responsável pela industrialização'","'Certificado de capacitação do responsável pela industrialização (data, carga horária e conteúdo)'"],
+    ["'4.10.1':'F1 — Controle de qualidade'","'4.10.1':'F1 — Implementação e documentação do controle de qualidade'"],
+    ["'4.11.1':'F1 — Supervisão e Capacitação'","'4.11.1':'F1 — Supervisão e capacitação periódica'"],
+    ["'4.11.3':'F1 — Curso de capacitação'","'4.11.3':'F1 — Capacitação de 40 horas e curso há mais de 2 anos'"],
+    ["'4.11.4':'F1 — Certificados de capacitação'","'4.11.4':'F1 — Certificados dos manipuladores e do responsável pela industrialização'"]
+  ];
+  for(const [before,after] of F1_LABELS)if(altered.includes(before))altered=altered.replace(before,after);
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
