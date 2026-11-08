@@ -104,6 +104,26 @@ function patchAfterGuideReady(){
    }
   }
  }
+ // Preservar as verificações internas do único F1 (sem alterar nomes de campos nem respostas).
+ if(typeof bpfF1Checks==='function'&&!window.__bpfF1ChecksCompletosV58){
+   const original=bpfF1Checks;
+   bpfF1Checks=function(row,scope){
+     const checks=original(row,scope);
+     if(row.code==='4.11.1')return checks.map(x=>({...x,option:x.option==='Capacitação'?'Capacitação periódica':x.option}));
+     if(row.code==='4.11.3')return checks.map(x=>({...x,option:x.option==='Curso de 40h com até 2 anos'?'Curso de capacitação de 40 horas concluído há até 2 anos':x.option==='Curso de 40h com mais de 2 anos'?'Curso de capacitação de 40 horas concluído há mais de 2 anos — verificar atualização':x.option}));
+     return checks;
+   };
+   window.__bpfF1ChecksCompletosV58=true;
+   const expectativas={'4.10.1':2,'4.11.1':2,'4.11.3':2,'4.11.4':7};
+   window.__bpfF1Verificacao={};
+   for(const code of Object.keys(expectativas)){
+     const row=BPF_PHRASES.flatMap(p=>p.rows).find(r=>r.code===code);
+     if(row?.scopes[0]){
+       const options=bpfF1Checks(row,row.scopes[0]);
+       window.__bpfF1Verificacao[code]={esperados:expectativas[code],encontrados:options.length,opcoes:options.map(o=>o.option)};
+     }
+   }
+ }
  // Manter todos os critérios originais dentro do único F1. Não ocultar subcritérios nem transferir respostas para F2 inexistentes.
  if(typeof bpfInspectorApplySaved==='function'){
   // Existing user-specific revisions remain recoverable; new texts are the Guide defaults.
