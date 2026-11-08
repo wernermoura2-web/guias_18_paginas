@@ -1,16 +1,43 @@
 <!doctype html>
-<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Abrir Guia BPF/APPCC</title><meta name="theme-color" content="#0b5c91">
-<style>body{font:16px Arial,sans-serif;color:#17445c;background:#edf5fa;margin:0;display:grid;place-items:center;min-height:100dvh;padding:24px;box-sizing:border-box}.card{background:white;max-width:530px;padding:28px;border-radius:16px;box-shadow:0 7px 24px #2344}a{color:#076897}</style>
-</head><body><div class="card"><h1>Guia de Avaliação de Risco — BPF/APPCC</h1><p>Abrindo o formulário...</p><p><a id="direct" href="./equipe.html">Abrir diretamente o guia</a></p></div>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guia de Avaliação de Risco — BPF/APPCC</title><meta name="theme-color" content="#0b5c91">
+<style>html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;background:#eff6fa;color:#17445c}#formulario{display:block;width:100%;height:100dvh;border:0}#avisos{position:fixed;bottom:12px;left:12px;z-index:10;background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 3px 12px #0002;font-size:13px}#avisos[hidden]{display:none}</style></head>
+<body><iframe id="formulario" title="Guia BPF/APPCC" allow="fullscreen"></iframe><div id="avisos" role="status">Carregando o guia... <a id="direto" href="./equipe.html">Abrir diretamente</a></div>
 <script>
 (function(){
-const q=new URLSearchParams(location.search);
-const mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo');q.set('v','20261108-abertura-direta-v63');
-const target='./'+mode+'.html?'+q.toString()+location.hash;
-document.getElementById('direct').href=target;
-// Redirecionamento direto: evita baixar e reescrever integralmente os formulários grandes.
-location.replace(target);
+'use strict';
+const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
+q.delete('modo'); q.set('v','20261108-etiquetas-v64');
+const target='./'+mode+'.html?'+q.toString();
+const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
+document.getElementById('direto').href=target;
+const files=[
+ 'bpf-revisao-frases-ativa-20261107.js?v=20261108-F1-direto-v60',
+ 'bpf-f1-correcao-direta-20261108.js?v=20261108-F1-direto-v60',
+ 'bpf-f1-opcoes-visiveis.js?v=20261108-F1-visivel-v60',
+ 'bpf-etiquetas-appcc-20261108.js?v=20261108-etiquetas-v64'
+];
+let inserted=false;
+frame.addEventListener('load',()=>{
+ try{
+  const doc=frame.contentDocument;
+  if(!doc||!doc.documentElement)throw Error('O formulário não abriu.');
+  if(inserted)return;
+  inserted=true;
+  let index=0;
+  function next(){
+   if(index===files.length){status.hidden=true;return}
+   const script=doc.createElement('script');
+   script.src='./'+files[index++];
+   script.onload=next;
+   script.onerror=()=>{console.warn('Recurso adicional indisponível:',script.src);next()};
+   (doc.head||doc.documentElement).appendChild(script);
+  }
+  next();
+ }catch(e){status.textContent='Não foi possível aplicar as etiquetas. Use o acesso direto abaixo.';}
+});
+frame.src=target;
+// A interface do formulário continua acessível mesmo se um complemento demorar.
+setTimeout(()=>{status.hidden=true},12000);
 })();
 </script></body></html>
