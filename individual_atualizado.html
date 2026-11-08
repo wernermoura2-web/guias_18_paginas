@@ -9,7 +9,8 @@
 <p><a id="direto" href="./individual.html?v=20261107-F1-integrado-v58">Abrir o guia</a></p>
 <script>
 (async()=>{
- const target='./individual.html?v=20261107-F1-integrado-v58'+location.hash;
+ const query=new URLSearchParams(location.search);query.set('v','20261107-F1-integrado-v58');
+ const target='./individual.html?'+query.toString()+location.hash;
  document.getElementById('direto').href=target;
  const delay=ms=>new Promise(resolve=>setTimeout(resolve,ms));
  try{
