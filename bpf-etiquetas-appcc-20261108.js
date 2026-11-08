@@ -35,9 +35,44 @@ document.head.appendChild(css);
 const fixes=document.createElement('style');
 fixes.id='bpf-layout-impressao-v72';
 fixes.textContent=`
-/* Não alterar .bpf-item-code nem .bpf-f:
-   o guia original já define 42% para a numeração e 58% para o F. */
+/* Na tela, reservar fisicamente a faixa superior para o numero
+   (42%) e posicionar o botao F SOMENTE na faixa inferior (58%).
+   A separacao absoluta evita que o F cubra a numeracao dos itens.
+   Nao vale para PDF, nem altera frases/estado dos F. */
 @media screen {
+ #pages .page>.bpf-item-code {
+   position:absolute!important;
+   display:block!important;
+   overflow:hidden!important;
+   padding:0!important;
+   isolation:isolate!important;
+ }
+ #pages .page>.bpf-item-code>span:not(.bpf-f) {
+   position:absolute!important;
+   top:0!important;left:0!important;
+   width:100%!important;height:42%!important;
+   box-sizing:border-box!important;
+   display:flex!important;
+   align-items:center!important;justify-content:center!important;
+   visibility:visible!important;
+   min-height:0!important;
+   line-height:1!important;
+   white-space:nowrap!important;
+   z-index:1!important;
+ }
+ #pages .page>.bpf-item-code>.bpf-f {
+   position:absolute!important;
+   top:42%!important;left:0!important;bottom:0!important;
+   width:100%!important;height:58%!important;
+   max-width:100%!important;
+   box-sizing:border-box!important;
+   min-height:0!important;
+   margin:0!important;padding:0!important;
+   display:flex!important;
+   align-items:center!important;justify-content:center!important;
+   visibility:visible!important;
+   z-index:2!important;
+ }
  #bpf-editor textarea {line-height:1.5!important;}
  #bpf-editor .bpf-guidance {line-height:1.5!important;}
 }
