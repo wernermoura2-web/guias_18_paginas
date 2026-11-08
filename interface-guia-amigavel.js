@@ -464,3 +464,13 @@
   }catch(e){window.__BPF_F1_GUIA_ERRO=String(e)}
  });
 })();
+
+/* Carregamento permanente das etiquetas APPCC nos formulários abertos diretamente. */
+(function(){'use strict';
+ if(window.__bpfEtiquetasLoaderV63)return;
+ window.__bpfEtiquetasLoaderV63=true;
+ const script=document.createElement('script');
+ script.src='./bpf-etiquetas-appcc-20261108.js?v=20261108-etiquetas-diretas-v63';
+ script.defer=true;
+ document.head.appendChild(script);
+})();
