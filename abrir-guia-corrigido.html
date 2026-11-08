@@ -7,7 +7,7 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261108-etiquetas-v64');
+q.delete('modo'); q.set('v','20261108-etiquetas-superiores-v65');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
@@ -15,7 +15,7 @@ const files=[
  'bpf-revisao-frases-ativa-20261107.js?v=20261108-F1-direto-v60',
  'bpf-f1-correcao-direta-20261108.js?v=20261108-F1-direto-v60',
  'bpf-f1-opcoes-visiveis.js?v=20261108-F1-visivel-v60',
- 'bpf-etiquetas-appcc-20261108.js?v=20261108-etiquetas-v64'
+ 'bpf-etiquetas-appcc-20261108.js?v=20261108-etiquetas-superiores-v65'
 ];
 let inserted=false;
 frame.addEventListener('load',()=>{
