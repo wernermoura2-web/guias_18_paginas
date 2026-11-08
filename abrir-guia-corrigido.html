@@ -23,6 +23,8 @@ try{
  }
  const script='<script defer src="./bpf-f1-correcao-direta-20261108.js?v=20261108-F1-direto-v60"><\/script>';
  if(!html.includes('bpf-f1-correcao-direta-20261108.js'))html=html.replace(/<\/head\s*>/i,script+'</head>');
+ const visible='<script defer src="./bpf-f1-opcoes-visiveis.js?v=20261108-F1-visivel-v60"><\/script>';
+ if(!html.includes('bpf-f1-opcoes-visiveis.js'))html=html.replace(/<\/head\s*>/i,visible+'</head>');
  // Conservar o endereço esperado pelo aplicativo: mesma origem, mesmos formulários e armazenamento.
  history.replaceState(history.state,'',src.pathname+src.search+src.hash);
  document.open();document.write(html);document.close();
