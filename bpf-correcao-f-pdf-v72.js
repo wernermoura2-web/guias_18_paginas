@@ -16,18 +16,13 @@ style.textContent=`
 #pages .page .bpf-item-code>span:first-child{
  display:block!important;visibility:visible!important;opacity:1!important;
  position:static!important;grid-row:auto!important;
- color:#102b43!important;background:transparent!important;
- font:700 1.06cqw/1 Arial,Helvetica,sans-serif!important;
+ color:#102b43!important;
  text-align:center!important;white-space:nowrap!important;
  flex:0 0 auto!important;
 }
 #pages .page .bpf-item-code>.bpf-f{
- display:block!important;position:static!important;grid-row:auto!important;
- margin:0!important;box-sizing:border-box!important;
- flex:0 0 54%!important;height:54%!important;min-height:0!important;
- max-height:54%!important;width:95%!important;max-width:95%!important;
- font-size:1.95cqw!important;line-height:1!important;padding:0!important;
- cursor:pointer!important;z-index:3!important;
+ display:block!important;grid-row:auto!important;
+ /* Dimensoes, cores, fonte e clique do F seguem o guia original. */
 }
 #pages .page .bpf-item-code>img,
 #pages .page .bpf-item-code>.bpf-etiqueta-overlay-v69{display:none!important}
