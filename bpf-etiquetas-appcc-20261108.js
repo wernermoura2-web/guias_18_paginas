@@ -13,13 +13,13 @@ css.textContent=`
  display:flex!important;align-items:center!important;justify-content:center!important;
  gap:.17cqw!important;border:.19cqw solid var(--bpf-borda)!important;
  border-radius:.43cqw!important;background:var(--bpf-fundo)!important;
- color:#000!important;font:800 1.08cqw/1.1 Arial,Helvetica,sans-serif!important;
+ color:#000!important;font:800 1.35cqw/1.1 Arial,Helvetica,sans-serif!important;
  white-space:nowrap!important;overflow:hidden!important;
  text-align:center!important;pointer-events:none!important;
  -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
 }
-.page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:.885cqw!important;gap:.08cqw!important}
-.page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:.69cqw!important;gap:.05cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:1.10cqw!important;gap:.08cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:.86cqw!important;gap:.05cqw!important}
 .page .bpf-etiqueta-overlay-v69>span {color:#000!important}
 `;
 document.head.appendChild(css);
@@ -80,7 +80,7 @@ function apply(){
    // As respostas de cada linha determinam o alinhamento vertical exato.
    const height=widget.size?.[1]||841.92;
    const centerY=height-(widget.rect[1]+widget.rect[3])/2;
-   const left=87.2,width=65.1,badgeHeight=13.5;
+   const left=87.2,width=65.1,badgeHeight=15.2;
    const badge=document.createElement('span');
    badge.className='bpf-etiqueta-overlay-v69'+(label.length>=9?' bpf-longa':'')+(label.length>16?' bpf-extralonga':'');
    badge.dataset.etiquetaId=id;
