@@ -34,7 +34,7 @@ async function attachFriendlyMenu(response,url){
   if(!altered.includes('bpf-f1-correcao-direta-20261108.js'))altered=altered.replace(/<\/head\s*>/i,direct+'</head>');
   // Garantia visual: opções selecionáveis dentro dos F1, também após reabrir o editor.
   const f1Visible='<script src="./bpf-f1-opcoes-visiveis.js?v=20261107-F1-visivel-v59" defer></script>';
-  if(!altered.includes('bpf-f1-opcoes-visiveis.js'))altered=altered.replace(/<\\/body\\s*>/i,f1Visible+'</body>');
+  if(!altered.includes('bpf-f1-opcoes-visiveis.js'))altered=altered.replace(/<\/body\s*>/i,f1Visible+'</body>');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
