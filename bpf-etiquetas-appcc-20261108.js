@@ -13,13 +13,13 @@ css.textContent=`
  display:flex!important;align-items:center!important;justify-content:center!important;
  gap:.17cqw!important;border:.19cqw solid var(--bpf-borda)!important;
  border-radius:.43cqw!important;background:var(--bpf-fundo)!important;
- color:#000!important;font:800 1.35cqw/1.1 Arial,Helvetica,sans-serif!important;
+ color:#000!important;font:900 1.9cqw/1.08 Arial,Helvetica,sans-serif!important;
  white-space:nowrap!important;overflow:hidden!important;
  text-align:center!important;pointer-events:none!important;
  -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
 }
-.page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:1.10cqw!important;gap:.08cqw!important}
-.page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:.86cqw!important;gap:.05cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:1.48cqw!important;gap:.08cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:1.15cqw!important;gap:.05cqw!important}
 .page .bpf-etiqueta-overlay-v69>span {color:#000!important}
 `;
 document.head.appendChild(css);
@@ -63,6 +63,28 @@ const rank={PPR:0,POP:0,PC:1,PPRO:1,PCC:2};
 const outlines=['#159a33','#f0b400','#e91a20'];
 const fills=['linear-gradient(110deg,#dbf7dc,#a9eeb5)','linear-gradient(110deg,#fff7bc,#ffe47a)','linear-gradient(110deg,#ffd6da,#ffa9b0)'];
 const pageWidth=595.32;
+/* Ajustar as letras à área útil real da etiqueta, em vez de cqw
+   relativo ao viewport, que fica pequeno ao ampliar o PDF no celular. */
+const measureCanvas=document.createElement('canvas');
+const measureContext=measureCanvas.getContext('2d');
+function fitBadge(badge){
+ const children=Array.from(badge.children);
+ if(children.length!==3)return;
+ const w=badge.clientWidth,h=badge.clientHeight;
+ if(w<10||h<5||!measureContext)return;
+ const available=Math.max(1,w-Math.max(3,w*.065));
+ const text=children.map(el=>el.textContent.trim()).join(' ');
+ let lo=3,hi=Math.min(h*.84,18);
+ for(let n=0;n<15;n++){
+   const mid=(lo+hi)/2;
+   measureContext.font='900 '+mid+'px Arial,Helvetica,sans-serif';
+   const required=measureContext.measureText(text).width+Math.max(2,w*.022);
+   if(required<=available)lo=mid;else hi=mid;
+ }
+ // !important inline prevalece sobre os estilos "longa" e "extralonga".
+ badge.style.setProperty('font-size',lo.toFixed(2)+'px','important');
+ badge.style.setProperty('gap','0px','important');
+}
 function apply(){
  if(typeof BPF_PHRASES==='undefined'||!Array.isArray(BPF_PHRASES))return;
  if(typeof GUIDE_DATA==='undefined'||!Array.isArray(GUIDE_DATA.widgets))return;
@@ -78,7 +100,8 @@ function apply(){
   const page=pages[data.page];if(!page)continue;
   for(const row of data.rows){
    const id='bpf-etiqueta-superior-v69-'+data.page+'-'+row.code.replace(/\./g,'-');
-   if(page.querySelector('[data-etiqueta-id="'+id+'"]'))continue;
+   const existing=page.querySelector('[data-etiqueta-id="'+id+'"]');
+   if(existing){fitBadge(existing);continue;}
    diag.total++;
    let widget=null;
    for(const scope of row.scopes||[]){
@@ -108,7 +131,7 @@ function apply(){
    badge.title='Item '+row.code+' — '+cats.join(', ')+' — não conformidade '+['menor','maior','crítica'][grade];
    const number=document.createElement('span'),divider=document.createElement('span'),suffix=document.createElement('span');
    number.textContent=row.code;divider.textContent='|';suffix.textContent=label;
-   badge.append(number,divider,suffix);page.append(badge);
+   badge.append(number,divider,suffix);page.append(badge);fitBadge(badge);
    diag.aplicadas++;
   }
  }
@@ -116,6 +139,7 @@ function apply(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
 let count=0;const interval=setInterval(()=>{apply();if(++count>30)clearInterval(interval)},1000);
+window.addEventListener('resize',()=>requestAnimationFrame(apply),{passive:true});
 
 // As etiquetas desenhadas na tela não entram automaticamente no PDF editável:
 // o exportador usa o modelo PDF incorporado. Aplicar as mesmas classificações
@@ -148,9 +172,9 @@ let count=0;const interval=setInterval(()=>{apply();if(++count>30)clearInterval(
       cats.sort((a,b)=>rank[b]-rank[a]);
       const grade=Math.max(...cats.map(c=>rank[c]));
       const label=row.code+'  |  '+cats.join(' e ');
-      const width=65.1, height=13.5, x=87.2;
+      const width=65.1, height=15.2, x=87.2;
       const y=(widget.rect[1]+widget.rect[3])/2-height/2;
-      const size=Math.max(3,Math.min(6.2,(width-3)/font.widthOfTextAtSize(label,1)));
+      const size=Math.max(3,Math.min(9.6,(width-4)/font.widthOfTextAtSize(label,1)));
       page.drawRectangle({x,y,width,height,color:bg[grade],borderColor:bd[grade],borderWidth:1});
       page.drawText(label,{x:x+(width-font.widthOfTextAtSize(label,size))/2,y:y+(height-size)/2+.65,size,font,color:Lib.rgb(0,0,0)});
       count++;
