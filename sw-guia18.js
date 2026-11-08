@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261107-revisao-ativa-v54';
+const CACHE='guia18-20261108-revisao-f-v55';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./revisao-orientacoes-20261107.json'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
@@ -10,7 +10,7 @@ async function attachFriendlyMenu(response,url){
   let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261107-R-processos-v24');
   // Carregar revisão dos F antes do script que constrói os campos e as respostas.
   const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
-  const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261107-v54"></script>';
+  const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261108-v55"></script>';
   if(altered.includes(anchor)&&!altered.includes('bpf-revisao-frases-ativa-20261107.js'))altered=altered.replace(anchor,'</script>'+active+'<script>/* Shared by the browser forms and Acrobat.');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
