@@ -385,22 +385,95 @@
  // O aviso da Regra PCC é acessível pelo botão R na versão HTML.
  function installGeneralRiskCount(){
   const previous=window.recalc;
-  if(typeof previous!=='function'||previous.__bpfCount8Processes)return;
+  if(typeof previous!=='function'||previous.__bpfRiskPCCMatrixV97)return;
+  // Matriz: os 8 processos têm células de risco, de escore e de unidades próprias.
+  // O percentual permanece inalterado; PCC NÃO prevalece sobre a faixa percentual.
+  const groups=[
+   {pages:[0],finals:['Dropdown5'],matrix:'Dropdown67',score:'Dropdown300',units:{0:['Dropdown100','Dropdown101','Dropdown102','Dropdown103']}},
+   {pages:[1],finals:['Dropdown10'],matrix:'Dropdown66',score:'Dropdown301',units:{1:['Dropdown104','Dropdown105','Dropdown106','Dropdown107']}},
+   {pages:[2,3,4,5],finals:['Dropdown15','Dropdown20','Dropdown25','Dropdown30'],matrix:'Dropdown65',score:'Dropdown302',units:{2:['Dropdown108','Dropdown109','Dropdown110','Dropdown111'],3:['Dropdown108','Dropdown109','Dropdown110','Dropdown111'],4:['Dropdown108','Dropdown109','Dropdown110','Dropdown111'],5:['Dropdown108','Dropdown109','Dropdown110','Dropdown111']}},
+   {pages:[6],finals:['Dropdown35'],matrix:'Dropdown64',score:'Dropdown303',units:{6:['Dropdown112','Dropdown116','Dropdown114','Dropdown115']}},
+   {pages:[7,8],finals:['Dropdown40','Dropdown45'],matrix:'Dropdown63',score:'Dropdown304',units:{7:['Dropdown140','Dropdown141','Dropdown142','Dropdown143'],8:['Dropdown144','Dropdown145','Dropdown146','Dropdown147']}},
+   {pages:[9,10],finals:['Dropdown50','Dropdown55'],matrix:'Dropdown61',score:'Dropdown305',units:{9:['Dropdown130','Dropdown131','Dropdown132','Dropdown133'],10:['Dropdown134','Dropdown135','Dropdown136','Dropdown137']}},
+   {pages:[11],finals:['Dropdown56'],matrix:'Dropdown60',score:'Dropdown306',units:{11:['Dropdown117','Dropdown118','Dropdown119','Dropdown120']}},
+   {pages:[12],finals:['Dropdown57'],matrix:'Dropdown62',score:'Dropdown307',units:{12:['Dropdown121','Dropdown122','Dropdown123','Dropdown124']}}
+  ];
+  const riskFields=['Dropdown60','Dropdown61','Dropdown62','Dropdown63','Dropdown64','Dropdown65','Dropdown66','Dropdown67'];
+  function failedPCC(v){
+   const failed=new Map();
+   if(typeof BPF_PHRASES==='undefined'||typeof bpfPhraseName!=='function')return failed;
+   for(const page of BPF_PHRASES)for(const row of (page.rows||[]))for(const scope of (row.scopes||[])){
+    for(let i=0;i<(scope.phrases||[]).length;i++){
+     if(String(scope.phrases[i].appcc||'').toUpperCase()!=='PCC')continue;
+     if(v[bpfPhraseName(scope,i)]!=='0')continue;
+     const col=Number(scope.col);
+     if(!Number.isInteger(col)||col<1||col>4)continue;
+     if(!failed.has(page.page))failed.set(page.page,new Set());
+     failed.get(page.page).add(col);
+    }
+   }
+   return failed;
+  }
+  function showPCC(failed){
+   const host=document.getElementById('pages');
+   const page=host?.children?.[17],data=window.Guia?.data;
+   if(!page||!data?.widgets)return;
+   page.querySelectorAll('[data-bpf-matriz-pcc]').forEach(el=>el.remove());
+   for(const group of groups){
+    for(const p of group.pages){
+     for(const col of (failed.get(p)||[])){
+      const field=group.units[p]?.[col-1];
+      if(!field)continue;
+      const widget=data.widgets.find(w=>w.page===17&&w.name===field);
+      if(!widget?.rect||!widget?.size)continue;
+      const [x1,y1,,]=widget.rect,[width,height]=widget.size;
+      const badge=document.createElement('span');
+      badge.dataset.bpfMatrizPcc=field;
+      badge.textContent='PCC';
+      badge.title='ALTO RISCO — PCC não atendido';
+      badge.style.cssText='position:absolute;z-index:48;pointer-events:none;'+
+       'left:'+(100*x1/width)+'%;top:'+(100*(height-y1+1)/height)+'%;'+
+       'color:#a81212;background:#fff;font:700 clamp(8px,1.05cqw,12px)/1.1 Arial,sans-serif;'+
+       'padding:0 2px;border-radius:2px';
+      page.appendChild(badge);
+     }
+    }
+   }
+  }
   function corrected(...args){
    const result=previous.apply(this,args),v=window.Guia?.values;
-   if(v){
-    const fields=['Dropdown60','Dropdown61','Dropdown62','Dropdown63','Dropdown64','Dropdown65','Dropdown66','Dropdown67'];
-    const levels=fields.map(field=>v[field]),altos=levels.filter(level=>level==='ALTO').length;
-    v.Dropdown58=levels.every(level=>!level)?'':altos>=6?'ALTO':altos>=4?'MÉDIO':'BAIXO';
-    v.Group279=v.Dropdown58==='BAIXO'?'0':v.Dropdown58==='MÉDIO'?'1':v.Dropdown58==='ALTO'?'2':'Off';
-    if(typeof window.sync==='function')window.sync();
+   if(!v)return result;
+   const failed=failedPCC(v);
+   for(const group of groups){
+    let pcc=false;
+    for(const p of group.pages){
+     const cols=failed.get(p);
+     if(!cols||!cols.size)continue;
+     pcc=true;
+     for(const col of cols){
+      const unitField=group.units[p]?.[col-1];
+      if(unitField)v[unitField]='3'; // célula da unidade: ALTO por PCC
+     }
+    }
+    // A célula da matriz deve refletir ALTO tanto por PCC quanto por risco próprio do processo.
+    if(pcc||group.finals.some(field=>v[field]==='ALTO')){
+     v[group.matrix]='ALTO';
+     v[group.score]='3';
+    }
    }
+   const levels=riskFields.map(field=>v[field]);
+   const anyHigh=levels.includes('ALTO'),anyMedium=levels.includes('MÉDIO');
+   v.Dropdown58=levels.every(level=>!level)?'':anyHigh?'ALTO':anyMedium?'MÉDIO':'BAIXO';
+   v.Group279=v.Dropdown58==='BAIXO'?'0':v.Dropdown58==='MÉDIO'?'1':v.Dropdown58==='ALTO'?'2':'Off';
+   if(typeof window.sync==='function')window.sync();
+   showPCC(failed);
    return result;
   }
-  corrected.__bpfCount8Processes=true;
+  corrected.__bpfRiskPCCMatrixV97=true;
   window.recalc=corrected;
   if(window.Guia)window.Guia.recalc=corrected;
  }
+
  installGeneralRiskCount();
  // O PDF mantém os campos originais de observação, sem sobreposição de texto PCC.
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});else start();
