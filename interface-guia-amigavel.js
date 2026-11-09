@@ -169,8 +169,8 @@
   const fullHint=document.createElement('p');
   fullHint.className='bpf-ui-hint';
   fullHint.textContent='Imprimir PDF inclui as observações, as fotos das NC e os rótulos anexados ao guia.';
-  actions.after(fullHint);
   root.appendChild(actions);
+  root.appendChild(fullHint);
   if(inTeam&&(teamBtn||importBtn)){
     const t=makeAccordion('Configurar equipe');
     if(teamBtn)t.content.appendChild(makeButton('Dados da equipe',teamBtn));
