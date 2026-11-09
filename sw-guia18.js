@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261109-pcc-legenda-v98';
+const CACHE='guia18-20261109-pdf-branco-v15-v99';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
@@ -7,7 +7,7 @@ async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
   const tag='<script src="./interface-guia-amigavel.js?v=20261107-identidade-f21" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261109-pcc-legenda-v98');
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261109-pdf-branco-v15-v99');
   // Carregar revisão dos F antes do script que constrói os campos e as respostas.
   const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
   const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261108-f1-nativo-v58"></script>';
@@ -68,19 +68,19 @@ async function attachFriendlyMenu(response,url){
   }
   // Registrar OBS do quadro SIM sem prefixo SIM mesmo quando NÃO/NC está marcado.
   // Preservar a resposta, a NC e a classificação da frase (PPR/PC/PPRO/PCC).
-  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-pcc-legenda-v98"></script>';
+  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-pdf-branco-v15-v99"></script>';
   if(!altered.includes('bpf-obs-livres-sem-prefixo-sim-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,obsTag+'</body>');
   altered=altered.replace(/bpf-obs-livres-sem-prefixo-sim-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-pcc-legenda-v98');
+    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-pdf-branco-v15-v99');
   // O cálculo original do guia foi preservado; retirar o interceptor de valores que impedia abertura.
   // Identificação visual explícita "ALTO - PCC" nas células de risco,
   // sem mudar o valor de cálculo dos campos de seleção.
-  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261109-pcc-legenda-v98"></script>';
+  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261109-pdf-branco-v15-v99"></script>';
   if(!altered.includes('bpf-pcc-rotulos-risco-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,pccTag+'</body>');
   altered=altered.replace(/bpf-pcc-rotulos-risco-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-pcc-rotulos-risco-20261109.js?v=20261109-pcc-legenda-v98');
+    'bpf-pcc-rotulos-risco-20261109.js?v=20261109-pdf-branco-v15-v99');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
