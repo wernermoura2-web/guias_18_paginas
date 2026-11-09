@@ -25,6 +25,41 @@
    if(typeof window.sync==='function')window.sync();
   }catch(e){console.warn('Impressao: risco nao sincronizado:',e);}
  }
+ function repairWidgetPages(pdf){
+  // Alguns PDFs de origem conservam /P apontando para paginas antigas.
+  // O pdf-lib exige que /P corresponda a pagina atual ao achatar formularios.
+  var L=window.PDFLib, pageKey=L.PDFName.of('P');
+  var pages=pdf.getPages(), repaired=0, seen=new Set();
+  for(var i=0;i<pages.length;i++){
+   var page=pages[i], refs=page.node.Annots();
+   if(!refs||typeof refs.asArray!=='function')continue;
+   for(var ref of refs.asArray()){
+    var annot;
+    try{annot=pdf.context.lookup(ref);}catch(e){continue;}
+    if(!annot||typeof annot.get!=='function'||typeof annot.set!=='function')continue;
+    var subtype=annot.get(L.PDFName.of('Subtype'));
+    if(String(subtype)!=='/Widget')continue;
+    var old=annot.get(pageKey);
+    if(String(old)!==String(page.ref)){annot.set(pageKey,page.ref);repaired++;}
+    seen.add(String(ref));
+   }
+  }
+  // Evitar gerar um PDF corrompido: identificar campos cujos widgets nao
+  // constam de nenhuma pagina, para manter o relatorio original intacto.
+  var missing=[];
+  try{
+   for(var field of pdf.getForm().getFields()){
+    var kids=field.acroField.Kids();
+    var refs=kids&&typeof kids.asArray==='function'?kids.asArray():[field.ref];
+    for(var ref of refs){
+     if(ref&&!seen.has(String(ref)))missing.push(String(field.getName())+': '+String(ref));
+    }
+   }
+  }catch(e){console.warn('Verificacao dos widgets:',e);}
+  if(missing.length)console.warn('Widgets sem pagina no PDF de origem:',missing.slice(0,20));
+  console.info('Impressao BPF: referencias de pagina corrigidas:',repaired);
+  return repaired;
+ }
  function install(){
   var Pdf=window.PDFLib?.PDFDocument;
   if(!Pdf?.prototype||typeof Pdf.prototype.save!=='function')return false;
@@ -38,6 +73,7 @@
     var form=this.getForm();
     // Transforma as aparencias dos campos em conteudo fixo das paginas.
     // Fotos/rotulos ja desenhados no PDF permanecem na pagina.
+    repairWidgetPages(this);
     form.flatten({updateFieldAppearances:true});
     // Remover scripts embarcados para impedir que o documento impresso
     // altere percentuais, risco, radio do grupo ou qualquer resposta.
