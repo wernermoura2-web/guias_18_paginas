@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261109-pdf-branco-v15-v99';
+const CACHE='guia18-20261109-impressao-travada-v100';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
@@ -7,7 +7,7 @@ async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
   const tag='<script src="./interface-guia-amigavel.js?v=20261107-identidade-f21" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261109-pdf-branco-v15-v99');
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261109-impressao-travada-v100');
   // Carregar revisão dos F antes do script que constrói os campos e as respostas.
   const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
   const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261108-f1-nativo-v58"></script>';
@@ -68,19 +68,46 @@ async function attachFriendlyMenu(response,url){
   }
   // Registrar OBS do quadro SIM sem prefixo SIM mesmo quando NÃO/NC está marcado.
   // Preservar a resposta, a NC e a classificação da frase (PPR/PC/PPRO/PCC).
-  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-pdf-branco-v15-v99"></script>';
+  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-impressao-travada-v100"></script>';
   if(!altered.includes('bpf-obs-livres-sem-prefixo-sim-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,obsTag+'</body>');
   altered=altered.replace(/bpf-obs-livres-sem-prefixo-sim-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-pdf-branco-v15-v99');
+    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-impressao-travada-v100');
   // O cálculo original do guia foi preservado; retirar o interceptor de valores que impedia abertura.
   // Identificação visual explícita "ALTO - PCC" nas células de risco,
   // sem mudar o valor de cálculo dos campos de seleção.
-  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261109-pdf-branco-v15-v99"></script>';
+  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261109-impressao-travada-v100"></script>';
   if(!altered.includes('bpf-pcc-rotulos-risco-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,pccTag+'</body>');
   altered=altered.replace(/bpf-pcc-rotulos-risco-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-pcc-rotulos-risco-20261109.js?v=20261109-pdf-branco-v15-v99');
+    'bpf-pcc-rotulos-risco-20261109.js?v=20261109-impressao-travada-v100');
+  // Relatório de inspeção impresso: congelar os campos (inclusive SIM/NÃO)
+  // e evitar recálculo posterior pelo Foxit ou outros leitores.
+  // O botão de PDF EM BRANCO permanece independente e editável.
+  const exportMarker='bpf-relatorio-final-estatico-v100';
+  if(!altered.includes(exportMarker)){
+    const helperText="/* bpf-relatorio-final-estatico-v100 */\n\n// BPF: exportação final (somente relatório impresso, nunca o modelo em branco).\nfunction bpfPrintPrepareRisk(){\n const map=[\n  {p:[0],u:{0:['Dropdown1','Dropdown2','Dropdown3','Dropdown4']},f:{0:'Dropdown5'},m:'Dropdown67',s:'Dropdown300'},\n  {p:[1],u:{1:['Dropdown6','Dropdown113','Dropdown8','Dropdown9']},f:{1:'Dropdown10'},m:'Dropdown66',s:'Dropdown301'},\n  {p:[2,3,4,5],u:{2:['Dropdown11','Dropdown12','Dropdown13','Dropdown14'],3:['Dropdown16','Dropdown17','Dropdown18','Dropdown19'],4:['Dropdown21','Dropdown22','Dropdown23','Dropdown24'],5:['Dropdown26','Dropdown27','Dropdown28','Dropdown29']},f:{2:'Dropdown15',3:'Dropdown20',4:'Dropdown25',5:'Dropdown30'},m:'Dropdown65',s:'Dropdown302'},\n  {p:[6],u:{6:['Dropdown31','Dropdown32','Dropdown33','Dropdown34']},f:{6:'Dropdown35'},m:'Dropdown64',s:'Dropdown303'},\n  {p:[7,8],u:{7:['Dropdown36','Dropdown37','Dropdown38','Dropdown39'],8:['Dropdown41','Dropdown42','Dropdown43','Dropdown44']},f:{7:'Dropdown40',8:'Dropdown45'},m:'Dropdown63',s:'Dropdown304'},\n  {p:[9,10],u:{9:['Dropdown46','Dropdown47','Dropdown48','Dropdown49'],10:['Dropdown51','Dropdown52','Dropdown53','Dropdown54']},f:{9:'Dropdown50',10:'Dropdown55'},m:'Dropdown61',s:'Dropdown305'},\n  {p:[11],u:{},f:{11:'Dropdown56'},m:'Dropdown60',s:'Dropdown306'},\n  {p:[12],u:{},f:{12:'Dropdown57'},m:'Dropdown62',s:'Dropdown307'}\n ];\n const failed=new Map();\n for(const page of BPF_PHRASES)for(const row of (page.rows||[]))for(const scope of (row.scopes||[])){\n  for(let i=0;i<(scope.phrases||[]).length;i++){\n   if(String(scope.phrases[i]?.appcc||'').toUpperCase()!=='PCC')continue;\n   if(String(values[bpfPhraseName(scope,i)]||'')!=='0')continue;\n   const col=Number(scope.col);if(!Number.isInteger(col)||col<1||col>4)continue;\n   if(!failed.has(page.page))failed.set(page.page,new Set());\n   failed.get(page.page).add(col);\n  }\n }\n const labels=[];\n for(const g of map){\n  let isPcc=false;\n  for(const p of g.p){\n   const cols=failed.get(p);if(!cols||!cols.size)continue;\n   isPcc=true;\n   for(const col of cols){\n    const unit=g.u[p]?.[col-1];\n    if(unit){values[unit]='ALTO';labels.push({page:p,name:unit});}\n   }\n   const final=g.f[p];\n   if(final){values[final]='ALTO';labels.push({page:p,name:final});}\n  }\n  if(isPcc){\n   values[g.m]='ALTO';values[g.s]='3';\n   labels.push({page:17,name:g.m});\n  }\n }\n const groups=['Dropdown60','Dropdown61','Dropdown62','Dropdown63','Dropdown64','Dropdown65','Dropdown66','Dropdown67'];\n const anyHigh=groups.some(field=>values[field]==='ALTO');\n if(anyHigh){\n  values.Dropdown58='ALTO';\n  values.Group279='2'; // Grupo 3 é a opção PDF de estado \"2\".\n }\n return labels;\n}\nfunction bpfPrintFinalizePdf(pdf,form,font,labels){\n // Transformar todas as respostas e imagens inseridas em elementos fixos\n // da página, removendo campos clicáveis e o JavaScript de recálculo.\n form.flatten({updateFieldAppearances:true});\n const ink=PDFLib.rgb(.64,.055,.09),background=PDFLib.rgb(.95,.97,.99);\n for(const {page,name} of labels){\n  const w=D.widgets.find(item=>item.page===page&&item.name===name);\n  if(!w||!w.rect)continue;\n  const docPage=pdf.getPage(page);\n  const h=docPage.getHeight();\n  const delta=h-w.size[1];\n  const [x1,y1,x2,y2]=w.rect;\n  const width=x2-x1,height=y2-y1;\n  if(width<28||height<8)continue;\n  const text='ALTO - PCC';\n  const size=Math.min(8.5,Math.max(4.2,(width-5)/font.widthOfTextAtSize(text,1)));\n  // Corresponde à coordenada do widget, inclusive nas páginas ampliadas.\n  const top=w.size[1]-y2;\n  const y=h-top-height;\n  docPage.drawRectangle({x:x1+.35,y:y+.35,width:width-.7,height:height-.7,color:background});\n  docPage.drawText(text,{x:x1+(width-font.widthOfTextAtSize(text,size))/2,y:y+(height-size)/2+.8,size,font,color:ink});\n }\n const N=PDFLib.PDFName;\n for(const key of ['Names','OpenAction','AA','AcroForm'])pdf.catalog.delete(N.of(key));\n for(const page of pdf.getPages())page.node.delete(N.of('AA'));\n}\n";
+    const exportDefinition='async function bpfExportEditable(){';
+    const beforeSave=' const bytes=await pdf.save();';
+    const fillPreparation=' bpfPreparePhotoPdf(pdf,form,observationFont);';
+    const oldDownload="a.download='Guia_BPF_Inspecao_Editavel.pdf'";
+    const oldStatus="status.textContent='PDF preenchível gerado'";
+    if(altered.includes(exportDefinition)&&altered.includes(beforeSave)&&altered.includes(fillPreparation)){
+      altered=altered.replace(exportDefinition,helperText+'\n'+exportDefinition);
+      altered=altered.replace(fillPreparation,fillPreparation+
+        '\n const bpfPrintPccLabels=bpfPrintPrepareRisk();');
+      altered=altered.replace(beforeSave,
+        '\n bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n'+beforeSave);
+      altered=altered.replace(oldDownload,
+        "a.download='Guia_BPF_Relatorio_Inspecao_FINAL.pdf'");
+      altered=altered.replace(oldStatus,"status.textContent='PDF final não editável gerado'");
+      altered=altered.replace("status.textContent='Preparando PDF preenchível…'","status.textContent='Preparando PDF final de impressão…'");
+      altered=altered.replace("'. Texto integral distribuído entre páginas e campos editáveis.'",
+        "'. Relatório final sem campos editáveis ou recálculo automático.'");
+    } else {
+      console.error('Não foi possível ativar exportação PDF final: modelo alterado inesperadamente.');
+    }
+  }
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
