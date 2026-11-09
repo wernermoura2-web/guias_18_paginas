@@ -2,8 +2,8 @@
    Complementa as rotinas nativas; não muda as respostas, a exigência de NC ou o cálculo. */
 (function(){
 'use strict';
-if(window.__bpfObsLivresV91)return;
-window.__bpfObsLivresV91=true;
+if(window.__bpfObsLivresV93)return;
+window.__bpfObsLivresV93=true;
 const trim=value=>String(value==null?'':value).replace(/\s+/g,' ').trim();
 
 function independentObservation(row,page){
@@ -18,16 +18,19 @@ function independentObservation(row,page){
  for(const panel of bpfPanels(page,row)){
   const note=trim(values[bpfGroupNoteName(page,row,panel,'1')]);
   if(!note)continue;
-  const hasAnswer=(panel.entries||[]).some(e=>['1','0','2'].includes(values[e.name]));
-  let unified=false;
+  // A OBS do quadro SIM também deve ser registrada quando NÃO foi marcado.
+  // Bloquear a OBS separada somente se existir algum SIM efetivamente marcado,
+  // pois neste caso a rotina normal já a inclui com o prefixo SIM.
+  const hasSim=(panel.entries||[]).some(e=>values[e.name]==='1');
+  let unifiedSim=false;
   if(typeof bpfUnifiedAnswer==='function'){
-   try{unified=['1','0'].includes(bpfUnifiedAnswer(page,row,panel));}catch(e){}
+   try{unifiedSim=bpfUnifiedAnswer(page,row,panel)==='1';}catch(e){}
   }
-  let checklist=false;
+  let checklistSim=false;
   if(panel.checklist&&typeof bpfChecklistSelected==='function'){
-   try{checklist=['1','0'].some(a=>bpfChecklistSelected(page,row,panel,a)?.length>0);}catch(e){}
+   try{checklistSim=(bpfChecklistSelected(page,row,panel,'1')||[]).length>0;}catch(e){}
   }
-  if(hasAnswer||unified||checklist)continue;
+  if(hasSim||unifiedSim||checklistSim)continue;
   const categories=[...new Set((panel.entries||[]).map(e=>trim(e.phrase?.appcc)).filter(Boolean))];
   const cls=categories.length?' ('+categories.join(' / ')+')':'';
   extra.push(panel.label+' — OBS'+cls+': '+note);
@@ -40,7 +43,7 @@ function independentObservation(row,page){
 }
 function install(){
  if(typeof bpfSyncObservation!=='function')return false;
- if(bpfSyncObservation.__bpfObsLivresV91)return true;
+ if(bpfSyncObservation.__bpfObsLivresV93)return true;
  const original=bpfSyncObservation;
  const enhanced=function(row,page){
   const value=original.apply(this,arguments);
@@ -48,7 +51,7 @@ function install(){
   catch(e){console.warn('OBS livre do F:',e);}
   return value;
  };
- enhanced.__bpfObsLivresV91=true;
+ enhanced.__bpfObsLivresV93=true;
  bpfSyncObservation=enhanced;
  return true;
 }
