@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261109-obs-sem-sim-v87';
+const CACHE='guia18-20261109-obs-sem-sim-v88';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
@@ -56,12 +56,16 @@ async function attachFriendlyMenu(response,url){
   // v87: obs do F sem prefixo SIM; resposta de avaliação permanece separada.
   // O texto OBS pode ser digitado antes de marcar SIM.
   const OBS_F_PATCHES=[["entries.push(panel.label+' — '+bpfAnswerLabel(answer)+' ('+options.join(', ')+')'+(note?': '+bpfObservationMarker(answer,panel.entries)+note:''));","if(answer==='1'){\n     if(note)entries.push(panel.label+' ('+options.join(', ')+') — '+bpfObservationMarker(answer,panel.entries)+note);\n    }else entries.push(panel.label+' — '+bpfAnswerLabel(answer)+' ('+options.join(', ')+')'+(note?': '+bpfObservationMarker(answer,panel.entries)+note:''));"],["entries.push(panel.label+' — '+label+(units.length?' ('+units.join(', ')+')':'')+(note?': '+bpfObservationMarker(answer,selected)+note:''));","if(answer==='1'){\n    if(note)entries.push(panel.label+(units.length?' ('+units.join(', ')+')':'')+' — '+bpfObservationMarker(answer,selected)+note);\n   }else entries.push(panel.label+' — '+label+(units.length?' ('+units.join(', ')+')':'')+(note?': '+bpfObservationMarker(answer,selected)+note:''));"],["entries.push(panel.label+' — '+bpfAnswerLabel(answer)+' ('+checks.join(', ')+')'+(note?'; '+bpfObservationMarker(answer,matched)+note:'')+(other?'; Outro: '+other:''));","if(answer==='1'){\n   entries.push(panel.label+' ('+checks.join(', ')+')'+(note?'; '+bpfObservationMarker(answer,matched)+note:'')+(other?'; Outro: '+other:''));\n  }else entries.push(panel.label+' — '+bpfAnswerLabel(answer)+' ('+checks.join(', ')+')'+(note?'; '+bpfObservationMarker(answer,matched)+note:'')+(other?'; Outro: '+other:''));"],["area.disabled=!answer||answer==='2';","area.disabled=answer==='2';"],["area.dataset.note=!area.disabled?bpfGroupNoteName(page,row,panel,answer):'';","area.dataset.note=!area.disabled?bpfGroupNoteName(page,row,panel,answer==='0'?'0':'1'):'';"],["area.oninput=()=>{if(!answer||answer==='2')return;values[bpfGroupNoteName(page,row,panel,answer)]=area.value;bpfUnifiedApply(page,row,panel);changed();};","area.oninput=()=>{if(answer==='2')return;values[bpfGroupNoteName(page,row,panel,answer==='0'?'0':'1')]=area.value;bpfUnifiedApply(page,row,panel);changed();};"],["'OBS — observação única das opções marcadas Sim'","'OBS — observação livre do F (opcional)'"]];
-  let obsFApplied=0;
-  for(const [source,target] of OBS_F_PATCHES){
-    if(altered.includes(source)){altered=altered.replace(source,target);obsFApplied++;}
+  // Evitar reaplicar o patch ao HTML já transformado e recuperado do cache offline.
+  if(!altered.includes('bpf-obs-f-v88')&&!altered.includes(OBS_F_PATCHES[0][1])){
+    let obsFApplied=0;
+    for(const [source,target] of OBS_F_PATCHES){
+      if(altered.includes(source)){altered=altered.replace(source,target);obsFApplied++;}
+    }
+    if(obsFApplied===OBS_F_PATCHES.length)
+      altered=altered.replace(/<\/head\s*>/i,'<meta name="bpf-obs-f-v88" content="1"></head>');
+    else console.warn('OBS do F: ',obsFApplied,'de',OBS_F_PATCHES.length,'ajustes aplicados');
   }
-  if(obsFApplied!==OBS_F_PATCHES.length)
-    console.warn('OBS do F: ',obsFApplied,'de',OBS_F_PATCHES.length,'ajustes aplicados');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
