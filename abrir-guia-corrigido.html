@@ -7,12 +7,12 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261109-etiquetas-proporcionais-v84');
+q.delete('modo'); q.set('v','20261109-padronizacao-v85');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
 // Somente o recurso visual é acrescentado. Os F ficam sob controle do formulário original.
-const files=['bpf-etiquetas-appcc-20261108.js?v=20261109-etiquetas-proporcionais-v84','bpf-correcao-f-pdf-v72.js?v=20261109-etiquetas-proporcionais-v84'];
+const files=['bpf-etiquetas-appcc-20261108.js?v=20261109-padronizacao-v85','bpf-correcao-f-pdf-v72.js?v=20261109-padronizacao-v85'];
 let inserted=false;
 frame.addEventListener('load',()=>{
  try{
@@ -34,6 +34,10 @@ frame.addEventListener('load',()=>{
   next();
  }catch(e){status.textContent='Não foi possível aplicar as etiquetas. Use o acesso direto abaixo.';}
 });
+// Pedir atualização do cache antes do próximo acesso, sem bloquear o guia.
+if('serviceWorker' in navigator){
+ navigator.serviceWorker.getRegistration('./').then(r=>r&&r.update()).catch(()=>{});
+}
 frame.src=target;
 // A interface do formulário continua acessível mesmo se um complemento demorar.
 setTimeout(()=>{status.hidden=true},12000);
