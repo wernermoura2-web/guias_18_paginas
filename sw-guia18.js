@@ -1,13 +1,13 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261109-padronizacao-v85';
+const CACHE='guia18-20261109-export-completo-nc-v86';
 const ROOT=new URL('./',self.location.href);
-const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js'];
+const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
   const tag='<script src="./interface-guia-amigavel.js?v=20261107-identidade-f21" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261108-F1-formulario-v58');
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261109-export-completo-nc-v86');
   // Carregar revisão dos F antes do script que constrói os campos e as respostas.
   const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
   const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261108-f1-nativo-v58"></script>';
@@ -38,15 +38,20 @@ async function attachFriendlyMenu(response,url){
 
   // Aplicar também aos acessos diretos equipe.html / individual.html:
   // navegador e PDF editável devem receber o mesmo complemento.
-  const upperTag='<script defer src="./bpf-etiquetas-appcc-20261108.js?v=20261109-padronizacao-v85"></script>';
-  const fFixTag='<script defer src="./bpf-correcao-f-pdf-v72.js?v=20261109-padronizacao-v85"></script>';
+  const upperTag='<script defer src="./bpf-etiquetas-appcc-20261108.js?v=20261109-export-completo-nc-v86"></script>';
+  const fFixTag='<script defer src="./bpf-correcao-f-pdf-v72.js?v=20261109-export-completo-nc-v86"></script>';
   if(!altered.includes('bpf-etiquetas-appcc-20261108.js'))altered=altered.replace('</body>',upperTag+'</body>');
   if(!altered.includes('bpf-correcao-f-pdf-v72.js'))altered=altered.replace('</body>',fFixTag+'</body>');
   // Normalizar também URLs já inseridas ou recuperadas do cache anterior.
   altered=altered.replace(/bpf-etiquetas-appcc-20261108\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-etiquetas-appcc-20261108.js?v=20261109-padronizacao-v85');
+    'bpf-etiquetas-appcc-20261108.js?v=20261109-export-completo-nc-v86');
   altered=altered.replace(/bpf-correcao-f-pdf-v72\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-correcao-f-pdf-v72.js?v=20261109-padronizacao-v85');
+    'bpf-correcao-f-pdf-v72.js?v=20261109-export-completo-nc-v86');
+  // Em todos os acessos (individual/equipe), permitir foto no F somente com NÃO e NC.
+  const photoTag='<script defer src="./bpf-fotos-somente-nc-20261109.js?v=20261109-export-completo-nc-v86"></script>';
+  if(!altered.includes('bpf-fotos-somente-nc-20261109.js'))altered=altered.replace(/<\/body\s*>/i,photoTag+'</body>');
+  altered=altered.replace(/bpf-fotos-somente-nc-20261109\.js(?:\?v=[^"'<> ]*)?/g,
+    'bpf-fotos-somente-nc-20261109.js?v=20261109-export-completo-nc-v86');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
