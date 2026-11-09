@@ -183,7 +183,8 @@ function refresh(){
      if(rank)assign(cells[i],numericOf(rank));
     }
    }
-   processRank=Math.max(processRank,rankOf(v[group.matrix]));
+   // Os processos sem unidades (controle de qualidade e manipuladores) usam seu resultado calculado.
+   if(!Object.keys(group.units).length)processRank=Math.max(processRank,rankOf(v[group.matrix]));
    if(processRank){
     assign(group.matrix,labelOf(processRank));
     assign(group.score,numericOf(processRank));
