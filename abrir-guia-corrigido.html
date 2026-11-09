@@ -7,12 +7,12 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261109-na-458-garrafao-v105');
+q.delete('modo'); q.set('v','20261109-na-risco-matriz-v106');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
 // Somente o recurso visual é acrescentado. Os F ficam sob controle do formulário original.
-const files=['bpf-etiquetas-appcc-20261108.js?v=20261109-na-458-garrafao-v105','bpf-correcao-f-pdf-v72.js?v=20261109-na-458-garrafao-v105','bpf-fotos-somente-nc-20261109.js?v=20261109-na-458-garrafao-v105','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-na-458-garrafao-v105','bpf-pcc-rotulos-risco-20261109.js?v=20261109-na-458-garrafao-v105','bpf-impressao-unicode-compat-20261109.js?v=20261109-na-458-garrafao-v105'];
+const files=['bpf-etiquetas-appcc-20261108.js?v=20261109-na-risco-matriz-v106','bpf-correcao-f-pdf-v72.js?v=20261109-na-risco-matriz-v106','bpf-fotos-somente-nc-20261109.js?v=20261109-na-risco-matriz-v106','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-na-risco-matriz-v106','bpf-pcc-rotulos-risco-20261109.js?v=20261109-na-risco-matriz-v106','bpf-impressao-unicode-compat-20261109.js?v=20261109-na-risco-matriz-v106'];
 let inserted=false;
 frame.addEventListener('load',()=>{
  try{
