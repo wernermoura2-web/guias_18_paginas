@@ -5,6 +5,7 @@
 'use strict';
 if(window.__bpfEtiquetasSuperioresV69)return;
 window.__bpfEtiquetasSuperioresV69=true;
+window.__bpfLayoutRevision='20261109-padronizacao-v85';
 const css=document.createElement('style');
 css.id='bpf-etiquetas-superiores-v69';
 css.textContent=`
@@ -183,7 +184,7 @@ function apply(){
  window.__bpfEtiquetasDiagnosticoV69=diag;
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
-let count=0;const interval=setInterval(()=>{apply();if(++count>30)clearInterval(interval)},1000);
+let count=0;const interval=setInterval(()=>{apply();observePages();if(++count>30)clearInterval(interval)},1000);
 window.addEventListener('resize',()=>requestAnimationFrame(apply),{passive:true});
 // As 22 páginas são alternadas no celular: recalcular a fonte quando cada
 // página passa de oculta para visível (sem mudar os textos nem as respostas).
