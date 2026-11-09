@@ -7,12 +7,12 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261109-fotos-obs-v91');
+q.delete('modo'); q.set('v','20261109-fotos-obs-v92');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
 // Somente o recurso visual é acrescentado. Os F ficam sob controle do formulário original.
-const files=['bpf-etiquetas-appcc-20261108.js?v=20261109-fotos-obs-v91','bpf-correcao-f-pdf-v72.js?v=20261109-fotos-obs-v91','bpf-fotos-somente-nc-20261109.js?v=20261109-fotos-obs-v91','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-fotos-obs-v91'];
+const files=['bpf-etiquetas-appcc-20261108.js?v=20261109-fotos-obs-v92','bpf-correcao-f-pdf-v72.js?v=20261109-fotos-obs-v92','bpf-fotos-somente-nc-20261109.js?v=20261109-fotos-obs-v92','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-fotos-obs-v92'];
 let inserted=false;
 frame.addEventListener('load',()=>{
  try{
