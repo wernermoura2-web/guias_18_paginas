@@ -144,7 +144,7 @@ function refresh(){
   // Matriz 4.1–4.11: os codigos 1/2/3 representam a classificacao
   // efetiva, nunca o percentual bruto nem um valor deixado por versao antiga.
   // As alteracoes PCC realizadas acima permanecem prioritarias.
-  const rankOf=x=>{const s=String(x||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toUpperCase();return s.startsWith('ALTO')?3:s.startsWith('MEDIO')?2:s.startsWith('BAIXO')?1:0;};
+  const rankOf=x=>{const s=String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();return s.startsWith('ALTO')?3:s.startsWith('MEDIO')?2:s.startsWith('BAIXO')?1:0;};
   const labelOf=n=>n===3?'ALTO':n===2?'MÉDIO':n===1?'BAIXO':'';
   const numericOf=n=>n?String(n):'';
   const assign=(name,value)=>{if(name&&v[name]!==value){v[name]=value;dirty=true;}};
