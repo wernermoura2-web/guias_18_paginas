@@ -131,8 +131,8 @@ async function attachFriendlyMenu(response,url){
   // dos itens 4.10.1–4.10.6 para a página de continuação.
   const cqTransfer='<script defer src="./bpf-cq-continuacao-20261109.js?v=20261109-cq-continuacao-v108"></script>';
   if(!altered.includes('bpf-cq-continuacao-20261109.js'))
-    altered=altered.replace(/<\\/body\\s*>/i,cqTransfer+'</body>');
-  altered=altered.replace(/bpf-cq-continuacao-20261109\\.js(?:\\?v=[^"'<> ]*)?/g,
+    altered=altered.replace(/<\/body\s*>/i,cqTransfer+'</body>');
+  altered=altered.replace(/bpf-cq-continuacao-20261109\.js(?:\?v=[^"'<> ]*)?/g,
     'bpf-cq-continuacao-20261109.js?v=20261109-cq-continuacao-v108');
   // Complemento da impressão: proteger também o acesso direto aos formulários.
   const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261109-cq-continuacao-v108"></script>';
