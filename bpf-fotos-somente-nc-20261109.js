@@ -19,7 +19,7 @@ function eligible(page,row){
   }
   if(!failed.length&&panel.checklist&&typeof bpfChecklistSelected==='function'&&bpfChecklistSelected(page,row,panel,'0').length)failed=(panel.entries||[]).slice(0,1);
   for(const entry of failed){
-   const f='F'+((panel.storageId??panel.id)+1);
+   const f=row.code==='4.10.3'&&panel.id>=3?'F'+(panel.id+2):(String(panel.label||'').match(/^F\d+/)?.[0]||'F'+(panel.id+1));
    const unit=typeof bpfScopeLabel==='function'?bpfScopeLabel(page,entry.scope):'Estabelecimento';
    const id=f+'|'+unit;
    if(keys.has(id))continue;
