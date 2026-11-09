@@ -50,7 +50,7 @@ fixes.textContent=`
  #pages .page>.bpf-item-code>span:not(.bpf-f) {
    position:absolute!important;
    top:0!important;left:0!important;
-   width:100%!important;height:42%!important;
+   width:100%!important;height:46%!important;
    box-sizing:border-box!important;
    display:flex!important;
    align-items:center!important;justify-content:center!important;
@@ -58,12 +58,14 @@ fixes.textContent=`
    min-height:0!important;
    line-height:1!important;
    white-space:nowrap!important;
-   z-index:1!important;
+   z-index:5!important;
+   background:#dceaf4!important;
+   overflow:hidden!important;
  }
  #pages .page>.bpf-item-code>.bpf-f {
    position:absolute!important;
-   top:42%!important;left:0!important;bottom:0!important;
-   width:100%!important;height:58%!important;
+   top:49%!important;left:0!important;bottom:0!important;
+   width:100%!important;height:51%!important;
    max-width:100%!important;
    box-sizing:border-box!important;
    min-height:0!important;
@@ -72,6 +74,7 @@ fixes.textContent=`
    align-items:center!important;justify-content:center!important;
    visibility:visible!important;
    z-index:2!important;
+   overflow:hidden!important;
  }
  #bpf-editor textarea {line-height:1.5!important;}
  #bpf-editor .bpf-guidance {line-height:1.5!important;}
