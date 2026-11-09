@@ -1,0 +1,29 @@
+name: Publicar PDF BPF em branco v15
+on:
+  push:
+    paths:
+      - "assets/pdf-v15/**"
+      - "scripts/publicar_pdf_em_branco_v15.py"
+      - ".github/workflows/publicar-pdf-em-branco-v15.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publicar-pdf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter repositório
+        uses: actions/checkout@v4
+      - name: Gerar PDF revisado e verificar integridade
+        run: python3 scripts/publicar_pdf_em_branco_v15.py
+      - name: Publicar PDF único no GitHub Pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Guia_BPF_Em_Branco_Atualizado.pdf
+          if ! git diff --cached --quiet; then
+            git commit -m "Publicar PDF em branco atualizado BPF v15"
+            git push
+          fi
