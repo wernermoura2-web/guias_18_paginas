@@ -6,11 +6,13 @@ const ids=['4.10.1','4.10.2','4.10.3','4.10.4','4.10.5','4.10.6'];
 const names=ids.map(x=>'OBSERVAÇÕES'+x.replaceAll('.','').slice(0,4));
 const key=i=>'BPF_CQ_Continuar_'+ids[i].replaceAll('.','_');
 const original=i=>'BPF_CQ_Original_'+ids[i].replaceAll('.','_');
-const start='[INÍCIO DAS OBSERVAÇÕES TRANSFERIDAS DO CONTROLE DA QUALIDADE]';
-const end='[FIM DAS OBSERVAÇÕES TRANSFERIDAS DO CONTROLE DA QUALIDADE]';
+const start='CONTINUAÇÃO DAS OBSERVAÇÕES — CONTROLE DA QUALIDADE';
+const oldStart='[INÍCIO DAS OBSERVAÇÕES TRANSFERIDAS DO CONTROLE DA QUALIDADE]';
+const oldEnd='[FIM DAS OBSERVAÇÕES TRANSFERIDAS DO CONTROLE DA QUALIDADE]';
+const end='FIM DAS OBSERVAÇÕES DO CONTROLE DA QUALIDADE';
 function valuesRef(){return window.Guia?.values||window.values;}
 function moved(v,i){return v[key(i)]==='1';}
-function removeBlock(s){s=String(s||'');let a=s.indexOf(start),b=s.indexOf(end,a+start.length);return a>=0&&b>a?(s.slice(0,a)+s.slice(b+end.length)).trim():s;}
+function removeBlock(s){s=String(s||'');for(const [first,last] of [[start,end],[oldStart,oldEnd]]){let a=s.indexOf(first),b=s.indexOf(last,a+first.length);if(a>=0&&b>a)s=(s.slice(0,a)+s.slice(b+last.length)).trim();}return s;}
 function update(){
  const v=valuesRef();if(!v)return;
  const parts=[];
@@ -19,7 +21,7 @@ function update(){
    let current=String(v[names[i]]||'');
    if(current&&!current.startsWith('Ver observações na continuação'))v[original(i)]=current;
    let text=String(v[original(i)]||'');
-   if(text)parts.push(ids[i]+' — CONTROLE DA QUALIDADE\n'+text);
+   if(text)parts.push('ITEM '+ids[i]+' — OBSERVAÇÕES\n'+text);
    v[names[i]]='Ver observações na continuação — item '+ids[i]+'.';
   }else if(v[original(i)]!==undefined){
    if(String(v[names[i]]||'').startsWith('Ver observações na continuação'))v[names[i]]=v[original(i)];
