@@ -462,8 +462,10 @@
     }
    }
    const levels=riskFields.map(field=>v[field]);
-   const anyHigh=levels.includes('ALTO'),anyMedium=levels.includes('MÉDIO');
-   v.Dropdown58=levels.every(level=>!level)?'':anyHigh?'ALTO':anyMedium?'MÉDIO':'BAIXO';
+   const anyHigh=levels.includes('ALTO');
+   // Sobrepor apenas a regra prioritária ALTO; preservar o cálculo geral
+   // que o formulário produziu para os demais cenários.
+   if(anyHigh)v.Dropdown58='ALTO';
    v.Group279=v.Dropdown58==='BAIXO'?'0':v.Dropdown58==='MÉDIO'?'1':v.Dropdown58==='ALTO'?'2':'Off';
    if(typeof window.sync==='function')window.sync();
    showPCC(failed);
