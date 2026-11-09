@@ -11,18 +11,18 @@ css.textContent=`
 .page .bpf-etiqueta-overlay-v69 {
  position:absolute!important;z-index:12!important;box-sizing:border-box!important;
  display:flex!important;align-items:center!important;justify-content:center!important;
- gap:.17cqw!important;border:.19cqw solid var(--bpf-borda)!important;
+ gap:.06cqw!important;border:.16cqw solid var(--bpf-borda)!important;
  border-radius:.43cqw!important;background:var(--bpf-fundo)!important;
- color:#000!important;font:900 1.9cqw/1.08 Arial,Helvetica,sans-serif!important;
+ color:#000!important;font:800 1.025cqw/1.08 Arial,Helvetica,sans-serif!important;
  white-space:nowrap!important;overflow:hidden!important;
  text-align:center!important;pointer-events:none!important;
  -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
 }
-.page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:1.48cqw!important;gap:.08cqw!important}
-.page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:1.15cqw!important;gap:.05cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:1.025cqw!important;gap:.06cqw!important}
+.page .bpf-etiqueta-overlay-v69.bpf-extralonga{font-size:1.025cqw!important;gap:.06cqw!important}
 .page .bpf-etiqueta-overlay-v69>span {color:#000!important}
-/* Fonte geral restaurada ao padrão das etiquetas da versão de referência.
-   Somente o 4.5.3 recebe redução discreta pelo ajuste JS de largura. */
+/* Padrão tipográfico proporcional ao PDF: tamanho-base de 6,1 pt.
+   Não aumentar fonte em etiquetas curtas; somente reduzir quando necessário. */
 .page .bpf-etiqueta-overlay-v69>span {flex:0 0 auto!important;min-width:0!important}
 .page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"] {letter-spacing:-.012em!important}
 `;
@@ -108,25 +108,24 @@ const pageWidth=595.32;
    relativo ao viewport, que fica pequeno ao ampliar o PDF no celular. */
 const measureCanvas=document.createElement('canvas');
 const measureContext=measureCanvas.getContext('2d');
+// Base idêntica à impressão: a etiqueta tem 65,1 pontos de largura.
+const LABEL_WIDTH_PT=65.1, FONT_BASE_PT=6.1, TEXT_AREA_PT=59.1;
 function fitBadge(badge){
  const children=Array.from(badge.children);
  if(children.length!==3)return;
- const w=badge.clientWidth,h=badge.clientHeight;
- if(w<10||h<5||!measureContext)return;
- const available=Math.max(1,w-Math.max(4,w*.075));
- const label=children.map(el=>el.textContent.trim()).join('');
- const is453=badge.dataset.etiquetaId?.endsWith('-4-5-3');
- let lo=3,hi=Math.min(h*.78,18);
- for(let n=0;n<17;n++){
-   const mid=(lo+hi)/2;
-   measureContext.font='900 '+mid+'px Arial,Helvetica,sans-serif';
-   if(measureContext.measureText(label).width <= available)lo=mid;
-   else hi=mid;
- }
- // Só o 4.5.3 recebe redução sutil, com margem para as três classes.
- const size=is453?lo*.92:lo;
+ const w=badge.clientWidth;
+ if(w<10||!measureContext)return;
+ const label=children[0].textContent.trim()+' | '+children[2].textContent.trim();
+ // Proporção fixa em todas as etiquetas; uma longa diminui apenas o
+ // mínimo necessário. Isto evita fontes enormes em itens curtos.
+ const basePx=w*FONT_BASE_PT/LABEL_WIDTH_PT;
+ const available=w*TEXT_AREA_PT/LABEL_WIDTH_PT;
+ let size=basePx;
+ measureContext.font='800 '+size+'px Arial,Helvetica,sans-serif';
+ const actual=measureContext.measureText(label).width;
+ if(actual>available)size=size*available/actual;
  badge.style.setProperty('font-size',size.toFixed(2)+'px','important');
- badge.style.setProperty('gap','0px','important');
+ badge.style.setProperty('gap',(w*.006).toFixed(2)+'px','important');
 }
 function apply(){
  if(typeof BPF_PHRASES==='undefined'||!Array.isArray(BPF_PHRASES))return;
@@ -185,11 +184,23 @@ let count=0;const interval=setInterval(()=>{apply();if(++count>30)clearInterval(
 window.addEventListener('resize',()=>requestAnimationFrame(apply),{passive:true});
 // As 22 páginas são alternadas no celular: recalcular a fonte quando cada
 // página passa de oculta para visível (sem mudar os textos nem as respostas).
+// O número fica inteiramente na faixa superior; inclusive nas linhas baixas.
+function fitFNumbers(page){
+ for(const cell of page.querySelectorAll('.bpf-item-code')){
+  const number=Array.from(cell.children).find(n=>n.tagName==='SPAN'&&!n.classList.contains('bpf-f'));
+  const h=cell.clientHeight,w=cell.clientWidth;
+  if(!number||h<2||w<2)continue;
+  const fs=Math.min(h*.31,w*.21,page.clientWidth*.014);
+  number.style.setProperty('font-size',Math.max(2,fs).toFixed(2)+'px','important');
+  number.style.setProperty('line-height','1','important');
+ }
+}
 const observedPages=new WeakSet();
 const pageObserver=new ResizeObserver(entries=>{
  for(const entry of entries){
    if(entry.contentRect.width>20){
      entry.target.querySelectorAll('.bpf-etiqueta-overlay-v69').forEach(fitBadge);
+     fitFNumbers(entry.target);
    }
  }
 });
@@ -202,7 +213,8 @@ function observePages(){
  });
 }
 observePages();
-
+document.querySelectorAll('#pages>.page').forEach(fitFNumbers);
+window.addEventListener('resize',()=>document.querySelectorAll('#pages>.page').forEach(fitFNumbers),{passive:true});
 
 // As etiquetas desenhadas na tela não entram automaticamente no PDF editável:
 // o exportador usa o modelo PDF incorporado. Aplicar as mesmas classificações
@@ -237,9 +249,10 @@ observePages();
       const label=row.code+'  |  '+cats.join(' e ');
       const width=65.1, height=15.2, x=87.2;
       const y=(widget.rect[1]+widget.rect[3])/2-height/2;
-      const size=Math.max(3,Math.min(9.6,(width-4)/font.widthOfTextAtSize(label,1)));
+      // Uma escala para todas as etiquetas; reduzir apenas para os textos longos.
+      const size=Math.min(FONT_BASE_PT,(width-6)/font.widthOfTextAtSize(label,1));
       page.drawRectangle({x,y,width,height,color:bg[grade],borderColor:bd[grade],borderWidth:1});
-      const textSize=size; // sem redução extra na etiqueta do PDF
+      const textSize=size; // mesmo padrão tipográfico da tela
       page.drawText(label,{x:x+(width-font.widthOfTextAtSize(label,textSize))/2,y:y+(height-textSize)/2+.65,size:textSize,font,color:Lib.rgb(0,0,0)});
       count++;
      }
