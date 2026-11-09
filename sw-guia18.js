@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261109-fotos-obs-v93';
+const CACHE='guia18-20261109-regra-um-alto-v94';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
@@ -68,11 +68,32 @@ async function attachFriendlyMenu(response,url){
   }
   // Registrar OBS do quadro SIM sem prefixo SIM mesmo quando NÃO/NC está marcado.
   // Preservar a resposta, a NC e a classificação da frase (PPR/PC/PPRO/PCC).
-  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-fotos-obs-v93"></script>';
+  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-regra-um-alto-v94"></script>';
   if(!altered.includes('bpf-obs-livres-sem-prefixo-sim-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,obsTag+'</body>');
   altered=altered.replace(/bpf-obs-livres-sem-prefixo-sim-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-fotos-obs-v93');
+    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-regra-um-alto-v94');
+  // Regra geral prioritária: qualquer um dos oito processos em ALTO
+  // exige estabelecimento ALTO. A propriedade permanece reativa ao cálculo,
+  // à importação de preenchimentos e à exportação PDF.
+  const riskSource='const D=GUIDE_DATA, values={}';
+  const riskReplacement=`const D=GUIDE_DATA, values=new Proxy({},{
+   get:function(state,key){
+    if(key==='Dropdown58'&&['Dropdown60','Dropdown61','Dropdown62','Dropdown63','Dropdown64','Dropdown65','Dropdown66','Dropdown67'].some(function(field){return state[field]==='ALTO';}))return 'ALTO';
+    return state[key];
+   },
+   set:function(state,key,value){
+    if(key==='Dropdown58'&&['Dropdown60','Dropdown61','Dropdown62','Dropdown63','Dropdown64','Dropdown65','Dropdown66','Dropdown67'].some(function(field){return state[field]==='ALTO';}))value='ALTO';
+    state[key]=value;
+    return true;
+   }
+  })`;
+  if(!altered.includes('bpf-um-alto-estabelecimento-alto-v94')){
+    if(altered.includes(riskSource)){
+      altered=altered.replace(riskSource,
+        '/* bpf-um-alto-estabelecimento-alto-v94 */'+riskReplacement);
+    }else console.warn('Regra 1 ALTO: definição dos valores não localizada.');
+  }
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
