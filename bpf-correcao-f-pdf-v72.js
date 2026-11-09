@@ -7,28 +7,10 @@ window.__bpfCorrecaoFPrintV72=true;
 const style=document.createElement('style');
 style.id='bpf-correcao-f-print-v72';
 style.textContent=`
-/* Restaurar a numeracao acima de cada botao F, sem mexer no clique ou nas respostas. */
-#pages .page .bpf-item-code{
- display:flex!important;flex-direction:column!important;
- align-items:center!important;justify-content:center!important;
- overflow:hidden!important;gap:.06cqw!important;grid-template-rows:none!important;
-}
-#pages .page .bpf-item-code>span:first-child{
- display:block!important;visibility:visible!important;opacity:1!important;
- position:static!important;grid-row:auto!important;
- color:#102b43!important;
- text-align:center!important;white-space:nowrap!important;
- flex:0 0 auto!important;
-}
-#pages .page .bpf-item-code>.bpf-f{
- display:block!important;grid-row:auto!important;
- /* Dimensoes, cores, fonte e clique do F seguem o guia original. */
-}
-#pages .page .bpf-item-code>img,
-#pages .page .bpf-item-code>.bpf-etiqueta-overlay-v69{display:none!important}
-@media print{
- #pages .page .bpf-item-code>span:first-child{display:block!important}
- #pages .page .bpf-item-code>.bpf-f{display:none!important}
+/* As faixas de numeração e botão F são controladas pelo complemento principal.
+   NÃO sobrescrever display/position/flex das células nem do botão F. */
+@media print {
+ #pages .page .bpf-item-code>span:first-child{visibility:visible!important}
 }
 `;
 (document.head||document.documentElement).append(style);
@@ -69,8 +51,8 @@ async function addLabelsToPdf(pdf){
   const [red,green,blue]=bg[r.grade], [er,eg,eb]=edge[r.grade];
   page.drawRectangle({x:x+.6,y:y+.8,width:width-1.2,height:h-1.6,color:PDFLib.rgb(red,green,blue),borderColor:PDFLib.rgb(er,eg,eb),borderWidth:1.2});
   const label=r.code+' | '+r.cats.join(' e ');
-  let size=7;
-  while(size>4.0&&font.widthOfTextAtSize(label,size)>width-4)size-=.2;
+  // Mesmo padrão das etiquetas do HTML e do outro exportador: 6,1 pt.
+  const size=Math.min(6.1,(width-6)/font.widthOfTextAtSize(label,1));
   page.drawText(label,{x:x+(width-font.widthOfTextAtSize(label,size))/2,y:cy-size*.34,size,font,color:PDFLib.rgb(0,0,0)});
   count++;
  }
