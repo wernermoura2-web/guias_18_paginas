@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261109-impressao-pdf-ref-v104';
+const CACHE='guia18-20261109-na-458-garrafao-v105';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
@@ -7,7 +7,7 @@ async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
   const tag='<script src="./interface-guia-amigavel.js?v=20261107-identidade-f21" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261109-impressao-pdf-ref-v104');
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261109-na-458-garrafao-v105');
   // Carregar revisão dos F antes do script que constrói os campos e as respostas.
   const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
   const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261108-f1-nativo-v58"></script>';
@@ -68,19 +68,19 @@ async function attachFriendlyMenu(response,url){
   }
   // Registrar OBS do quadro SIM sem prefixo SIM mesmo quando NÃO/NC está marcado.
   // Preservar a resposta, a NC e a classificação da frase (PPR/PC/PPRO/PCC).
-  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-impressao-pdf-ref-v104"></script>';
+  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-na-458-garrafao-v105"></script>';
   if(!altered.includes('bpf-obs-livres-sem-prefixo-sim-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,obsTag+'</body>');
   altered=altered.replace(/bpf-obs-livres-sem-prefixo-sim-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-impressao-pdf-ref-v104');
+    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261109-na-458-garrafao-v105');
   // O cálculo original do guia foi preservado; retirar o interceptor de valores que impedia abertura.
   // Identificação visual explícita "ALTO - PCC" nas células de risco,
   // sem mudar o valor de cálculo dos campos de seleção.
-  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261109-impressao-pdf-ref-v104"></script>';
+  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261109-na-458-garrafao-v105"></script>';
   if(!altered.includes('bpf-pcc-rotulos-risco-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,pccTag+'</body>');
   altered=altered.replace(/bpf-pcc-rotulos-risco-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-pcc-rotulos-risco-20261109.js?v=20261109-impressao-pdf-ref-v104');
+    'bpf-pcc-rotulos-risco-20261109.js?v=20261109-na-458-garrafao-v105');
   // Relatório de inspeção impresso: congelar os campos (inclusive SIM/NÃO)
   // e evitar recálculo posterior pelo Foxit ou outros leitores.
   // O botão de PDF EM BRANCO permanece independente e editável.
@@ -112,11 +112,30 @@ async function attachFriendlyMenu(response,url){
     }
   }
   // Complemento da impressão: proteger também o acesso direto aos formulários.
-  const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261109-impressao-pdf-ref-v104"></script>';
+  const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261109-na-458-garrafao-v105"></script>';
   if(!altered.includes('bpf-impressao-unicode-compat-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,printUnicodeTag+'</body>');
   altered=altered.replace(/bpf-impressao-unicode-compat-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-impressao-unicode-compat-20261109.js?v=20261109-impressao-pdf-ref-v104');
+    'bpf-impressao-unicode-compat-20261109.js?v=20261109-na-458-garrafao-v105');
+  // Item 4.5.8: NA no F1 de garrafoes retornaveis implica NA no item inteiro.
+  // Preservar selecoes de descartaveis, rotulos e saneantes.
+  const bpfNA458Guard="if((row.code==='4.5.8'&&entry.index===0)||(['4.3.6','4.6.12'].includes(row.code)&&entry.index===1))return false;";
+  const bpfNA458Rule="if((row.code==='4.5.8'&&entry.index===0&&Number(entry.scope.col)!==1)||(['4.3.6','4.6.12'].includes(row.code)&&entry.index===1))return false;";
+  const bpfNA458Dep="return !bpfNARequiresF1No(row,entry.index)||v[bpfPhraseName(entry.scope,0)]==='0';";
+  const bpfNA458DepFix="return !bpfNARequiresF1No(row,entry.index)||v[bpfPhraseName(entry.scope,0)]==='0'||(row.code==='4.5.8'&&Number(entry.scope.col)===1&&v[bpfPhraseName(entry.scope,0)]==='2');";
+  const bpfNA458Change="values[entry.name]=input.checked?answer:values[entry.name]===answer?'':values[entry.name];";
+  const bpfNA458ChangeFix=bpfNA458Change+"\n     if(row.code==='4.5.8'&&page.page===6&&Number(entry.scope.col)===1&&entry.index===0){\n       const first=values[entry.name];\n       for(let j=1;j<entry.scope.phrases.length;j++){\n         const key=bpfPhraseName(entry.scope,j);\n         if(first==='2'){values[key]='2';values[bpfNoteName(entry.scope,j)]='';}\n         else if(values[key]==='2'){values[key]='';values[bpfNoteName(entry.scope,j)]='';}\n       }\n       if(first==='2')values[bpfNoteName(entry.scope,0)]='';\n     }";
+  if(altered.includes(bpfNA458Guard)&&altered.includes(bpfNA458Dep)&&altered.includes(bpfNA458Change)){
+    altered=altered.replace(bpfNA458Guard,bpfNA458Rule)
+                   .replace(bpfNA458Dep,bpfNA458DepFix)
+                   .replace(bpfNA458Change,bpfNA458ChangeFix);
+    const na458Script='<script>/* 4.5.8 F1 NA - garrafoes retornaveis */\n'+
+      '(function(){try{for(const p of BPF_PHRASES){if(p.page!==6)continue;'+
+      'for(const r of p.rows){if(r.code!=="4.5.8")continue;'+
+      'for(const s of r.scopes){if(Number(s.col)===1&&s.phrases[0])s.phrases[0].allowNA=true;}}}'+
+      '}catch(e){console.warn("4.5.8 NA:",e);}})();<\\/script>';
+    altered=altered.replace(/<\\/body\\s*>/i,na458Script+'</body>');
+  }else console.warn('4.5.8: trecho do formulario nao localizado; nenhuma alteracao NA aplicada.');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
