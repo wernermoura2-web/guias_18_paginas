@@ -126,7 +126,7 @@ async function attachFriendlyMenu(response,url){
   // O número 1/2/3 deve refletir exatamente BAIXO/MÉDIO/ALTO de cada processo.
   const riskAnchor=" bpfOverridePCCRisk();\\n const levels=";
   const riskText=" bpfOverridePCCRisk();\\n for(const cfg of BPF_PCC_RISK_MAP){const grade=String(values[cfg.matrix]||'').toUpperCase();values[cfg.score]=grade.startsWith('ALTO')?'3':grade.startsWith('MÉDIO')||grade.startsWith('MEDIO')?'2':grade.startsWith('BAIXO')?'1':'';}\\n const levels=";
-  altered=altered.replace(riskAnchor.replace('\\n','\\n'),riskText.replaceAll('\\n','\\n'));
+  altered=altered.replace(riskAnchor,riskText);
   // Complemento da impressão: proteger também o acesso direto aos formulários.
   const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261109-na-458-garrafao-v105"></script>';
   if(!altered.includes('bpf-impressao-unicode-compat-20261109.js'))
