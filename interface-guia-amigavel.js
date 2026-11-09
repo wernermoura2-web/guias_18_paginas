@@ -134,22 +134,14 @@
   }
  }
  async function bpfDownloadBlankGuide(){
+  // O modelo incorporado é antigo e não corresponde ao PDF interativo revisado.
+  // Bloquear esse download evita disponibilizar a versão errada como aprovada.
+  const message='O PDF BPF revisado v4 ainda não foi publicado no site. '+
+    'O modelo antigo foi desativado para não ser baixado por engano. '+
+    'O PDF revisado está disponível nesta conversa para conferência.';
   const status=document.querySelector('#status');
-  try{
-   // O PDF-base incorporado contém o formulário sem respostas de inspeção.
-   // Não usar o estado atual do usuário, nem clicar em Novo/Limpar.
-   if(typeof BPF_EMBEDDED_PDF==='undefined'||!window.PDFLib?.PDFDocument)
-    throw Error('O formulário PDF-base ainda não foi carregado.');
-   const bytes=Uint8Array.from(atob(BPF_EMBEDDED_PDF),c=>c.charCodeAt(0));
-   const pdf=await PDFLib.PDFDocument.load(bytes);
-   const saved=await pdf.save();
-   const url=URL.createObjectURL(new Blob([saved],{type:'application/pdf'}));
-   const link=document.createElement('a');
-   link.href=url;link.download='Guia_BPF_APPCC_Em_Branco_22_paginas_Em_Revisao.pdf';
-   document.body.append(link);link.click();link.remove();
-   setTimeout(()=>URL.revokeObjectURL(url),60000);
-   if(status)status.textContent='Modelo PDF em branco baixado. O preenchimento atual foi preservado.';
-  }catch(err){alert('Não foi possível baixar o PDF em branco: '+err.message);}
+  if(status)status.textContent=message;
+  alert(message);
  }
  function makeHub(){
   if(document.getElementById('bpf-ui-hub'))return true;
@@ -185,7 +177,7 @@
   }
   const extra=makeAccordion('Mais opções');
   const blank=document.createElement('button');blank.type='button';
-  blank.className='bpf-ui-action';blank.textContent='Baixar PDF em branco (em revisão)';
+  blank.className='bpf-ui-action';blank.textContent='Baixar PDF em branco';
   blank.addEventListener('click',bpfDownloadBlankGuide);
   extra.content.appendChild(blank);
   if(revise)extra.content.appendChild(makeButton('Revisar frases',revise));
