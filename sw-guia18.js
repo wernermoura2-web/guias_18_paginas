@@ -1,7 +1,7 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
 const CACHE='guia18-20261109-impressao-unicode-v102';
 const ROOT=new URL('./',self.location.href);
-const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js'];
+const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
@@ -109,6 +109,12 @@ async function attachFriendlyMenu(response,url){
       console.error('Não foi possível ativar exportação PDF final: modelo alterado inesperadamente.');
     }
   }
+  // Complemento da impressão: proteger também o acesso direto aos formulários.
+  const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261109-impressao-unicode-v102"></script>';
+  if(!altered.includes('bpf-impressao-unicode-compat-20261109.js'))
+    altered=altered.replace(/<\/body\s*>/i,printUnicodeTag+'</body>');
+  altered=altered.replace(/bpf-impressao-unicode-compat-20261109\.js(?:\?v=[^"'<> ]*)?/g,
+    'bpf-impressao-unicode-compat-20261109.js?v=20261109-impressao-unicode-v102');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
