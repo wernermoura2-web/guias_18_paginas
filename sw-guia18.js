@@ -133,8 +133,8 @@ async function attachFriendlyMenu(response,url){
       '(function(){try{for(const p of BPF_PHRASES){if(p.page!==6)continue;'+
       'for(const r of p.rows){if(r.code!=="4.5.8")continue;'+
       'for(const s of r.scopes){if(Number(s.col)===1&&s.phrases[0])s.phrases[0].allowNA=true;}}}'+
-      '}catch(e){console.warn("4.5.8 NA:",e);}})();<\\/script>';
-    altered=altered.replace(/<\\/body\\s*>/i,na458Script+'</body>');
+      '}catch(e){console.warn("4.5.8 NA:",e);}})();</script>';
+    altered=altered.replace(/<\/body\s*>/i,na458Script+'</body>');
   }else console.warn('4.5.8: trecho do formulario nao localizado; nenhuma alteracao NA aplicada.');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
