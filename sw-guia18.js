@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261109-obs-sem-sim-v89';
+const CACHE='guia18-20261109-fotos-sim-nao-v90';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
@@ -47,11 +47,11 @@ async function attachFriendlyMenu(response,url){
     'bpf-etiquetas-appcc-20261108.js?v=20261109-export-completo-nc-v86');
   altered=altered.replace(/bpf-correcao-f-pdf-v72\.js(?:\?v=[^"'<> ]*)?/g,
     'bpf-correcao-f-pdf-v72.js?v=20261109-export-completo-nc-v86');
-  // Em todos os acessos (individual/equipe), permitir foto no F somente com NÃO e NC.
-  const photoTag='<script defer src="./bpf-fotos-somente-nc-20261109.js?v=20261109-export-completo-nc-v86"></script>';
+  // Em ambos os modos, fotos nos F com SIM ou NÃO: SIM dispensa OBS; NÃO exige NC.
+  const photoTag='<script defer src="./bpf-fotos-somente-nc-20261109.js?v=20261109-fotos-sim-nao-v90"></script>';
   if(!altered.includes('bpf-fotos-somente-nc-20261109.js'))altered=altered.replace(/<\/body\s*>/i,photoTag+'</body>');
   altered=altered.replace(/bpf-fotos-somente-nc-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-fotos-somente-nc-20261109.js?v=20261109-export-completo-nc-v86');
+    'bpf-fotos-somente-nc-20261109.js?v=20261109-fotos-sim-nao-v90');
 
   // v87: obs do F sem prefixo SIM; resposta de avaliação permanece separada.
   // O texto OBS pode ser digitado antes de marcar SIM.
