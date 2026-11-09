@@ -133,6 +133,24 @@
    inner.appendChild(parent);d.append(summary,inner);break;
   }
  }
+ async function bpfDownloadBlankGuide(){
+  const status=document.querySelector('#status');
+  try{
+   // O PDF-base incorporado contém o formulário sem respostas de inspeção.
+   // Não usar o estado atual do usuário, nem clicar em Novo/Limpar.
+   if(typeof BPF_EMBEDDED_PDF==='undefined'||!window.PDFLib?.PDFDocument)
+    throw Error('O formulário PDF-base ainda não foi carregado.');
+   const bytes=Uint8Array.from(atob(BPF_EMBEDDED_PDF),c=>c.charCodeAt(0));
+   const pdf=await PDFLib.PDFDocument.load(bytes);
+   const saved=await pdf.save();
+   const url=URL.createObjectURL(new Blob([saved],{type:'application/pdf'}));
+   const link=document.createElement('a');
+   link.href=url;link.download='Guia_BPF_APPCC_Em_Branco_22_paginas_Em_Revisao.pdf';
+   document.body.append(link);link.click();link.remove();
+   setTimeout(()=>URL.revokeObjectURL(url),60000);
+   if(status)status.textContent='Modelo PDF em branco baixado. O preenchimento atual foi preservado.';
+  }catch(err){alert('Não foi possível baixar o PDF em branco: '+err.message);}
+ }
  function makeHub(){
   if(document.getElementById('bpf-ui-hub'))return true;
   const save=lookup(/^Salvar arquivo$/i),open=lookup(/^Abrir preenchimento$/i),pdf=lookup(/^Imprimir\s*\/\s*PDF$/i);
@@ -148,6 +166,10 @@
   const lbl=document.createElement('div');lbl.className='bpf-ui-label';lbl.textContent='ARQUIVOS E RELATÓRIOS';root.appendChild(lbl);
   const actions=document.createElement('div');actions.className='bpf-ui-actions';
   actions.append(makeButton('Salvar arquivo',save,true),makeButton('Abrir preenchimento',open),makeButton('Imprimir PDF',pdf));
+  const fullHint=document.createElement('p');
+  fullHint.className='bpf-ui-hint';
+  fullHint.textContent='Imprimir PDF inclui as observações, as fotos das NC e os rótulos anexados ao guia.';
+  actions.after(fullHint);
   root.appendChild(actions);
   if(inTeam&&(teamBtn||importBtn)){
     const t=makeAccordion('Configurar equipe');
@@ -162,6 +184,10 @@
     root.appendChild(t.details);
   }
   const extra=makeAccordion('Mais opções');
+  const blank=document.createElement('button');blank.type='button';
+  blank.className='bpf-ui-action';blank.textContent='Baixar PDF em branco (em revisão)';
+  blank.addEventListener('click',bpfDownloadBlankGuide);
+  extra.content.appendChild(blank);
   if(revise)extra.content.appendChild(makeButton('Revisar frases',revise));
   const annex=Array.from(document.querySelectorAll('input[type=checkbox]'))
     .find(el=>!el.closest('#bpf-ui-hub')&&/Anexar F ao PDF/i.test(norm(el.parentElement?.textContent)));
