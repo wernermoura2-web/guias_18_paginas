@@ -163,7 +163,7 @@
   actions.append(makeButton('Salvar arquivo',save,true),makeButton('Abrir preenchimento',open),makeButton('Imprimir PDF',pdf));
   const fullHint=document.createElement('p');
   fullHint.className='bpf-ui-hint';
-  fullHint.textContent='Imprimir PDF inclui as observações, as fotos e os rótulos anexados ao guia.';
+  fullHint.textContent='Imprimir PDF: relatório final sem edição e sem recálculo; inclui respostas, observações, fotos e rótulos anexados.';
   root.appendChild(actions);
   root.appendChild(fullHint);
   if(inTeam&&(teamBtn||importBtn)){
