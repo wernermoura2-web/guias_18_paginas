@@ -134,14 +134,17 @@
   }
  }
  async function bpfDownloadBlankGuide(){
-  // O modelo incorporado é antigo e não corresponde ao PDF interativo revisado.
-  // Bloquear esse download evita disponibilizar a versão errada como aprovada.
-  const message='O PDF BPF revisado v4 ainda não foi publicado no site. '+
-    'O modelo antigo foi desativado para não ser baixado por engano. '+
-    'O PDF revisado está disponível nesta conversa para conferência.';
+  // PDF v15 publicado no mesmo repositório: 22 páginas, fotos/rótulos livres,
+  // campos F e Grupo 3 automático. Não toca nas respostas abertas no HTML.
+  const a=document.createElement('a');
+  a.href='./Guia_BPF_Em_Branco_Atualizado.pdf?v=20261109-pdf-v15';
+  a.download='Guia_BPF_Em_Branco_Atualizado_v15.pdf';
+  a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
   const status=document.querySelector('#status');
-  if(status)status.textContent=message;
-  alert(message);
+  if(status)status.textContent='Download do PDF em branco atualizado v15 iniciado. O preenchimento atual não foi alterado.';
  }
  function makeHub(){
   if(document.getElementById('bpf-ui-hub'))return true;
@@ -160,7 +163,7 @@
   actions.append(makeButton('Salvar arquivo',save,true),makeButton('Abrir preenchimento',open),makeButton('Imprimir PDF',pdf));
   const fullHint=document.createElement('p');
   fullHint.className='bpf-ui-hint';
-  fullHint.textContent='Imprimir PDF inclui as observações, as fotos das NC e os rótulos anexados ao guia.';
+  fullHint.textContent='Imprimir PDF inclui as observações, as fotos e os rótulos anexados ao guia.';
   root.appendChild(actions);
   root.appendChild(fullHint);
   if(inTeam&&(teamBtn||importBtn)){
@@ -177,7 +180,7 @@
   }
   const extra=makeAccordion('Mais opções');
   const blank=document.createElement('button');blank.type='button';
-  blank.className='bpf-ui-action';blank.textContent='Baixar PDF em branco';
+  blank.className='bpf-ui-action';blank.textContent='Baixar PDF em branco';blank.title='PDF interativo atualizado v15 (22 páginas, fotos e rótulos livres, Grupo 3 automático)';
   blank.addEventListener('click',bpfDownloadBlankGuide);
   extra.content.appendChild(blank);
   if(revise)extra.content.appendChild(makeButton('Revisar frases',revise));
