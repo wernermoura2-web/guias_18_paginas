@@ -111,6 +111,22 @@ async function attachFriendlyMenu(response,url){
       console.error('Não foi possível ativar exportação PDF final: modelo alterado inesperadamente.');
     }
   }
+  // Corrigir o HTML fonte sem alterar as frases ou as respostas de outras linhas.
+  // F1 de 4.5.8 aceita NA exclusivamente para garrafões retornáveis.
+  const naF158="if((row.code==='4.5.8'&&entry.index===0)||";
+  const naF158Fixed="if((row.code==='4.5.8'&&entry.index===0&&Number(entry.scope.col)!==1)||";
+  altered=altered.replace(naF158,naF158Fixed);
+  const naRender="if(answer==='2'&&!entry.phrase.allowNA&&values[entry.name]!=='2')continue;";
+  altered=altered.replace(naRender,
+    "if(answer==='2'&&!entry.phrase.allowNA&&values[entry.name]!=='2'&&!(row.code==='4.5.8'&&entry.index===0&&Number(entry.scope.col)===1))continue;");
+  // Se F1 de retornáveis está NA, o item inteiro dessa coluna é NA na matriz.
+  const agg="  if(!s.observationOnly&&(a!==null||cleared))v[s.name]=a??'Off';";
+  altered=altered.replace(agg,
+    "  if(!s.observationOnly&&(a!==null||cleared))v[s.name]=(r.code==='4.5.8'&&Number(s.col)===1&&v[bpfPhraseName(s,0)]==='2')?'2':(a??'Off');");
+  // O número 1/2/3 deve refletir exatamente BAIXO/MÉDIO/ALTO de cada processo.
+  const riskAnchor=" bpfOverridePCCRisk();\\n const levels=";
+  const riskText=" bpfOverridePCCRisk();\\n for(const cfg of BPF_PCC_RISK_MAP){const grade=String(values[cfg.matrix]||'').toUpperCase();values[cfg.score]=grade.startsWith('ALTO')?'3':grade.startsWith('MÉDIO')||grade.startsWith('MEDIO')?'2':grade.startsWith('BAIXO')?'1':'';}\\n const levels=";
+  altered=altered.replace(riskAnchor.replace('\\n','\\n'),riskText.replaceAll('\\n','\\n'));
   // Complemento da impressão: proteger também o acesso direto aos formulários.
   const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261109-na-458-garrafao-v105"></script>';
   if(!altered.includes('bpf-impressao-unicode-compat-20261109.js'))
