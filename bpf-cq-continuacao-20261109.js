@@ -15,49 +15,58 @@ function moved(v,i){return v[key(i)]==='1';}
 function removeBlock(s){s=String(s||'');for(const [first,last] of [[start,end],[oldStart,oldEnd]]){let a=s.indexOf(first),b=s.indexOf(last,a+first.length);if(a>=0&&b>a)s=(s.slice(0,a)+s.slice(b+last.length)).trim();}return s;}
 // A página 15 é a de índice 14 (contagem interna começa em zero).
 // Não usar obs_gerais_continuacao como destino: ele está na página 14.
-function destination(){
- const widgets=window.Guia?.data?.widgets||[];
- const list=widgets.filter(w=>w.page===14&&w.rect&&w.size);
- const exact=list.find(w=>w.name==='BPF_ObsGeneralFlow');
- if(exact)return exact.name;
- // Campo de texto maior situado ABAIXO da tabela de documentos.
- const candidates=list.filter(w=>{
-  const name=String(w.name||'');
-  const [x1,y1,x2,y2]=w.rect;
-  const width=x2-x1,height=y2-y1,H=w.size[1];
-  return width>180&&height>90&&(y1+y2)/2<H*.58&&
-    !/imagem|foto|r[oó]tulo|document|situacao|atende|risco/i.test(name);
- }).sort((a,b)=>(b.rect[2]-b.rect[0])*(b.rect[3]-b.rect[1])-
-                 (a.rect[2]-a.rect[0])*(a.rect[3]-a.rect[1]));
- return candidates[0]?.name||null;
-}
-function update(){
- const v=valuesRef();if(!v)return;
- const target=destination();
- // Não transferir para a página errada caso o campo da página 15 não seja localizado.
- if(!target){console.warn('CQ: campo de continuação da página 15 não encontrado');return;}
- const parts=[];
- for(let i=0;i<ids.length;i++){
-  if(moved(v,i)){
-   const current=String(v[names[i]]||'');
-   if(current&&!current.startsWith('Ver observações na continuação'))v[original(i)]=current;
-   const text=String(v[original(i)]||'');
-   if(text)parts.push('ITEM '+ids[i]+' — OBSERVAÇÕES\\n'+text);
-   v[names[i]]='Ver observações na continuação — item '+ids[i]+'.';
-  }else if(v[original(i)]!==undefined){
-   if(String(v[names[i]]||'').startsWith('Ver observações na continuação'))
-    v[names[i]]=v[original(i)];
+// Conferido no modelo real de 22 páginas: índice 13 = página 14 (OBS 1),
+ // índice 14 = página 15 (documentos + obs_gerais_continuacao).
+const starts=[start,oldStart],ends=[end,oldEnd];
+function strip(value){
+ let s=String(value||'');
+ for(let k=0;k<starts.length;k++){
+  let n=0;
+  while(n++<30){
+   const i=s.indexOf(starts[k]);if(i<0)break;
+   const j=s.indexOf(ends[k],i+starts[k].length);
+   if(j<0)break;
+   s=(s.slice(0,i)+s.slice(j+ends[k].length)).trim();
   }
  }
- // Limpar apenas o bloco automático da página 14, sem tocar nos documentos.
- const old=String(v.obs_gerais_continuacao||'');
- const cleaned=removeBlock(old);
- if(old!==cleaned)v.obs_gerais_continuacao=cleaned;
- const previousTarget=String(v[target]||'');
- const base=removeBlock(previousTarget);
- const block=parts.length?start+'\\n\\n'+parts.join('\\n\\n')+'\\n\\n'+end:'';
- const next=[base,block].filter(Boolean).join('\\n\\n');
- if(previousTarget!==next)v[target]=next;
+ return s;
+}
+function block(){
+ const v=valuesRef();if(!v)return '';
+ let lines=[];
+ for(let i=0;i<ids.length;i++){
+  if(!moved(v,i))continue;
+  let current=String(v[names[i]]||'');
+  if(current&&!current.startsWith('Ver observações na continuação'))v[original(i)]=current;
+  let value=String(v[original(i)]||'');
+  if(value)lines.push('ITEM '+ids[i]+' — OBSERVAÇÕES\\n'+value);
+ }
+ return lines.length?start+'\\n\\n'+lines.join('\\n\\n')+'\\n\\n'+end:'';
+}
+window.bpfCQTransferBlock=block;
+window.bpfCQStrip=strip;
+function update(){
+ const v=valuesRef();if(!v)return;
+ // Não inserir a observação diretamente na página 14 nem na 15.
+ // O cálculo original é quem pagina; o complemento do fluxo reserva a página 15.
+ strip(v['OBS 1']);
+ const first=strip(v['OBS 1']),second=strip(v.obs_gerais_continuacao);
+ if(v['OBS 1']!==first)v['OBS 1']=first;
+ if(v.obs_gerais_continuacao!==second)v.obs_gerais_continuacao=second;
+ if(v.BPF_ObsGeneralFlow){
+  try{
+   const flow=JSON.parse(v.BPF_ObsGeneralFlow);
+   if(flow&&typeof flow==='object'){
+    flow.first=strip(flow.first);flow.second=strip(flow.second);
+    flow.full=strip(flow.full);v.BPF_ObsGeneralFlow=JSON.stringify(flow);
+   }
+  }catch(e){}
+ }
+ for(let i=0;i<ids.length;i++){
+  if(moved(v,i))v[names[i]]='Ver observações na continuação — item '+ids[i]+'.';
+  else if(String(v[names[i]]||'').startsWith('Ver observações na continuação'))
+   v[names[i]]=String(v[original(i)]||'');
+ }
 }
 function toggle(i){
  const v=valuesRef();if(!v)return;
