@@ -41,7 +41,7 @@ function block(){
   let value=String(v[original(i)]||'');
   if(value)lines.push('ITEM '+ids[i]+' — OBSERVAÇÕES\n'+value.trim());
  }
- return lines.length?start+'\n'+'────────────────────────────────────────\n\n'+lines.join('\n\n────────────────────────────────────────\n\n')+'\n\n'+end:'';
+ return lines.length?start+'\n'+'----------------------------------------\n\n'+lines.join('\n\n----------------------------------------\n\n')+'\n\n'+end:'';
 }
 window.bpfCQTransferBlock=block;
 window.bpfCQStrip=strip;
