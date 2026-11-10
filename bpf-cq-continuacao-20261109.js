@@ -39,9 +39,9 @@ function block(){
   let current=String(v[names[i]]||'');
   if(current&&!current.startsWith('Ver observações na continuação'))v[original(i)]=current;
   let value=String(v[original(i)]||'');
-  if(value)lines.push('ITEM '+ids[i]+' — OBSERVAÇÕES\\n'+value);
+  if(value)lines.push('ITEM '+ids[i]+' — OBSERVAÇÕES\n'+value.trim());
  }
- return lines.length?start+'\\n\\n'+lines.join('\\n\\n')+'\\n\\n'+end:'';
+ return lines.length?start+'\n'+'────────────────────────────────────────\n\n'+lines.join('\n\n────────────────────────────────────────\n\n')+'\n\n'+end:'';
 }
 window.bpfCQTransferBlock=block;
 window.bpfCQStrip=strip;
