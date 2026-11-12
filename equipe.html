@@ -133,6 +133,14 @@ function bpfDocumentObservations(){
  return [window.bpfCQTransferBlock?.(),manual].filter(Boolean).join('\n\n');
 }
 
+
+const BPF_CQ_FONT_SIZE=6;
+function bpfCQCompactLines(text){
+ const lines=text.replace(/\r\n?/g,'\n').split('\n');
+ const marker=line=>/^(?:-{4,}|CONTINUAÇÃO DAS OBSERVAÇÕES — CONTROLE DA QUALIDADE|FIM DAS OBSERVAÇÕES DO CONTROLE DA QUALIDADE)$/.test(line?.trim()||'');
+ return lines.map((line,i)=>({line,space:!line.trim()&&(marker(lines[i-1])||marker(lines[i+1])) ? 0.3 : 1}));
+}
+
 const BPF_NC_DEFINITIONS={
  PCC:{text:'Ponto Crítico de Controle — etapa em que o controle é essencial para prevenir ou eliminar um perigo significativo à segurança do alimento, ou reduzi-lo a um nível aceitável, mediante limites críticos e monitoramento.',guidance:''},
  PPRO:{text:'Programa de Pré-Requisito Operacional — medida ou conjunto de medidas para controlar um perigo significativo, acompanhadas por critérios de ação e monitoramento.',guidance:''},
@@ -1397,6 +1405,11 @@ header p{font-size:13px!important;opacity:.9;margin:0!important}
 #pages .page:has(textarea[data-field="OBS 1"]:focus) .bpf-nc-formatted[data-field="OBS 1"],
 #pages .page:has(textarea[data-field="BPF_ObsNC_Continuacao"]:focus) .bpf-nc-formatted[data-field="BPF_ObsNC_Continuacao"]{display:none}
 }
+#pages .bpf-cq-continuation{padding:5px 7px;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.35;text-align:left}
+@media screen{
+#pages .bpf-cq-continuation{display:block;z-index:3;background:#f6fbfe;border:1px solid #b3c6d2;cursor:text}
+#pages .page:has(textarea[data-field="obs_gerais_continuacao"]:focus) .bpf-cq-continuation{display:none}
+}
 @media print{.bpf-nc-heading{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 .bpf-nc-continuation-title{position:absolute;top:10.55%;left:7.5%;right:7.5%;height:2.65%;display:grid;place-items:center;background:#ddebF6;color:#000;font:bold 1.43cqw Arial;print-color-adjust:exact}
 .bpf-guide-footer{position:absolute;z-index:4;right:2.6%;width:21%;height:2.9%;display:flex;justify-content:flex-end;align-items:center;padding-right:.6%;background:white;color:#163146;font:1.25cqw Arial;pointer-events:none}
@@ -1701,6 +1714,21 @@ function fit(el){if(!el.classList.contains('text')||!el.clientHeight)return;
   if(mirror){mirror.style.fontSize=(font/595.32*100)+'cqw';mirror.style.lineHeight='1.3';mirror.style.whiteSpace='pre-wrap'}
   el.style.overflowY=el.scrollHeight>el.clientHeight+1?'auto':'hidden';return;
  }
+ if(el.dataset.field==='obs_gerais_continuacao'){
+  const mirror=el.parentElement.querySelector('.bpf-cq-continuation');
+  const apply=(field,size)=>{field.style.fontSize=(size/595.32*100)+'cqw';};
+  apply(el,BPF_CQ_FONT_SIZE);el.style.lineHeight='1.35';
+  if(mirror){
+   const display=mirror.style.display;
+   mirror.style.display='block';
+   let size=BPF_CQ_FONT_SIZE;
+   apply(mirror,size);
+   while(size>.25&&mirror.scrollHeight>mirror.clientHeight+1)apply(mirror,size-=.25);
+   mirror.style.display=display;
+   apply(el,size);
+  }
+  return;
+ }
  if(el.classList.contains('bpf-process-observation')){
   bpfFitProcessObservation(el);
   return;
@@ -1751,7 +1779,18 @@ function sync(){window.bpfCQTransferSync?.();bpfGeneralFlow(bpfGeneralFullText()
  const n=el.dataset.field;
  if(el.type==='radio')el.checked=values[n]===el.value;
  else if(el.classList.contains('bpf-inspection-date')){const date=bpfDateToISO(values[n]);if(el.value!==date)el.value=date;}
- else if(el.classList.contains('printable')){const text=values[n]==='Off'?'':(n==='DATA'?bpfDateToBR(values[n])||values[n]:values[n]);if(n==='OBS 1'||n===BPF_NC_CONTINUATION)bpfRenderNCObservation(el,String(text||''));else el.textContent=text;}
+ else if(el.classList.contains('printable')){const text=values[n]==='Off'?'':(n==='DATA'?bpfDateToBR(values[n])||values[n]:values[n]);if(n==='OBS 1'||n===BPF_NC_CONTINUATION)bpfRenderNCObservation(el,String(text||''));else if(n==='obs_gerais_continuacao'){
+  const area=el.parentElement.querySelector('textarea[data-field="obs_gerais_continuacao"]');
+  el.classList.add('bpf-cq-continuation');
+  el.replaceChildren(...bpfCQCompactLines(String(text||'')).map(({line,space})=>{
+   const div=document.createElement('div');
+   if(line.trim())div.textContent=line;
+   else div.style.height=(space*1.35)+'em';
+   return div;
+  }));
+  el.onclick=()=>area?.focus();
+  if(area)fit(area);
+ }else el.textContent=text;}
  else if(el.tagName==='SELECT'){
   if(values[n]&&!Array.from(el.options).some(o=>o.value===values[n])){const o=new Option(values[n],values[n]);el.add(o)}el.value=values[n];
   const displayValue=el.classList.contains('matrix-risk')?({'1':'BAIXO','2':'MÉDIO','3':'ALTO'}[values[n]]||values[n]):values[n];el.style.color=displayValue==='ALTO'||displayValue==='N'?'#b91c1c':displayValue==='MÉDIO'?'#8a6600':displayValue==='BAIXO'||displayValue==='S'?'#116a29':'#111';
@@ -2328,10 +2367,18 @@ async function bpfPdfUpdatePages(pdf,form,font,flow){
  const note=(window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String))(observation);
  form.removeField(documents);
  if(note){
-  const rect=[box.x,box.y,box.x+box.width,box.y+box.height];
-  let size=9;
-  while(size>.25&&bpfPdfNCLines(note,font,box.width-14,size).length*size*1.35>box.height-18)size-=.25;
-  bpfPdfDrawObservation(pdf.getPage(15),rect,note,size,font,ink);
+  const parts=bpfCQCompactLines(note);
+  const wrap=size=>parts.flatMap(({line,space})=>line.trim()
+   ?bpfPdfNCLines(line,font,box.width-14,size).map(text=>({text,space:1}))
+   :[{text:'',space}]);
+  let size=BPF_CQ_FONT_SIZE,rows=wrap(size);
+  while(size>.25&&rows.reduce((total,row)=>total+row.space,0)*size*1.35>box.height-18)rows=wrap(size-=.25);
+  let y=box.y+box.height-7-size;
+  const sheet=pdf.getPage(15);
+  for(const row of rows){
+   if(row.text)sheet.drawText(row.text,{x:box.x+7,y,size,font,color:ink});
+   y-=row.space*size*1.35;
+  }
  }
  for(let index=15;index<22;index++){
   const sheet=pdf.getPage(index),w=sheet.getWidth(),h=sheet.getHeight();
@@ -2469,4 +2516,4 @@ document.querySelector('#print').onclick=bpfExportEditable;
 if('serviceWorker' in navigator && location.protocol==='https:'){
  navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 }
-</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-fonte-nc-6pt-v117"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>
+</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-cq-6pt-v118"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>

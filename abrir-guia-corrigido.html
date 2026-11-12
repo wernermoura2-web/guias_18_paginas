@@ -7,12 +7,12 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261112-fonte-nc-6pt-v117');
+q.delete('modo'); q.set('v','20261112-cq-6pt-v118');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
 // Somente o recurso visual é acrescentado. Os F ficam sob controle do formulário original.
-const files=['bpf-etiquetas-appcc-20261108.js?v=20261112-fonte-nc-6pt-v117','bpf-correcao-f-pdf-v72.js?v=20261112-fonte-nc-6pt-v117','bpf-fotos-somente-nc-20261109.js?v=20261112-fonte-nc-6pt-v117','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-fonte-nc-6pt-v117','bpf-pcc-rotulos-risco-20261109.js?v=20261112-fonte-nc-6pt-v117','bpf-impressao-unicode-compat-20261109.js?v=20261112-fonte-nc-6pt-v117','bpf-cq-continuacao-20261109.js?v=20261112-fonte-nc-6pt-v117'];
+const files=['bpf-etiquetas-appcc-20261108.js?v=20261112-cq-6pt-v118','bpf-correcao-f-pdf-v72.js?v=20261112-cq-6pt-v118','bpf-fotos-somente-nc-20261109.js?v=20261112-cq-6pt-v118','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-cq-6pt-v118','bpf-pcc-rotulos-risco-20261109.js?v=20261112-cq-6pt-v118','bpf-impressao-unicode-compat-20261109.js?v=20261112-cq-6pt-v118','bpf-cq-continuacao-20261109.js?v=20261112-cq-6pt-v118'];
 let inserted=false;
 frame.addEventListener('load',()=>{
  try{
