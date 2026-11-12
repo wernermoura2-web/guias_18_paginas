@@ -1405,6 +1405,9 @@ header p{font-size:13px!important;opacity:.9;margin:0!important}
 #pages .page:has(textarea[data-field="OBS 1"]:focus) .bpf-nc-formatted[data-field="OBS 1"],
 #pages .page:has(textarea[data-field="BPF_ObsNC_Continuacao"]:focus) .bpf-nc-formatted[data-field="BPF_ObsNC_Continuacao"]{display:none}
 }
+.bpf-doc-cell{display:flex;align-items:center;justify-content:center;pointer-events:none;background:#fff;border:.5px solid #555;white-space:pre-line;text-align:center;font:bold 1.4cqw/1.12 Arial;color:#111;print-color-adjust:exact}
+#pages select[data-field^="doc_legal_"]{font-size:1.23cqw;padding:0 .24cqw}
+#pages textarea[data-field^="doc_legal_"],#pages .printable[data-field^="doc_legal_"]{font-size:1.26cqw;line-height:1.15;padding:0 .35cqw;white-space:pre-wrap;overflow-wrap:anywhere;resize:none;text-align:left}
 #pages .bpf-cq-continuation{padding:5px 7px;overflow:auto;overflow-wrap:anywhere;white-space:pre-wrap;line-height:1.35;text-align:left}
 @media screen{
 #pages .bpf-cq-continuation{display:block;z-index:3;background:#f6fbfe;border:1px solid #b3c6d2;cursor:text}
@@ -1440,6 +1443,20 @@ for(let i=1;i<=6;i++){
   const name='BPF_CQ_'+kind+'_4_10_'+i;
   D.fields[name]={name,type:'/Tx',flags:0,label:name,options:[],calc:''};
  }
+}
+// Coordenadas do quadro de documentos da página 16, em pontos do modelo.
+const BPF_DOC_COLS=[156.375,227,278,580.875];
+const BPF_DOC_ROWS=[118.875,141.375,154.875,177.375,190.875,213.375,244.875,276.375,298.875,321.75];
+const BPF_DOC_HEADINGS=[['Situação'],['Atende ao','descritor?'],['Observações']];
+const BPF_DOC_FIELDS=new Map();
+for(const w of D.widgets){
+ const match=/^doc_legal_([1-8])_(situacao|atende|observacao)$/.exec(w.name);
+ if(!match||w.page!==14)continue;
+ const row=Number(match[1]),col=['situacao','atende','observacao'].indexOf(match[2]);
+ const [width,height]=w.size, top=BPF_DOC_ROWS[row], bottom=BPF_DOC_ROWS[row+1];
+ const inset=col===2?1.25:(bottom-top-10)/2;
+ w.rect=[BPF_DOC_COLS[col]+2,height-bottom+inset,BPF_DOC_COLS[col+1]-2,height-top-inset];
+ BPF_DOC_FIELDS.set(w.name,w);
 }
 const bpfNCPageIndex=21;
 const bpfNCPageSize=[595.32,841.92];
@@ -1572,6 +1589,17 @@ for(const source of bpfPageOrder){
   footer.textContent='Página '+number+' de '+bpfPageOrder.length;page.append(footer);
  }
  bpfSheets[source]=page;host.append(page);
+}
+
+const docPage=bpfSheets[14];
+const docSize=[...BPF_DOC_FIELDS.values()][0].size;
+for(let row=0;row<BPF_DOC_ROWS.length-1;row++)for(let col=0;col<BPF_DOC_COLS.length-1;col++){
+ const cell=document.createElement('div');
+ cell.className='overlay bpf-doc-cell';
+ const height=docSize[1];
+ place(cell,{size:docSize,rect:[BPF_DOC_COLS[col],height-BPF_DOC_ROWS[row+1],BPF_DOC_COLS[col+1],height-BPF_DOC_ROWS[row]]});
+ if(row===0)cell.textContent=BPF_DOC_HEADINGS[col].join('\n');
+ docPage.append(cell);
 }
 
 /* Faixa vermelha dos seis primeiros processos na matriz. Coordenadas em pontos da página. */
@@ -1707,6 +1735,7 @@ function bpfFitProcessObservation(el){
  el.style.overflowY=canFit?'hidden':'auto';
 }
 function fit(el){if(!el.classList.contains('text')||!el.clientHeight)return;
+ if(BPF_DOC_FIELDS.has(el.dataset.field))return;
  if(el.dataset.field==='OBS 1'||el.dataset.field===BPF_NC_CONTINUATION){
   let font=BPF_NC_FONT_SIZE;try{font=Math.min(Number(JSON.parse(values.BPF_ObsGeneralFlow||'{}').font)||font,font)}catch(e){}
   el.style.fontSize=(font/595.32*100)+'cqw';el.style.lineHeight='1.3';
@@ -2176,6 +2205,35 @@ function bpfPdfDrawObservation(sheet,rect,text,size,font,color){
   sheet.drawText(line,{x:x+7,y:top-7-size-i*leading,size,font,color});
  });
 }
+function bpfPdfLegalDocuments(sheet,form,font,bold,ink){
+ const height=sheet.getHeight();
+ const first=BPF_DOC_ROWS[0],last=BPF_DOC_ROWS.at(-1);
+ const left=BPF_DOC_COLS[0],right=BPF_DOC_COLS.at(-1);
+ sheet.drawRectangle({x:left,y:height-last,width:right-left,height:last-first,color:PDFLib.rgb(1,1,1)});
+ const rule=PDFLib.rgb(.33,.33,.33);
+ for(const x of BPF_DOC_COLS)sheet.drawLine({start:{x,y:height-first},end:{x,y:height-last},thickness:.55,color:rule});
+ for(const top of BPF_DOC_ROWS)sheet.drawLine({start:{x:left,y:height-top},end:{x:right,y:height-top},thickness:.55,color:rule});
+ BPF_DOC_HEADINGS.forEach((lines,col)=>{
+  const center=(BPF_DOC_COLS[col]+BPF_DOC_COLS[col+1])/2,size=8;
+  lines.forEach((text,i)=>sheet.drawText(text,{x:center-bold.widthOfTextAtSize(text,size)/2,
+   y:height-(first+BPF_DOC_ROWS[1])/2-size*.3+(lines.length-1-2*i)*4.5,size,font:bold,color:ink}));
+ });
+ const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
+ for(const [name,w] of BPF_DOC_FIELDS){
+  const field=form.getFieldMaybe(name);
+  if(field)form.removeField(field);
+  const text=normalize(String(values[name]||'—'));
+  const [x,y,right,top]=w.rect,width=right-x-4;
+  const note=name.endsWith('_observacao');
+  let size=7.5,lines=note?bpfPdfNCLines(text,font,width,size):[text];
+  while(size>.25&&(note?lines.length*size*1.15>top-y:font.widthOfTextAtSize(text,size)>width)){
+   size-=.25;
+   if(note)lines=bpfPdfNCLines(text,font,width,size);
+  }
+  lines.forEach((line,i)=>sheet.drawText(line,{x:note?x+2:(x+right-font.widthOfTextAtSize(line,size))/2,
+   y:note?top-size-i*size*1.15:(top+y)/2-size*.35,size,font,color:ink}));
+ }
+}
 async function bpfPdfUpdatePages(pdf,form,font,flow){
  const [width,height]=bpfNCPageSize;
  for(const field of form.getFields()){
@@ -2196,6 +2254,7 @@ async function bpfPdfUpdatePages(pdf,form,font,flow){
  form.removeField(form.getTextField('OBS 1'));
  bpfPdfDrawObservation(pdf.getPage(13),bpfNCFirstRect,flow.first,flow.size,font,ink);
  bpfPdfDrawObservation(page,bpfNCPageRect,flow.second,flow.size,font,ink);
+ bpfPdfLegalDocuments(pdf.getPage(15),form,font,bold,ink);
  const documents=form.getTextField('obs_gerais_continuacao');
  const box=documents.acroField.getWidgets()[0].getRectangle();
  const observation=bpfDocumentObservations();
@@ -2338,7 +2397,7 @@ async function bpfExportEditable(){
  rinsePage.pushOperators(PDFLib.popGraphicsState());
  bpfPreparePhotoPdf(pdf,form,observationFont);
  const pdfFlow=bpfPdfGeneralSplit(bpfGeneralFullText(),observationFont);
- for(const f of form.getFields()){const name=f.getName(),value=values[name];if(name==='OBS 1'||name==='obs_gerais_continuacao')continue;if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
+ for(const f of form.getFields()){const name=f.getName(),value=values[name];if(name==='OBS 1'||name==='obs_gerais_continuacao'||BPF_DOC_FIELDS.has(name))continue;if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
  // Keep the original photo fields and embed the supplied inspection images.
  for(const [name,data]of Object.entries(images)){const widget=D.widgets.find(w=>w.name===name);if(!widget||widget.page===bpfNCPageIndex)continue;const image=await (/^data:image\/png/.test(data)?pdf.embedPng(data):pdf.embedJpg(data)),page=pdf.getPages()[widget.page],delta=page.getHeight()-widget.size[1],region=BPF_PHRASES.find(p=>p.page===widget.page),above=region&&widget.size[1]-widget.rect[3]<region.end;const [x1,y1,x2,y2]=widget.rect;const box={x:x1,y:y1+(above?delta:0),width:x2-x1,height:y2-y1},scale=Math.min(box.width/image.width,box.height/image.height);page.drawImage(image,{x:box.x+(box.width-image.width*scale)/2,y:box.y+(box.height-image.height*scale)/2,width:image.width*scale,height:image.height*scale});const pictureField=form.getFieldMaybe(name);if(pictureField)for(const appearance of pictureField.acroField.getWidgets()){const rect=appearance.getRectangle();const transparent=pdf.context.flateStream('q Q',{Type:'XObject',Subtype:'Form',BBox:[0,0,rect.width,rect.height]});appearance.setNormalAppearance(pdf.context.register(transparent));}}
  const state={};for(const [name,value] of Object.entries(values))if(name.startsWith('BPF_F_'))state[name]=({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta';for(const [name,value]of Object.entries(values))if(name.startsWith('BPF_Obs_'))state[name]=value;for(const [name,value]of Object.entries(values))if(/^BPF_FGroup(?:Note|Choice|Selected|Other)_|^BPF_CQ_Frequencia_/.test(name))state[name]=value;state._summaries={};for(const page of BPF_PHRASES)for(const row of page.rows)state._summaries[page.page+'_'+row.code]=values[bpfSummaryName(page,row)]||'';form.getTextField('BPF_State').setText(JSON.stringify(state));
@@ -2351,4 +2410,4 @@ document.querySelector('#print').onclick=bpfExportEditable;
 if('serviceWorker' in navigator && location.protocol==='https:'){
  navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 }
-</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-cq-6pt-v118"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>
+</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-doc16-v119"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>
