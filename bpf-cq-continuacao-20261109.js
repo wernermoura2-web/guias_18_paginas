@@ -12,6 +12,11 @@ const oldEnd='[FIM DAS OBSERVAÇÕES TRANSFERIDAS DO CONTROLE DA QUALIDADE]';
 const end='FIM DAS OBSERVAÇÕES DO CONTROLE DA QUALIDADE';
 function valuesRef(){return window.Guia?.values||window.values;}
 function moved(v,i){return v[key(i)]==='1';}
+function reference(i){return 'Ver observações na continuação — item '+ids[i]+'.';}
+function actualText(value,i){
+ const text=String(value||'').trim();
+ return text===reference(i)?'':text;
+}
 const starts=[start,oldStart],ends=[end,oldEnd];
 function strip(value){
  let s=String(value||'');
@@ -31,10 +36,8 @@ function block(){
  let lines=[];
  for(let i=0;i<ids.length;i++){
   if(!moved(v,i))continue;
-  let current=String(v[names[i]]||'');
-  if(current&&!current.startsWith('Ver observações na continuação'))v[original(i)]=current;
-  let value=String(v[original(i)]||'');
-  if(value)lines.push('ITEM '+ids[i]+' — OBSERVAÇÕES\n'+value.trim());
+  const value=actualText(v[original(i)],i);
+  if(value)lines.push('ITEM '+ids[i]+' — OBSERVAÇÕES\n'+value);
  }
  return lines.length?start+'\n'+'----------------------------------------\n\n'+lines.join('\n\n----------------------------------------\n\n')+'\n\n'+end:'';
 }
@@ -43,18 +46,28 @@ window.bpfCQStrip=strip;
 function update(){
  const v=valuesRef();if(!v)return;
  for(let i=0;i<ids.length;i++){
-  if(moved(v,i))v[names[i]]='Ver observações na continuação — item '+ids[i]+'.';
-  else if(String(v[names[i]]||'').startsWith('Ver observações na continuação'))
-   v[names[i]]=String(v[original(i)]||'');
+  const current=actualText(v[names[i]],i),saved=actualText(v[original(i)],i);
+  if(moved(v,i)){
+   if(!saved&&current)v[original(i)]=current;
+   v[names[i]]=reference(i);
+  }else if(v[names[i]]===reference(i)&&saved){
+   v[names[i]]=saved;
+  }
  }
 }
 function toggle(i){
  const v=valuesRef();if(!v)return;
- if(!moved(v,i)){v[original(i)]=v[names[i]]||'';v[key(i)]='1';}
- else {v[key(i)]='0';v[names[i]]=v[original(i)]||'';}
- update();
- try{if(typeof changed==='function')changed();}catch(e){console.warn('CQ:',e);}
- queueMicrotask(()=>{update();paint();});
+ if(!moved(v,i)){
+  const current=actualText(v[names[i]],i);
+  if(!current)return;
+  v[original(i)]=current;
+  v[key(i)]='1';
+ }else{
+  v[key(i)]='0';
+  v[names[i]]=actualText(v[original(i)],i);
+ }
+ if(typeof changed==='function')changed();
+ window.Guia?.recalc();
 }
 const className='bpf-cq-transfer-v108';
 function paint(){
@@ -90,6 +103,6 @@ function init(){
  },true);
  window.addEventListener('beforeprint',sync);
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 window.bpfCQTransferSync=sync;
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();

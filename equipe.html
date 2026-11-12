@@ -1421,6 +1421,12 @@ for(const [name,model] of [['Group351','Group350'],['Group357','Group356'],['Gro
  bpfRinseCells.push({name,options,rect,size:first.size});
 }
 bpfInitFields(D);
+for(let i=1;i<=6;i++){
+ for(const kind of ['Original','Continuar']){
+  const name='BPF_CQ_'+kind+'_4_10_'+i;
+  D.fields[name]={name,type:'/Tx',flags:0,label:name,options:[],calc:''};
+ }
+}
 const bpfNCPageIndex=21;
 const bpfNCPageSize=[595.32,841.92];
 const bpfNCFirstRect=D.widgets.find(w=>w.name==='OBS 1').rect;
@@ -1739,7 +1745,7 @@ function bpfRenderNCObservation(el,text){
  el.onclick=formatted?()=>el.parentElement.querySelector('textarea[data-field="'+CSS.escape(el.dataset.field)+'"]')?.focus():null;
 }
 
-function sync(){bpfGeneralFlow(bpfGeneralFullText());values.obs_gerais_continuacao=bpfDocumentObservations();for(let i=0;i<4;i++)values[conductions[i]]=values[sourceFields[i]];syncLinked();
+function sync(){window.bpfCQTransferSync?.();bpfGeneralFlow(bpfGeneralFullText());values.obs_gerais_continuacao=bpfDocumentObservations();for(let i=0;i<4;i++)values[conductions[i]]=values[sourceFields[i]];syncLinked();
  for(const el of document.querySelectorAll('[data-field]')){
  const n=el.dataset.field;
  if(el.type==='radio')el.checked=values[n]===el.value;
@@ -2288,6 +2294,13 @@ function bpfPdfNCLines(text,font,width,size){
  }
  return lines;
 }
+function bpfPdfDrawObservation(sheet,rect,text,size,font,color){
+ const [x,,right,top]=rect;
+ const leading=size*1.35;
+ bpfPdfNCLines(text,font,right-x-14,size).forEach((line,i)=>{
+  sheet.drawText(line,{x:x+7,y:top-7-size-i*leading,size,font,color});
+ });
+}
 async function bpfPdfUpdatePages(pdf,form,font,flow){
  const [width,height]=bpfNCPageSize;
  for(const field of form.getFields()){
@@ -2306,12 +2319,18 @@ async function bpfPdfUpdatePages(pdf,form,font,flow){
  const number='Página 15 de 22',numberSize=7;
  page.drawText(number,{x:550-font.widthOfTextAtSize(number,numberSize),y:height-784,size:numberSize,font,color:black});
  form.removeField(form.getTextField('OBS 1'));
- for(const [sheet,rect,text] of [[pdf.getPage(13),bpfNCFirstRect,flow.first],[page,bpfNCPageRect,flow.second]]){
-  const [x,,right,top]=rect;
-  const leading=flow.size*1.35;
-  bpfPdfNCLines(text,font,right-x-14,flow.size).forEach((line,i)=>{
-   sheet.drawText(line,{x:x+7,y:top-7-flow.size-i*leading,size:flow.size,font,color:ink});
-  });
+ bpfPdfDrawObservation(pdf.getPage(13),bpfNCFirstRect,flow.first,flow.size,font,ink);
+ bpfPdfDrawObservation(page,bpfNCPageRect,flow.second,flow.size,font,ink);
+ const documents=form.getTextField('obs_gerais_continuacao');
+ const box=documents.acroField.getWidgets()[0].getRectangle();
+ const observation=bpfDocumentObservations();
+ const note=(window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String))(observation);
+ form.removeField(documents);
+ if(note){
+  const rect=[box.x,box.y,box.x+box.width,box.y+box.height];
+  let size=9;
+  while(size>.25&&bpfPdfNCLines(note,font,box.width-14,size).length*size*1.35>box.height-18)size-=.25;
+  bpfPdfDrawObservation(pdf.getPage(15),rect,note,size,font,ink);
  }
  for(let index=15;index<22;index++){
   const sheet=pdf.getPage(index),w=sheet.getWidth(),h=sheet.getHeight();
@@ -2436,7 +2455,7 @@ async function bpfExportEditable(){
  rinsePage.pushOperators(PDFLib.popGraphicsState());
  bpfPreparePhotoPdf(pdf,form,observationFont);
  const pdfFlow=bpfPdfGeneralSplit(bpfGeneralFullText(),observationFont);
- for(const f of form.getFields()){const name=f.getName(),value=name==='obs_gerais_continuacao'?bpfDocumentObservations():values[name];if(name==='OBS 1')continue;if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
+ for(const f of form.getFields()){const name=f.getName(),value=values[name];if(name==='OBS 1'||name==='obs_gerais_continuacao')continue;if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
  // Keep the original photo fields and embed the supplied inspection images.
  for(const [name,data]of Object.entries(images)){const widget=D.widgets.find(w=>w.name===name);if(!widget||widget.page===bpfNCPageIndex)continue;const image=await (/^data:image\/png/.test(data)?pdf.embedPng(data):pdf.embedJpg(data)),page=pdf.getPages()[widget.page],delta=page.getHeight()-widget.size[1],region=BPF_PHRASES.find(p=>p.page===widget.page),above=region&&widget.size[1]-widget.rect[3]<region.end;const [x1,y1,x2,y2]=widget.rect;const box={x:x1,y:y1+(above?delta:0),width:x2-x1,height:y2-y1},scale=Math.min(box.width/image.width,box.height/image.height);page.drawImage(image,{x:box.x+(box.width-image.width*scale)/2,y:box.y+(box.height-image.height*scale)/2,width:image.width*scale,height:image.height*scale});const pictureField=form.getFieldMaybe(name);if(pictureField)for(const appearance of pictureField.acroField.getWidgets()){const rect=appearance.getRectangle();const transparent=pdf.context.flateStream('q Q',{Type:'XObject',Subtype:'Form',BBox:[0,0,rect.width,rect.height]});appearance.setNormalAppearance(pdf.context.register(transparent));}}
  const state={};for(const [name,value] of Object.entries(values))if(name.startsWith('BPF_F_'))state[name]=({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta';for(const [name,value]of Object.entries(values))if(name.startsWith('BPF_Obs_'))state[name]=value;for(const [name,value]of Object.entries(values))if(/^BPF_FGroup(?:Note|Choice|Selected|Other)_|^BPF_CQ_Frequencia_/.test(name))state[name]=value;state._summaries={};for(const page of BPF_PHRASES)for(const row of page.rows)state._summaries[page.page+'_'+row.code]=values[bpfSummaryName(page,row)]||'';form.getTextField('BPF_State').setText(JSON.stringify(state));
@@ -2449,4 +2468,4 @@ document.querySelector('#print').onclick=bpfExportEditable;
 if('serviceWorker' in navigator && location.protocol==='https:'){
  navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 }
-</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-paginacao-v113"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>
+</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-recuperar-cq-v115"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>
