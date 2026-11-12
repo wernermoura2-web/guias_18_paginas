@@ -1,13 +1,13 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261112-editar-obs-v126';
+const CACHE='guia18-20261112-reservatorios-v127';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
-  const tag='<script src="./interface-guia-amigavel.js?v=20261112-editar-obs-v126" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261112-editar-obs-v126');
+  const tag='<script src="./interface-guia-amigavel.js?v=20261112-reservatorios-v127" defer></script>';
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261112-reservatorios-v127');
   // Atualizar o padrão da recuperação em equipe sem sobrescrever a preferência salva.
   if(/\/equipe\.html$/i.test(url.pathname)){
     altered=altered.replace('let minutes=5;try', 'let minutes=1;try')
@@ -53,10 +53,10 @@ async function attachFriendlyMenu(response,url){
   altered=altered.replace(/bpf-correcao-f-pdf-v72\.js(?:\?v=[^"'<> ]*)?/g,
     'bpf-correcao-f-pdf-v72.js?v=20261109-export-completo-nc-v86');
   // Em ambos os modos, fotos nos F com SIM ou NÃO: SIM dispensa OBS; NÃO exige NC.
-  const photoTag='<script defer src="./bpf-fotos-somente-nc-20261109.js?v=20261112-editar-obs-v126"></script>';
+  const photoTag='<script defer src="./bpf-fotos-somente-nc-20261109.js?v=20261112-reservatorios-v127"></script>';
   if(!altered.includes('bpf-fotos-somente-nc-20261109.js'))altered=altered.replace(/<\/body\s*>/i,photoTag+'</body>');
   altered=altered.replace(/bpf-fotos-somente-nc-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-fotos-somente-nc-20261109.js?v=20261112-editar-obs-v126');
+    'bpf-fotos-somente-nc-20261109.js?v=20261112-reservatorios-v127');
 
   // v91: SIM com OBS mantém prefixo SIM; sem marcação, somente OBS; classificação sem BPF/APPCC.
   // O texto OBS pode ser digitado antes de marcar SIM.
@@ -73,19 +73,19 @@ async function attachFriendlyMenu(response,url){
   }
   // Registrar OBS do quadro SIM sem prefixo SIM mesmo quando NÃO/NC está marcado.
   // Preservar a resposta, a NC e a classificação da frase (PPR/PC/PPRO/PCC).
-  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-editar-obs-v126"></script>';
+  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-reservatorios-v127"></script>';
   if(!altered.includes('bpf-obs-livres-sem-prefixo-sim-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,obsTag+'</body>');
   altered=altered.replace(/bpf-obs-livres-sem-prefixo-sim-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-editar-obs-v126');
+    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-reservatorios-v127');
   // O cálculo original do guia foi preservado; retirar o interceptor de valores que impedia abertura.
   // Identificação visual explícita "ALTO - PCC" nas células de risco,
   // sem mudar o valor de cálculo dos campos de seleção.
-  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261112-editar-obs-v126"></script>';
+  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261112-reservatorios-v127"></script>';
   if(!altered.includes('bpf-pcc-rotulos-risco-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,pccTag+'</body>');
   altered=altered.replace(/bpf-pcc-rotulos-risco-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-pcc-rotulos-risco-20261109.js?v=20261112-editar-obs-v126');
+    'bpf-pcc-rotulos-risco-20261109.js?v=20261112-reservatorios-v127');
   // Relatório de inspeção impresso: congelar os campos (inclusive SIM/NÃO)
   // e evitar recálculo posterior pelo Foxit ou outros leitores.
   // O botão de PDF EM BRANCO permanece independente e editável.
@@ -152,17 +152,17 @@ async function attachFriendlyMenu(response,url){
   altered=altered.replace(riskAnchor,riskText);
   // Controle de Qualidade: botão opcional para transferir observações extensas
   // dos itens 4.10.1–4.10.6 para a página de continuação.
-  const cqTransfer='<script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-editar-obs-v126"></script>';
+  const cqTransfer='<script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-reservatorios-v127"></script>';
   if(!altered.includes('bpf-cq-continuacao-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,cqTransfer+'</body>');
   altered=altered.replace(/bpf-cq-continuacao-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-cq-continuacao-20261109.js?v=20261112-editar-obs-v126');
+    'bpf-cq-continuacao-20261109.js?v=20261112-reservatorios-v127');
   // Complemento da impressão: proteger também o acesso direto aos formulários.
-  const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-editar-obs-v126"></script>';
+  const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-reservatorios-v127"></script>';
   if(!altered.includes('bpf-impressao-unicode-compat-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,printUnicodeTag+'</body>');
   altered=altered.replace(/bpf-impressao-unicode-compat-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-impressao-unicode-compat-20261109.js?v=20261112-editar-obs-v126');
+    'bpf-impressao-unicode-compat-20261109.js?v=20261112-reservatorios-v127');
   // As páginas adicionais usam Foto_Pagina_ para os espaços de foto.
   altered=altered.replaceAll('Imagem|Foto_Extra_|Rotulo_Extra_|Rotulo_Pagina_',
     'Imagem|Foto_Extra_|Foto_Pagina_|Rotulo_Extra_|Rotulo_Pagina_');
@@ -183,6 +183,97 @@ async function attachFriendlyMenu(response,url){
  if(!summary||text.includes(summary))return text;
  return [text,summary].filter(Boolean).join('\\n\\n');
 }`);
+  // O guia conserva os formulários vazios para que possam ser restaurados.
+  if(!altered.includes('const BPF_RESERVOIR_PAGES=')){
+    const reservoirField="const BPF_PHOTO_PAGE_FIELD=";
+    altered=altered.replace(reservoirField,`const BPF_RESERVOIR_PAGES=[2,3,4,5];
+const BPF_HIDDEN_RESERVOIRS='BPF_HiddenReservoirPages';
+D.fields[BPF_HIDDEN_RESERVOIRS]={name:BPF_HIDDEN_RESERVOIRS,type:'/Tx',flags:0,label:'Páginas de reservatórios excluídas',options:[],calc:''};
+`+reservoirField);
+    const galleryUpdate='function bpfUpdateDeleteGalleryPage(){';
+    altered=altered.replace(galleryUpdate,`const restoreReservoirPages=document.createElement('button');
+restoreReservoirPages.type='button';
+restoreReservoirPages.textContent='Restaurar páginas de reservatórios';
+restoreReservoirPages.onclick=()=>{
+ values[BPF_HIDDEN_RESERVOIRS]='';
+ changed();
+ sync();
+};
+galleryActions.append(restoreReservoirPages);
+const reservoirFields=new Map(BPF_RESERVOIR_PAGES.map(id=>[id,new Set([
+ ...D.widgets.filter(w=>w.page===id).map(w=>w.name),
+ ...Object.keys(D.fields).filter(name=>D.fields[name].phrasePage===id)
+])]));
+function bpfReservoirPageEmpty(id){
+ for(const name of reservoirFields.get(id)){
+  const field=D.fields[name];
+  if(images[name])return false;
+  if(derived.has(name)||field.calc||(field.type==='/Btn'&&(field.flags&65536)))continue;
+  const value=String(values[name]??'').trim();
+  if(value&&value!=='Off'&&value!=='[]')return false;
+ }
+ return true;
+}
+function bpfReservoirHasSource(id){
+ const column=id-2;
+ if([sourceFields[column],'fill_'+(6+column),'fill_'+(10+column)].some(name=>String(values[name]??'').trim()))return true;
+ const catchment=BPF_PHRASES.find(page=>page.page===0);
+ return catchment.rows.some(row=>row.scopes.some(scope=>Number(scope.col)===column+1&&
+  (['0','1'].includes(values[scope.name])||scope.phrases.some((_,index)=>['0','1'].includes(values[bpfPhraseName(scope,index)])))));
+}
+function bpfReservoirCanHide(id){
+ return bpfReservoirPageEmpty(id)&&!bpfReservoirHasSource(id);
+}
+function bpfReconcileReservoirPages(){
+ const saved=new Set(String(values[BPF_HIDDEN_RESERVOIRS]||'').split(',').map(Number));
+ const hidden=BPF_RESERVOIR_PAGES.filter(id=>saved.has(id)&&bpfReservoirCanHide(id));
+ values[BPF_HIDDEN_RESERVOIRS]=hidden.join(',');
+ let updated=false;
+ for(const id of BPF_RESERVOIR_PAGES){
+  const index=bpfPageOrder.indexOf(id);
+  if(hidden.includes(id)&&index>=0){
+   bpfSheets[id].remove();
+   bpfPageOrder.splice(index,1);
+   updated=true;
+  }else if(!hidden.includes(id)&&index<0){
+   const next=[...BPF_RESERVOIR_PAGES,6].find(page=>page>id&&bpfPageOrder.includes(page));
+   bpfPageOrder.splice(bpfPageOrder.indexOf(next),0,id);
+   host.insertBefore(bpfSheets[id],bpfSheets[next]);
+   updated=true;
+  }
+ }
+ if(updated)bpfRefreshPhotoNavigation();
+ restoreReservoirPages.hidden=!hidden.length;
+}
+`+galleryUpdate+`
+ bpfReconcileReservoirPages();
+ const reservoir=Number(nav.value);
+ if(BPF_RESERVOIR_PAGES.includes(reservoir)){
+  deleteGalleryPage.hidden=!bpfReservoirCanHide(reservoir);
+  deleteGalleryPage.textContent='Excluir página vazia de reservatórios';
+  deleteGalleryPage.onclick=()=>{
+   if(!bpfReservoirCanHide(reservoir)||!confirm('Excluir esta página vazia de reservatórios do guia e do PDF impresso?'))return;
+   values[BPF_HIDDEN_RESERVOIRS]=[values[BPF_HIDDEN_RESERVOIRS],reservoir].filter(Boolean).join(',');
+   nav.value=String(bpfPageOrder[bpfPageOrder.indexOf(reservoir)-1]);
+   changed();
+   sync();
+  };
+  return;
+ }
+`);
+    altered=altered.replace("const option=document.querySelector('#nav').options[2+i];if(option)option.textContent=(i+3)+'. 4.3",
+      "const option=[...document.querySelector('#nav').options].find(o=>Number(o.value)===2+i);if(option)option.textContent=(bpfPageOrder.indexOf(2+i)+1)+'. 4.3");
+    altered=altered.replace("if(index<14)footer.classList.add('bpf-renumbered-base');",
+      "if(id>=0&&id<14)footer.classList.add('bpf-renumbered-base');");
+    altered=altered.replace("const number='Página 15 de '+bpfPageOrder.length",
+      "const number='Página '+(bpfPageOrder.indexOf(bpfNCPageIndex)+1)+' de '+bpfPageOrder.length");
+    altered=altered.replace("text(page,'Página '+(i+1)+' de '+total,w-96,58,70,7);",
+      "if(bpfPageOrder.includes(i))text(page,'Página '+(bpfPageOrder.indexOf(i)+1)+' de '+total,w-96,58,70,7);");
+    altered=altered.replace('for(const source of [20,19,16,15]){',
+      'for(const source of [20,19,16,15,...BPF_RESERVOIR_PAGES.slice().reverse()]){');
+    altered=altered.replace('pdf.removePage(source+1);',`pdf.removePage(source<14?source:source+1);
+  pdf.pageCache.invalidate();`);
+  }
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
