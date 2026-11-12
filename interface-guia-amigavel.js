@@ -110,7 +110,9 @@
   const nextBtn=prevBtn.cloneNode();nextBtn.textContent='›';nextBtn.setAttribute('aria-label','Próximo processo');
   prevBtn.addEventListener('click',()=>{if(prev)prev.click();else{src.selectedIndex=Math.max(0,src.selectedIndex-1);src.dispatchEvent(new Event('change',{bubbles:true}))}setTimeout(sync,80)});
   nextBtn.addEventListener('click',()=>{if(next)next.click();else{src.selectedIndex=Math.min(src.options.length-1,src.selectedIndex+1);src.dispatchEvent(new Event('change',{bubbles:true}))}setTimeout(sync,80)});
-  row.append(prevBtn,mirror,nextBtn);box.append(lbl,row);host.appendChild(box);
+  row.append(prevBtn,mirror,nextBtn);box.append(lbl,row);
+  const addPhotos=document.querySelector('.bpf-add-photo-page');if(addPhotos)box.appendChild(addPhotos);
+  host.appendChild(box);
   mark(src);if(prev)mark(prev);if(next)mark(next);
   src.addEventListener('change',()=>{setTimeout(sync,0)});
  }

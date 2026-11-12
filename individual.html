@@ -1458,6 +1458,8 @@ for(const w of D.widgets){
  w.rect=[BPF_DOC_COLS[col]+2,height-bottom+inset,BPF_DOC_COLS[col+1]-2,height-top-inset];
  BPF_DOC_FIELDS.set(w.name,w);
 }
+const BPF_PHOTO_PAGE_FIELD='BPF_PhotoPages';
+D.fields[BPF_PHOTO_PAGE_FIELD]={name:BPF_PHOTO_PAGE_FIELD,type:'/Tx',flags:0,label:'Páginas de fotos',options:[],calc:''};
 const bpfNCPageIndex=21;
 const bpfNCPageSize=[595.32,841.92];
 const bpfNCFirstRect=D.widgets.find(w=>w.name==='OBS 1').rect;
@@ -1645,13 +1647,14 @@ function bpfDateToBR(value){
  const iso=bpfDateToISO(value);
  return iso?iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4):'';
 }
-for(const [i,w]of D.widgets.entries()){
- if(w.page===bpfNCPageIndex&&w.name!==BPF_NC_CONTINUATION)continue;
+for(const [i,w]of D.widgets.entries())bpfMountWidget(w,i);
+function bpfMountWidget(w,i){
+ if(w.page===bpfNCPageIndex&&w.name!==BPF_NC_CONTINUATION)return;
  const f=D.fields[w.name],page=bpfSheets[w.page];let el;
  if(f.type==='/Btn' && f.flags&65536){
   el=document.createElement('button');el.className='overlay action';
   if(/^(Imagem|Foto_Extra_|Rotulo_Pagina_)/.test(w.name)){
-   el.textContent='Adicionar imagem';el.dataset.image=w.name;if(w.page===15||w.page===16)el.classList.add('bpf-gallery-picture');
+   el.textContent='Adicionar imagem';el.dataset.image=w.name;if(w.page===15||w.page===16||w.page>=22)el.classList.add('bpf-gallery-picture');
    el.onclick=()=>chooseImage(w.name);
   }else{el.textContent=w.name.replace('LIMPAR','Limpar');el.onclick=()=>clearScope(w)}
  }else if(f.type==='/Btn'){
@@ -1778,7 +1781,7 @@ function bpfRemoveGalleryPhoto(name){
  if(!images[name])return;
  delete images[name];
  values['BPF_PhotoProcess_'+name]='';values['BPF_PhotoLocation_'+name]='';
- bpfSortPhotos(values,images);changed();sync();
+ changed();sync();
 }
 
 
@@ -1839,33 +1842,108 @@ function clearScope(w){
  if(w.name==='LIMPAR TUDO')window.Guia?.team?.reset();
  const names=w.name==='LIMPAR TUDO'?Object.keys(values):[...D.widgets.filter(x=>x.page===w.page).map(x=>x.name),...Object.keys(D.fields).filter(n=>D.fields[n].phrasePage===w.page)];
  for(const n of names){values[n]=D.fields[n].type==='/Btn'?'Off':'';delete images[n]}
+ if(w.name==='LIMPAR TUDO')bpfSetPhotoPages(2);
  changed();recalc();
 }
 
 const BPF_GALLERY_SLOTS=D.widgets.filter(w=>[15,16].includes(w.page)&&/^(?:Imagem|Foto_Extra_)(?:[1-9]|1[0-2])$/.test(w.name)).map(w=>w.name);
-const BPF_PHOTO_PROCESS_CODES=['4.1','4.2','4.3','4.5','4.6','4.7','4.10','4.11'];
-function bpfPhotoRank(process){
- const code=String(process||'').split(/\s/)[0];
- const index=BPF_PHOTO_PROCESS_CODES.indexOf(code);
- return index<0?BPF_PHOTO_PROCESS_CODES.length:index;
+const BPF_PHOTO_EXTRA_PATTERN=/^Foto_Pagina_([1-9]\d*)_([1-9]|1[0-2])$/;
+const BPF_PHOTO_META=['BPF_PhotoProcess_','BPF_PhotoLocation_','BPF_PhotoRotation_','BPF_PhotoAngle_'];
+const bpfPhotoTemplates=D.widgets.filter(w=>w.page===16&&(BPF_GALLERY_SLOTS.includes(w.name)||BPF_PHOTO_META.some(prefix=>w.name.startsWith(prefix))));
+function bpfExtraPhotoPage(name){
+ const hit=BPF_PHOTO_EXTRA_PATTERN.exec(name);
+ const page=Number(hit?.[1]);
+ return Number.isSafeInteger(page)&&page>=3?page:0;
 }
-function bpfSortPhotos(v,pictures,lastSlot=''){
- const slots=BPF_GALLERY_SLOTS;
- const process=n=>'BPF_PhotoProcess_'+n,location=n=>'BPF_PhotoLocation_'+n;
- const entries=slots.filter(n=>pictures[n]).map((n,i)=>({n,i,data:pictures[n],process:v[process(n)]||'',location:v[location(n)]||''}));
- const destinations=slots.filter(n=>pictures[n]||!(v[process(n)]||v[location(n)]));
- entries.sort((a,b)=>bpfPhotoRank(a.process)-bpfPhotoRank(b.process)||(Number(a.n===lastSlot)-Number(b.n===lastSlot)||a.i-b.i));
- for(const n of destinations){delete pictures[n];v[process(n)]='';v[location(n)]='';}
- entries.forEach((entry,i)=>{
-  const n=destinations[i];pictures[n]=entry.data;v[process(n)]=entry.process;v[location(n)]=entry.location;
+function bpfReadPhotoPages(v,pictures){
+ const declared=Number(v?.[BPF_PHOTO_PAGE_FIELD]);
+ let count=Number.isSafeInteger(declared)&&declared>=2?declared:2;
+ for(const name of Object.keys(pictures||{}))count=Math.max(count,bpfExtraPhotoPage(name));
+ for(const [name,value] of Object.entries(v||{})){
+  if(!value)continue;
+  const prefix=BPF_PHOTO_META.find(prefix=>name.startsWith(prefix));
+  if(prefix)count=Math.max(count,bpfExtraPhotoPage(name.slice(prefix.length)));
+ }
+ return count;
+}
+function bpfGallerySlotNames(count){
+ const names=[...BPF_GALLERY_SLOTS];
+ for(let page=3;page<=count;page++)for(let slot=1;slot<=12;slot++)names.push('Foto_Pagina_'+page+'_'+slot);
+ return names;
+}
+function bpfCurrentPhotoPages(){return bpfPageOrder.length-20;}
+function bpfSetPhotoPages(count){
+ const current=bpfCurrentPhotoPages();
+ if(count===current)return;
+ for(let number=current;number>count;number--){
+  const id=number+19;
+  bpfSheets[id].remove();bpfSheets.pop();bpfPageOrder.splice(bpfPageOrder.indexOf(id),1);
+  for(let i=D.widgets.length-1;i>=0;i--){
+   const w=D.widgets[i];if(w.page!==id)continue;
+   delete D.fields[w.name];delete values[w.name];delete images[w.name];D.widgets.splice(i,1);
+  }
+ }
+ for(let number=current+1;number<=count;number++){
+  const id=number+19;
+  const page=document.createElement('section');page.className='page bpf-photo-extra-page';page.dataset.page=id;
+  const title=document.createElement('div');title.className='bpf-photo-extra-title';
+  title.textContent='GUIA ESTADUAL DE AVALIAÇÃO DO RISCO SANITÁRIO — Registro fotográfico '+number;
+  page.append(title);
+  bpfSheets[id]=page;bpfPageOrder.splice(15+number,0,id);
+  host.insertBefore(page,bpfSheets[17]);
+  for(const base of bpfPhotoTemplates){
+   const prefix=BPF_PHOTO_META.find(prefix=>base.name.startsWith(prefix))||'';
+   const slot=Number(base.name.slice(prefix.length).match(/\d+$/)?.[0]);
+   const name=prefix+'Foto_Pagina_'+number+'_'+slot;
+   const w={...base,page:id,name};
+   D.fields[name]={...D.fields[base.name],name};
+   values[name]=D.fields[name].type==='/Btn'?'Off':'';
+   D.widgets.push(w);bpfMountWidget(w,D.widgets.length-1);
+   if(prefix==='BPF_PhotoProcess_')page.querySelector('select[data-field="'+name+'"] option[value=""]').textContent='Processo da foto';
+   if(!prefix){
+    const label=document.createElement('div');label.className='overlay bpf-photo-slot-label';
+    label.textContent='Foto '+((number-1)*12+slot);
+    const [x,y,right,top]=w.rect;
+    place(label,{...w,rect:[x,top,right,top+10]});page.append(label);
+    bpfMountPhotoControls(w);
+   }
+  }
+ }
+ values[BPF_PHOTO_PAGE_FIELD]=String(count);
+ bpfRefreshPhotoNavigation();
+}
+function bpfRefreshPhotoNavigation(){
+ const selected=nav.value,total=bpfPageOrder.length;
+ const options=bpfPageOrder.map((id,index)=>{
+  const page=bpfSheets[id];
+  let footer=page.querySelector('.bpf-guide-footer');
+  if(total>22||index>=14){
+   if(!footer){footer=document.createElement('div');footer.className='bpf-guide-footer';page.append(footer);}
+   if(index<14)footer.classList.add('bpf-renumbered-base');
+   footer.textContent='Página '+(index+1)+' de '+total;
+  }else if(footer?.classList.contains('bpf-renumbered-base'))footer.remove();
+  return new Option((index+1)+'. '+(id>=22?'Fotos '+(id-19):titles[id]),id);
  });
+ nav.replaceChildren(...options);
+ if(options.some(option=>option.value===selected))nav.value=selected;
+ nav.dispatchEvent(new Event('change'));
+}
+function bpfCopyExtraPhotoValues(raw,next){
+ for(const [name,value] of Object.entries(raw)){
+  const prefix=BPF_PHOTO_META.find(prefix=>name.startsWith(prefix));
+  if(prefix&&bpfExtraPhotoPage(name.slice(prefix.length))&&typeof value==='string')next[name]=value;
+ }
+ return next;
+}
+function bpfApplyLoadedPhotoPages(raw,pictures){
+ const count=bpfReadPhotoPages(raw,pictures);
+ bpfSetPhotoPages(count);
 }
 function bpfAddPhotoFromF(editor,row,page){
  const bar=document.createElement('div');bar.className='bpf-f-photo-tools';
  const button=document.createElement('button');button.type='button';button.textContent='Inserir foto';
  const status=document.createElement('span');status.setAttribute('role','status');
  button.onclick=()=>{
-  if(!bpfFreePhotoSlot()){status.textContent='As 24 posições estão ocupadas. Libere uma posição nas páginas Fotos.';return;}
   const code=row.code.split('.').slice(0,2).join('.');
   const process=D.fields.BPF_PhotoProcess_Imagem1.options.find(option=>option.split(/\s/)[0]===code)||'';
   chooseImage('',{process,location:'Item '+row.code+' — '+titles[page.page].replace(/^4\.\d+\s+/,''),status});
@@ -1873,7 +1951,12 @@ function bpfAddPhotoFromF(editor,row,page){
  bar.append(button,status);editor.append(bar);
 }
 function bpfFreePhotoSlot(){
- return BPF_GALLERY_SLOTS.find(n=>!images[n]&&!values['BPF_PhotoProcess_'+n]&&!values['BPF_PhotoLocation_'+n]);
+ return bpfGallerySlotNames(bpfCurrentPhotoPages()).find(n=>!images[n]&&!values['BPF_PhotoProcess_'+n]&&!values['BPF_PhotoLocation_'+n]);
+}
+function bpfAllocatePhotoSlot(){
+ let slot=bpfFreePhotoSlot();
+ if(!slot){bpfSetPhotoPages(bpfCurrentPhotoPages()+1);slot=bpfFreePhotoSlot();}
+ return slot;
 }
 
 
@@ -1931,10 +2014,9 @@ document.querySelector('#imageInput').onchange=async e=>{
  const rect=label?await bpfCropLabel(bitmap):[0,0,bitmap.width,bitmap.height];
  if(!rect){bitmap.close();return;}
  const [cropX,cropY,cropW,cropH]=rect;
- const scale=Math.min(1,1600/Math.max(cropW,cropH));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(cropW*scale));canvas.height=Math.max(1,Math.round(cropH*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,cropX,cropY,cropW,cropH,0,0,canvas.width,canvas.height);const n=photo?bpfFreePhotoSlot():target;if(!n){bitmap.close();if(photo)photo.status.textContent='Não há posições livres nas páginas Fotos.';return;}
+ const scale=Math.min(1,1600/Math.max(cropW,cropH));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(cropW*scale));canvas.height=Math.max(1,Math.round(cropH*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(bitmap,cropX,cropY,cropW,cropH,0,0,canvas.width,canvas.height);const n=photo?bpfAllocatePhotoSlot():target;if(!n){bitmap.close();if(photo)photo.status.textContent='Não há posições livres nas páginas Fotos.';return;}
   images[n]=canvas.toDataURL('image/jpeg',.85);bitmap.close();
-  if(photo){values['BPF_PhotoProcess_'+n]=photo.process;values['BPF_PhotoLocation_'+n]=photo.location;bpfSortPhotos(values,images,n);photo.status.textContent='Foto inserida nas páginas Fotos.';}
-  else if(BPF_GALLERY_SLOTS.includes(n))bpfSortPhotos(values,images,n);
+  if(photo){values['BPF_PhotoProcess_'+n]=photo.process;values['BPF_PhotoLocation_'+n]=photo.location;photo.status.textContent='Foto inserida nas páginas Fotos.';}
   changed();sync()}catch(err){alert('Não foi possível abrir a imagem. Use JPG ou PNG.')}
 };
 document.querySelector('#removeImage').onclick=()=>{const names=Object.keys(images);if(!names.length)return alert('Nenhuma imagem anexada.');const list=names.map((n,i)=>(i+1)+': '+n).join('\n');const ix=Number(prompt('Qual imagem remover?\n'+list))-1;if(names[ix]){delete images[names[ix]];changed();sync()}};
@@ -1947,7 +2029,7 @@ document.querySelector('#jsonInput').onchange=async e=>{
  const file=e.target.files[0];if(!file)return;
  try{const data=JSON.parse(await file.text());if(data.format!=='guia-rev6-chrome'||data.version!==1||!data.values||typeof data.values!=='object')throw Error('Formato inválido');
  for(const n of Object.keys(values))values[n]=typeof data.values[n]==='string'?data.values[n]:(D.fields[n].type==='/Btn'?'Off':'');
- for(const n of Object.keys(images))delete images[n];for(const[n,v]of Object.entries(data.images||{}))if(D.fields[n]&&/^(Imagem|Foto_Extra_|Rotulo_Pagina_)/.test(n)&&typeof v==='string'&&/^data:image\/(jpeg|png);base64,/.test(v))images[n]=v;
+ for(const n of Object.keys(images))delete images[n];for(const[n,v]of Object.entries(data.images||{}))if(D.fields[n]&&/^(Imagem|Foto_Extra_|Foto_Pagina_|Rotulo_Pagina_)/.test(n)&&typeof v==='string'&&/^data:image\/(jpeg|png);base64,/.test(v))images[n]=v;
  recalc();dirty=false;document.querySelector('#status').textContent='Preenchimento carregado: '+file.name;
  }catch(err){alert('Arquivo inválido. Selecione um JSON salvo por este formulário.')}e.target.value='';
 };
@@ -1956,7 +2038,20 @@ document.querySelector('#print').onclick=()=>{sync();window.print()};
 const titles=['4.1 Captação','4.2 Condução','4.3 Reservatórios da Captação 1','4.3 Reservatórios da Captação 2','4.3 Reservatórios da Captação 3','4.3 Reservatórios da Captação 4','4.5 Recepção de embalagens e insumos','4.6 Higienização de retornáveis','4.6 Higienização de descartáveis','4.7 Envase de retornáveis','4.7 Envase de descartáveis','4.10 Controle da qualidade','4.11 Responsáveis e manipuladores','Observações gerais','Documentos e continuação das observações','Fotos 1','Fotos 2','Matriz de risco','Ações e responsáveis','Rótulos 1','Rótulos 2','Observações gerais — continuação das não conformidades'];
 const nav=document.querySelector('#nav');bpfPageOrder.forEach((source,i)=>{nav.add(new Option((i+1)+'. '+titles[source],source))});
 
-function show(){for(const [i,p]of bpfSheets.entries())p.classList.toggle('active',i===Number(nav.value));requestAnimationFrame(()=>{sync()})}nav.onchange=show;
+const addPhotoPage=document.createElement('button');
+addPhotoPage.type='button';addPhotoPage.textContent='Adicionar página de fotos';
+addPhotoPage.className='bpf-add-photo-page';
+nav.after(addPhotoPage);
+addPhotoPage.onclick=()=>{
+ const number=bpfCurrentPhotoPages()+1;
+ bpfSetPhotoPages(number);nav.value=number+19;nav.dispatchEvent(new Event('change'));changed();
+};
+function show(){
+ const id=Number(nav.value);
+ for(const [i,p]of bpfSheets.entries())p.classList.toggle('active',i===id);
+ addPhotoPage.hidden=id!==15&&id!==16&&id<22;
+ requestAnimationFrame(()=>{sync()});
+}nav.onchange=show;
 
 document.querySelector('#prev').onclick=()=>{nav.selectedIndex=Math.max(0,nav.selectedIndex-1);show()};document.querySelector('#next').onclick=()=>{nav.selectedIndex=Math.min(nav.options.length-1,nav.selectedIndex+1);show()};
 document.querySelector('#zoom').oninput=e=>{document.documentElement.style.setProperty('--page-width',e.target.value+'px');sync()};
@@ -1978,8 +2073,8 @@ function teamDownload18(v,pics,name){const blob=new Blob([JSON.stringify({format
 function exportTeam18(){document.activeElement?.blur();teamDownload18(values,images,'Guia_Rev6_'+(values.ENVASADORA||'Inspecao').replace(/[^a-zA-Z0-9_-]/g,'_')+'.json');dirty=false;document.querySelector('#status').textContent='Arquivo de preenchimento gerado. Guarde o JSON para continuar e enviar os processos à equipe.';}
 document.querySelector('#save').onclick=exportTeam18;
 // Replace full-file restore while retaining the original format and 22-page engine.
-document.querySelector('#jsonInput').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text());if(data.format!=='guia-rev6-chrome'||data.version!==1||!data.values||typeof data.values!=='object')throw Error('Formato inválido');const next=parseValues18(data.values);for(const n of Object.keys(values))values[n]=next[n];for(const n of Object.keys(images))delete images[n];for(const[n,v]of Object.entries(data.images||{}))if(D.fields[n]&&/^(Imagem|Foto_Extra_|Rotulo_Pagina_)/.test(n)&&typeof v==='string'&&/^data:image\/(jpeg|png);base64,/.test(v))images[n]=v;team18=cleanTeam18(data.team18)||makeTeam18();recalc();dirty=false;document.querySelector('#status').textContent='Preenchimento carregado: '+file.name;}catch(err){alert('Arquivo inválido. Selecione um JSON salvo por este formulário de 22 páginas.')}e.target.value='';};
-function parseValues18(raw){const next={};for(const[n,f]of Object.entries(D.fields)){const v=raw[n];if(v!==undefined&&typeof v!=='string')throw Error('Campo inválido: '+n);next[n]=typeof v==='string'?v:f.type==='/Btn'?'Off':'';if(f.type==='/Btn'&&!(f.flags&65536)&&!derived.has(n)){const options=new Set(D.widgets.filter(w=>w.name===n).map(w=>w.state));if(next[n]!=='Off'&&!options.has(next[n]))throw Error('Resposta inválida: '+n);}}return next;}
+document.querySelector('#jsonInput').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{const data=JSON.parse(await file.text());if(data.format!=='guia-rev6-chrome'||data.version!==1||!data.values||typeof data.values!=='object')throw Error('Formato inválido');const next=parseValues18(data.values);bpfApplyLoadedPhotoPages(next,data.images);for(const n of Object.keys(values))values[n]=next[n]??values[n];for(const n of Object.keys(images))delete images[n];for(const[n,v]of Object.entries(data.images||{}))if(D.fields[n]&&/^(Imagem|Foto_Extra_|Foto_Pagina_|Rotulo_Pagina_)/.test(n)&&typeof v==='string'&&/^data:image\/(jpeg|png);base64,/.test(v))images[n]=v;team18=cleanTeam18(data.team18)||makeTeam18();recalc();dirty=false;document.querySelector('#status').textContent='Preenchimento carregado: '+file.name;}catch(err){alert('Arquivo inválido. Selecione um JSON salvo por este formulário de 22 páginas.')}e.target.value='';};
+function parseValues18(raw){const next={};for(const[n,f]of Object.entries(D.fields)){const v=raw[n];if(v!==undefined&&typeof v!=='string')throw Error('Campo inválido: '+n);next[n]=typeof v==='string'?v:f.type==='/Btn'?'Off':'';if(f.type==='/Btn'&&!(f.flags&65536)&&!derived.has(n)){const options=new Set(D.widgets.filter(w=>w.name===n).map(w=>w.state));if(next[n]!=='Off'&&!options.has(next[n]))throw Error('Resposta inválida: '+n);}}return bpfCopyExtraPhotoValues(raw,next);}
 function initialTeam18(){const initial={};for(const[n,f]of Object.entries(D.fields))initial[n]=f.type==='/Btn'?'Off':'';for(const n of ['ENVASADORA','ENDEREÇO','DATA',...sourceFields,'fill_6','fill_7','fill_8','fill_9','fill_10','fill_11','fill_12','fill_13','Group1','Group2','Group3','Group4'])initial[n]=values[n];for(const[p,names]of Object.entries(scopedFields18))for(const n of names)if(/CÓD|CAPACIDADE|APRESENTAÇÃO|MARCA\(S\)/i.test(D.fields[n].label))initial[n]=values[n];teamDownload18(initial,{},'Guia_18_Equipe_Inicial_'+team18.inspectionId.slice(0,8)+'.json');document.querySelector('#status').textContent='Arquivo inicial gerado. Envie o mesmo JSON e este HTML às duas pessoas. Você pode continuar preenchendo neste HTML; seu trabalho não foi apagado.';}
 const normalizeTeam18=v=>String(v||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').toLowerCase();
 function identityTeam18(incoming){const received=cleanTeam18(incoming.team18);if(received){if(received.inspectionId!==team18.inspectionId)throw Error('Arquivo de outra inspeção. Os três devem abrir o mesmo JSON inicial da equipe. Nada foi importado.');return false;}for(const n of ['ENVASADORA','ENDEREÇO','DATA'])if(values[n]&&incoming.values[n]&&(n==='DATA'?bpfDateToISO(values[n])||normalizeTeam18(values[n]):normalizeTeam18(values[n]))!==(n==='DATA'?bpfDateToISO(incoming.values[n])||normalizeTeam18(incoming.values[n]):normalizeTeam18(incoming.values[n])))throw Error('A identificação do arquivo não corresponde ao guia atual ('+n+'). Nada foi importado.');return true;}
@@ -2000,7 +2095,7 @@ const styleTeam18=document.createElement('style');styleTeam18.textContent='.team
 window.Guia.team={get identity(){return team18},receive:receiveTeam18,initial:initialTeam18,fields:scopedFields18,export:exportTeam18,reset:()=>{team18=makeTeam18()}};
 
 // BEGIN LOCAL RECOVERY
-const RECOVERY_ADAPTER={family:'18',mount:b=>document.querySelector('#status').parentElement.after(b),snapshot:()=>({format:'guia-rev6-chrome',version:1,values,images,team18}),identity:b=>b.team18.inspectionId,label:b=>b.values.ENVASADORA,restore:async b=>{const next=parseValues18(b.values),meta=cleanTeam18(b.team18);if(!meta)throw Error('Código inválido');Object.assign(values,next);for(const k of Object.keys(images))delete images[k];Object.assign(images,b.images||{});team18=meta;recalc();dirty=true;}};
+const RECOVERY_ADAPTER={family:'18',mount:b=>document.querySelector('#status').parentElement.after(b),snapshot:()=>({format:'guia-rev6-chrome',version:1,values,images,team18}),identity:b=>b.team18.inspectionId,label:b=>b.values.ENVASADORA,restore:async b=>{const next=parseValues18(b.values),meta=cleanTeam18(b.team18);if(!meta)throw Error('Código inválido');bpfApplyLoadedPhotoPages(next,b.images);for(const n of Object.keys(values))values[n]=next[n]??values[n];for(const k of Object.keys(images))delete images[k];Object.assign(images,b.images||{});team18=meta;recalc();dirty=true;}};
 
 // Recuperação local isolada por versão e código da inspeção. JSON continua portátil.
 (function(A){
@@ -2030,11 +2125,12 @@ async function bpfRotateImage(name,button){
  try{const image=new Image();image.src=original;await image.decode();if(images[name]!==original)return;const canvas=document.createElement('canvas');canvas.width=image.naturalHeight;canvas.height=image.naturalWidth;const ctx=canvas.getContext('2d');ctx.translate(canvas.width,0);ctx.rotate(Math.PI/2);ctx.drawImage(image,0,0);images[name]=canvas.toDataURL('image/jpeg',.92);changed();sync();}
  catch(e){alert('Não foi possível girar a imagem. Tente novamente.');}finally{button.disabled=false;}
 }
-for(const widget of D.widgets.filter(w=>w.page!==bpfNCPageIndex&&/^(Imagem|Foto_Extra_|Rotulo_Pagina_)/.test(w.name))){
+for(const widget of D.widgets.filter(w=>w.page!==bpfNCPageIndex&&/^(Imagem|Foto_Extra_|Rotulo_Pagina_)/.test(w.name)))bpfMountPhotoControls(widget);
+function bpfMountPhotoControls(widget){
  const button=document.createElement('button');button.type='button';button.className='overlay bpf-rotate';button.textContent='Girar 90°';button.dataset.rotate=widget.name;button.setAttribute('aria-label','Girar imagem '+widget.name+' 90 graus');button.onclick=()=>bpfRotateImage(widget.name,button);
  const [x1,y1,x2,y2]=widget.rect;
  const sheet=bpfSheets[widget.page];
- if(widget.page===15||widget.page===16){
+ if(widget.page===15||widget.page===16||widget.page>=22){
   button.classList.add('bpf-gallery-control');button.dataset.bpfGallerySlot=widget.name;
   place(button,{...widget,rect:[x2-82,y2-25,x2-4,y2-2]});
   const remove=document.createElement('button');remove.type='button';remove.className='overlay bpf-gallery-control bpf-gallery-remove';remove.textContent='Retirar foto';
@@ -2044,7 +2140,7 @@ for(const widget of D.widgets.filter(w=>w.page!==bpfNCPageIndex&&/^(Imagem|Foto_
  }else place(button,{...widget,rect:[x2-64,y2-17,x2-2,y2-2]});
  sheet.append(button);
 }
-const photoStyle=document.createElement('style');photoStyle.textContent='.bpf-rotate{z-index:3;padding:0;font-size:1.2cqw;background:#fffE;border:1px solid #84a4b7;border-radius:3px}.choice[data-field^="BPF_PhotoProcess_"]{border:1px solid #9ab4c6;background:#edf6fc;text-align:left;font-size:1.25cqw}.text[data-field^="BPF_PhotoLocation_"]{background:white;font-size:1.25cqw!important}@media print{.bpf-rotate{display:none!important}}';document.head.append(photoStyle);bpfRefreshGalleryControls();
+const photoStyle=document.createElement('style');photoStyle.textContent='.bpf-photo-extra-title{position:absolute;top:4.3%;left:3%;right:3%;padding:.6em;background:#dae9f3;font:bold 1.65cqw Arial}.bpf-photo-slot-label{font-size:1.12cqw;color:#163146}.bpf-renumbered-base{bottom:6%;right:7.3%;width:17%;padding:0}.bpf-add-photo-page[hidden]{display:none!important}@media print{.bpf-add-photo-page{display:none!important}}.bpf-rotate{z-index:3;padding:0;font-size:1.2cqw;background:#fffE;border:1px solid #84a4b7;border-radius:3px}.choice[data-field^="BPF_PhotoProcess_"]{border:1px solid #9ab4c6;background:#edf6fc;text-align:left;font-size:1.25cqw}.text[data-field^="BPF_PhotoLocation_"]{background:white;font-size:1.25cqw!important}@media print{.bpf-rotate{display:none!important}}';document.head.append(photoStyle);bpfRefreshGalleryControls();
 for(const el of document.querySelectorAll('select[data-field^="BPF_PhotoProcess_"]')){const blank=el.querySelector('option[value=""]');if(blank)blank.textContent='Processo da foto';}
 </script><script>!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"function"==typeof define&&define.amd?define(["exports"],e):e((t=t||self).PDFLib={})}(this,(function(t){"use strict";
 /*! *****************************************************************************
@@ -2249,7 +2345,7 @@ async function bpfPdfUpdatePages(pdf,form,font,flow){
  page.drawRectangle({x:45,y:height-112,width:505,height:23,color:blue});
  page.drawText(bpfNCPageTitle,{x:(width-bold.widthOfTextAtSize(bpfNCPageTitle,titleSize))/2,y:height-104,size:titleSize,font:bold,color:black});
  page.drawRectangle({x:470,y:height-794,width:84,height:24,color:white});
- const number='Página 15 de 22',numberSize=7;
+ const number='Página 15 de '+bpfPageOrder.length,numberSize=7;
  page.drawText(number,{x:550-font.widthOfTextAtSize(number,numberSize),y:height-784,size:numberSize,font,color:black});
  form.removeField(form.getTextField('OBS 1'));
  bpfPdfDrawObservation(pdf.getPage(13),bpfNCFirstRect,flow.first,flow.size,font,ink);
@@ -2279,7 +2375,7 @@ async function bpfPdfUpdatePages(pdf,form,font,flow){
   if(index===15)sheet.drawRectangle({x:465,y:h-832,width:w-465,height:24,color:white});
   else if(index!==16&&index!==17)
    sheet.drawRectangle({x:460,y:h-790,width:w-460,height:22,color:white});
-  const label='Página '+(index+1)+' de 22';
+  const label='Página '+(index+1+(index>=18?bpfCurrentPhotoPages()-2:0))+' de '+bpfPageOrder.length;
   sheet.drawText(label,{x:w-22-font.widthOfTextAtSize(label,8),y:index===15?20:h-784,size:8,font,color:ink});
  }
 }
@@ -2342,7 +2438,7 @@ function bpfPreparePhotoPdf(pdf,form,font){
   page.drawRectangle({x:0,y:0,width:w,height:h,color:white});
   page.drawRectangle({x:18,y:h-74,width:w-36,height:43,color:color(.88,.93,.96)});
   page.drawText('GUIA ESTADUAL DE AVALIAÇÃO DO RISCO SANITÁRIO',{x:27,y:h-49,size:11,font,color:blue});
-  page.drawText('Registro fotográfico '+(i-14)+' de 2',{x:27,y:h-64,size:9,font,color:blue});
+  page.drawText('Registro fotográfico '+(i-14)+' de '+bpfCurrentPhotoPages(),{x:27,y:h-64,size:9,font,color:blue});
   const fields=D.widgets.filter(w=>w.page===i);
   for(const widget of fields){
    const [x,y,x2,y2]=widget.rect,width=x2-x,height=y2-y,name=widget.name;
@@ -2356,6 +2452,46 @@ function bpfPreparePhotoPdf(pdf,form,font){
    }
   }
   page.drawText('Guia BPF — Registro fotográfico',{x:18,y:30,size:8,font,color:blue});
+ }
+}
+
+async function bpfPdfAddPhotoPages(pdf,font){
+ const count=bpfCurrentPhotoPages(),total=bpfPageOrder.length;
+ if(count===2)return;
+ const ink=PDFLib.rgb(.07,.23,.33),white=PDFLib.rgb(1,1,1),edge=PDFLib.rgb(.58,.67,.73);
+ const pale=PDFLib.rgb(.88,.93,.96);
+ const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
+ function text(page,value,x,y,width,size){
+  value=normalize(String(value||''));
+  if(!value)return;
+  const scale=Math.min(size,size*width/Math.max(1,font.widthOfTextAtSize(value,size)));
+  page.drawText(value,{x,y,size:scale,font,color:ink});
+ }
+ for(let i=0;i<14;i++){
+  const page=pdf.getPage(i),w=page.getWidth();
+  page.drawRectangle({x:460,y:52,width:w-460,height:21,color:white});
+  text(page,'Página '+(i+1)+' de '+total,w-96,58,70,7);
+ }
+ for(let number=3;number<=count;number++){
+  const [w,h]=bpfNCPageSize,id=number+19;
+  const page=pdf.insertPage(number+15,[w,h]);
+  page.drawRectangle({x:18,y:h-74,width:w-36,height:43,color:pale});
+  text(page,'GUIA ESTADUAL DE AVALIAÇÃO DO RISCO SANITÁRIO',27,h-49,w-54,11);
+  text(page,'Registro fotográfico '+number+' de '+count,27,h-64,w-54,9);
+  for(const field of D.widgets.filter(widget=>widget.page===id)){
+   const [x,y,right,top]=field.rect,width=right-x,height=top-y;
+   page.drawRectangle({x,y,width,height,borderWidth:.6,borderColor:edge});
+   if(bpfExtraPhotoPage(field.name)){
+    const slot=Number(field.name.split('_').at(-1));
+    text(page,'Foto '+((number-1)*12+slot),x+2,top+2,width,7);
+    const data=images[field.name];if(!data)continue;
+    const image=await (/^data:image\/png/.test(data)?pdf.embedPng(data):pdf.embedJpg(data));
+    const scale=Math.min(width/image.width,height/image.height);
+    page.drawImage(image,{x:x+(width-image.width*scale)/2,y:y+(height-image.height*scale)/2,width:image.width*scale,height:image.height*scale});
+   }else text(page,values[field.name],x+2,y+3,width-4,8);
+  }
+  text(page,'Guia BPF — Registro fotográfico',18,30,220,8);
+  text(page,'Página '+(number+16)+' de '+total,w-96,58,70,7);
  }
 }
 
@@ -2399,15 +2535,15 @@ async function bpfExportEditable(){
  const pdfFlow=bpfPdfGeneralSplit(bpfGeneralFullText(),observationFont);
  for(const f of form.getFields()){const name=f.getName(),value=values[name];if(name==='OBS 1'||name==='obs_gerais_continuacao'||BPF_DOC_FIELDS.has(name))continue;if(value===undefined)continue;try{if(f instanceof PDFLib.PDFTextField){f.setText(value==='Off'?'':value);if(Object.entries(BPF_OBSERVATION_FIELDS).some(([key,field])=>/^\d+_/.test(key)&&Number(key.split('_')[0])<13&&field===name))f.disableReadOnly();if(observationNames.has(name)){const boxes=f.acroField.getWidgets().map(w=>w.getRectangle());const size=Math.min(...boxes.map(b=>bpfObservationFontSize(value,observationFont,Math.max(1,b.width-6),Math.max(1,b.height-6))));f.acroField.setDefaultAppearance('/Helv '+size+' Tf 0 g');f.defaultUpdateAppearances(observationFont);}}else if(f instanceof PDFLib.PDFRadioGroup){if(value==='Off'||value==='')f.clear();else if(f.getOptions().includes(value))f.select(value);}else if(f instanceof PDFLib.PDFDropdown){if(name.startsWith('BPF_F_'))f.select(({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta');else if(value&&f.getOptions().includes(value))f.select(value);else f.clear();}}catch(e){throw Error('Campo '+name+': '+e.message);}}
  // Keep the original photo fields and embed the supplied inspection images.
- for(const [name,data]of Object.entries(images)){const widget=D.widgets.find(w=>w.name===name);if(!widget||widget.page===bpfNCPageIndex)continue;const image=await (/^data:image\/png/.test(data)?pdf.embedPng(data):pdf.embedJpg(data)),page=pdf.getPages()[widget.page],delta=page.getHeight()-widget.size[1],region=BPF_PHRASES.find(p=>p.page===widget.page),above=region&&widget.size[1]-widget.rect[3]<region.end;const [x1,y1,x2,y2]=widget.rect;const box={x:x1,y:y1+(above?delta:0),width:x2-x1,height:y2-y1},scale=Math.min(box.width/image.width,box.height/image.height);page.drawImage(image,{x:box.x+(box.width-image.width*scale)/2,y:box.y+(box.height-image.height*scale)/2,width:image.width*scale,height:image.height*scale});const pictureField=form.getFieldMaybe(name);if(pictureField)for(const appearance of pictureField.acroField.getWidgets()){const rect=appearance.getRectangle();const transparent=pdf.context.flateStream('q Q',{Type:'XObject',Subtype:'Form',BBox:[0,0,rect.width,rect.height]});appearance.setNormalAppearance(pdf.context.register(transparent));}}
+ for(const [name,data]of Object.entries(images)){const widget=D.widgets.find(w=>w.name===name);if(!widget||widget.page===bpfNCPageIndex||widget.page>=22)continue;const image=await (/^data:image\/png/.test(data)?pdf.embedPng(data):pdf.embedJpg(data)),page=pdf.getPages()[widget.page],delta=page.getHeight()-widget.size[1],region=BPF_PHRASES.find(p=>p.page===widget.page),above=region&&widget.size[1]-widget.rect[3]<region.end;const [x1,y1,x2,y2]=widget.rect;const box={x:x1,y:y1+(above?delta:0),width:x2-x1,height:y2-y1},scale=Math.min(box.width/image.width,box.height/image.height);page.drawImage(image,{x:box.x+(box.width-image.width*scale)/2,y:box.y+(box.height-image.height*scale)/2,width:image.width*scale,height:image.height*scale});const pictureField=form.getFieldMaybe(name);if(pictureField)for(const appearance of pictureField.acroField.getWidgets()){const rect=appearance.getRectangle();const transparent=pdf.context.flateStream('q Q',{Type:'XObject',Subtype:'Form',BBox:[0,0,rect.width,rect.height]});appearance.setNormalAppearance(pdf.context.register(transparent));}}
  const state={};for(const [name,value] of Object.entries(values))if(name.startsWith('BPF_F_'))state[name]=({'1':'Sim','0':'Não','2':'Não se aplica'})[value]||'Sem resposta';for(const [name,value]of Object.entries(values))if(name.startsWith('BPF_Obs_'))state[name]=value;for(const [name,value]of Object.entries(values))if(/^BPF_FGroup(?:Note|Choice|Selected|Other)_|^BPF_CQ_Frequencia_/.test(name))state[name]=value;state._summaries={};for(const page of BPF_PHRASES)for(const row of page.rows)state._summaries[page.page+'_'+row.code]=values[bpfSummaryName(page,row)]||'';form.getTextField('BPF_State').setText(JSON.stringify(state));
- await bpfPdfUpdatePages(pdf,form,observationFont,pdfFlow);const annexCount=await bpfAppendCompactAnnex(pdf);
+ await bpfPdfUpdatePages(pdf,form,observationFont,pdfFlow);await bpfPdfAddPhotoPages(pdf,observationFont);const annexCount=await bpfAppendCompactAnnex(pdf);
  const bytes=await pdf.save();const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'})),a=document.createElement('a');a.href=url;a.download='Guia_BPF_Inspecao_Editavel.pdf';a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);status.textContent='PDF preenchível gerado'+(annexCount?' e anexo F compacto ('+annexCount+' página(s))':'')+'. Texto integral distribuído entre páginas e campos editáveis.';
  }catch(e){status.textContent='Não foi possível gerar o PDF: '+e.message;alert(status.textContent);}finally{button.disabled=false;}
 }
 document.querySelector('#print').onclick=bpfExportEditable;
-</script><script src="./interface-guia-amigavel.js?v=20261107-R-processos-v24" defer></script><script id="bpf-update-worker">
+</script><script src="./interface-guia-amigavel.js?v=20261112-fotos-v120" defer></script><script id="bpf-update-worker">
 if('serviceWorker' in navigator && location.protocol==='https:'){
  navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 }
-</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-doc16-v119"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>
+</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-fotos-v120"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>
