@@ -12,10 +12,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 3
       - name: Aplicar a paginação e conferir os formulários
         shell: bash
         run: |
-          test "$(git rev-parse HEAD^)" = "b90f5c2de588226a8141b523c5e210bd8343fc59"
+          git diff --quiet b90f5c2de588226a8141b523c5e210bd8343fc59 HEAD -- equipe.html individual.html index.html abrir-guia-corrigido.html sw-guia18.js interface-guia-amigavel.js bpf-cq-continuacao-20261109.js bpf-impressao-unicode-compat-20261109.js bpf-pcc-rotulos-risco-20261109.js
           base64 -d <<'GUIA_PATCH' | gzip -d > /tmp/guia-paginacao.patch
           H4sIAAAAAAACA+29W3PbSNIo+N6/AvacFggThAjwKlKwxu1Ld59w2x7bc/psyBwHRIISxhRBA6QstayIjTgP+wd233fiPHzxbcT3
           dGJfzqv/yf6SzUtVoXAhRcnuuZzQ9FgEULesrKysrKyszEk0nRqNxnG0NILd4CiJksbxKgoa4zhJouNoEjsny9OZcbQ+7btoPgnP
