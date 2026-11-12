@@ -7,12 +7,12 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261112-retomada-v129');
+q.delete('modo'); q.set('v','20261112-retomada-v130');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
 // Somente o recurso visual é acrescentado. Os F ficam sob controle do formulário original.
-const files=['bpf-etiquetas-appcc-20261108.js?v=20261112-retomada-v129','bpf-correcao-f-pdf-v72.js?v=20261112-retomada-v129','bpf-fotos-somente-nc-20261109.js?v=20261112-retomada-v129','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-retomada-v129','bpf-pcc-rotulos-risco-20261109.js?v=20261112-retomada-v129','bpf-impressao-unicode-compat-20261109.js?v=20261112-retomada-v129','bpf-cq-continuacao-20261109.js?v=20261112-retomada-v129'];
+const files=['bpf-etiquetas-appcc-20261108.js?v=20261112-retomada-v130','bpf-correcao-f-pdf-v72.js?v=20261112-retomada-v130','bpf-fotos-somente-nc-20261109.js?v=20261112-retomada-v130','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-retomada-v130','bpf-pcc-rotulos-risco-20261109.js?v=20261112-retomada-v130','bpf-impressao-unicode-compat-20261109.js?v=20261112-retomada-v130','bpf-cq-continuacao-20261109.js?v=20261112-retomada-v130'];
 let inserted=false;
 frame.addEventListener('load',()=>{
  try{
