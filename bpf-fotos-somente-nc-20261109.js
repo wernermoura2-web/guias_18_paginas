@@ -1,4 +1,4 @@
-/* Fotos de F avaliados SIM ou NÃO nas páginas 16–17. SIM não exige OBS; NÃO exige NC. */
+/* Fotos de F avaliados SIM ou NÃO nas páginas 17–18. SIM não exige OBS; NÃO exige NC. */
 (function(){
 'use strict';
 if(window.__bpfFotosFSimNao20261109)return;
@@ -61,7 +61,7 @@ window.bpfAddPhotoFromF=function(editor,row,page){
   for(const item of list){const option=document.createElement('option');option.value=item.id;option.textContent=item.f+' — '+item.unit+' — '+item.result;select.append(option);}
   if(list.some(item=>item.id===previous))select.value=previous;
   button.disabled=!list.length;
-  status.textContent=list.length?'A foto será identificada por processo, F, linha/grupo e resultado nas páginas 16–17. SIM não exige OBS; NÃO exige NC.':'Marque SIM ou NÃO no F. Para foto de NÃO, preencha também a NC.';
+  status.textContent=list.length?'A foto será identificada por processo, F, linha/grupo e resultado nas páginas 17–18. SIM não exige OBS; NÃO exige NC.':'Marque SIM ou NÃO no F. Para foto de NÃO, preencha também a NC.';
  }
  button.onclick=()=>{
   refresh();
