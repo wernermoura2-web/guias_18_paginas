@@ -304,7 +304,7 @@
   let rows=dataset[page]?.rows||[];
   // Se os índices do formulário e da lista de frases não coincidirem,
   // identificar as linhas pelos códigos que efetivamente aparecem na página.
-  const pageEl=document.getElementById('pages')?.children[page];
+  const pageEl=document.querySelector('#pages .page[data-page="'+Number(page)+'"]');
   const shown=pageEl?.innerText||'';
   const indexedCodes=rows.map(r=>r.code).filter(Boolean);
   if(!indexedCodes.some(code=>shown.includes(code))){
@@ -381,7 +381,7 @@
   fixResiduePCC();
   for(const el of host.children)el.querySelectorAll('.bpf-nota-pcc-2-perigos,#bpf-regra-pcc-matriz').forEach(n=>n.remove());
   for(const [page,center] of Object.entries(ruleCellCenters)){
-   addR(host.children[page],Number(page),center);
+   addR(host.querySelector('.page[data-page="'+Number(page)+'"]'),Number(page),center);
   }
  }
  // Não acrescentar frases sobre o formulário nem alterar as dimensões do PDF editável.
@@ -419,7 +419,7 @@
   }
   function showPCC(failed){
    const host=document.getElementById('pages');
-   const page=host?.children?.[17],data=window.Guia?.data;
+   const page=host?.querySelector('.page[data-page="17"]'),data=window.Guia?.data;
    if(!page||!data?.widgets)return;
    page.querySelectorAll('[data-bpf-matriz-pcc]').forEach(el=>el.remove());
    for(const group of groups){

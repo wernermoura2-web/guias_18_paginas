@@ -12,11 +12,6 @@ const oldEnd='[FIM DAS OBSERVAÇÕES TRANSFERIDAS DO CONTROLE DA QUALIDADE]';
 const end='FIM DAS OBSERVAÇÕES DO CONTROLE DA QUALIDADE';
 function valuesRef(){return window.Guia?.values||window.values;}
 function moved(v,i){return v[key(i)]==='1';}
-function removeBlock(s){s=String(s||'');for(const [first,last] of [[start,end],[oldStart,oldEnd]]){let a=s.indexOf(first),b=s.indexOf(last,a+first.length);if(a>=0&&b>a)s=(s.slice(0,a)+s.slice(b+last.length)).trim();}return s;}
-// A página 15 é a de índice 14 (contagem interna começa em zero).
-// Não usar obs_gerais_continuacao como destino: ele está na página 14.
-// Conferido no modelo real de 22 páginas: índice 13 = página 14 (OBS 1),
- // índice 14 = página 15 (documentos + obs_gerais_continuacao).
 const starts=[start,oldStart],ends=[end,oldEnd];
 function strip(value){
  let s=String(value||'');
@@ -47,21 +42,6 @@ window.bpfCQTransferBlock=block;
 window.bpfCQStrip=strip;
 function update(){
  const v=valuesRef();if(!v)return;
- // Não inserir a observação diretamente na página 14 nem na 15.
- // O cálculo original é quem pagina; o complemento do fluxo reserva a página 15.
- strip(v['OBS 1']);
- const first=strip(v['OBS 1']),second=strip(v.obs_gerais_continuacao);
- if(v['OBS 1']!==first)v['OBS 1']=first;
- if(v.obs_gerais_continuacao!==second)v.obs_gerais_continuacao=second;
- if(v.BPF_ObsGeneralFlow){
-  try{
-   const flow=JSON.parse(v.BPF_ObsGeneralFlow);
-   if(flow&&typeof flow==='object'){
-    flow.first=strip(flow.first);flow.second=strip(flow.second);
-    flow.full=strip(flow.full);v.BPF_ObsGeneralFlow=JSON.stringify(flow);
-   }
-  }catch(e){}
- }
  for(let i=0;i<ids.length;i++){
   if(moved(v,i))v[names[i]]='Ver observações na continuação — item '+ids[i]+'.';
   else if(String(v[names[i]]||'').startsWith('Ver observações na continuação'))

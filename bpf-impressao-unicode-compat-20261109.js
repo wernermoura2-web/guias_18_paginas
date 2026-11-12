@@ -48,4 +48,5 @@ document.addEventListener('click',function(e){
  if(el&&/^Imprimir\s*(?:\/\s*)?PDF$/i.test(String(el.textContent||'').trim()))install();
 },true);
 window.bpfPrintInstallWinAnsiGuard=install;
+window.bpfNormalizePdfText=normalize;
 })();

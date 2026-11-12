@@ -70,7 +70,7 @@ function failures(data){
 }
 function addLabel(active,data,field,pageIndex,label){
  const pages=document.getElementById('pages');
- const pageEl=pages?.children?.[pageIndex];
+ const pageEl=pages?.querySelector('.page[data-page="'+pageIndex+'"]');
  if(!pageEl)return;
  const widget=data.guide.data.widgets.find(w=>w.page===pageIndex&&w.name===field);
  if(!widget?.rect||!widget?.size)return;
