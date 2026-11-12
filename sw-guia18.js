@@ -1,13 +1,13 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261112-anexos-v121';
+const CACHE='guia18-20261112-grupo-pdf-v122';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
-  const tag='<script src="./interface-guia-amigavel.js?v=20261112-anexos-v121" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261112-anexos-v121');
+  const tag='<script src="./interface-guia-amigavel.js?v=20261112-grupo-pdf-v122" defer></script>';
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261112-grupo-pdf-v122');
   // Atualizar o padrão da recuperação em equipe sem sobrescrever a preferência salva.
   if(/\/equipe\.html$/i.test(url.pathname)){
     altered=altered.replace('let minutes=5;try', 'let minutes=1;try')
@@ -53,10 +53,10 @@ async function attachFriendlyMenu(response,url){
   altered=altered.replace(/bpf-correcao-f-pdf-v72\.js(?:\?v=[^"'<> ]*)?/g,
     'bpf-correcao-f-pdf-v72.js?v=20261109-export-completo-nc-v86');
   // Em ambos os modos, fotos nos F com SIM ou NÃO: SIM dispensa OBS; NÃO exige NC.
-  const photoTag='<script defer src="./bpf-fotos-somente-nc-20261109.js?v=20261112-anexos-v121"></script>';
+  const photoTag='<script defer src="./bpf-fotos-somente-nc-20261109.js?v=20261112-grupo-pdf-v122"></script>';
   if(!altered.includes('bpf-fotos-somente-nc-20261109.js'))altered=altered.replace(/<\/body\s*>/i,photoTag+'</body>');
   altered=altered.replace(/bpf-fotos-somente-nc-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-fotos-somente-nc-20261109.js?v=20261112-anexos-v121');
+    'bpf-fotos-somente-nc-20261109.js?v=20261112-grupo-pdf-v122');
 
   // v91: SIM com OBS mantém prefixo SIM; sem marcação, somente OBS; classificação sem BPF/APPCC.
   // O texto OBS pode ser digitado antes de marcar SIM.
@@ -73,19 +73,19 @@ async function attachFriendlyMenu(response,url){
   }
   // Registrar OBS do quadro SIM sem prefixo SIM mesmo quando NÃO/NC está marcado.
   // Preservar a resposta, a NC e a classificação da frase (PPR/PC/PPRO/PCC).
-  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-anexos-v121"></script>';
+  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-grupo-pdf-v122"></script>';
   if(!altered.includes('bpf-obs-livres-sem-prefixo-sim-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,obsTag+'</body>');
   altered=altered.replace(/bpf-obs-livres-sem-prefixo-sim-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-anexos-v121');
+    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-grupo-pdf-v122');
   // O cálculo original do guia foi preservado; retirar o interceptor de valores que impedia abertura.
   // Identificação visual explícita "ALTO - PCC" nas células de risco,
   // sem mudar o valor de cálculo dos campos de seleção.
-  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261112-anexos-v121"></script>';
+  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261112-grupo-pdf-v122"></script>';
   if(!altered.includes('bpf-pcc-rotulos-risco-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,pccTag+'</body>');
   altered=altered.replace(/bpf-pcc-rotulos-risco-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-pcc-rotulos-risco-20261109.js?v=20261112-anexos-v121');
+    'bpf-pcc-rotulos-risco-20261109.js?v=20261112-grupo-pdf-v122');
   // Relatório de inspeção impresso: congelar os campos (inclusive SIM/NÃO)
   // e evitar recálculo posterior pelo Foxit ou outros leitores.
   // O botão de PDF EM BRANCO permanece independente e editável.
@@ -116,6 +116,14 @@ async function attachFriendlyMenu(response,url){
       console.error('Não foi possível ativar exportação PDF final: modelo alterado inesperadamente.');
     }
   }
+  // O PDF identifica as caixas de classificação pelos estados 0/1/2.
+  const radioExport="else if(f.getOptions().includes(value))f.select(value);";
+  if(!altered.includes("else if(name==='Group279')")){
+    altered=altered.replace(radioExport,`else if(name==='Group279'){
+      const state=f.acroField.getOnValues().find(option=>option.decodeText()===value);
+      if(state)f.acroField.setValue(state);
+    }`+radioExport);
+  }
   // Corrigir o HTML fonte sem alterar as frases ou as respostas de outras linhas.
   // F1 de 4.5.8 aceita NA exclusivamente para garrafões retornáveis.
   const naF158="if((row.code==='4.5.8'&&entry.index===0)||";
@@ -134,17 +142,17 @@ async function attachFriendlyMenu(response,url){
   altered=altered.replace(riskAnchor,riskText);
   // Controle de Qualidade: botão opcional para transferir observações extensas
   // dos itens 4.10.1–4.10.6 para a página de continuação.
-  const cqTransfer='<script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-anexos-v121"></script>';
+  const cqTransfer='<script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-grupo-pdf-v122"></script>';
   if(!altered.includes('bpf-cq-continuacao-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,cqTransfer+'</body>');
   altered=altered.replace(/bpf-cq-continuacao-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-cq-continuacao-20261109.js?v=20261112-anexos-v121');
+    'bpf-cq-continuacao-20261109.js?v=20261112-grupo-pdf-v122');
   // Complemento da impressão: proteger também o acesso direto aos formulários.
-  const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-anexos-v121"></script>';
+  const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-grupo-pdf-v122"></script>';
   if(!altered.includes('bpf-impressao-unicode-compat-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,printUnicodeTag+'</body>');
   altered=altered.replace(/bpf-impressao-unicode-compat-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-impressao-unicode-compat-20261109.js?v=20261112-anexos-v121');
+    'bpf-impressao-unicode-compat-20261109.js?v=20261112-grupo-pdf-v122');
   // Item 4.5.8: NA no F1 de garrafoes retornaveis implica NA no item inteiro.
   // Preservar selecoes de descartaveis, rotulos e saneantes.
   const bpfNA458Guard="if((row.code==='4.5.8'&&entry.index===0)||(['4.3.6','4.6.12'].includes(row.code)&&entry.index===1))return false;";
