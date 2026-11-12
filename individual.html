@@ -66,7 +66,7 @@ function bpfSyncPCCFinal(){
 
 
 const BPF_NC_CONTINUATION='BPF_ObsNC_Continuacao';
-const BPF_NC_FONT_SIZE=4.5;
+const BPF_NC_FONT_SIZE=6;
 function bpfGeneralFullText(){
  const first=String(values['OBS 1']||'');
  const continuation=String(values[BPF_NC_CONTINUATION]||'');
@@ -105,7 +105,7 @@ function bpfSplitGeneralText(full,fits,sizes){
 function bpfGeneralFlow(full){
  full=String(full||'').replace(/\r\n?/g,'\n');
  let old={};try{old=JSON.parse(values.BPF_ObsGeneralFlow||'{}')}catch(e){}
- if(old.field===BPF_NC_CONTINUATION&&old.font<=BPF_NC_FONT_SIZE&&old.height===bpfNCBoxes[1][1]&&old.full===full&&old.first===values['OBS 1']&&old.second===values[BPF_NC_CONTINUATION])return;
+ if(old.field===BPF_NC_CONTINUATION&&old.baseFont===BPF_NC_FONT_SIZE&&old.height===bpfNCBoxes[1][1]&&old.full===full&&old.first===values['OBS 1']&&old.second===values[BPF_NC_CONTINUATION])return;
  const probe=document.createElement('textarea');
  probe.style.cssText='position:fixed;left:-20000px;top:0;visibility:hidden;resize:none;box-sizing:border-box;padding:7px;line-height:1.3;font-family:Arial';
  document.body.append(probe);
@@ -116,7 +116,7 @@ function bpfGeneralFlow(full){
    probe.style.width=width+'px';probe.style.height=height+'px';probe.style.fontSize=size+'px';
    probe.value=part;
    return probe.scrollHeight<=probe.clientHeight+1;
-  },[BPF_NC_FONT_SIZE,4.25,4,3.5,3,2.5]);
+  },[BPF_NC_FONT_SIZE,5.5,5,4.5,4.25,4,3.5,3,2.5]);
  }finally{probe.remove();}
  if(!result){
   const first=old.field===BPF_NC_CONTINUATION?String(values['OBS 1']||''):'';
@@ -125,7 +125,7 @@ function bpfGeneralFlow(full){
  }
  values['OBS 1']=result.first;
  values[BPF_NC_CONTINUATION]=result.second;
- values.BPF_ObsGeneralFlow=JSON.stringify({field:BPF_NC_CONTINUATION,first:result.first,second:result.second,full,font:result.size,height:bpfNCBoxes[1][1]});
+ values.BPF_ObsGeneralFlow=JSON.stringify({field:BPF_NC_CONTINUATION,first:result.first,second:result.second,full,font:result.size,baseFont:BPF_NC_FONT_SIZE,height:bpfNCBoxes[1][1]});
 }
 function bpfDocumentObservations(){
  const current=String(values.obs_gerais_continuacao||'');
@@ -2104,7 +2104,7 @@ async function bpfAppendCompactAnnex(pdf){
 function bpfPdfGeneralSplit(full,font){
  const normalize=window.bpfNormalizePdfText;
  if(normalize)full=normalize(full);
- const sizes=[BPF_NC_FONT_SIZE,4.25,4,3.5,3,2.5,2,1.5,1,.5,.25];
+ const sizes=[BPF_NC_FONT_SIZE,5.5,5,4.5,4.25,4,3.5,3,2.5,2,1.5,1,.5,.25];
  const result=bpfSplitGeneralText(full,(part,index,size)=>{
   const [width,height]=bpfNCBoxes[index];
   return bpfPdfNCLines(part,font,width-14,size).length*size*1.35<=height-18;
@@ -2304,4 +2304,4 @@ document.querySelector('#print').onclick=bpfExportEditable;
 if('serviceWorker' in navigator && location.protocol==='https:'){
  navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
 }
-</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-fonte-nc-v116"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>
+</script><script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-fonte-nc-6pt-v117"></script><script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-paginacao-v113"></script></body></html>
