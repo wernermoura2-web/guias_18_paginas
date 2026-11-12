@@ -1,0 +1,67 @@
+name: Publicar ajuste da página 16
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publicar-cq-6pt-v118.yml"
+permissions:
+  contents: write
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Aplicar fonte e espaçamento conferidos
+        run: |
+          test "$(git rev-parse HEAD^)" = "f441414ea90b97a2d0b01030779487e106a6f328"
+          base64 -d <<'GUIA_PATCH' | gzip -d > /tmp/guia-v118.patch
+          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
+          pPbgIMnN9/gL43Pe8JhLzEDoPyvzQ7rEMQAA
+          GUIA_PATCH
+          git apply --unidiff-zero --check /tmp/guia-v118.patch
+          git apply --unidiff-zero /tmp/guia-v118.patch
+          git diff --check
+          node --check sw-guia18.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --update
+          git commit -m 'Compactar as observações do Controle de Qualidade na página 16'
+          git push origin HEAD:main
