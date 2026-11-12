@@ -1,13 +1,13 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261112-multifotos-v128';
+const CACHE='guia18-20261112-retomada-v129';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
-  const tag='<script src="./interface-guia-amigavel.js?v=20261112-multifotos-v128" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261112-multifotos-v128');
+  const tag='<script src="./interface-guia-amigavel.js?v=20261112-retomada-v129" defer></script>';
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261112-retomada-v129');
   // Atualizar o padrão da recuperação em equipe sem sobrescrever a preferência salva.
   if(/\/equipe\.html$/i.test(url.pathname)){
     altered=altered.replace('let minutes=5;try', 'let minutes=1;try')
@@ -53,10 +53,10 @@ async function attachFriendlyMenu(response,url){
   altered=altered.replace(/bpf-correcao-f-pdf-v72\.js(?:\?v=[^"'<> ]*)?/g,
     'bpf-correcao-f-pdf-v72.js?v=20261109-export-completo-nc-v86');
   // Em ambos os modos, fotos nos F com SIM ou NÃO: SIM dispensa OBS; NÃO exige NC.
-  const photoTag='<script defer src="./bpf-fotos-somente-nc-20261109.js?v=20261112-multifotos-v128"></script>';
+  const photoTag='<script defer src="./bpf-fotos-somente-nc-20261109.js?v=20261112-retomada-v129"></script>';
   if(!altered.includes('bpf-fotos-somente-nc-20261109.js'))altered=altered.replace(/<\/body\s*>/i,photoTag+'</body>');
   altered=altered.replace(/bpf-fotos-somente-nc-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-fotos-somente-nc-20261109.js?v=20261112-multifotos-v128');
+    'bpf-fotos-somente-nc-20261109.js?v=20261112-retomada-v129');
 
   // v91: SIM com OBS mantém prefixo SIM; sem marcação, somente OBS; classificação sem BPF/APPCC.
   // O texto OBS pode ser digitado antes de marcar SIM.
@@ -73,19 +73,19 @@ async function attachFriendlyMenu(response,url){
   }
   // Registrar OBS do quadro SIM sem prefixo SIM mesmo quando NÃO/NC está marcado.
   // Preservar a resposta, a NC e a classificação da frase (PPR/PC/PPRO/PCC).
-  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-multifotos-v128"></script>';
+  const obsTag='<script defer src="./bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-retomada-v129"></script>';
   if(!altered.includes('bpf-obs-livres-sem-prefixo-sim-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,obsTag+'</body>');
   altered=altered.replace(/bpf-obs-livres-sem-prefixo-sim-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-multifotos-v128');
+    'bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-retomada-v129');
   // O cálculo original do guia foi preservado; retirar o interceptor de valores que impedia abertura.
   // Identificação visual explícita "ALTO - PCC" nas células de risco,
   // sem mudar o valor de cálculo dos campos de seleção.
-  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261112-multifotos-v128"></script>';
+  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261112-retomada-v129"></script>';
   if(!altered.includes('bpf-pcc-rotulos-risco-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,pccTag+'</body>');
   altered=altered.replace(/bpf-pcc-rotulos-risco-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-pcc-rotulos-risco-20261109.js?v=20261112-multifotos-v128');
+    'bpf-pcc-rotulos-risco-20261109.js?v=20261112-retomada-v129');
   // Relatório de inspeção impresso: congelar os campos (inclusive SIM/NÃO)
   // e evitar recálculo posterior pelo Foxit ou outros leitores.
   // O botão de PDF EM BRANCO permanece independente e editável.
@@ -152,17 +152,17 @@ async function attachFriendlyMenu(response,url){
   altered=altered.replace(riskAnchor,riskText);
   // Controle de Qualidade: botão opcional para transferir observações extensas
   // dos itens 4.10.1–4.10.6 para a página de continuação.
-  const cqTransfer='<script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-multifotos-v128"></script>';
+  const cqTransfer='<script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-retomada-v129"></script>';
   if(!altered.includes('bpf-cq-continuacao-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,cqTransfer+'</body>');
   altered=altered.replace(/bpf-cq-continuacao-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-cq-continuacao-20261109.js?v=20261112-multifotos-v128');
+    'bpf-cq-continuacao-20261109.js?v=20261112-retomada-v129');
   // Complemento da impressão: proteger também o acesso direto aos formulários.
-  const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-multifotos-v128"></script>';
+  const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-retomada-v129"></script>';
   if(!altered.includes('bpf-impressao-unicode-compat-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,printUnicodeTag+'</body>');
   altered=altered.replace(/bpf-impressao-unicode-compat-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-impressao-unicode-compat-20261109.js?v=20261112-multifotos-v128');
+    'bpf-impressao-unicode-compat-20261109.js?v=20261112-retomada-v129');
   // As páginas adicionais usam Foto_Pagina_ para os espaços de foto.
   altered=altered.replaceAll('Imagem|Foto_Extra_|Rotulo_Extra_|Rotulo_Pagina_',
     'Imagem|Foto_Extra_|Foto_Pagina_|Rotulo_Extra_|Rotulo_Pagina_');
@@ -335,6 +335,51 @@ document.querySelector('#imageInput').onchange=async event=>{
   if(photo)photo.status.textContent=added+' foto(s) inserida(s) nas páginas Fotos.'+(failed?' '+failed+' arquivo(s) não puderam ser inseridos.':'');
  }finally{bpfImageImportBusy=false;}
 };`);
+  if(/\/equipe\.html$/i.test(url.pathname)&&!altered.includes('function scheduleRecovery18()')){
+    const changed='function changed(){dirty=true;';
+    altered=altered.replace(changed,changed+"window.GuiaRecovery?.schedule();");
+    altered=altered.replace("bpfSyncObservation(row,page);bpfSyncPCCFinal();recalc();return true;",
+      "bpfSyncObservation(row,page);bpfSyncPCCFinal();recalc();window.GuiaRecovery?.schedule();return true;");
+    altered=altered.replace("dirty=true;recalc();sync();\n  document.querySelector('#teamModal18')",
+      "dirty=true;recalc();sync();window.GuiaRecovery?.schedule();\n  document.querySelector('#teamModal18')");
+    altered=altered.replace("team18=cleanTeam18(data.team18)||makeTeam18();recalc();dirty=false;",
+      "team18=cleanTeam18(data.team18)||makeTeam18();recalc();dirty=false;window.GuiaRecovery?.schedule();");
+    altered=altered.replace("let db,baseline=JSON.stringify(A.snapshot()),queue=Promise.resolve(),paused=false,failed=false;",
+      `let db,baseline=JSON.stringify(A.snapshot()),queue=Promise.resolve(),paused=false,failed=false;
+let recoveryEdited=false,recoveryTimer;
+function scheduleRecovery18(){
+ recoveryEdited=true;
+ clearTimeout(recoveryTimer);
+ recoveryTimer=setTimeout(()=>checkpoint(),3000);
+}
+document.querySelector('#jsonInput').addEventListener('change',event=>{
+ if(event.target.files.length)recoveryEdited=true;
+},true);`);
+    const oldStartup=/const rows=\(await request\(s=>s\.getAll\(\)\)\)\.filter\(r=>r\.family===A\.family\);status\(rows\.length\?'Há '\+rows\.length\+[^\n]*?(?=\};\}catch\(e\))/;
+    altered=altered.replace(oldStartup,`try{
+ const rows=(await request(s=>s.getAll())).filter(r=>r.family===A.family).sort((a,b)=>b.at.localeCompare(a.at));
+ if(recoveryEdited||JSON.stringify(A.snapshot())!==baseline||document.querySelector('#bpf-editor,#teamModal18,#recoveryModal')){
+  status('Cópia automática disponível. Use Recuperar preenchimento para abrir outra inspeção.');
+  return;
+ }
+ const latest=rows[0];
+ if(!latest){
+  status('Cópia automática disponível neste aparelho.');
+  return;
+ }
+ paused=true;
+ await A.restore(latest.body);
+ baseline=JSON.stringify(A.snapshot());
+ dirty=false;
+ const message='Inspeção retomada: '+latest.label+' · cópia de '+new Date(latest.at).toLocaleString('pt-BR')+'.';
+ status(message);
+ document.querySelector('#status').textContent=message;
+}catch(e){
+ status('Não foi possível retomar a inspeção automaticamente. Use Recuperar preenchimento ou abra seu JSON.');
+}finally{paused=false;}`);
+    altered=altered.replace("window.GuiaRecovery={checkpoint,list,get failed()",
+      "window.GuiaRecovery={checkpoint,list,schedule:scheduleRecovery18,get failed()");
+  }
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
