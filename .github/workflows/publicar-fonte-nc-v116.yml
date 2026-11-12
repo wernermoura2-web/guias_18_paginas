@@ -1,0 +1,52 @@
+name: Publicar fonte das não conformidades
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publicar-fonte-nc-v116.yml"
+permissions:
+  contents: write
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Aplicar a fonte conferida
+        run: |
+          test "$(git rev-parse HEAD^)" = "a5f3af1fe5a99b499cdc162e419cc06340f2a9df"
+          base64 -d <<'GUIA_PATCH' | gzip -d > /tmp/guia-v116.patch
+          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
+          GUIA_PATCH
+          git apply --unidiff-zero --check /tmp/guia-v116.patch
+          git apply --unidiff-zero /tmp/guia-v116.patch
+          git diff --check
+          node --check sw-guia18.js
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --update
+          git commit -m 'Reduzir a fonte das não conformidades em 50 por cento'
+          git push origin HEAD:main
