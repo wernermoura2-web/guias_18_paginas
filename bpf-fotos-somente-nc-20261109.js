@@ -52,7 +52,7 @@ window.bpfAddPhotoFromF=function(editor,row,page){
  const bar=document.createElement('div');bar.className='bpf-f-photo-tools bpf-nc-photo';
  const label=document.createElement('label');label.textContent='Foto do F (SIM ou NÃO):';
  const select=document.createElement('select');select.setAttribute('aria-label','Selecionar F, resultado e linha ou grupo');label.append(select);
- const button=document.createElement('button');button.type='button';button.textContent='Anexar foto do F';
+ const button=document.createElement('button');button.type='button';button.textContent='Anexar fotos do F';
  const status=document.createElement('span');status.setAttribute('role','status');
  bar.append(label,button,status);editor.append(bar);
  let list=[];
@@ -61,7 +61,7 @@ window.bpfAddPhotoFromF=function(editor,row,page){
   for(const item of list){const option=document.createElement('option');option.value=item.id;option.textContent=item.f+' — '+item.unit+' — '+item.result;select.append(option);}
   if(list.some(item=>item.id===previous))select.value=previous;
   button.disabled=!list.length;
-  status.textContent=list.length?'A foto será identificada por processo, F, linha/grupo e resultado nas páginas de fotos. SIM não exige OBS; NÃO exige NC.':'Marque SIM ou NÃO no F. Para foto de NÃO, preencha também a NC.';
+  status.textContent=list.length?'Selecione uma ou mais fotos. Todas serão identificadas pelo processo, F, linha/grupo e resultado selecionados. SIM não exige OBS; NÃO exige NC.':'Marque SIM ou NÃO no F. Para foto de NÃO, preencha também a NC.';
  }
  button.onclick=()=>{
   refresh();
