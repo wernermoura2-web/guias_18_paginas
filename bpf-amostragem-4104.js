@@ -11,7 +11,7 @@ function refresh(){
  if(!editor||!/\b4\.10\.4\b/.test(editor.querySelector('h2')?.textContent||''))return;
  for(const card of editor.querySelectorAll('fieldset.bpf-group')){
    const f=card.querySelector(':scope > legend')?.textContent.trim().match(/^F[12]\b/)?.[0];
-   if(!f||card.querySelector('[data-sampling-criteria]'))continue;
+   if(f!=='F1'||card.querySelector('[data-sampling-criteria]'))continue;
    const anchor=card.querySelector('.bpf-group-description')||card.querySelector('legend');
    const area=document.createElement('div');
    area.dataset.samplingCriteria=f;
@@ -36,10 +36,7 @@ function refresh(){
      row.append(caption,input);area.append(row);
    }
    anchor?.after(area);
-   if(f==='F2'){
-     const note=document.createElement('p');note.textContent='Registre as evidências nas caixas OBS e NC. O tratamento dos desvios é avaliado no item 4.10.6.';
-     area.append(note);
-   }
+
  }
 }
 function install(){
@@ -76,7 +73,17 @@ window.bpfPrintSampling404=async function(pdf){
    add('Orientação ao inspetor: '+p.guide,10);
    y-=7;
    for(const [,id,label] of checks.filter(item=>item[0]===f)){
-     const result={'1':'Sim','0':'Não','2':'NA'}[data()?.[key(id)]]||'Em branco';
+     const state=data();
+     let answer=state?.[key(id)];
+     if(f==='F2'&&typeof BPF_PHRASES!=='undefined'&&typeof bpfPanels==='function'){
+       const page=BPF_PHRASES.find(p=>p.rows.some(r=>r.code==='4.10.4'));
+       const item=page?.rows.find(r=>r.code==='4.10.4');
+       const panel=item&&bpfPanels(page,item).find(p=>p.id===1);
+       if(panel?.checklist?.includes(label))answer=['0','1'].find(value=>
+         bpfChecklistSelected(page,item,panel,value,state).includes(label)
+       )||(id==='mensal_registro'&&answer==='2'?'2':'');
+     }
+     const result={'1':'Sim','0':'Não','2':'NA'}[answer]||'Em branco';
      add(label+' — '+result,10);
    }
    y-=7;
