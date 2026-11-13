@@ -135,18 +135,36 @@
    inner.appendChild(parent);d.append(summary,inner);break;
   }
  }
- async function bpfDownloadBlankGuide(){
-  // PDF v15 publicado no mesmo repositório: 22 páginas, fotos/rótulos livres,
-  // campos F e Grupo 3 automático. Não toca nas respostas abertas no HTML.
-  const a=document.createElement('a');
-  a.href='./Guia_BPF_Em_Branco_Atualizado.pdf?v=20261109-pdf-v15';
-  a.download='Guia_BPF_Em_Branco_Atualizado_v15.pdf';
-  a.style.display='none';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  const status=document.querySelector('#status');
-  if(status)status.textContent='Download do PDF em branco atualizado v15 iniciado. O preenchimento atual não foi alterado.';
+ function makePrintDownload(label,fileName){
+  const button=document.createElement('button');
+  button.type='button';
+  button.className='bpf-ui-action';
+  button.textContent=label;
+  button.addEventListener('click',async()=>{
+    const status=document.querySelector('#status');
+    button.disabled=true;
+    try{
+      const response=await fetch('./impressao/'+fileName+'.b64');
+      if(!response.ok)throw new Error('PDF indisponível');
+      const bytes=Uint8Array.from(atob((await response.text()).trim()), char=>char.charCodeAt(0));
+      if(String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('PDF inválido');
+      const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+      const link=document.createElement('a');
+      link.href=url;
+      link.download=fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      if(status)status.textContent='PDF pronto para abrir e imprimir.';
+    }catch(error){
+      if(status)status.textContent='Não foi possível baixar o PDF. Tente novamente com conexão à internet.';
+      else alert('Não foi possível baixar o PDF. Tente novamente com conexão à internet.');
+    }finally{
+      button.disabled=false;
+    }
+  });
+  return button;
  }
  function makeHub(){
   if(document.getElementById('bpf-ui-hub'))return true;
@@ -181,10 +199,10 @@
     root.appendChild(t.details);
   }
   const extra=makeAccordion('Mais opções');
-  const blank=document.createElement('button');blank.type='button';
-  blank.className='bpf-ui-action';blank.textContent='Baixar PDF em branco';blank.title='PDF interativo atualizado v15 (22 páginas, fotos e rótulos livres, Grupo 3 automático)';
-  blank.addEventListener('click',bpfDownloadBlankGuide);
-  extra.content.appendChild(blank);
+  extra.content.append(
+    makePrintDownload('Imprimir guia em branco (18 páginas)','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
+    makePrintDownload('Imprimir anexo resumido das frases (F)','Anexo_Resumido_Frases_BPF_APPCC.pdf')
+  );
   if(revise)extra.content.appendChild(makeButton('Revisar frases',revise));
   const annex=Array.from(document.querySelectorAll('input[type=checkbox]'))
     .find(el=>!el.closest('#bpf-ui-hub')&&/Anexar F ao PDF/i.test(norm(el.parentElement?.textContent)));
