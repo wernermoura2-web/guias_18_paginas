@@ -1,13 +1,14 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261113-impressao-campo';
+const CACHE='guia18-20261113-amostragem-4104';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
+CORE.push('./bpf-amostragem-4104.js');
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
-  const tag='<script src="./interface-guia-amigavel.js?v=20261113-impressao-campo" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261113-impressao-campo');
+  const tag='<script src="./interface-guia-amigavel.js?v=20261113-amostragem-4104" defer></script>';
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261113-amostragem-4104');
   // Atualizar o padrão da recuperação em equipe sem sobrescrever a preferência salva.
   if(/\/equipe\.html$/i.test(url.pathname)){
     altered=altered.replace('let minutes=5;try', 'let minutes=1;try')
@@ -21,7 +22,7 @@ async function attachFriendlyMenu(response,url){
       ?altered.replace(anchor,'</script>'+active+'<script>/* Shared by the browser forms and Acrobat.')
       :altered.replace(/<\/body\s*>/i,active+'</body>');
   }
-  altered=altered.replace(/bpf-revisao-frases-ativa-20261107\.js(?:\?v=[^"'<> ]*)?/g,'bpf-revisao-frases-ativa-20261107.js?v=20261108-F1-subcriterios-restaurados-v59');
+  altered=altered.replace(/bpf-revisao-frases-ativa-20261107\.js(?:\?v=[^"'<> ]*)?/g,'bpf-revisao-frases-ativa-20261107.js?v=20261113-amostragem-4104');
   // Corrigir rótulos das verificações existentes dentro de F1 (nenhuma nova frase F).
   // A descrição legal de cada item e as respostas salvas permanecem inalteradas.
   const F1_LABELS=[
@@ -105,7 +106,7 @@ async function attachFriendlyMenu(response,url){
       altered=altered.replace(fillPreparation,fillPreparation+
         '\n const bpfPrintPccLabels=bpfPrintPrepareRisk();');
       altered=altered.replace(beforeSave,
-        '\n bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n'+beforeSave);
+        '\n bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n if(window.bpfPrintSampling404)await window.bpfPrintSampling404(pdf);\n'+beforeSave);
       altered=altered.replace(oldDownload,
         "a.download='Guia_BPF_Relatorio_Inspecao_FINAL.pdf'");
       altered=altered.replace(oldStatus,"status.textContent='PDF final não editável gerado'");
@@ -391,6 +392,8 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
     altered=altered.replace("window.GuiaRecovery={checkpoint,list,get failed()",
       "window.GuiaRecovery={checkpoint,list,schedule:scheduleRecovery18,get failed()");
   }
+  const samplingTag='<script defer src="./bpf-amostragem-4104.js?v=20261113-amostragem-4104"></script>';
+  if(!altered.includes('bpf-amostragem-4104.js'))altered=altered.replace(/<\/body\s*>/i,samplingTag+'</body>');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
