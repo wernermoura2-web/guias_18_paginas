@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261113-amostragem-caixas';
+const CACHE='guia18-20261113-pop-na-visivel';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -139,34 +139,46 @@ async function attachFriendlyMenu(response,url){
   altered=altered.replace(inspectorScript,na458Setup+inspectorScript);
   const dependentNA="function bpfAllowsDependentNA(row,entry,v){";
   const popRule=`<script>
-  function bpfPopF2DependsOnF1(row, scope, data) {
-    return ['4.2.9','4.3.6','4.5.8','4.6.12'].includes(row.code)
-      && scope.phrases.length >= 2 && data[bpfPhraseName(scope,0)] === '0';
+  function bpfIsPopDependent(row,index) {
+    return index===1&&['4.2.9','4.3.6','4.5.8','4.6.12'].includes(row.code)
+      ||index===2&&['4.3.6','4.5.8','4.6.12'].includes(row.code);
   }
-  function bpfApplyPopF2NA(row, scope, data) {
-    if (!['4.2.9','4.3.6','4.5.8','4.6.12'].includes(row.code) || scope.phrases.length < 2) return;
-    const name=bpfPhraseName(scope,1), backup=name+'_POP_NA_anterior';
-    if (bpfPopF2DependsOnF1(row,scope,data)) {
-      if (!Object.prototype.hasOwnProperty.call(data,backup)) data[backup]=String(data[name]??'');
-      data[name]='2';
-    } else if (Object.prototype.hasOwnProperty.call(data,backup)) {
-      data[name]=data[backup];
-      delete data[backup];
+  function bpfPopNAForced(row,scope,index,data) {
+    return bpfIsPopDependent(row,index)&&data[bpfPhraseName(scope,0)]==='0';
+  }
+  function bpfApplyPopF2NA(row,scope,data) {
+    for (const index of scope.phrases.keys()) {
+      if(!bpfIsPopDependent(row,index))continue;
+      const name=bpfPhraseName(scope,index), backup=name+'_POP_NA_anterior';
+      if(bpfPopNAForced(row,scope,index,data)){
+        if(!Object.prototype.hasOwnProperty.call(data,backup))data[backup]=String(data[name]??'');
+        data[name]='2';
+      } else if(Object.prototype.hasOwnProperty.call(data,backup)){
+        data[name]=data[backup];
+        delete data[backup];
+      }
     }
   }
   </script>`;
   if(!altered.includes('function bpfApplyPopF2NA('))altered=altered.replace(inspectorScript,popRule+inspectorScript);
   altered=altered.replace(dependentNA,dependentNA+`
- if(entry.index===1&&bpfPopF2DependsOnF1(row,entry.scope,v))return true;
+ if(bpfPopNAForced(row,entry.scope,entry.index,v))return true;
  if(row.code==='4.5.8'&&Number(entry.scope.col)===1&&entry.index<3)
   return entry.scope.phrases[entry.index]?.allowNA===true;`);
+  altered=altered.replace("  const cleared=bpfNormalizeDependentNA(r,s,v);","  bpfApplyPopF2NA(r,s,v);\n  const cleared=bpfNormalizeDependentNA(r,s,v);");
+  altered=altered.replace("panel.entries.some(e=>e.phrase.allowNA||values[e.name]==='2')","panel.entries.some(e=>e.phrase.allowNA||values[e.name]==='2'||bpfIsPopDependent(row,e.index))");
+  altered=altered.replace("if(answer==='2'&&!entry.phrase.allowNA&&values[entry.name]!=='2')continue;","if(answer==='2'&&!entry.phrase.allowNA&&values[entry.name]!=='2'&&!bpfIsPopDependent(row,entry.index))continue;");
+  altered=altered.replace("input.checked=values[entry.name]===answer;\n    if(answer==='2'){","input.checked=values[entry.name]===answer;\n    if(bpfIsPopDependent(row,entry.index)){\n     input.dataset.popDependent=String(entry.index);\n     if(bpfPopNAForced(row,entry.scope,entry.index,values))input.disabled=true;\n    }\n    if(answer==='2'){");
+  altered=altered.replace("control.disabled=!bpfAllowsDependentNA(row,entry,values);","control.disabled=bpfPopNAForced(row,entry.scope,entry.index,values)||!bpfAllowsDependentNA(row,entry,values);");
+  altered=altered.replace("for(const {control,entry:naEntry} of dependentNA)control.disabled=!bpfAllowsDependentNA(row,naEntry,values);","for(const {control,entry:naEntry} of dependentNA)control.disabled=bpfPopNAForced(row,naEntry.scope,naEntry.index,values)||!bpfAllowsDependentNA(row,naEntry,values);\n     for(const other of content.querySelectorAll('input[data-pop-dependent]:not([data-answer=\"2\"])')){\n      const dependent=bpfPanels(page,row).flatMap(p=>p.entries).find(e=>e.name===other.dataset.answerName);\n      if(dependent)other.disabled=bpfPopNAForced(row,dependent.scope,dependent.index,values);\n     }");
+  altered=altered.replace("input.disabled=!bpfAllowsDependentNA(row,entry,values);","input.disabled=bpfPopNAForced(row,entry.scope,entry.index,values)||!bpfAllowsDependentNA(row,entry,values);");
   const naHint="hint.textContent='Disponível quando o F1 da mesma unidade estiver marcado como Não.';";
   altered=altered.replace(naHint,
     "hint.textContent=row.code==='4.5.8'?'Nas demais colunas, o NA depende de o F1 da mesma coluna estar marcado como Não.':'Disponível quando o F1 da mesma unidade estiver marcado como Não.';");
   // A matriz usa NA para o item de retornáveis quando o F1 estiver marcado NA.
   const agg="  if(!s.observationOnly&&(a!==null||cleared))v[s.name]=a??'Off';";
   altered=altered.replace(agg,
-    "  bpfApplyPopF2NA(r,s,v);\n  if(!s.observationOnly&&(a!==null||cleared))v[s.name]=(r.code==='4.5.8'&&Number(s.col)===1&&v[bpfPhraseName(s,0)]==='2')?'2':(a??'Off');");
+    "  if(!s.observationOnly&&(a!==null||cleared))v[s.name]=(r.code==='4.5.8'&&Number(s.col)===1&&v[bpfPhraseName(s,0)]==='2')?'2':(a??'Off');");
   // O número 1/2/3 deve refletir exatamente BAIXO/MÉDIO/ALTO de cada processo.
   const riskAnchor=" bpfOverridePCCRisk();\n const levels=";
   const riskText=" bpfOverridePCCRisk();\n for(const cfg of BPF_PCC_RISK_MAP){const grade=String(values[cfg.matrix]||'').toUpperCase();values[cfg.score]=grade.startsWith('ALTO')?'3':grade.startsWith('MÉDIO')||grade.startsWith('MEDIO')?'2':grade.startsWith('BAIXO')?'1':'';}\n const levels=";
