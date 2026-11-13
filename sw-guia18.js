@@ -1,8 +1,9 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261113-amostragem-4104';
+const CACHE='guia18-20261113-conclusao-nc';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
+CORE.push('./bpf-conclusao-nc.js');
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
@@ -106,7 +107,7 @@ async function attachFriendlyMenu(response,url){
       altered=altered.replace(fillPreparation,fillPreparation+
         '\n const bpfPrintPccLabels=bpfPrintPrepareRisk();');
       altered=altered.replace(beforeSave,
-        '\n bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n if(window.bpfPrintSampling404)await window.bpfPrintSampling404(pdf);\n'+beforeSave);
+        '\n if(window.bpfConclusaoNC?.hasNC()){const cfg=window.bpfConclusaoNC;const conclusion=form.getFieldMaybe(cfg.field);if(conclusion){conclusion.setText(cfg.include(values[cfg.field]));conclusion.updateAppearances(observationFont);}}\n bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n if(window.bpfPrintSampling404)await window.bpfPrintSampling404(pdf);\n'+beforeSave);
       altered=altered.replace(oldDownload,
         "a.download='Guia_BPF_Relatorio_Inspecao_FINAL.pdf'");
       altered=altered.replace(oldStatus,"status.textContent='PDF final não editável gerado'");
@@ -394,6 +395,8 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   }
   const samplingTag='<script defer src="./bpf-amostragem-4104.js?v=20261113-amostragem-4104"></script>';
   if(!altered.includes('bpf-amostragem-4104.js'))altered=altered.replace(/<\/body\s*>/i,samplingTag+'</body>');
+  const conclusionTag='<script defer src="./bpf-conclusao-nc.js?v=20261113"></script>';
+  if(!altered.includes('bpf-conclusao-nc.js'))altered=altered.replace(/<\/body\s*>/i,conclusionTag+'</body>');
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
