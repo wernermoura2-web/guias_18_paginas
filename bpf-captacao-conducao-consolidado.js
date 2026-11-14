@@ -48,7 +48,7 @@ const bpfWaterCheck = (() => {
    0:{all:true,checks:[
     check('pop-desmonte','POP contempla o desmonte e a frequência'),
     check('registros-desmonte','Registros do desmonte, troca de componentes (o-ring) e higienização posterior'),
-    check('inspecao-visual','Realiza e registra inspeção visual interna das tubulações')
+    check('inspecao-visual','Realiza e registra inspeção visual interna das tubulações',{yesOnly:true})
    ]},
    1:{checks:[
     check('reparo','Possui registro de reparo das tubulações e conexões'),
@@ -109,9 +109,9 @@ const bpfWaterCheck = (() => {
 
  function result(panel,state){
   const selected=panel.checks.filter(c=>answered(c,state));
-  if(!selected.length||(panel.all&&selected.length!==panel.checks.length))return '';
+  if(!selected.length||(panel.all&&panel.checks.some(c=>!c.yesOnly&&!answered(c,state))))return '';
   if(panel.alternatives)return selected.some(c=>state[c.id].answer==='1')?'1':'0';
-  return selected.some(c=>state[c.id].answer===(c.negative?'1':'0'))?'0':'1';
+  return selected.some(c=>!c.yesOnly&&state[c.id].answer===(c.negative?'1':'0'))?'0':'1';
  }
 
  function apply(row,scope,data){
@@ -220,7 +220,7 @@ const bpfWaterCheck = (() => {
     if(!state)continue;
     const selected=config.checks.filter(c=>answered(c,state));
     if(!selected.length)continue;
-    const missing=config.all&&config.checks.find(c=>!answered(c,state));
+    const missing=config.all&&config.checks.find(c=>!c.yesOnly&&!answered(c,state));
     const detail=selected.find(c=>missingDetail(c,state[c.id]));
     const issue=missing||detail;
     if(!issue)continue;
@@ -349,7 +349,7 @@ const bpfWaterCheck = (() => {
  function render(card,page,row,panel){
   const config=get(row,panel.id);
   if(!config)return false;
-  const hint=element('p',config.all?'Responda Sim ou Não em todas as verificações da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
+  const hint=element('p',config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
   if(!document.getElementById('bpf-water-css')){
