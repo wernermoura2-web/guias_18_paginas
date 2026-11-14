@@ -1,9 +1,9 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-captacao-conducao';
+const CACHE='guia18-20261114-verificacoes-captacao-conducao';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
-CORE.push('./bpf-conclusao-nc.js');
+CORE.push('./bpf-conclusao-nc.js','./bpf-captacao-conducao.js');
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
@@ -144,6 +144,7 @@ async function attachFriendlyMenu(response,url){
       ||index===2&&['4.3.6','4.5.8','4.6.12'].includes(row.code);
   }
   function bpfPopNAForced(row,scope,index,data) {
+    if(row.code==='4.2.9'&&(data['BPF_FWater_'+bpfPhraseName(scope,0)]||data['BPF_FWater_'+bpfPhraseName(scope,1)]))return false;
     return bpfIsPopDependent(row,index)&&data[bpfPhraseName(scope,0)]==='0';
   }
   function bpfApplyPopF2NA(row,scope,data) {
@@ -434,6 +435,24 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   if(!altered.includes('bpf-amostragem-4104.js'))altered=altered.replace(/<\/body\s*>/i,samplingTag+'</body>');
   const conclusionTag='<script defer src="./bpf-conclusao-nc.js?v=20261113"></script>';
   if(!altered.includes('bpf-conclusao-nc.js'))altered=altered.replace(/<\/body\s*>/i,conclusionTag+'</body>');
+
+  // Carregar as verificações antes de inicializar os campos do guia.
+  if(!altered.includes('bpf-captacao-conducao.js')){
+   const checkTag='<script src="./bpf-captacao-conducao.js?v=20261114-f-captacao-conducao"></script>';
+   altered=altered.replace(inspectorScript,checkTag+inspectorScript);
+   altered=altered.replace('bpfInitFields(D);','bpfWaterCheck.init(D);bpfInitFields(D);');
+   altered=altered.replace('  const cleared=bpfNormalizeDependentNA(r,s,v);',
+    '  bpfWaterCheck.apply(r,s,v);\n  const cleared=bpfNormalizeDependentNA(r,s,v);');
+   altered=altered.replace("  if(row.code==='4.10.6'&&panel.id===0){\n   const hint=",
+    "  if(bpfWaterCheck.render(card,page,row,panel)){content.append(card);continue;}\n  if(row.code==='4.10.6'&&panel.id===0){\n   const hint=");
+   altered=altered.replace("content.querySelectorAll('input[type=checkbox]')","content.querySelectorAll('input[data-answer-name]')");
+   altered=altered.replace(" dlg.bpfCommit=()=>{\n  const special=",
+    " dlg.bpfCommit=()=>{\n  if(!bpfWaterCheck.validate(page,row,panels,content))return false;\n  const special=");
+   altered=altered.replace(" const entries=[];\n for(const panel of bpfPanels(page,row)){",
+    " const entries=[];\n for(const panel of bpfPanels(page,row)){\n  entries.push(...bpfWaterCheck.summary(page,row,panel,values));");
+   altered=altered.replace("if(records.length)result.push({page,row,phrase,index:i,records});",
+    "if(records.length)result.push({page,row,phrase,index:i,records:bpfWaterCheck.annex(row,i,records,values)});");
+  }
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
@@ -457,3 +476,4 @@ self.addEventListener('fetch',event=>{
   }
  })());
 });
+
