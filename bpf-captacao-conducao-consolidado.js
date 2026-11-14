@@ -40,6 +40,11 @@ const bpfWaterCheck = (() => {
     check('acessivel','Tubulação acessível em todo o percurso / trajeto e com ausência de mato')
    ]}
   },
+  '4.3.5':{0:{all:true,checks:[
+   sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório'),
+   check('recirculacao','Procedimento adotado para recirculação do sanitizante no tanque',{details:'recirculation'}),
+   ...controls('do reservatório','armazenada')
+  ]}},
   '4.3.4':{0:{checks:[
    check('inspecao-visual','Inspeção visual do reservatório na frequência definida pelo estabelecimento',{details:'inspection-frequency'})
   ]}},
@@ -83,14 +88,18 @@ const bpfWaterCheck = (() => {
     check('implementacao','A limpeza e a higienização são realizadas conforme o POP, com os mesmos desinfetantes, concentrações e formas de aplicação')
    ]},
    1:{all:true,checks:[
-    check('saneantes-poco','Sanitizantes utilizados na descontaminação ou desinfecção de rotina do poço ou surgência',{details:'sanitizers'}),
-    check('saneantes-casa','Sanitizantes utilizados na descontaminação ou desinfecção de rotina da casa de proteção e área externa',{details:'sanitizers'})
+    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina da condução')
    ]}
   }
  };
  const products = [['hipoclorito','Hipoclorito de sódio'],['ozonio','Ozônio'],['peracetico','Ácido peracético'],['outros','Outros']];
  const frequencies = ['Semanal','Mensal','Trimestral','Semestral','Anual','Outra'];
  const telemetry = [['ph','pH'],['temperatura','Temperatura'],['condutividade','Condutividade (condutivímetro)']];
+ const recirculation = [
+  'Tanque CIP para preparo do sanitizante com bomba para recirculação e spray ball',
+  'Preparo do sanitizante no próprio tanque com bomba para recirculação e spray ball',
+  'Outro'
+ ];
  const tests = [['telemetria','Telemetria'],['indicador','Teste com indicador'],['outros','Outros']];
  const get = (row,index) => panels[row.code]?.[index];
  const key = entry => 'BPF_FWater_'+entry.name;
@@ -166,6 +175,7 @@ const bpfWaterCheck = (() => {
      break;
     case 'inspection-frequency': details=text(item.frequency)&&'Frequência da inspeção visual interna: '+text(item.frequency);break;
     case 'filter': details=text(item.frequency)&&'Frequência de troca: '+text(item.frequency);break;
+    case 'recirculation': details=text(item.procedure);break;
     case 'measure': details=text(item.description);break;
    }
    return {id:c.id,answer:item.answer,details};
@@ -228,6 +238,7 @@ const bpfWaterCheck = (() => {
    case 'telemetry': return !telemetry.some(([id])=>item.parameters?.[id]);
    case 'residue': return !item.recorded||!tests.some(([id])=>item.tests?.[id])||(item.tests.outros&&!text(item.otherTest));
    case 'filter': return !text(item.frequency);
+   case 'recirculation': return !recirculation.includes(item.procedure);
    case 'measure': return !text(item.description);
    default: return false;
   }
@@ -378,6 +389,9 @@ const bpfWaterCheck = (() => {
     other.hidden=!custom;
     break;
    }
+   case 'recirculation':
+    field('Procedimento de recirculação',item.procedure,value=>{item.procedure=value;save();},recirculation);
+    break;
    case 'measure': field('Descreva a medida de controle',item.description,value=>{item.description=value;save();},null,4);break;
   }
  }
