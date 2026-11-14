@@ -7,7 +7,7 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261114-caixas-texto-amplas');
+q.delete('modo'); q.set('v','20261114-422-f2');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;

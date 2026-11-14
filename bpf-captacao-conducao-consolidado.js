@@ -32,11 +32,11 @@ const bpfWaterCheck = (() => {
     check('nota-fiscal','Nota Fiscal do material')
    ]},
    1:{all:true,checks:[
-    check('vazamento','Tubulação e/ou conexões com vazamento',{negative:true}),
-    check('abaulada','Tubulação abaulada e/ou com suportes insuficientes',{negative:true}),
+    check('vazamento','Tubulação e/ou conexões sem vazamento'),
+    check('abaulada','Tubulação sem abaulamento e/ou com suportes suficientes'),
     check('integra','Tubulação sem avarias e/ou lisa e íntegra'),
     check('corrosao','Tubulação e conexões sem corrosão'),
-    check('emendas','Tubulações com emendas ou conexões não sanitárias',{negative:true}),
+    check('emendas','Tubulações com emendas ou conexões sanitárias'),
     check('acessivel','Tubulação acessível em todo o percurso / trajeto e com ausência de mato')
    ]}
   },
@@ -75,9 +75,24 @@ const bpfWaterCheck = (() => {
  const key = entry => 'BPF_FWater_'+entry.name;
  const entriesFor = (row,scope) => Object.keys(panels[row.code]||{}).map(Number).map(index=>({scope,index,name:bpfPhraseName(scope,index)}));
  const read = (entry,data) => {
-  try { return JSON.parse(data[key(entry)]||'null'); }
-  catch (_) { return null; }
+  try {
+   const name=key(entry);
+   const state=JSON.parse(data[name]||'null');
+   if(state&&entry.index===1&&getConductionIntegrityEntry(entry)&&!state.integrityPositive){
+    for(const id of ['vazamento','abaulada','emendas']){
+     const check=state[id];
+     if(check?.answer==='1'||check?.answer==='0')check.answer=check.answer==='1'?'0':'1';
+    }
+    state.integrityPositive=true;
+    data[name]=JSON.stringify(state);
+   }
+   return state;
+  }catch (_) { return null; }
  };
+ function getConductionIntegrityEntry(entry){
+  const row=BPF_PHRASES.find(page=>page.page===1)?.rows.find(row=>row.code==='4.2.2');
+  return row?.scopes.some(scope=>scope.name===entry.scope.name);
+ }
  const active = (criterion,state) => !criterion.requires||state[criterion.requires]?.answer==='1';
  const answered = (criterion,state) => active(criterion,state)&&
   (state[criterion.id]?.answer==='1'||(!criterion.yesOnly&&state[criterion.id]?.answer==='0'));
@@ -356,7 +371,7 @@ const bpfWaterCheck = (() => {
   }
   for(const entry of panel.entries){
    const previous=read(entry,values);
-   const state=previous||{};
+   const state=previous||(row.code==='4.2.2'&&panel.id===1?{integrityPositive:true}:{});
    const label=bpfScopeLabel(page,entry.scope);
    const legacy=previous?'':bpfAnswerLabel(values[entry.name]);
    const legacyLines=[];
