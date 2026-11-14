@@ -11,7 +11,33 @@ const bpfWaterCheck = (() => {
   yes('medida','Adota outra medida de controle adicional ao perigo identificado de contaminação microbiológica ou química da água '+water,'measure')
  ];
  const adequateHygiene = check('higienizacao-adequada','A higienização é realizada de forma adequada?');
+ const blownChecks = [
+  check('uso-imediato','As embalagens sopradas são utilizadas imediatamente, sem contato manual?'),
+  yes('ar-sopro-filtrado','As pré-formas são sopradas com ar comprimido com filtro de ar microbiológico.'),
+  yes('analise-ar-comprimido','O ar comprimido é coletado e enviado para análises microbiológicas.'),
+  yes('transporte-ar-filtrado','As embalagens são movimentadas com sopradores de ar com filtro de ar microbiológico.')
+ ].map(criterion=>({...criterion,section:'Embalagens sopradas no estabelecimento'}));
+ function rinsePanel(disposable){
+  const rinseChecks=[
+   check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada?'),
+   check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
+   check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?'),
+   check('sanitizantes-embalagens','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens',{
+    details:'packaging-sanitizers',
+    products:disposable?[
+     ['ozonio','Ozônio'],['outros','Outro']
+    ]:[
+     ['detergente-clorado','Detergente alcalino clorado'],['hipoclorito-com-sodio','Hipoclorito de sódio com sódio'],
+     ['hipoclorito','Hipoclorito de sódio'],['ozonio','Ozônio'],['outros','Outro']
+    ]
+   }),
+   yes('telemetria-concentracao','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.')
+  ].map(criterion=>({...criterion,section:'Enxágue com solução desinfetante'}));
+  return {sectioned:true,allowNA:disposable,checks:disposable?[...blownChecks,...rinseChecks]:rinseChecks};
+ }
+ const returnableRinse=rinsePanel(false), disposableRinse=rinsePanel(true);
  const panels = {
+  '4.6.3':{0:returnableRinse},
   '4.1.3':{
    0:{checks:[
     adequateHygiene,
@@ -119,7 +145,8 @@ const bpfWaterCheck = (() => {
   'Outro'
  ];
  const tests = [['telemetria','Telemetria'],['indicador','Teste com indicador'],['outros','Outros']];
- const get = (row,index) => panels[row.code]?.[index];
+ const get = (row,index) => row.code==='4.6.3'&&index===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA)
+  ?disposableRinse:panels[row.code]?.[index];
  const key = entry => 'BPF_FWater_'+entry.name;
  const entriesFor = (row,scope) => Object.keys(panels[row.code]||{}).map(Number).map(index=>({scope,index,name:bpfPhraseName(scope,index)}));
  const read = (entry,data) => {
@@ -155,9 +182,15 @@ const bpfWaterCheck = (() => {
   }
  }
 
+ function requiredChecks(panel,selected){
+  if(panel.sectioned)return panel.checks.filter(c=>!c.yesOnly&&selected.some(item=>item.section===c.section));
+  return panel.all?panel.checks.filter(c=>!c.yesOnly):[];
+ }
+
  function result(panel,state){
+  if(panel.allowNA&&state.notApplicable)return '2';
   const selected=panel.checks.filter(c=>answered(c,state));
-  if(!selected.length||(panel.all&&panel.checks.some(c=>!c.yesOnly&&!answered(c,state))))return '';
+  if(!selected.length||requiredChecks(panel,selected).some(c=>!answered(c,state)))return '';
   if(panel.alternatives)return selected.some(c=>state[c.id].answer==='1')?'1':'0';
   return selected.some(c=>!c.yesOnly&&state[c.id].answer===(c.negative?'1':'0'))?'0':'1';
  }
@@ -172,6 +205,7 @@ const bpfWaterCheck = (() => {
  function records(row,entry,data){
   const state=read(entry,data);
   if(!state)return [];
+  if(state.notApplicable&&get(row,entry.index).allowNA)return [];
   return get(row,entry.index).checks.filter(c=>answered(c,state)).map(c=>{
    const item=state[c.id];
    let details='';
@@ -182,6 +216,10 @@ const bpfWaterCheck = (() => {
       return (id==='outros'?text(product.name)||label:label)+
        (product.frequency?' — '+(product.frequency==='Outra'?text(product.otherFrequency)||'Outra':product.frequency):'');
      }).join(', ');
+     break;
+    case 'packaging-sanitizers':
+     details= c.products.filter(([id])=>item.products?.[id]).map(([id,label])=>
+      id==='outros'?text(item.otherProduct)||label:label).join(', ');
      break;
     case 'telemetry':
      details=telemetry.filter(([id])=>item.parameters?.[id]).map(([,label])=>label).join(', ');
@@ -253,6 +291,8 @@ const bpfWaterCheck = (() => {
      return !p.frequency||(id==='outros'&&!text(p.name))||(p.frequency==='Outra'&&!text(p.otherFrequency));
     });
    }
+   case 'packaging-sanitizers':
+    return !criterion.products.some(([id])=>item.products?.[id])||(item.products?.outros&&!text(item.otherProduct));
    case 'telemetry': return !telemetry.some(([id])=>item.parameters?.[id]);
    case 'residue': return !item.recorded||!tests.some(([id])=>item.tests?.[id])||(item.tests.outros&&!text(item.otherTest));
    case 'filter': return !text(item.frequency);
@@ -268,10 +308,10 @@ const bpfWaterCheck = (() => {
    if(!config)continue;
    for(const entry of panel.entries){
     const state=read(entry,values);
-    if(!state)continue;
+    if(!state||(config.allowNA&&state.notApplicable))continue;
     const selected=config.checks.filter(c=>answered(c,state));
     if(!selected.length)continue;
-    const missing=config.all&&config.checks.find(c=>!c.yesOnly&&!answered(c,state));
+    const missing=requiredChecks(config,selected).find(c=>!answered(c,state));
     const detail=selected.find(c=>missingDetail(c,state[c.id]));
     const issue=missing||detail;
     if(!issue)continue;
@@ -359,6 +399,18 @@ const bpfWaterCheck = (() => {
      updates.push(update);
     }
     break;
+   case 'packaging-sanitizers': {
+    item.products??={};
+    let other;
+    options(criterion.products,item.products,(id,selected)=>{
+     item.products[id]=selected;
+     other.hidden=!item.products.outros;
+     save();
+    });
+    other=field('Identifique o outro sanitizante',item.otherProduct,value=>{item.otherProduct=value;save();});
+    other.hidden=!item.products.outros;
+    break;
+   }
    case 'telemetry':
     item.parameters??={};
     options(telemetry,item.parameters,(id,selected)=>{item.parameters[id]=selected;save();});
@@ -417,7 +469,7 @@ const bpfWaterCheck = (() => {
  function render(card,page,row,panel){
   const config=get(row,panel.id);
   if(!config)return false;
-  const hint=element('p',config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
+  const hint=element('p',config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
   if(!document.getElementById('bpf-water-css')){
@@ -443,6 +495,7 @@ const bpfWaterCheck = (() => {
    const state=previous||(config.simple&&['1','0'].includes(existingAnswer)
     ? {[config.checks[0].id]:{answer:existingAnswer}} : null)||(row.code==='4.2.2'&&panel.id===1?{integrityPositive:true}:{});
    const label=bpfScopeLabel(page,entry.scope);
+   if(config.allowNA&&existingAnswer==='2'&&!previous)state.notApplicable=true;
    const legacy=previous||config.simple?'':bpfAnswerLabel(existingAnswer);
    const legacyLines=[];
    const rows=[];
@@ -458,6 +511,16 @@ const bpfWaterCheck = (() => {
    const refresh=()=>{
     for(const control of rows)control();
    };
+   if(config.allowNA){
+    const control=element('label',label+' — Não se aplica (copos descartáveis)');
+    control.className='bpf-water-choice';
+    const input=element('input');
+    input.type='checkbox';
+    input.checked=!!state.notApplicable;
+    input.onchange=()=>{state.notApplicable=input.checked;save();};
+    control.prepend(input);
+    answerGrid.prepend(control);
+   }
    for(const [answer,box] of boxes){
     const heading=answer==='1'?'Sim':'Não';
     const section=element(config.simple?'div':'details');
@@ -469,12 +532,19 @@ const bpfWaterCheck = (() => {
     legacyLines.push(legacyLine);
     section.append(legacyLine);
     box.append(section);
+    const groups=new Map();
     for(const criterion of config.checks){
      if(criterion.yesOnly&&answer==='0')continue;
      const item=state[criterion.id]??={};
      const line=element('div');
      line.className='bpf-water-row';
-     section.append(line);
+     if(criterion.section&&!groups.has(criterion.section)){
+      const group=element('fieldset');
+      group.append(element('legend',criterion.section));
+      groups.set(criterion.section,group);
+      section.append(group);
+     }
+     (groups.get(criterion.section)||section).append(line);
      if(criterion.details==='sanitizers'&&answer==='1'){
       const title=element('strong',criterion.label);
       title.className='bpf-water-caption';
@@ -502,7 +572,7 @@ const bpfWaterCheck = (() => {
      if(criterion.details&&answer==='1')fields(extra,criterion,item,save);
      line.append(extra);
      rows.push(()=>{
-      const enabled=active(criterion,state);
+      const enabled=!state.notApplicable&&active(criterion,state);
       input.checked=enabled&&item.answer===answer;
       input.disabled=!enabled;
       line.hidden=!enabled;
