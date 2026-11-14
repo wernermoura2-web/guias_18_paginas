@@ -209,7 +209,11 @@ const bpfWaterCheck = (() => {
     const detail=selected.find(c=>missingDetail(c,state[c.id]));
     const issue=missing||detail;
     if(!issue)continue;
-    content.querySelector('[data-water-entry="'+CSS.escape(entry.name)+'"]')?.scrollIntoView({block:'nearest'});
+    const section=content.querySelector('[data-water-entry="'+CSS.escape(entry.name)+'"]');
+    if(section){
+     section.open=true;
+     section.scrollIntoView({block:'nearest'});
+    }
     alert('Item '+row.code+' — '+panel.label+' — '+bpfScopeLabel(page,entry.scope)+': '+(missing?'responda':'complete os dados de')+' “'+issue.label+'”.');
     return false;
    }
@@ -333,7 +337,7 @@ const bpfWaterCheck = (() => {
   if(!document.getElementById('bpf-water-css')){
    const style=element('style');
    style.id='bpf-water-css';
-   style.textContent='#bpf-editor .bpf-water-grid{grid-template-columns:minmax(0,1fr)}.bpf-water-unit+.bpf-water-unit{margin-top:12px}.bpf-water-row{padding:5px 0}.bpf-water-caption{display:block;margin-bottom:4px}.bpf-water-choice{display:flex;align-items:flex-start;gap:8px;margin:4px 0}.bpf-water-choice input{flex:none}.bpf-water-detail{padding:6px 10px;margin-top:4px;background:#f2f7fa;border-radius:5px}.bpf-water-field{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0}.bpf-water-field input,.bpf-water-field select{font:inherit;max-width:100%;padding:5px}.bpf-water-unit [hidden]{display:none!important}';
+   style.textContent='#bpf-editor .bpf-water-grid{grid-template-columns:minmax(0,1fr)}.bpf-water-unit+.bpf-water-unit{margin-top:4px}.bpf-water-unit>summary{padding:8px 0;cursor:pointer;font-weight:700}.bpf-water-row{padding:5px 0}.bpf-water-caption{display:block;margin-bottom:4px}.bpf-water-choice{display:flex;align-items:flex-start;gap:8px;margin:4px 0}.bpf-water-choice input{flex:none}.bpf-water-detail{padding:6px 10px;margin-top:4px;background:#f2f7fa;border-radius:5px}.bpf-water-field{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0}.bpf-water-field input,.bpf-water-field select{font:inherit;max-width:100%;padding:5px}.bpf-water-unit [hidden]{display:none!important}';
    document.head.append(style);
   }
   const answerGrid=element('div');
@@ -368,10 +372,11 @@ const bpfWaterCheck = (() => {
    };
    for(const [answer,box] of boxes){
     const heading=answer==='1'?'Sim':'Não';
-    const section=element('div');
+    const section=element('details');
     section.className='bpf-water-unit';
     section.dataset.waterEntry=entry.name;
-    const legacyLine=element('p',legacy?label+' — Avaliação geral registrada: '+legacy+'.':'');
+    section.append(element('summary',label));
+    const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
     legacyLine.hidden=!legacy;
     legacyLines.push(legacyLine);
     section.append(legacyLine);
@@ -383,13 +388,13 @@ const bpfWaterCheck = (() => {
      line.className='bpf-water-row';
      section.append(line);
      if(criterion.details==='sanitizers'&&answer==='1'){
-      const title=element('strong',label+' — '+criterion.label);
+      const title=element('strong',criterion.label);
       title.className='bpf-water-caption';
       line.append(title);
       fields(line,criterion,item,save,rows);
       continue;
      }
-     const control=element('label',label+' — '+criterion.label);
+     const control=element('label',criterion.label);
      control.className='bpf-water-choice';
      const input=element('input');
      input.type='checkbox';
