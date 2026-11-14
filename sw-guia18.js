@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-higienizacao-468-analise-recebimento';
+const CACHE='guia18-20261114-higienizacao-478-envasadora';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -439,7 +439,7 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
 
   // Carregar as verificações antes de inicializar os campos do guia.
   if(!altered.includes('bpf-captacao-conducao.js')){
-   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261114-higienizacao-468-analise-recebimento"></script>';
+   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261114-higienizacao-478-envasadora"></script>';
    altered=altered.replace(inspectorScript,checkTag+'<script>bpfWaterCheck.prepareCaps();</script>'+inspectorScript);
    altered=altered.replace('const BPF_EXAMPLE_REVISIONS=new Map();',
     'bpfWaterCheck.capsExamples(BPF_FILL_EXAMPLES);\nconst BPF_EXAMPLE_REVISIONS=new Map();');
@@ -467,6 +467,9 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
     }else if(splitHygiene){
      if(!optionGroups.has(entry.option)){`);
    altered=altered.replace("content.querySelectorAll('input[type=checkbox]')","content.querySelectorAll('input[data-answer-name]')");
+   altered=altered.replace("   }else for(const entry of panel.entries){\n    if(answer==='2'",
+    "   }else for(const entry of panel.entries){\n    if(splitHygiene&&entry.option==='Envasadora Automática')continue;\n    if(answer==='2'");
+
    altered=altered.replace(" dlg.bpfCommit=()=>{\n  const special=",
     ` const hasWaterPanels=panels.some(panel=>bpfWaterCheck.get(row,panel.id));
  const waterEditorState=()=>JSON.stringify(panels.flatMap(panel=>[
@@ -478,12 +481,14 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   if(hasWaterPanels&&waterEditorState()===initialWaterState)return true;
   if(!bpfWaterCheck.validate(page,row,panels,content))return false;
   const special=`);
+   altered=altered.replace("  content.append(card);\n }\n const hasWaterPanels=",
+    "  bpfWaterCheck.renderMachine(card,page,row,panel);\n  content.append(card);\n }\n const hasWaterPanels=");
    altered=altered.replace("scope.phrases.map((_,i)=>values[bpfPhraseName(scope,i)]?null:'F'+(i+1)).filter(Boolean)",
     "scope.phrases.map((_,i)=>bpfWaterCheck.get(row,i)||values[bpfPhraseName(scope,i)]?null:'F'+(i+1)).filter(Boolean)");
    altered=altered.replace(" const entries=[];\n for(const panel of bpfPanels(page,row)){",
-    " const entries=[];\n for(const panel of bpfPanels(page,row)){\n  const report=bpfWaterCheck.report(page,row,panel,values);\n  if(report.length){entries.push(...bpfWaterCheck.summary(page,panel,report));continue;}");
+    " const entries=[];\n for(const panel of bpfPanels(page,row)){\n  const report=bpfWaterCheck.report(page,row,panel,values);\n  if(report.length){entries.push(...bpfWaterCheck.summary(page,panel,report));if(row.code!=='4.7.8')continue;}");
    altered=altered.replace("const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));",
-    "const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));\n  if(row.code==='4.3.3'){result.push(...bpfWaterCheck.report(page,row,panels[0],values));continue;}");
+    "const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));\n  if(row.code==='4.7.8')result.push(...bpfWaterCheck.report(page,row,panels[0],values));\n  if(row.code==='4.3.3'){result.push(...bpfWaterCheck.report(page,row,panels[0],values));continue;}");
    altered=altered.replace("if(records.length)result.push({page,row,phrase,index:i,records});",
     "const panel=panels.find(panel=>panel.id===i);\n   const report=panel?bpfWaterCheck.report(page,row,panel,values):[];\n   if(report.length)result.push(...report);\n   else if(records.length)result.push({page,row,phrase,index:i,records});");
    altered=altered.replace("const removedF4=r.code", 

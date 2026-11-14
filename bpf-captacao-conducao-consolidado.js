@@ -36,7 +36,16 @@ const bpfWaterCheck = (() => {
   return {sectioned:true,allowNA:disposable,checks:disposable?[...blownChecks,...rinseChecks]:rinseChecks};
  }
  const returnableRinse=rinsePanel(false), disposableRinse=rinsePanel(true);
+ const fillingMachine={all:true,inline:true,checks:[
+  check('saneantes','Sanitizantes utilizados para descontaminação ou desinfecção de rotina da envasadora',{details:'sanitizers',explicitAnswer:true}),
+  {...yes('residuo','Após a desinfecção da envasadora, testa a ausência de resíduo de saneante na água após o enxágue?','residue'),
+   tests:[['dpd','Fotômetro de bolso (DPD)'],['ortotolidina','Kit de gotas (Ortotolidina)'],['outros','Outro']]},
+  yes('microbiologia','Após o enxágue da envasadora, testa a ausência de contaminação microbiológica?'),
+  yes('atp','Após o enxágue da envasadora, faz teste fluorescente / ATP?'),
+  yes('medida','Adota outra medida de controle para o perigo identificado de contaminação microbiológica ou química da água envasada?','measure')
+ ]};
  const panels = {
+  '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
   '4.6.5':{
    0:{all:true,checks:[
@@ -194,7 +203,8 @@ const bpfWaterCheck = (() => {
  const get = (row,index) => row.code==='4.6.3'&&index===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA)
   ?disposableRinse:panels[row.code]?.[index];
  const key = entry => 'BPF_FWater_'+entry.name;
- const entriesFor = (row,scope) => Object.keys(panels[row.code]||{}).map(Number).map(index=>({scope,index,name:bpfPhraseName(scope,index)}));
+ const machineEntries=panel=>panel.entries.filter(entry=>entry.name.endsWith('_EnvasadoraAutomatica'));
+ const entriesFor = (row,scope) => row.code==='4.7.8'?bpfF1Checks(row,scope).filter(entry=>entry.name.endsWith('_EnvasadoraAutomatica')):Object.keys(panels[row.code]||{}).map(Number).map(index=>({scope,index,name:bpfPhraseName(scope,index)}));
  const read = (entry,data) => {
   try {
    const name=key(entry);
@@ -270,7 +280,15 @@ const bpfWaterCheck = (() => {
    const state=read(entry,data);
    if(!panelEnabled(row,entry,data)){
     data[entry.name]='';
-   }else if(state)data[entry.name]=result(get(row,entry.index),state);
+   }else if(state){
+    data[entry.name]=result(get(row,entry.index),state);
+    if(row.code==='4.7.8'){
+     const answers=bpfF1Checks(row,scope).map(check=>data[check.name]);
+     const answer=answers.includes('0')?'0':answers.every(value=>value==='1')?'1':'';
+     data[bpfPhraseName(scope,0)]=answer;
+     if(!answer)data[scope.name]='Off';
+    }
+   }
   }
  }
 
@@ -298,7 +316,7 @@ const bpfWaterCheck = (() => {
      break;
     case 'residue':
      details=[item.recorded==='1'?'Registra o resultado':item.recorded==='0'?'Não registra o resultado':'',
-      ...tests.filter(([id])=>item.tests?.[id]).map(([id,label])=>id==='outros'?text(item.otherTest)||label:label)
+      ...(c.tests||tests).filter(([id])=>item.tests?.[id]).map(([id,label])=>id==='outros'?text(item.otherTest)||label:label)
      ].filter(Boolean).join(', ');
      break;
     case 'inspection-frequency': details=text(item.frequency)&&'Frequência da inspeção visual interna: '+text(item.frequency);break;
@@ -315,7 +333,7 @@ const bpfWaterCheck = (() => {
   const config=reservoir?{checks:panel.entries.filter(entry=>entry.scope===panel.entries[0]?.scope)
    .map(entry=>({id:entry.index,label:bpfUnifiedOption(row,entry)}))}:get(row,panel.id);
   if(!config)return [];
-  const units=panel.entries.map(entry=>({
+  const units=(config.inline?machineEntries(panel):panel.entries).map(entry=>({
    entry,label:bpfScopeLabel(page,entry.scope),checks:reservoir?
     (['1','0'].includes(data[entry.name])?[{id:entry.index,answer:data[entry.name],details:''}]:[]):
     records(row,entry,data)
@@ -366,7 +384,7 @@ const bpfWaterCheck = (() => {
    case 'packaging-sanitizers':
     return !criterion.products.some(([id])=>item.products?.[id])||(item.products?.outros&&!text(item.otherProduct));
    case 'telemetry': return !telemetry.some(([id])=>item.parameters?.[id]);
-   case 'residue': return !item.recorded||!tests.some(([id])=>item.tests?.[id])||(item.tests.outros&&!text(item.otherTest));
+   case 'residue': return !item.recorded||!(criterion.tests||tests).some(([id])=>item.tests?.[id])||(item.tests.outros&&!text(item.otherTest));
    case 'filter': return !text(item.frequency);
    case 'recirculation': return !recirculation.includes(item.procedure);
    case 'measure': return !text(item.description);
@@ -378,7 +396,7 @@ const bpfWaterCheck = (() => {
   for(const panel of panels){
    const config=get(row,panel.id);
    if(!config)continue;
-   for(const entry of panel.entries){
+   for(const entry of config.inline?machineEntries(panel):panel.entries){
     const state=read(entry,values);
     if(!panelEnabled(row,entry,values)||(config.allowNA&&state?.notApplicable))continue;
     const selected=state?config.checks.filter(c=>answered(c,state)):[];
@@ -471,7 +489,7 @@ const bpfWaterCheck = (() => {
      }
      input.onchange=()=>{
       product.selected=input.checked;
-      item.answer=Object.values(item.products).some(p=>p.selected)?'1':'';
+      if(!criterion.explicitAnswer)item.answer=Object.values(item.products).some(p=>p.selected)?'1':'';
       save();
      };
      updates.push(update);
@@ -504,7 +522,7 @@ const bpfWaterCheck = (() => {
     record.classList.add('bpf-water-record');
     item.tests??={};
     let other;
-    options(tests,item.tests,(id,selected)=>{
+    options(criterion.tests||tests,item.tests,(id,selected)=>{
      item.tests[id]=selected;
      other.hidden=!item.tests.outros;
      save();
@@ -549,7 +567,7 @@ const bpfWaterCheck = (() => {
 
  function render(card,page,row,panel){
   const config=get(row,panel.id);
-  if(!config)return false;
+  if(!config||config.inline&&!panel.machineDetails)return false;
   if(row.code==='4.6.8'&&panel.id===1){
    card.dataset.bpfCapsF2='';
    card.hidden=!panel.entries.some(entry=>panelEnabled(row,entry,values));
@@ -590,6 +608,7 @@ const bpfWaterCheck = (() => {
     values[entry.name]=result(config,state);
     if(!values[entry.name])values[entry.scope.name]='Off';
     refresh();
+    if(config.inline)apply(row,entry.scope,values);
     if(config.capRoute){
      const followup=card.parentElement?.querySelector('[data-bpf-caps-f2]');
      if(followup)followup.hidden=!capsDisinfected(entry.scope,values);
@@ -647,7 +666,7 @@ const bpfWaterCheck = (() => {
       section.append(group);
      }
      (groups.get(criterion.section)||section).append(line);
-     if(criterion.details==='sanitizers'&&answer==='1'){
+     if(criterion.details==='sanitizers'&&!criterion.explicitAnswer&&answer==='1'){
       const title=element('strong',criterion.label);
       title.className='bpf-water-caption';
       line.append(title);
@@ -685,6 +704,7 @@ const bpfWaterCheck = (() => {
    }
    refresh();
   }
+  if(config.inline)return true;
   const grid=element('div');
   grid.className='bpf-answer-grid bpf-water-grid';
   for(const [answer,heading] of [['1','OBS — observação'],['0','NC — não conformidade']]){
@@ -704,6 +724,14 @@ const bpfWaterCheck = (() => {
   card.append(grid);
   return true;
  }
- return {get,prepareCaps,capsExamples,init,apply,report,summary,validate,render};
+ function renderMachine(card,page,row,panel){
+  if(row.code!=='4.7.8'||panel.id!==0)return;
+  const section=element('fieldset');
+  section.className='bpf-answer-box';
+  section.append(element('legend','Envasadora Automática'));
+  render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
+  card.append(section);
+ }
+ return {get,renderMachine,prepareCaps,capsExamples,init,apply,report,summary,validate,render};
 })();
 
