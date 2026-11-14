@@ -55,7 +55,7 @@ const bpfWaterCheck = (() => {
     check('vazamento','Reservatório e/ou conexões com vazamento',{negative:true}),
     check('vincos-amassados','Reservatório com paredes com vincos ou amassadas',{negative:true}),
     check('escotilha-parede','Reservatório com escotilha na parede para acesso interno'),
-    check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual')
+    check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual',{yesOnly:true})
    ]}
   },
   '4.2.7':{0:{checks:[
