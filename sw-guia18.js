@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-422-f2';
+const CACHE='guia18-20261114-saida-frases';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -438,7 +438,7 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
 
   // Carregar as verificações antes de inicializar os campos do guia.
   if(!altered.includes('bpf-captacao-conducao.js')){
-   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261114-422-f2"></script>';
+   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261114-saida-frases"></script>';
    altered=altered.replace(inspectorScript,checkTag+inspectorScript);
    altered=altered.replace('bpfInitFields(D);','bpfWaterCheck.init(D);bpfInitFields(D);');
    altered=altered.replace('  const cleared=bpfNormalizeDependentNA(r,s,v);',
@@ -447,7 +447,18 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
     "  if(bpfWaterCheck.render(card,page,row,panel)){content.append(card);continue;}\n  if(row.code==='4.10.6'&&panel.id===0){\n   const hint=");
    altered=altered.replace("content.querySelectorAll('input[type=checkbox]')","content.querySelectorAll('input[data-answer-name]')");
    altered=altered.replace(" dlg.bpfCommit=()=>{\n  const special=",
-    " dlg.bpfCommit=()=>{\n  if(!bpfWaterCheck.validate(page,row,panels,content))return false;\n  const special=");
+    ` const hasWaterPanels=panels.some(panel=>bpfWaterCheck.get(row,panel.id));
+ const waterEditorState=()=>JSON.stringify(panels.flatMap(panel=>[
+  ...panel.entries.flatMap(entry=>[values[entry.name],values['BPF_FWater_'+entry.name]]),
+  ...['1','0'].map(answer=>values[bpfGroupNoteName(page,row,panel,answer)])
+ ]));
+ const initialWaterState=hasWaterPanels?waterEditorState():null;
+ dlg.bpfCommit=()=>{
+  if(hasWaterPanels&&waterEditorState()===initialWaterState)return true;
+  if(!bpfWaterCheck.validate(page,row,panels,content))return false;
+  const special=`);
+   altered=altered.replace("scope.phrases.map((_,i)=>values[bpfPhraseName(scope,i)]?null:'F'+(i+1)).filter(Boolean)",
+    "scope.phrases.map((_,i)=>bpfWaterCheck.get(row,i)||values[bpfPhraseName(scope,i)]?null:'F'+(i+1)).filter(Boolean)");
    altered=altered.replace(" const entries=[];\n for(const panel of bpfPanels(page,row)){",
     " const entries=[];\n for(const panel of bpfPanels(page,row)){\n  const report=bpfWaterCheck.report(page,row,panel,values);\n  if(report.length){entries.push(...bpfWaterCheck.summary(page,panel,report));continue;}");
    altered=altered.replace("const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));",
