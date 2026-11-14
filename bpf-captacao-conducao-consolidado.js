@@ -51,8 +51,8 @@ const bpfWaterCheck = (() => {
     check('inspecao-visual','Realiza e registra inspeção visual interna das tubulações',{yesOnly:true})
    ]},
    1:{checks:[
-    check('reparo','Possui registro de reparo das tubulações e conexões'),
-    check('passivacao','Registros de passivação e/ou desincrustação'),
+    check('reparo','Possui registro de reparo das tubulações e conexões',{yesOnly:true}),
+    check('passivacao','Registros de passivação e/ou desincrustação',{yesOnly:true}),
     check('historico-pop','POP contempla o histórico de revisão de operações de higienização')
    ]}
   },
