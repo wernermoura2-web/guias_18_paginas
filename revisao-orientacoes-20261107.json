@@ -447,9 +447,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PCC",
       "desdobramento": "O enxágue das embalagens retornadas para um novo ciclo de uso deve garantir a eliminação dos resíduos dos produtos químicos utilizados na higienização.",
-      "orientacao_inspetor": "Conferir limite para cada resíduo, eficácia e sensibilidade do teste; verificar frequência, registros, bloqueio do produto afetado e liberação após correção. Evidências documentais: registros dos testes indicadores de ausência de resíduos químicos em retornáveis, frequência, limites, resultado e bloqueio em caso de falha.",
-      "obs_sim": "O enxágue final foi conferido com teste indicador definido no POP [código], com resultado de ausência de resíduos do saneante nos horários amostrados.",
-      "nc_nao": "Não foi comprovada a eliminação de resíduos de saneantes após o enxágue das embalagens retornáveis, pois não foram realizados os testes indicadores definidos no procedimento."
+      "orientacao_inspetor": "Acompanhe o funcionamento da enxaguadora durante a operação. Verifique se todos os bicos liberam água mineral e se os jatos atingem o fundo das embalagens na posição em que são enxaguadas. Ao término do enxágue, verifique se o equipamento proporciona tempo suficiente para o escoamento da água antes do envase.",
+      "obs_sim": "Durante a verificação, os jatos de todos os bicos atingiram o fundo das embalagens. Após o enxágue, a água escoou antes do envase.",
+      "nc_nao": "Durante a verificação, foram identificados bicos obstruídos. Os jatos correspondentes não atingiram o fundo das embalagens."
     },
     {
       "item": "4.6.6",
@@ -457,9 +457,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PC",
       "desdobramento": "A ausência desses resíduos deve ser comprovada por testes indicadores.",
-      "orientacao_inspetor": "Conferir registros de testes indicadores por lote ou condição de operação, método, limites de aceitação, produto químico monitorado, frequência, resultado, ações diante de teste positivo e bloqueio de embalagens sem comprovação de ausência de resíduos.",
-      "obs_sim": "Foram apresentados registros dos testes de arraste [datas/horários] e frascos de indicadores dentro da validade.",
-      "nc_nao": "Os registros dos testes indicadores apresentavam horários sem preenchimento e foram encontrados frascos de reagente indicador com validade expirada."
+      "orientacao_inspetor": "Solicite a demonstração do teste indicador previsto para verificar resíduos dos produtos químicos utilizados na higienização. Confira se o teste é adequado aos produtos utilizados e verifique a frequência, o critério de aceitação e os registros vinculados ao ciclo ou lote. Registre separadamente a falta de execução do teste, quando constatada, e a falta de registro do resultado. Interprete o resultado conforme a sensibilidade do método. Um resultado negativo significa que o teste não detectou o resíduo nas condições em que foi realizado. Quando a envasadora utilizar instrumento portátil, confira se ele é adequado ao produto químico avaliado, se a faixa de medição abrange o critério de aceitação e se a calibração ou verificação foi feita com padrões apropriados para essa faixa. Evidências documentais: procedimento do teste, frequência, critério de aceitação e registro de data, hora, ciclo ou lote e resultado. Em caso de resultado fora do critério, confira o registro do bloqueio das embalagens afetadas e da destinação adotada.",
+      "obs_sim": "O teste indicador realizado em [data/hora], vinculado ao ciclo [ID], apresentou resultado [resultado], dentro do critério de aceitação [critério].",
+      "nc_nao": "O registro do ciclo [ID] não continha o resultado do teste indicador previsto para verificar resíduos do produto utilizado na higienização."
     },
     {
       "item": "4.6.7",
