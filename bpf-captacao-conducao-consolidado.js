@@ -52,8 +52,7 @@ const bpfWaterCheck = (() => {
     check('teste-arraste','O teste de arraste foi demonstrado?'),
     check('registros-residuos','Há registros dos testes de resíduos?'),
     check('instrumento-adequado','O instrumento portátil é adequado ao desinfetante utilizado?'),
-    check('enxague-final','O teste após o enxágue final indicou ausência de resíduos detectáveis pelo método utilizado?'),
-    yes('criterio-zero','O teste de arraste é adequado ao desinfetante utilizado e adota 0,0 mg/L como critério de aceitação, interpretado conforme o limite de detecção do método (opcional).')
+    check('enxague-final','O teste após o enxágue final indicou ausência de resíduos detectáveis pelo método utilizado?')
    ]}
   },
   '4.3.5':{0:{all:true,checks:[
