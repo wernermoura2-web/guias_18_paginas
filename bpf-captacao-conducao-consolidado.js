@@ -164,7 +164,7 @@ const bpfWaterCheck = (() => {
       ...tests.filter(([id])=>item.tests?.[id]).map(([id,label])=>id==='outros'?text(item.otherTest)||label:label)
      ].filter(Boolean).join(', ');
      break;
-    case 'inspection-frequency': details=text(item.frequency)&&'Frequência: '+text(item.frequency);break;
+    case 'inspection-frequency': details=text(item.frequency)&&'Frequência da inspeção visual interna: '+text(item.frequency);break;
     case 'filter': details=text(item.frequency)&&'Frequência de troca: '+text(item.frequency);break;
     case 'measure': details=text(item.description);break;
    }
@@ -356,7 +356,7 @@ const bpfWaterCheck = (() => {
     const saved=item.frequency||'';
     const custom=!!saved&&!periods.includes(saved);
     let other;
-    field('Frequência',custom?'Outros':saved,value=>{
+    field('Frequência da inspeção visual interna',custom?'Outros':saved,value=>{
      other.hidden=value!=='Outros';
      item.frequency=value==='Outros'?other.querySelector('textarea').value:value;
      save();
