@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-higienizacao-478-envasadora';
+const CACHE='guia18-20261114-matriz-pcc';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -11,6 +11,43 @@ async function attachFriendlyMenu(response,url){
   const original=await response.text();
   const tag='<script src="./interface-guia-amigavel.js?v=20261113-amostragem-4104" defer></script>';
   let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261113-amostragem-4104');
+  // Manter a coluna de Recepção com a faixa percentual original, entre os dois grupos de PCC.
+  altered=altered.replace(/\/\* Faixa vermelha dos seis primeiros processos na matriz\.[\s\S]*?(?=function place\(el,w\))/,`
+const BPF_MATRIX_PCC_BAND={left:100,right:348.28,top:185,bottom:223,width:595.32,height:841.92};
+const BPF_MATRIX_PCC_GROUPS=[[0,3],[4,6]];
+const BPF_MATRIX_PCC_TEXT=['PCC NÃO ATENDIDO','ALTO RISCO'];
+for(const [start,end] of BPF_MATRIX_PCC_GROUPS){
+ const band=BPF_MATRIX_PCC_BAND, column=(band.right-band.left)/6;
+ const cell=document.createElement('div');
+ cell.className='bpf-faixa-pcc-matriz';
+ cell.style.cssText='position:absolute;box-sizing:border-box;display:grid;place-content:center;left:'+
+  100*(band.left+column*start)/band.width+'%;top:'+100*band.top/band.height+'%;width:'+
+  100*column*(end-start)/band.width+'%;height:'+100*(band.bottom-band.top)/band.height+
+  '%;background:#e04c47;color:#000;border:1px solid #94443e;pointer-events:none;'+
+  'font:bold 1.28cqw/1.22 Arial,sans-serif;text-align:center;white-space:pre-line';
+ cell.textContent=BPF_MATRIX_PCC_TEXT.join('\\n');
+ bpfSheets[17].append(cell);
+}
+`);
+  altered=altered.replace(/ const pccPage=pdf\.getPage\(17\);[\s\S]*?(?= const rinsePage=pdf\.getPage\(8\);)/,`
+ const pccPage=pdf.getPage(17);
+ const {left,right,top,bottom,height}=BPF_MATRIX_PCC_BAND;
+ const column=(right-left)/6;
+ const border=PDFLib.rgb(.58,.27,.24),ink=PDFLib.rgb(0,0,0);
+ const pccFont=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
+ pccPage.pushOperators(PDFLib.pushGraphicsState(),PDFLib.setCharacterSpacing(0),PDFLib.setWordSpacing(0));
+ for(const [start,end] of BPF_MATRIX_PCC_GROUPS){
+  const x=left+column*start, width=column*(end-start), bandHeight=bottom-top;
+  pccPage.drawRectangle({x,y:height-bottom,width,height:bandHeight,color:PDFLib.rgb(.878,.298,.278),borderColor:border,borderWidth:.45});
+  const size=Math.min(8,(width-6)/Math.max(...BPF_MATRIX_PCC_TEXT.map(line=>pccFont.widthOfTextAtSize(line,1))));
+  BPF_MATRIX_PCC_TEXT.forEach((line,i)=>{
+   const lineX=x+(width-pccFont.widthOfTextAtSize(line,size))/2;
+   const y=height-bottom+bandHeight/2+(0.5-i)*size*1.22-size*.34;
+   pccPage.drawText(line,{x:lineX,y,size,font:pccFont,color:ink});
+  });
+ }
+ pccPage.pushOperators(PDFLib.popGraphicsState());
+`);
   // Atualizar o padrão da recuperação em equipe sem sobrescrever a preferência salva.
   if(/\/equipe\.html$/i.test(url.pathname)){
     altered=altered.replace('let minutes=5;try', 'let minutes=1;try')
