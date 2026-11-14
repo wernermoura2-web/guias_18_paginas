@@ -7,7 +7,7 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261112-retomada-v130');
+q.delete('modo'); q.set('v','20261114-verificacoes-captacao-conducao');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
@@ -34,11 +34,32 @@ frame.addEventListener('load',()=>{
   next();
  }catch(e){status.textContent='Não foi possível aplicar as etiquetas. Use o acesso direto abaixo.';}
 });
-// Pedir atualização do cache antes do próximo acesso, sem bloquear o guia.
-if('serviceWorker' in navigator){
- navigator.serviceWorker.getRegistration('./').then(r=>r&&r.update()).catch(()=>{});
+async function openGuide(){
+ if('serviceWorker' in navigator){
+  let timer;
+  const update=async()=>{
+   const registration=await navigator.serviceWorker.register('./sw-guia18.js',{scope:'./',updateViaCache:'none'});
+   await registration.update().catch(()=>{});
+   const worker=registration.installing||registration.waiting;
+   if(!navigator.serviceWorker.controller||worker){
+    await new Promise(resolve=>{
+     const check=()=>{
+      if(!navigator.serviceWorker.controller||worker&&registration.active!==worker)return;
+      navigator.serviceWorker.removeEventListener('controllerchange',check);
+      resolve();
+     };
+     navigator.serviceWorker.addEventListener('controllerchange',check);
+     check();
+    });
+   }
+  };
+  try{await Promise.race([update(),new Promise(resolve=>{timer=setTimeout(resolve,7000);})]);}
+  catch(_){}
+  finally{clearTimeout(timer);}
+ }
+ frame.src=target;
 }
-frame.src=target;
+openGuide();
 // A interface do formulário continua acessível mesmo se um complemento demorar.
 setTimeout(()=>{status.hidden=true},12000);
 })();
