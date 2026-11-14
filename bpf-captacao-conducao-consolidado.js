@@ -21,7 +21,7 @@ const bpfWaterCheck = (() => {
   const rinseChecks=[
    check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada?'),
    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
-   check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?'),
+   ...(disposable?[check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?')]:[]),
    check('sanitizantes-embalagens','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens',{
     details:'packaging-sanitizers',
     products:disposable?[
