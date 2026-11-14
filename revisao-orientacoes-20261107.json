@@ -176,10 +176,10 @@
       "f": "F1",
       "descricao_F": "",
       "classificacao_appcc": "PPR",
-      "desdobramento": "O reservatório deve atender ao Regulamento Técnico - Critérios Gerais e Classificação de Materiais para Embalagens e Equipamentos em Contato com Alimentos? (RES. RDC 91/01 ou sucessora), outros regulamentos técnicos específicos e suas alterações.",
-      "orientacao_inspetor": "1) Conferir especificações e comprovação de adequação dos materiais do reservatório e acessórios ao contato com alimentos. 2) Solicite a apresentação dos Certificados de Grau Alimentício dos materiais utilizados nos reservatórios, e verifique os certificados dos materiais apresentados. Evidências documentais: certificados de grau alimentício dos materiais do reservatório, identificação do tanque e registros de conservação.",
-      "obs_sim": "O reservatório [código] de material [identificação] apresentou certificado de adequação ao contato com alimentos [referência].",
-      "nc_nao": "Não foi apresentado documento de adequação do material do reservatório [código] ao contato com alimentos, embora solicitado durante a inspeção."
+      "desdobramento": "O reservatório deve atender ao Regulamento Técnico — Critérios Gerais e Classificação de Materiais para Embalagens e Equipamentos em Contato com Alimentos (RDC nº 91/2001 ou norma sucessora), aos demais regulamentos técnicos específicos e às suas alterações.",
+      "orientacao_inspetor": "Solicite documentação de adequação para contato com alimentos e relacione-a à identificação de cada tanque. Inclua revestimentos e conexões que entram em contato com a água. Evidências documentais: certificados de grau alimentício dos materiais do reservatório e identificação do tanque.",
+      "obs_sim": "A declaração [ID] identifica o material e abrange o reservatório [ID] e seu revestimento de contato.",
+      "nc_nao": "O documento [ID] cobria o tanque [ID A]. Não foi apresentada documentação do material do tanque [ID B]."
     },
     {
       "item": "4.3.2",
@@ -187,9 +187,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PPR",
       "desdobramento": "As superfícies que entram em contato com a água mineral natural ou com a água natural devem ser lisas, íntegras, impermeáveis, resistentes à corrosão e de fácil higienização.",
-      "orientacao_inspetor": "1) Verificar superfícies internas, corrosão, fissuras, revestimentos e facilidade de higienização; conferir registros de manutenção.  Evidências documentais: certificados de grau alimentício dos materiais do reservatório, identificação do tanque e registros de conservação.",
+      "orientacao_inspetor": "Verificar superfícies internas, corrosão, fissuras, revestimentos e facilidade de higienização. Conferir registros de manutenção. Evidências documentais: registros de conservação.",
       "obs_sim": "No reservatório [código], as superfícies e conexões observadas estavam conservadas, sem corrosão, vazamento ou danos.",
-      "nc_nao": "No reservatório [código], foi identificado vazamento na saída [local], além de ponto de oxidação, comprometendo a integridade do conjunto."
+      "nc_nao": "No reservatório [código], foi identificado um ponto de oxidação."
     },
     {
       "item": "4.3.2",
@@ -197,9 +197,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PPR",
       "desdobramento": "As superfícies que entram em contato com a água mineral natural ou com a água natural devem estar em adequado estado de conservação, livres de vazamentos e permitir a inspeção interna.",
-      "orientacao_inspetor": "1) Verificar superfícies externas, corrosão, fissuras, revestimentos e facilidade de higienização; conferir registros de manutenção. 2) Observe se existem vazamentos nas conexões Evidências documentais: certificados de grau alimentício dos materiais do reservatório, identificação do tanque e registros de conservação.",
-      "obs_sim": "Superfícies internas acessíveis íntegras, lisas e higienizáveis, sem corrosão ou fissuras observadas.",
-      "nc_nao": "Reservatório apresenta vazamentos nas conexões com corrosão ou fissuras."
+      "orientacao_inspetor": "Vistorie pontos de solda, deformações, acesso para inspeção interna e indícios de vazamento. Registre a extensão do reparo e o que pôde ser verificado.",
+      "obs_sim": "O tanque [ID] apresentava acesso para inspeção interna e não tinha vazamentos nos pontos vistoriados.",
+      "nc_nao": "No tanque [ID], permaneceu uma deformação em [local] após o reparo registrado em [data].\n\nOu: No reservatório [código], foi identificado vazamento na saída [local], comprometendo a integridade do conjunto."
     },
     {
       "item": "4.3.3",

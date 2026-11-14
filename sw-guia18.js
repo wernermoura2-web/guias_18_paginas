@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-429-435-higienizacao';
+const CACHE='guia18-20261114-432-frases-revisadas';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -17,13 +17,13 @@ async function attachFriendlyMenu(response,url){
   }
   // Carregar revisão dos F antes do script que constrói os campos e as respostas.
   const anchor='</script><script>/* Shared by the browser forms and Acrobat.';
-  const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261114-captacao-conducao"></script>';
+  const active='<script src="./bpf-revisao-frases-ativa-20261107.js?v=20261114-432-frases-revisadas"></script>';
   if(!altered.includes('bpf-revisao-frases-ativa-20261107.js')){
     altered=altered.includes(anchor)
       ?altered.replace(anchor,'</script>'+active+'<script>/* Shared by the browser forms and Acrobat.')
       :altered.replace(/<\/body\s*>/i,active+'</body>');
   }
-  altered=altered.replace(/bpf-revisao-frases-ativa-20261107\.js(?:\?v=[^"'<> ]*)?/g,'bpf-revisao-frases-ativa-20261107.js?v=20261114-captacao-conducao');
+  altered=altered.replace(/bpf-revisao-frases-ativa-20261107\.js(?:\?v=[^"'<> ]*)?/g,'bpf-revisao-frases-ativa-20261107.js?v=20261114-432-frases-revisadas');
   // Corrigir rótulos das verificações existentes dentro de F1 (nenhuma nova frase F).
   // A descrição legal de cada item e as respostas salvas permanecem inalteradas.
   const F1_LABELS=[
