@@ -228,15 +228,18 @@ const bpfWaterCheck = (() => {
  }
 
  function fields(container,criterion,item,save,updates=[]){
-  function field(label,value,update,options){
+  function field(label,value,update,options,rows=2){
    const row=element('label',label);
    row.className='bpf-water-field';
-   const input=element(options?'select':'input');
+   const input=element(options?'select':'textarea');
    if(options)for(const option of ['Selecione',...options]){
     const choice=element('option',option);
     choice.value=option==='Selecione'?'':option;
     input.append(choice);
-   }else input.type='text';
+   }else{
+    row.classList.add('bpf-water-text-field');
+    input.rows=rows;
+   }
    input.value=value||'';
    input.addEventListener(options?'change':'input',()=>update(input.value));
    row.append(input);
@@ -317,14 +320,14 @@ const bpfWaterCheck = (() => {
     let other;
     field('Frequência de troca do filtro de ar microbiológico',custom?'Outra':saved,value=>{
      other.hidden=value!=='Outra';
-     item.frequency=value==='Outra'?other.querySelector('input').value:value;
+     item.frequency=value==='Outra'?other.querySelector('textarea').value:value;
      save();
     },frequencies);
     other=field('Outra frequência de troca',custom?saved:'',value=>{item.frequency=value;save();});
     other.hidden=!custom;
     break;
    }
-   case 'measure': field('Descreva a medida de controle',item.description,value=>{item.description=value;save();});break;
+   case 'measure': field('Descreva a medida de controle',item.description,value=>{item.description=value;save();},null,4);break;
   }
  }
 
@@ -337,7 +340,7 @@ const bpfWaterCheck = (() => {
   if(!document.getElementById('bpf-water-css')){
    const style=element('style');
    style.id='bpf-water-css';
-   style.textContent='#bpf-editor .bpf-water-grid{grid-template-columns:minmax(0,1fr)}.bpf-water-unit+.bpf-water-unit{margin-top:4px}.bpf-water-unit>summary{padding:8px 0;cursor:pointer;font-weight:700}.bpf-water-row{padding:5px 0}.bpf-water-caption{display:block;margin-bottom:4px}.bpf-water-choice{display:flex;align-items:flex-start;gap:8px;margin:4px 0}.bpf-water-choice input{flex:none}.bpf-water-detail{padding:6px 10px;margin-top:4px;background:#f2f7fa;border-radius:5px}.bpf-water-field{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0}.bpf-water-field input,.bpf-water-field select{font:inherit;max-width:100%;padding:5px}.bpf-water-unit [hidden]{display:none!important}';
+   style.textContent='#bpf-editor .bpf-water-grid{grid-template-columns:minmax(0,1fr)}.bpf-water-unit+.bpf-water-unit{margin-top:4px}.bpf-water-unit>summary{padding:8px 0;cursor:pointer;font-weight:700}.bpf-water-row{padding:5px 0}.bpf-water-caption{display:block;margin-bottom:4px}.bpf-water-choice{display:flex;align-items:flex-start;gap:8px;margin:4px 0}.bpf-water-choice input{flex:none}.bpf-water-detail{padding:6px 10px;margin-top:4px;background:#f2f7fa;border-radius:5px}.bpf-water-field{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0}.bpf-water-field select{font:inherit;max-width:100%;padding:5px}#bpf-editor .bpf-water-text-field{display:block}#bpf-editor .bpf-water-text-field textarea{display:block;width:100%;max-width:100%;min-height:3.5em;box-sizing:border-box;margin:6px 0 0;padding:8px;font:inherit;resize:vertical}.bpf-water-unit [hidden]{display:none!important}';
    document.head.append(style);
   }
   const answerGrid=element('div');
@@ -425,7 +428,7 @@ const bpfWaterCheck = (() => {
    refresh();
   }
   const grid=element('div');
-  grid.className='bpf-answer-grid';
+  grid.className='bpf-answer-grid bpf-water-grid';
   for(const [answer,heading] of [['1','OBS — observação'],['0','NC — não conformidade']]){
    const box=element('fieldset');
    box.className='bpf-answer-box';
