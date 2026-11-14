@@ -42,8 +42,8 @@ const bpfWaterCheck = (() => {
    0:{all:true,checks:[
     check('concentracao-limpeza','O enxágue com produto químico para limpeza das embalagens no primeiro estágio da lavadora é feito na concentração adequada?'),
     check('bicos-limpeza','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução de limpeza alcance o fundo das garrafas?'),
-    check('produtos-limpeza','Produtos químicos utilizados para limpeza das embalagens',{
-     details:'packaging-sanitizers',
+    check('produtos-limpeza','Os produtos químicos utilizados para limpeza das embalagens são adequados?',{
+     details:'packaging-sanitizers',detailsOnNo:true,
      products:[['detergente-clorado','Detergente alcalino clorado'],['soda-caustica','Soda cáustica'],['outros','Outro']]
     }),
     yes('telemetria-limpeza','Existe telemetria em linha da concentração do produto químico utilizado para controlar e monitorar sua reposição.')
@@ -52,8 +52,8 @@ const bpfWaterCheck = (() => {
     yes('desinfeccao-primeiro-estagio','O enxágue com desinfetante das embalagens é feito junto com o primeiro estágio de limpeza?'),
     check('concentracao-desinfetante','O enxágue com desinfetante das embalagens é feito na concentração adequada?'),
     check('bicos-desinfetante','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
-    check('sanitizantes-desinfeccao','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens',{
-     details:'packaging-sanitizers',
+    check('sanitizantes-desinfeccao','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens adequados',{
+     details:'packaging-sanitizers',detailsOnNo:true,
      products:[['hipoclorito-com-soda','Hipoclorito de sódio com Soda Cáustica'],['hipoclorito','Hipoclorito de sódio'],['ozonio','Ozônio'],['outros','Outro']]
     }),
     yes('telemetria-desinfetante','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.')
@@ -230,7 +230,7 @@ const bpfWaterCheck = (() => {
   return get(row,entry.index).checks.filter(c=>answered(c,state)).map(c=>{
    const item=state[c.id];
    let details='';
-   if(item.answer==='1')switch(c.details){
+   if(item.answer==='1'||(c.detailsOnNo&&item.answer==='0'))switch(c.details){
     case 'sanitizers':
      details=products.filter(([id])=>item.products?.[id]?.selected).map(([id,label])=>{
       const product=item.products[id];
@@ -303,7 +303,7 @@ const bpfWaterCheck = (() => {
  }
 
  function missingDetail(criterion,item){
-  if(item.answer!=='1')return false;
+  if(item.answer!=='1')return !!(criterion.detailsOnNo&&item.answer==='0'&&item.products?.outros&&!text(item.otherProduct));
   switch(criterion.details){
    case 'sanitizers': {
     const selected=products.filter(([id])=>item.products?.[id]?.selected);
@@ -374,13 +374,14 @@ const bpfWaterCheck = (() => {
    return row;
   }
 
-  function options(entries,values,onToggle){
+  function options(entries,values,onToggle,sync=false){
    for(const [id,label] of entries){
     const row=element('label',label);
     row.className='bpf-water-choice';
     const input=element('input');
     input.type='checkbox';
     input.checked=!!values[id];
+    if(sync)updates.push(()=>{input.checked=!!values[id];});
     input.onchange=()=>onToggle(id,input.checked);
     row.prepend(input);
     container.append(row);
@@ -422,14 +423,17 @@ const bpfWaterCheck = (() => {
     break;
    case 'packaging-sanitizers': {
     item.products??={};
-    let other;
     options(criterion.products,item.products,(id,selected)=>{
      item.products[id]=selected;
-     other.hidden=!item.products.outros;
      save();
+    },true);
+    const other=field('Identifique o outro produto',item.otherProduct,value=>{item.otherProduct=value;save();});
+    const input=other.querySelector('textarea');
+    updates.push(()=>{
+     other.hidden=!item.products.outros;
+     const value=item.otherProduct||'';
+     if(input.value!==value)input.value=value;
     });
-    other=field('Identifique o outro sanitizante',item.otherProduct,value=>{item.otherProduct=value;save();});
-    other.hidden=!item.products.outros;
     break;
    }
    case 'telemetry':
@@ -590,14 +594,15 @@ const bpfWaterCheck = (() => {
      line.append(control);
      const extra=element('div');
      extra.className='bpf-water-detail';
-     if(criterion.details&&answer==='1')fields(extra,criterion,item,save);
+     const showDetails=criterion.details&&(answer==='1'||criterion.detailsOnNo);
+     if(showDetails)fields(extra,criterion,item,save,rows);
      line.append(extra);
      rows.push(()=>{
       const enabled=!state.notApplicable&&active(criterion,state);
       input.checked=enabled&&item.answer===answer;
       input.disabled=!enabled;
       line.hidden=!enabled;
-      extra.hidden=!enabled||item.answer!=='1'||answer!=='1'||!criterion.details;
+      extra.hidden=!enabled||item.answer!==answer||!showDetails;
      });
     }
    }
