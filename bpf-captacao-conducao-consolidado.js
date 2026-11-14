@@ -109,8 +109,8 @@ const bpfWaterCheck = (() => {
     check('ambiente-desinfeccao','O ambiente onde é feita a desinfecção é adequado?'),
     check('transporte-tampas','As tampas desinfetadas são transportadas para a sala de envase ou para o silo em recipientes higienizados e com tampa?'),
     check('analise-tampas','É feita a análise microbiológica dos lotes desinfetados de tampas?'),
-    check('fora-silo','A desinfecção é realizada fora do silo?',{noOnly:true}),
-    check('fora-envase','A desinfecção é realizada fora da área de envase?',{noOnly:true})
+    check('fora-silo','A desinfecção é realizada dentro do silo?',{noOnly:true}),
+    check('fora-envase','A desinfecção é realizada na sala de envase ou na antessala?',{noOnly:true})
    ]}
   },
   '4.6.6':{
