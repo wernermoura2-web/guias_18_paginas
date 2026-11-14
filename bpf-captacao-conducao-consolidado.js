@@ -92,6 +92,7 @@ const bpfWaterCheck = (() => {
   '4.6.8':{
    0:{all:true,capRoute:true,checks:[
     check('declaracao','Possui declaração do fabricante de desinfecção do lote de tampas em uso?'),
+    yes('analise-tampas-recebidas','É feita a análise microbiológica dos lotes das tampas recebidas com declaração de desinfecção?'),
     check('dupla-embalagem','Os sacos com as tampas são enviados com embalagens primária e secundária?'),
     check('retirada-envase','A embalagem secundária é retirada imediatamente antes do transporte para a sala de envase?',{route:'direto'}),
     check('armazenamento-primaria','Os sacos com apenas a embalagem primária são mantidos fora do piso e dos equipamentos?',{route:'direto'}),
