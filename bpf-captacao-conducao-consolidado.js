@@ -40,6 +40,9 @@ const bpfWaterCheck = (() => {
     check('acessivel','Tubulação acessível em todo o percurso / trajeto e com ausência de mato')
    ]}
   },
+  '4.3.4':{0:{checks:[
+   check('inspecao-visual','Inspeção visual do reservatório na frequência definida pelo estabelecimento',{details:'inspection-frequency'})
+  ]}},
   '4.3.2':{
    0:{alternatives:true,checks:[
     check('certificado','Certificado de grau alimentício'),
@@ -161,6 +164,7 @@ const bpfWaterCheck = (() => {
       ...tests.filter(([id])=>item.tests?.[id]).map(([id,label])=>id==='outros'?text(item.otherTest)||label:label)
      ].filter(Boolean).join(', ');
      break;
+    case 'inspection-frequency': details=text(item.frequency)&&'Frequência: '+text(item.frequency);break;
     case 'filter': details=text(item.frequency)&&'Frequência de troca: '+text(item.frequency);break;
     case 'measure': details=text(item.description);break;
    }
@@ -345,6 +349,20 @@ const bpfWaterCheck = (() => {
     });
     other=field('Outro teste',item.otherTest,value=>{item.otherTest=value;save();});
     other.hidden=!item.tests.outros;
+    break;
+   }
+   case 'inspection-frequency': {
+    const periods=['Mensal','Trimestral','Semestral','Outros'];
+    const saved=item.frequency||'';
+    const custom=!!saved&&!periods.includes(saved);
+    let other;
+    field('Frequência',custom?'Outros':saved,value=>{
+     other.hidden=value!=='Outros';
+     item.frequency=value==='Outros'?other.querySelector('textarea').value:value;
+     save();
+    },periods);
+    other=field('Outra frequência',custom?saved:'',value=>{item.frequency=value;save();});
+    other.hidden=!custom;
     break;
    }
    case 'filter': {
