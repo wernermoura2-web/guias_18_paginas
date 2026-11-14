@@ -17,9 +17,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PPR",
       "desdobramento": "A área circundante à casa de proteção da captação deve ser pavimentada, mantida limpa e livre de focos de insalubridade.",
-      "orientacao_inspetor": "Verifique se a área ao redor da casa de proteção da captação possui piso impermeável e íntegro. Certifique-se de que esteja limpa, sem mato alto ou entulhos, e livre de focos de insalubridade, lixo ou presença de gado e outros animais, para evitar a contaminação da água mineral.",
-      "obs_sim": "Foi constatado pavimento íntegro, limpo, sem vegetação invasiva ou resíduos no entorno da captação [código], com drenagem funcional.",
-      "nc_nao": "Na área circundante à captação [código], foram encontrados trechos de pavimentação quebrados, ausência de rejunte, vegetação crescendo nas fissuras e resíduos de obras; registrar fotografias e localização."
+      "orientacao_inspetor": "Percorra todo o entorno e identifique em croqui ou foto os trechos sem pavimento, com ruptura, musgo ou resíduos. Registre a condição observada no dia.",
+      "obs_sim": "O entorno da captação [ID] estava pavimentado, íntegro e limpo no perímetro vistoriado.",
+      "nc_nao": "No entorno da captação [ID], o trecho [local] apresentava [falha ou ausência do pavimento] e [foco de insalubridade]."
     },
     {
       "item": "4.1.1",
@@ -27,9 +27,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PPR",
       "desdobramento": "Deve dispor de um sistema de drenagem de águas pluviais de modo a impedir a infiltração de contaminantes, não comprometendo a qualidade sanitária da água mineral natural e da água natural.",
-      "orientacao_inspetor": "Verifique se o sistema de drenagem de águas pluviais ao redor da captação e da área de envase está íntegro e direcionado para evitar empoçamentos e infiltrações, prevenindo o carreamento de contaminantes que possam comprometer a qualidade sanitária da água mineral e natural.",
-      "obs_sim": "Na captação [código], verificou-se drenagem das águas pluviais por [canaleta/sistema], sem empoçamento ou infiltração.",
-      "nc_nao": "Na captação [código], não foi identificado sistema de drenagem eficaz; observaram-se empoçamentos e pontos com risco de infiltração junto à casa de proteção."
+      "orientacao_inspetor": "Acompanhe o trajeto da água pluvial e confira o destino das canaletas. Se estiver seco, verifique e descreva a evidência disponível, como marcas de empoçamento e declive.",
+      "obs_sim": "As canaletas de [local] estavam desobstruídas e direcionadas para [destino], conforme [evidência].",
+      "nc_nao": "Em [local], a drenagem direcionava o escoamento para junto da casa de captação, conforme [declive, marca ou teste observado]."
     },
     {
       "item": "4.1.2",
@@ -37,9 +37,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PPR",
       "desdobramento": "A casa de proteção da captação deve ser mantida em condição higiênico-sanitária satisfatória, livre de infiltrações, rachaduras, fendas e outras alterações.",
-      "orientacao_inspetor": "Verifique se a casa de proteção da captação está limpa, sem infiltrações, rachaduras, fendas ou danos estruturais que possam expor a água mineral a contaminações externas.",
-      "obs_sim": "A casa de proteção [código] apresentava paredes e pisos íntegros, sem focos de insalubridade e com porta vedada.",
-      "nc_nao": "Na casa da captação [código], observou-se borracha de vedação deteriorada na porta, fenda em parede e presença de insetos; registrar os locais e as evidências fotográficas."
+      "orientacao_inspetor": "Vistorie a proteção da cabeça do poço, as passagens de cabos, as portas e a vedação das aberturas. Localize cada falha.",
+      "obs_sim": "Na captação [ID], as passagens de cabos e aberturas estavam vedadas, com paredes e piso conservados.",
+      "nc_nao": "Na casa da captação [ID], a abertura junto a [componente] permitia acesso do exterior, conforme foto [ID]."
     },
     {
       "item": "4.1.2",
@@ -48,7 +48,7 @@
       "classificacao_appcc": "PPR",
       "desdobramento": "No início da canalização de distribuição da água mineral natural ou da água natural deve ser instalada torneira específica para a coleta de amostras.",
       "orientacao_inspetor": "Verificar existência, localização, conservação e higienização da torneira de coleta no início da canalização; observar a coleta de amostras. Como o plano de amostragem exigido pela Portaria SUVISA nº 4325/2025 prevê análises semanais da água mineral captada, pergunte quais os parâmetros são analisados e a sua periodicidade. Esta informação é importante para entendimento posterior do controle de qualidade realizado pela envasadora.",
-      "obs_sim": "Foi localizada e testada torneira específica de amostragem no início da condução da fonte [código], em condições de higienização.",
+      "obs_sim": "Foi localizada e testada torneira específica de amostragem no início da condução da fonte [código], em boas condições de higienização.",
       "nc_nao": "Na fonte [código], não foi localizada torneira exclusiva de amostragem no início da canalização, conforme inspeção do trajeto [trecho]."
     },
     {
@@ -57,7 +57,7 @@
       "descricao_F": "",
       "classificacao_appcc": "PCC",
       "desdobramento": "As edificações, as instalações, a canalização e os equipamentos da captação devem ser submetidos à limpeza e, se for o caso, à desinfecção, de forma a minimizar os riscos de contaminação da água mineral natural e da água natural.",
-      "orientacao_inspetor": "1) Solicite informações se na captação é realizado algum procedimento de higienização periódica ou “descontaminação” se necessário e se sim solicite ao responsável a descrição dos serviços realizados (sanitizantes, periodicidade, concentrações, etc.) e depois verifique se eles estão previstos no POP. Descreva essa operação em “Observações Gerais”. 2) Verifique se existe filtro de ar microbiológico no poço (surgência apenas em drenos) e pergunte a periodicidade de troca e peça os registros. 3) Verifique o POP e os registros de limpeza e higienização se existentes na casa de proteção. 4) Para o PPC verifique registros e se existe Condutívimetro em linha ou outra medida complementar para controle da ausência de resíduo de saneante após a higienização, bem como verificação microbiológica ou teste fluorescente / ATP para confirmação se a limpeza e higienização foi satisfatória ou se precisa de reforço com liberação de uso só após este monitoramento. Evidências documentais: POP de higienização da captação, registros dos últimos três meses, capacitação dos executores e registros de troca dos elementos filtrantes, quando existentes.",
+      "orientacao_inspetor": "1) Solicite informações se na captação é realizado algum procedimento de higienização periódica ou “descontaminação” se necessário e se sim solicite ao responsável a descrição dos serviços realizados (sanitizantes, periodicidade, concentrações, etc.) e depois verifique se eles estão previstos no POP. Descreva essa operação em “Observações Gerais”. 2) Verifique se existe filtro de ar microbiológico no poço (surgência apenas em drenos) e pergunte a periodicidade de troca e peça os registros. 3) Verifique o POP e os registros de limpeza e higienização se existentes na casa de proteção. 4) Para o PCC verifique registros e se existe condutivímetro em linha ou outra medida complementar para controle da ausência de resíduo de saneante após a higienização, bem como verificação microbiológica ou teste fluorescente / ATP para confirmação se a limpeza e higienização foi satisfatória ou se precisa de reforço com liberação de uso só após este monitoramento. Evidências documentais: POP de higienização da captação, registros dos últimos três meses, capacitação dos executores e registros de troca dos elementos filtrantes, quando existentes.",
       "obs_sim": "A higienização da captação [código] foi descrita no POP [número/revisão] e demonstrada por registros [datas], com saneante, concentração, tempo de contato e liberação compatíveis.",
       "nc_nao": "Na captação [código], o POP previa higienização a cada [frequência], mas os registros demonstraram intervalo de [período] e uso de concentração diversa da prevista, sem justificativa ou avaliação do desvio."
     },
@@ -76,10 +76,10 @@
       "f": "F3",
       "descricao_F": "",
       "classificacao_appcc": "PPR",
-      "desdobramento": "Devem ser mantidos registros das operações de limpeza e de desinfecção da captação.",
-      "orientacao_inspetor": "Conferir registros datados de limpeza e desinfecção, identificando captação, operação, parâmetros executados e responsável; confrontar com o POP. Evidências documentais: POP de higienização da captação, registros dos últimos três meses, capacitação dos executores e registros de troca dos elementos filtrantes, quando existentes.",
-      "obs_sim": "Foram conferidas planilhas de higienização da captação [código], com data, método, produto, concentração e assinatura do executor.",
-      "nc_nao": "Foi apresentado POP de higienização da captação, porém não foram apresentados registros assinados que comprovassem sua execução no período [datas]."
+      "desdobramento": "Devem ser mantidos registros das operações de limpeza e de desinfecção da captação. Evidências documentais: POP de higienização da captação, registros dos últimos três meses, capacitação dos executores e registros de troca dos elementos filtrantes, quando existentes.",
+      "orientacao_inspetor": "Cruze as datas previstas com os registros da casa, equipamentos e canalização da captação. Um registro de limpeza de piso cobre apenas essa atividade.",
+      "obs_sim": "Os registros [datas] identificavam os componentes da captação [ID] higienizados e os executores.",
+      "nc_nao": "Para a captação [ID], foi apresentado registro de limpeza do piso, mas faltava o registro de higienização de [componente] no período [datas]."
     },
     {
       "item": "4.2.2",
@@ -87,9 +87,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PPR",
       "desdobramento": "A canalização deve atender ao Regulamento Técnico - Critérios Gerais e Classificação de Materiais para Embalagens e Equipamentos em Contato com Alimentos (RES. RDC 91/01 ou sucessora), outros regulamentos técnicos específicos e suas alterações.",
-      "orientacao_inspetor": "Conferir especificações e comprovação de adequação dos materiais da canalização ao contato com alimentos, incluindo conexões e vedações. Solicite a apresentação dos Certificados de Grau Alimentício dos materiais utilizados nas canalizações. Evidências documentais: certificados de grau alimentício dos materiais e conexões da condução e registros de troca de filtros (três meses), quando existentes.",
-      "obs_sim": "Os materiais da condução [código] foram identificados por trechos e acompanhados de documentação do fabricante demonstrando adequação ao contato com alimentos.",
-      "nc_nao": "Para o trecho [código] da canalização, não foi apresentado certificado de adequação do material ao contato com alimentos; foram observadas conexões improvisadas de materiais distintos."
+      "orientacao_inspetor": "Vincule o documento de adequação para contato com alimentos aos trechos e conexões instalados. Confira se a nota fiscal identifica o material e se há evidência de sua adequação ao uso.",
+      "obs_sim": "A declaração [ID] identificava o material da tubulação e das conexões do trecho [origem–destino].",
+      "nc_nao": "Foi apresentada nota de compra de [material] sem documento que demonstrasse a adequação para contato com alimentos no trecho [ID]."
     },
     {
       "item": "4.2.2",
@@ -97,9 +97,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PPR",
       "desdobramento": "As superfícies da canalização que entram em contato com a água mineral natural e com a água natural devem ser lisas, íntegras, impermeáveis, resistentes à corrosão e de fácil higienização.",
-      "orientacao_inspetor": "1) Verificar superfícies da canalização, corrosão, fissuras, rugosidades e pontos de difícil higienização; conferir reparos e substituições. 2) Observe se existem vazamentos nas conexões e se as tubulações estão devidamente suportadas, bem como verifique os materiais utilizados e se estão sem corrosão. Evidências documentais: certificados de grau alimentício dos materiais e conexões da condução e registros de troca de filtros (três meses), quando existentes.",
-      "obs_sim": "A canalização [código] apresentou superfícies íntegras, conexões sem vazamentos e suportes adequados ao percurso inspecionado.",
-      "nc_nao": "Na condução [código], foram vistos pontos com vazamento ativo, amassamento e sustentação improvisada por [material], com dificuldade de higienização."
+      "orientacao_inspetor": "Percorra o traçado e localize vazamentos, amassamentos, falta de sustentação e desníveis. Indique onde a superfície interna pôde ser verificada.",
+      "obs_sim": "O trecho [origem–destino] estava íntegro e sem vazamentos nos pontos acessíveis, conforme [evidência].",
+      "nc_nao": "Na condução [ID], havia [vazamento/amassamento/desnível] em [local], identificado na foto [ID]."
     },
     {
       "item": "4.2.7",
@@ -107,7 +107,7 @@
       "descricao_F": "",
       "classificacao_appcc": "PCC",
       "desdobramento": "A higienização da canalização deve garantir a manutenção das condições higiênico-sanitárias satisfatórias e minimizar o risco de contaminação da água mineral natural e da água natural.",
-      "orientacao_inspetor": "Conferir POP, higienização de cada trecho, condições da canalização, tempo/contato/concentração, registros dos últimos três meses, verificação microbiológica e, quando utilizados produtos químicos, demonstração de remoção de resíduos antes da liberação. Verificar filtros e histórico de troca. O não atendimento de requisito classificado como PCC compromete o controle de perigos microbiológicos ou químicos e determina alto risco do processo conforme a regra do Guia.",
+      "orientacao_inspetor": "Conferir POP, a higienização de cada trecho, condições da canalização, tempo de contato, concentração, registros dos últimos 12 meses, verificação microbiológica e, quando utilizados produtos químicos, demonstração de remoção de resíduos antes da liberação. Verificar filtros e histórico de troca. O não atendimento de requisito classificado como PCC compromete o controle de perigos microbiológicos ou químicos e determina alto risco do processo conforme a regra do Guia.",
       "obs_sim": "Foi comprovada a higienização da condução [código] conforme POP [revisão] e registros [datas], com verificação do resultado e liberação após controle dos perigos pertinentes.",
       "nc_nao": "Na condução [código], os registros de higienização informavam método e frequência diferentes do POP apresentado, sem verificação documentada da eficácia e da liberação do sistema."
     },
@@ -117,9 +117,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PPR",
       "desdobramento": "Devem ser mantidos registros das operações de higienização da canalização.",
-      "orientacao_inspetor": "Conferir registros de higienização por trecho da canalização, com data, parâmetros executados, responsável e desvios identificados. Evidências documentais: registros de higienização da canalização dos últimos três meses, POP aplicável e capacitação dos executores.",
-      "obs_sim": "Os registros da condução [código] identificam datas, agente químico, concentração, operador, tempo de contato e resultado da verificação.",
-      "nc_nao": "As planilhas de higienização da condução [código] não identificavam os produtos efetivamente utilizados nem os parâmetros executados; o formulário continha somente data e assinatura."
+      "orientacao_inspetor": "Confira se as planilhas identificam cada condução e a operação executada. Diferencie registros de higienização, troca de filtros e manutenção. Evidências documentais: registros de higienização da canalização dos últimos 12 meses.",
+      "obs_sim": "A planilha [ID] registrava a higienização da condução [ID] em [datas], com parâmetros e executor identificados.",
+      "nc_nao": "Não foram apresentados os registros de higienização da condução [ID] no período [período]."
     },
     {
       "item": "4.2.7",
@@ -137,9 +137,9 @@
       "descricao_F": "",
       "classificacao_appcc": "PPRO",
       "desdobramento": "A higienização deve contemplar, quando aplicável, o desmonte da canalização e prever a frequência de realização desta operação.",
-      "orientacao_inspetor": "1) Conferir desmonte e frequência no POP, execução, registros e remontagem higiênica. 2) Solicite os registros dos serviços de desmontagem, passivação e desincrustação da canalização realizados nos últimos anos, bem como verifique se esta operação de desmontagem, mesmo se relatado que não é necessário, está descrita no POP de higienização e se também existe nele as ações corretivas necessárias. Evidências documentais: registros de desmontagem, passivação, desincrustação e ações corretivas conforme necessidade e frequência definida.\nDestaca-se que devido à natureza do produto pode ocorrer a formação de biofilme junto a superfícies rugosas, como conexões internas e junto às juntas utilizadas.",
-      "obs_sim": "Foi apresentado registro de desmontagem e limpeza da condução [código], incluindo [válvulas/conexões/filtros], conforme condição definida no POP.",
-      "nc_nao": "Não foram apresentados registros de desmonte da condução [código], troca de vedações ou desincrustação, apesar de previsão de manutenção no procedimento."
+      "orientacao_inspetor": "Identifique conexões e segmentos desmontáveis. Cruze a frequência prevista no POP com a evidência de execução e a justificativa para trechos em que o desmonte não se aplica.\nDestaca-se que devido à natureza do produto pode ocorrer a formação de biofilme junto a superfícies rugosas, como conexões internas e junto às juntas utilizadas.",
+      "obs_sim": "O POP [ID] identifica os trechos desmontáveis e define a frequência de desmonte. A execução de [data] foi registrada.",
+      "nc_nao": "O POP [ID] descrevia a circulação da solução, mas não indicava os pontos a desmontar nem a frequência para o trecho [ID]."
     },
     {
       "item": "4.2.8",
@@ -157,9 +157,9 @@
       "descricao_F": "",
       "classificacao_appcc": "POP",
       "desdobramento": "Devem ser implementados Procedimentos Operacionais Padronizados-POP referentes às operações de higienização da canalização.",
-      "orientacao_inspetor": "Conferir POP implantado para o circuito, parâmetros, registros, critérios e responsável pela liberação e resposta aos desvios. Evidências documentais: POP de higienização da canalização, versão vigente, acesso pelos executores e parâmetros técnicos previstos.",
-      "obs_sim": "O POP [número/revisão] de higienização da condução [código] estava implantado, com frequência, método e agentes coerentes com os registros.",
-      "nc_nao": "Embora apresentado o POP [número], as operações efetivamente registradas na condução [código] divergiam quanto ao agente químico e à frequência descritos no procedimento."
+      "orientacao_inspetor": "Peça o POP aplicável à condução e confirme, com o executor e os registros, se o procedimento é usado na instalação inspecionada.",
+      "obs_sim": "O POP [ID/revisão] foi apresentado e sua execução na condução [ID] foi demonstrada pelo registro [data].",
+      "nc_nao": "O Manual de BPF citava o POP [ID], mas o procedimento aplicável à condução [ID] não foi apresentado."
     },
     {
       "item": "4.2.9",
