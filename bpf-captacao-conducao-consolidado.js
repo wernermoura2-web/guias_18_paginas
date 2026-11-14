@@ -65,6 +65,8 @@ const bpfWaterCheck = (() => {
      details:'packaging-sanitizers',detailsOnNo:true,
      products:[['hipoclorito-com-soda','Hipoclorito de sódio com Soda Cáustica'],['hipoclorito','Hipoclorito de sódio'],['ozonio','Ozônio'],['outros','Outro']]
     }),
+    check('relatorio-operacao-lavadora','Foi apresentado o relatório de avaliação das condições de operação do maquinário automático utilizado para limpeza e desinfecção de embalagens retornáveis?'),
+    check('relatorio-operacao-atualizado','O relatório de avaliação das condições de operação está atualizado com os desinfetantes e as concentrações utilizadas?'),
     yes('telemetria-desinfetante','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.')
    ]}
   },
