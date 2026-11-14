@@ -42,6 +42,20 @@ const bpfWaterCheck = (() => {
     check('acessivel','Tubulação acessível em todo o percurso / trajeto e com ausência de mato')
    ]}
   },
+  '4.6.6':{
+   0:{all:true,checks:[
+    check('eliminacao-residuos','O enxágue das embalagens retornadas para um novo ciclo de uso garante a eliminação dos resíduos dos produtos químicos utilizados na higienização?'),
+    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?'),
+    check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a água de enxágue?')
+   ]},
+   1:{all:true,checks:[
+    check('teste-arraste','O teste de arraste foi demonstrado?'),
+    check('registros-residuos','Há registros dos testes de resíduos?'),
+    check('instrumento-adequado','O instrumento portátil é adequado ao desinfetante utilizado?'),
+    check('enxague-final','O teste após o enxágue final indicou ausência de resíduos detectáveis pelo método utilizado?'),
+    yes('criterio-zero','O teste de arraste é adequado ao desinfetante utilizado e adota 0,0 mg/L como critério de aceitação, interpretado conforme o limite de detecção do método (opcional).')
+   ]}
+  },
   '4.3.5':{0:{all:true,checks:[
    adequateHygiene,
     sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório'),
