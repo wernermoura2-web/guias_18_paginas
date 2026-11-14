@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-432-escotilha-sim';
+const CACHE='guia18-20261114-433-recolhido';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -438,13 +438,31 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
 
   // Carregar as verificações antes de inicializar os campos do guia.
   if(!altered.includes('bpf-captacao-conducao.js')){
-   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261114-432-escotilha-sim"></script>';
+   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261114-433-recolhido"></script>';
    altered=altered.replace(inspectorScript,checkTag+inspectorScript);
    altered=altered.replace('bpfInitFields(D);','bpfWaterCheck.init(D);bpfInitFields(D);');
    altered=altered.replace('  const cleared=bpfNormalizeDependentNA(r,s,v);',
     '  bpfWaterCheck.apply(r,s,v);\n  const cleared=bpfNormalizeDependentNA(r,s,v);');
    altered=altered.replace("  if(row.code==='4.10.6'&&panel.id===0){\n   const hint=",
     "  if(bpfWaterCheck.render(card,page,row,panel)){content.append(card);continue;}\n  if(row.code==='4.10.6'&&panel.id===0){\n   const hint=");
+
+   altered=altered.replace("    if(splitHygiene){\n     if(!optionGroups.has(entry.option)){",
+    `    if(row.code==='4.3.3'&&panel.id===0&&(answer==='1'||answer==='0')){
+     const unit=entry.scope.name;
+     if(!optionGroups.has(unit)){
+      const group=document.createElement('details');
+      group.style.margin='6px 0';
+      const title=document.createElement('summary');
+      title.style.cssText='cursor:pointer;font-weight:700;padding:5px 0';
+      title.textContent=bpfScopeLabel(page,entry.scope);
+      group.append(title);
+      optionGroups.set(unit,group);
+      box.append(group);
+     }
+     caption.textContent=detail;
+     optionGroups.get(unit).append(label);
+    }else if(splitHygiene){
+     if(!optionGroups.has(entry.option)){`);
    altered=altered.replace("content.querySelectorAll('input[type=checkbox]')","content.querySelectorAll('input[data-answer-name]')");
    altered=altered.replace(" dlg.bpfCommit=()=>{\n  const special=",
     ` const hasWaterPanels=panels.some(panel=>bpfWaterCheck.get(row,panel.id));
