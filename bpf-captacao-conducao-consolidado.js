@@ -10,9 +10,11 @@ const bpfWaterCheck = (() => {
   yes('atp','Após a desinfecção '+disinfection+', faz teste fluorescente / ATP'),
   yes('medida','Adota outra medida de controle adicional ao perigo identificado de contaminação microbiológica ou química da água '+water,'measure')
  ];
+ const adequateHygiene = check('higienizacao-adequada','A higienização é realizada de forma adequada?');
  const panels = {
   '4.1.3':{
    0:{checks:[
+    adequateHygiene,
     sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina do poço ou surgência'),
     check('filtro','Possui filtro de ar microbiológico no poço (surgência apenas em drenos)',{details:'filter'}),
     check('registro-filtro','Possui registro de troca do filtro de ar microbiológico',{requires:'filtro'}),
@@ -41,11 +43,12 @@ const bpfWaterCheck = (() => {
    ]}
   },
   '4.3.5':{0:{all:true,checks:[
-   sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório'),
+   adequateHygiene,
+    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório'),
    check('recirculacao','Procedimento adotado para recirculação do sanitizante no tanque',{details:'recirculation'}),
    ...controls('do reservatório','armazenada')
   ]}},
-  '4.3.4':{0:{checks:[
+  '4.3.4':{0:{simple:true,checks:[
    check('inspecao-visual','Inspeção visual do reservatório na frequência definida pelo estabelecimento',{details:'inspection-frequency'})
   ]}},
   '4.3.2':{
@@ -67,7 +70,8 @@ const bpfWaterCheck = (() => {
    ]}
   },
   '4.2.7':{0:{checks:[
-   sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução'),
+   adequateHygiene,
+    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução'),
    ...controls('da condução','conduzida')
   ]}},
   '4.2.8':{
@@ -421,9 +425,11 @@ const bpfWaterCheck = (() => {
   }
   for(const entry of panel.entries){
    const previous=read(entry,values);
-   const state=previous||(row.code==='4.2.2'&&panel.id===1?{integrityPositive:true}:{});
+   const existingAnswer=values[entry.name];
+   const state=previous||(config.simple&&['1','0'].includes(existingAnswer)
+    ? {[config.checks[0].id]:{answer:existingAnswer}} : null)||(row.code==='4.2.2'&&panel.id===1?{integrityPositive:true}:{});
    const label=bpfScopeLabel(page,entry.scope);
-   const legacy=previous?'':bpfAnswerLabel(values[entry.name]);
+   const legacy=previous||config.simple?'':bpfAnswerLabel(existingAnswer);
    const legacyLines=[];
    const rows=[];
    const save=()=>{
@@ -440,10 +446,10 @@ const bpfWaterCheck = (() => {
    };
    for(const [answer,box] of boxes){
     const heading=answer==='1'?'Sim':'Não';
-    const section=element('details');
+    const section=element(config.simple?'div':'details');
     section.className='bpf-water-unit';
     section.dataset.waterEntry=entry.name;
-    section.append(element('summary',label));
+    if(!config.simple)section.append(element('summary',label));
     const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
     legacyLine.hidden=!legacy;
     legacyLines.push(legacyLine);
@@ -462,11 +468,11 @@ const bpfWaterCheck = (() => {
       fields(line,criterion,item,save,rows);
       continue;
      }
-     const control=element('label',criterion.label);
+     const control=element('label',config.simple?label:criterion.label);
      control.className='bpf-water-choice';
      const input=element('input');
      input.type='checkbox';
-     input.setAttribute('aria-label',label+' — '+criterion.label+' — '+heading);
+     input.setAttribute('aria-label',config.simple?label+' — '+heading:label+' — '+criterion.label+' — '+heading);
      input.onchange=()=>{
       item.answer=input.checked?answer:'';
       if(criterion.details==='sanitizers'&&item.answer==='0'){
