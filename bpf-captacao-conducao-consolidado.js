@@ -38,6 +38,27 @@ const bpfWaterCheck = (() => {
  const returnableRinse=rinsePanel(false), disposableRinse=rinsePanel(true);
  const panels = {
   '4.6.3':{0:returnableRinse},
+  '4.6.5':{
+   0:{all:true,checks:[
+    check('concentracao-limpeza','O enxágue com produto químico para limpeza das embalagens no primeiro estágio da lavadora é feito na concentração adequada?'),
+    check('bicos-limpeza','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução de limpeza alcance o fundo das garrafas?'),
+    check('produtos-limpeza','Produtos químicos utilizados para limpeza das embalagens',{
+     details:'packaging-sanitizers',
+     products:[['detergente-clorado','Detergente alcalino clorado'],['soda-caustica','Soda cáustica'],['outros','Outro']]
+    }),
+    yes('telemetria-limpeza','Existe telemetria em linha da concentração do produto químico utilizado para controlar e monitorar sua reposição.')
+   ]},
+   1:{all:true,checks:[
+    yes('desinfeccao-primeiro-estagio','O enxágue com desinfetante das embalagens é feito junto com o primeiro estágio de limpeza?'),
+    check('concentracao-desinfetante','O enxágue com desinfetante das embalagens é feito na concentração adequada?'),
+    check('bicos-desinfetante','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
+    check('sanitizantes-desinfeccao','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens',{
+     details:'packaging-sanitizers',
+     products:[['hipoclorito-com-soda','Hipoclorito de sódio com Soda Cáustica'],['hipoclorito','Hipoclorito de sódio'],['ozonio','Ozônio'],['outros','Outro']]
+    }),
+    yes('telemetria-desinfetante','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.')
+   ]}
+  },
   '4.1.3':{
    0:{checks:[
     adequateHygiene,
