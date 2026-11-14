@@ -1,9 +1,9 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-unidades-frequencias';
+const CACHE='guia18-20261114-sim-nao-consolidado';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
-CORE.push('./bpf-conclusao-nc.js','./bpf-captacao-conducao.js');
+CORE.push('./bpf-conclusao-nc.js','./bpf-captacao-conducao-consolidado.js');
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
@@ -438,7 +438,7 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
 
   // Carregar as verificações antes de inicializar os campos do guia.
   if(!altered.includes('bpf-captacao-conducao.js')){
-   const checkTag='<script src="./bpf-captacao-conducao.js?v=20261114-unidades-frequencias"></script>';
+   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261114-sim-nao-consolidado"></script>';
    altered=altered.replace(inspectorScript,checkTag+inspectorScript);
    altered=altered.replace('bpfInitFields(D);','bpfWaterCheck.init(D);bpfInitFields(D);');
    altered=altered.replace('  const cleared=bpfNormalizeDependentNA(r,s,v);',
@@ -449,9 +449,13 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
    altered=altered.replace(" dlg.bpfCommit=()=>{\n  const special=",
     " dlg.bpfCommit=()=>{\n  if(!bpfWaterCheck.validate(page,row,panels,content))return false;\n  const special=");
    altered=altered.replace(" const entries=[];\n for(const panel of bpfPanels(page,row)){",
-    " const entries=[];\n for(const panel of bpfPanels(page,row)){\n  entries.push(...bpfWaterCheck.summary(page,row,panel,values));");
+    " const entries=[];\n for(const panel of bpfPanels(page,row)){\n  const report=bpfWaterCheck.report(page,row,panel,values);\n  if(report.length){entries.push(...bpfWaterCheck.summary(page,panel,report));continue;}");
+   altered=altered.replace("const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));",
+    "const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));\n  if(row.code==='4.3.3'){result.push(...bpfWaterCheck.report(page,row,panels[0],values));continue;}");
    altered=altered.replace("if(records.length)result.push({page,row,phrase,index:i,records});",
-    "if(records.length)result.push({page,row,phrase,index:i,records:bpfWaterCheck.annex(row,i,records,values)});");
+    "const panel=panels.find(panel=>panel.id===i);\n   const report=panel?bpfWaterCheck.report(page,row,panel,values):[];\n   if(report.length)result.push(...report);\n   else if(records.length)result.push({page,row,phrase,index:i,records});");
+   altered=altered.replace("const removedF4=r.code", 
+    "const previous=v[bpfSummaryName(p,r)]||'';\n const field=BPF_OBSERVATION_FIELDS[p.page+'_'+r.code];\n if(v===values&&(r.code==='4.3.3'?/Reservatório [0-9]+:/.test(previous):/ — (?:Sim|Não) — /.test(previous))&&v[field]?.includes(previous)&&bpfPanels(p,r).some(panel=>bpfWaterCheck.report(p,r,panel,v).length))bpfSyncObservation(r,p);\n const removedF4=r.code");
   }
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
@@ -476,4 +480,5 @@ self.addEventListener('fetch',event=>{
   }
  })());
 });
+
 
