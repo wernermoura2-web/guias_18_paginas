@@ -197,7 +197,7 @@ const bpfWaterCheck = (() => {
   return node;
  }
 
- function fields(container,criterion,item,save){
+ function fields(container,criterion,item,save,updates=[]){
   function field(label,value,update,options){
    const row=element('label',label);
    row.className='bpf-water-field';
@@ -236,7 +236,7 @@ const bpfWaterCheck = (() => {
      row.className='bpf-water-choice';
      const input=element('input');
      input.type='checkbox';
-     input.checked=!!product.selected;
+     input.checked=item.answer==='1'&&!!product.selected;
      row.prepend(input);
      container.append(row);
      const extra=[];
@@ -248,11 +248,16 @@ const bpfWaterCheck = (() => {
      },frequencies));
      const other=field('Outra periodicidade — '+label,product.otherFrequency,value=>{product.otherFrequency=value;save();});
      function update(){
-      for(const e of extra)e.hidden=!product.selected;
-      other.hidden=!product.selected||product.frequency!=='Outra';
+      input.checked=item.answer==='1'&&!!product.selected;
+      for(const e of extra)e.hidden=!input.checked;
+      other.hidden=!input.checked||product.frequency!=='Outra';
      }
-     input.onchange=()=>{product.selected=input.checked;update();save();};
-     update();
+     input.onchange=()=>{
+      product.selected=input.checked;
+      item.answer=Object.values(item.products).some(p=>p.selected)?'1':'';
+      save();
+     };
+     updates.push(update);
     }
     break;
    case 'telemetry':
@@ -320,46 +325,56 @@ const bpfWaterCheck = (() => {
    const refresh=()=>{
     const assessment=bpfAnswerLabel(values[entry.name]);
     summary.textContent=label+(assessment?' — '+assessment:'');
-    for(const {criterion,item,line,extra,buttons} of rows){
-     const enabled=active(criterion,state);
-     for(const [answer,button] of buttons){
-      button.checked=enabled&&item.answer===answer;
-      button.disabled=!enabled;
-     }
-     line.hidden=!enabled;
-     extra.hidden=!enabled||item.answer!=='1'||!criterion.details;
-    }
+    for(const control of rows)control();
    };
-   for(const criterion of config.checks){
-    const item=state[criterion.id]??={};
-    const line=element('div');
-    line.className='bpf-water-row';
-    const caption=element('strong',criterion.label);
-    caption.className='bpf-water-caption';
-    line.append(caption);
-    const buttons=new Map();
-    for(const [answer,caption] of [['1','Sim'],['0','Não']]){
+   const answerGrid=element('div');
+   answerGrid.className='bpf-answer-grid';
+   section.append(answerGrid);
+   for(const [answer,heading] of [['1','Sim'],['0','Não']]){
+    const box=element('fieldset');
+    box.className='bpf-answer-box';
+    box.append(element('legend',heading));
+    answerGrid.append(box);
+    for(const criterion of config.checks){
      if(criterion.yesOnly&&answer==='0')continue;
-     const control=element('label',caption);
+     const item=state[criterion.id]??={};
+     const line=element('div');
+     line.className='bpf-water-row';
+     box.append(line);
+     if(criterion.details==='sanitizers'&&answer==='1'){
+      const title=element('strong',criterion.label);
+      title.className='bpf-water-caption';
+      line.append(title);
+      fields(line,criterion,item,save,rows);
+      continue;
+     }
+     const control=element('label',criterion.label);
      control.className='bpf-water-choice';
      const input=element('input');
      input.type='checkbox';
-     input.setAttribute('aria-label',criterion.label+' — '+caption);
+     input.setAttribute('aria-label',criterion.label+' — '+heading);
      input.onchange=()=>{
       item.answer=input.checked?answer:'';
+      if(criterion.details==='sanitizers'&&item.answer==='0'){
+       for(const product of Object.values(item.products))product.selected=false;
+      }
       if(criterion.id==='filtro'&&item.answer!=='1')delete state['registro-filtro'].answer;
       save();
      };
      control.prepend(input);
      line.append(control);
-     buttons.set(answer,input);
+     const extra=element('div');
+     extra.className='bpf-water-detail';
+     if(criterion.details&&answer==='1')fields(extra,criterion,item,save);
+     line.append(extra);
+     rows.push(()=>{
+      const enabled=active(criterion,state);
+      input.checked=enabled&&item.answer===answer;
+      input.disabled=!enabled;
+      line.hidden=!enabled;
+      extra.hidden=!enabled||item.answer!=='1'||answer!=='1'||!criterion.details;
+     });
     }
-    const extra=element('div');
-    extra.className='bpf-water-detail';
-    if(criterion.details)fields(extra,criterion,item,save);
-    line.append(extra);
-    section.append(line);
-    rows.push({criterion,item,line,extra,buttons});
    }
    refresh();
    card.append(section);
