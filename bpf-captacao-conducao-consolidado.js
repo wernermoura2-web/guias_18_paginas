@@ -248,7 +248,7 @@ const bpfWaterCheck = (() => {
    for(const scope of row.scopes)scope.phrases.push({...phrase});
   }
  }
- const synchronizedItems=new Set(['4.6.3','4.6.5','4.6.6','4.6.8','4.7.8']);
+ const synchronizedItems=new Set(['4.1.3','4.2.2','4.2.7','4.2.8','4.2.9','4.3.2','4.3.5','4.6.3','4.6.5','4.6.6','4.6.8','4.7.8']);
  function registerReview(entries,byKey){
   for(const page of BPF_PHRASES)for(const row of page.rows){
    if(!synchronizedItems.has(row.code))continue;
@@ -259,7 +259,7 @@ const bpfWaterCheck = (() => {
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
      const mode=criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':'Responda Sim ou Não quando aplicável.';
-     const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.section||'';
+     const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      criterion.guidance=[mode,context].filter(Boolean).join(' ');
      const ref={
       set text(value){criterion.label=value;},
