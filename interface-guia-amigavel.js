@@ -201,7 +201,9 @@
   const extra=makeAccordion('Mais opções');
   extra.content.append(
     makePrintDownload('Imprimir guia em branco (18 páginas)','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
-    makePrintDownload('Imprimir anexo resumido das frases (F)','Anexo_Resumido_Frases_BPF_APPCC.pdf')
+    makePrintDownload('Imprimir anexo resumido das frases (F)','Anexo_Resumido_Frases_BPF_APPCC.pdf'),
+    makePrintDownload('CHECKLIST DE DOCUMENTOS','Checklist_de_Documentos_Envasadora.pdf'),
+    makePrintDownload('Descritores dos documentos','Descritores_de_Documentos_Envasadora.pdf')
   );
   if(revise)extra.content.appendChild(makeButton('Revisar frases',revise));
   const annex=Array.from(document.querySelectorAll('input[type=checkbox]'))
