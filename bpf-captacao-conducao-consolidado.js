@@ -27,7 +27,7 @@ const bpfWaterCheck = (() => {
     products:disposable?[
      ['ozonio','Ozônio'],['outros','Outro']
     ]:[
-     ['detergente-clorado','Detergente alcalino clorado'],['hipoclorito-com-sodio','Hipoclorito de sódio com sódio'],
+     ['detergente-clorado','Detergente alcalino clorado'],['hipoclorito-com-sodio','Hipoclorito de sódio com Soda Cáustica'],
      ['hipoclorito','Hipoclorito de sódio'],['ozonio','Ozônio'],['outros','Outro']
     ]
    }),
