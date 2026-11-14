@@ -37,6 +37,10 @@
     .action svg{width:25px;height:25px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round}
     .action-label{flex:1}
     .action .arrow{width:21px;height:21px;opacity:.7}
+    .credits summary{list-style:none}
+    .credits summary::-webkit-details-marker{display:none}
+    .credits[open] .arrow{transform:rotate(90deg)}
+    .credits-copy{padding:0 16px;color:#153c52;font-size:16px;line-height:1.55}
     #install-status{display:none;margin:5px 6px 1px;padding:12px 14px;background:#eaf5fb;border-radius:12px;font-size:14px;line-height:1.45;color:#15445d}
     #install-status.show{display:block}
     @media(min-width:640px){.hero{padding:58px 28px 82px}main{margin-top:-43px}.panel{padding:22px;gap:14px}.action{min-height:88px}}
@@ -76,6 +80,19 @@
         <span class="action-label">Revisão das frases</span>
         <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
       </a>
+      <details class="credits">
+        <summary class="action">
+          <span class="iconwrap" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 9l9-5 9 5M4 20h16M6 10v7m6-7v7m6-7v7"/></svg></span>
+          <span class="action-label">Créditos institucionais</span>
+          <svg class="arrow" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+        </summary>
+        <div class="credits-copy">
+          <p>A Superintendência de Vigilância Sanitária (SUVISA), da Secretaria de Estado de Saúde do Rio de Janeiro (SES-RJ), atuou na publicação do Guia de Avaliação de Risco, no apoio do Projeto, Capacitações, Inspeções e nos recursos para as ações realizadas.</p>
+          <p>A Coordenação de Vigilância e Fiscalização de Alimentos (COOVFA) coordenou inclusive na criação do Guia em PDF e depois no software, desenvolvido com apoio do ChatGPT.</p>
+          <p>A Assessoria de Projetos da SUVISA participou da evolução do Guia BPF/APPCC, coordenou e participou de todas as capacitações presenciais e inspeções de capacitação em campo.</p>
+          <p>Os técnicos da Divisão de Vigilância de Indústrias de Alimentos e Congêneres (DIVIAC) participaram de todas as capacitações e da aplicação dos Guias em todas as Inspeções.</p>
+        </div>
+      </details>
       <p id="install-status" role="status" aria-live="polite"></p>
     </nav>
   </main>
