@@ -40,6 +40,24 @@ const bpfWaterCheck = (() => {
     check('acessivel','Tubulação acessível em todo o percurso / trajeto e com ausência de mato')
    ]}
   },
+  '4.3.2':{
+   0:{alternatives:true,checks:[
+    check('certificado','Certificado de grau alimentício'),
+    check('declaracao','Declaração de grau alimentício'),
+    check('nota-fiscal','Nota Fiscal do material')
+   ]},
+   1:{all:true,checks:[
+    check('integro','Reservatório sem avarias e/ou liso e íntegro'),
+    check('corrosao','Reservatório e conexões sem corrosão'),
+    check('conexoes-nao-sanitarias','Reservatório com conexões não sanitárias',{negative:true})
+   ]},
+   2:{all:true,checks:[
+    check('vazamento','Reservatório e/ou conexões com vazamento',{negative:true}),
+    check('vincos-amassados','Reservatório com paredes com vincos ou amassadas',{negative:true}),
+    check('escotilha-parede','Reservatório com escotilha na parede para acesso interno'),
+    check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual')
+   ]}
+  },
   '4.2.7':{0:{checks:[
    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução'),
    ...controls('da condução','conduzida')
