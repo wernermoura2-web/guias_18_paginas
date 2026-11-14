@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-relatorio-465-condicional';
+const CACHE='guia18-20261114-anexo-f-revisado';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -476,8 +476,10 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
 
   // Carregar as verificações antes de inicializar os campos do guia.
   if(!altered.includes('bpf-captacao-conducao.js')){
-   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261114-relatorio-465-condicional"></script>';
+   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261114-anexo-f-revisado"></script>';
    altered=altered.replace(inspectorScript,checkTag+'<script>bpfWaterCheck.prepareCaps();</script>'+inspectorScript);
+   altered=altered.replace('let bpfInspectorLastApplied=null,bpfInspectorLocalChecked=false;',
+    'bpfWaterCheck.registerReview(BPF_INSPECTOR_ENTRIES,BPF_INSPECTOR_BY_KEY);\nlet bpfInspectorLastApplied=null,bpfInspectorLocalChecked=false;');
    altered=altered.replace('const BPF_EXAMPLE_REVISIONS=new Map();',
     'bpfWaterCheck.capsExamples(BPF_FILL_EXAMPLES);\nconst BPF_EXAMPLE_REVISIONS=new Map();');
    altered=altered.replace('bpfInitFields(D);','bpfWaterCheck.init(D);bpfInitFields(D);');
@@ -526,6 +528,8 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
     " const entries=[];\n for(const panel of bpfPanels(page,row)){\n  const report=bpfWaterCheck.report(page,row,panel,values);\n  if(report.length){entries.push(...bpfWaterCheck.summary(page,panel,report));if(row.code!=='4.7.8')continue;}");
    altered=altered.replace("const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));",
     "const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));\n  if(row.code==='4.7.8')result.push(...bpfWaterCheck.report(page,row,panels[0],values));\n  if(row.code==='4.3.3'){result.push(...bpfWaterCheck.report(page,row,panels[0],values));continue;}");
+   altered=altered.replace("   text(item.row.phrases[item.panel.id].text);",
+    "   const phrase=item.row.phrases[item.panel.id];\n   if(phrase?.appcc)text('Classificação APPCC: '+phrase.appcc,8,true);\n   if(phrase?.text)text(phrase.text);");
    altered=altered.replace("if(records.length)result.push({page,row,phrase,index:i,records});",
     "const panel=panels.find(panel=>panel.id===i);\n   const report=panel?bpfWaterCheck.report(page,row,panel,values):[];\n   if(report.length)result.push(...report);\n   else if(records.length)result.push({page,row,phrase,index:i,records});");
    altered=altered.replace("const removedF4=r.code", 
@@ -544,7 +548,8 @@ self.addEventListener('fetch',event=>{
  event.respondWith((async()=>{
   try{
    const isHtml=req.mode==='navigate'||IS_GUIDE(url)||url.pathname===ROOT.pathname||url.pathname.endsWith('/index.html');
-   const response=await fetch(req,isHtml?{cache:'reload'}:undefined);
+   const isPrintAnnex=url.pathname.endsWith('/impressao/Anexo_Resumido_Frases_BPF_APPCC.pdf.b64');
+   const response=await fetch(req,isHtml||isPrintAnnex?{cache:'reload'}:undefined);
    const page=await attachFriendlyMenu(response,url);
    if(page.ok){const copy=page.clone();event.waitUntil(caches.open(CACHE).then(c=>c.put(req,copy)));}
    return page;

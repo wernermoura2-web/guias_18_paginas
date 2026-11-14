@@ -248,6 +248,32 @@ const bpfWaterCheck = (() => {
    for(const scope of row.scopes)scope.phrases.push({...phrase});
   }
  }
+ const synchronizedItems=new Set(['4.6.3','4.6.5','4.6.6','4.6.8','4.7.8']);
+ function registerReview(entries,byKey){
+  for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(!synchronizedItems.has(row.code))continue;
+   for(const panel of bpfPanels(page,row)){
+    const config=get(row,panel.id);
+    if(!config)continue;
+    const index=panel.id;
+    for(const criterion of config.checks){
+     const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
+     const mode=criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':'Responda Sim ou Não quando aplicável.';
+     const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.section||'';
+     criterion.guidance=[mode,context].filter(Boolean).join(' ');
+     const ref={
+      set text(value){criterion.label=value;},
+      set guidance(value){criterion.guidance=value;}
+     };
+     const entry={key,page:page.page,code:row.code,index,
+      label:'F'+(index+1)+' — '+(config.inline?'Envasadora Automática · ':'')+criterion.label,
+      scopes:[],appcc:row.phrases[index].appcc||'',original:{text:criterion.label,guidance:criterion.guidance},refs:[ref]};
+     entries.push(entry);
+     byKey.set(key,entry);
+    }
+   }
+  }
+ }
  function capsExamples(examples){
   examples['4.6.8/2']=[
    'A envasadora desinfetou as tampas do lote [identificação] em [local], utilizando [produto]. O lote foi transportado em recipiente higienizado e fechado. Foi apresentado o laudo microbiológico [identificação/data].',
@@ -361,6 +387,13 @@ const bpfWaterCheck = (() => {
    if(legacy.length)checklist.push('Avaliação geral ('+legacy.map(unit=>unit.label).join(', ')+')');
    const note=answer==='2'||(answer==='1'&&!selected.length)?'':text(data[bpfGroupNoteName(page,row,panel,answer)]);
    if(!checklist.length&&!(selected.length&&(answer!=='1'||note)))return [];
+   if(config.capRoute&&checklist.length){
+    const routes=units.filter(unit=>unit.checks.some(check=>check.answer===answer)).map(unit=>{
+     const route=read(unit.entry,data)?.route;
+     return route?unit.label+' — '+(route==='silo'?'Com silo':'Sem silo'):'';
+    }).filter(Boolean);
+    if(routes.length)checklist.unshift('Transporte das tampas: '+routes.join(' / '));
+   }
    return [{page,row,panel,answer,checklist,note,selected:selected.map(unit=>unit.entry)}];
   });
  }
@@ -677,6 +710,7 @@ const bpfWaterCheck = (() => {
      }
      const control=element('label',config.simple?label:criterion.label);
      control.className='bpf-water-choice';
+     if(criterion.guidance)control.title=criterion.guidance;
      const input=element('input');
      input.type='checkbox';
      input.setAttribute('aria-label',config.simple?label+' — '+heading:label+' — '+criterion.label+' — '+heading);
@@ -734,6 +768,6 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,renderMachine,prepareCaps,capsExamples,init,apply,report,summary,validate,render};
+ return {get,registerReview,renderMachine,prepareCaps,capsExamples,init,apply,report,summary,validate,render};
 })();
 
