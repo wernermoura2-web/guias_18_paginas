@@ -136,11 +136,16 @@ const bpfWaterCheck = (() => {
  }
 
  function summary(page,row,panel,data){
-  return panel.entries.flatMap(entry=>{
-   const checks=records(row,entry,data);
-   return checks.length?[panel.label+' — '+bpfScopeLabel(page,entry.scope)+' — '+
-    checks.map(c=>bpfAnswerLabel(c.answer)+' — '+c.label).join(' / ')]:[];
-  });
+  const groups=new Map();
+  for(const entry of panel.entries){
+   for(const check of records(row,entry,data)){
+    const key=check.answer+' — '+check.label;
+    if(!groups.has(key))groups.set(key,{...check,units:[]});
+    groups.get(key).units.push(bpfScopeLabel(page,entry.scope));
+   }
+  }
+  return [...groups.values()].map(check=>panel.label+' — '+bpfAnswerLabel(check.answer)+' — '+
+   check.label+' ('+check.units.join(', ')+')');
  }
 
  function annex(row,index,recordsForUnits,data){
@@ -182,8 +187,7 @@ const bpfWaterCheck = (() => {
     const detail=selected.find(c=>missingDetail(c,state[c.id]));
     const issue=missing||detail;
     if(!issue)continue;
-    const section=content.querySelector('[data-water-entry="'+CSS.escape(entry.name)+'"]');
-    if(section)section.open=true;
+    for(const section of content.querySelectorAll('[data-water-entry="'+CSS.escape(entry.name)+'"]'))section.open=true;
     alert('Item '+row.code+' — '+panel.label+' — '+bpfScopeLabel(page,entry.scope)+': '+(missing?'responda':'complete os dados de')+' “'+issue.label+'”.');
     return false;
    }
@@ -281,7 +285,19 @@ const bpfWaterCheck = (() => {
     other.hidden=!item.tests.outros;
     break;
    }
-   case 'filter': field('Frequência de troca do filtro de ar microbiológico',item.frequency,value=>{item.frequency=value;save();});break;
+   case 'filter': {
+    const saved=item.frequency||'';
+    const custom=!!saved&&!frequencies.includes(saved);
+    let other;
+    field('Frequência de troca do filtro de ar microbiológico',custom?'Outra':saved,value=>{
+     other.hidden=value!=='Outra';
+     item.frequency=value==='Outra'?other.querySelector('input').value:value;
+     save();
+    },frequencies);
+    other=field('Outra frequência de troca',custom?saved:'',value=>{item.frequency=value;save();});
+    other.hidden=!custom;
+    break;
+   }
    case 'measure': field('Descreva a medida de controle',item.description,value=>{item.description=value;save();});break;
   }
  }
@@ -298,23 +314,27 @@ const bpfWaterCheck = (() => {
    style.textContent='.bpf-water-unit{margin:10px 0;padding:10px;border:1px solid #94a9b6;border-radius:7px}.bpf-water-unit>summary{cursor:pointer;font-weight:700}.bpf-water-row{padding:9px 0;border-bottom:1px solid #d5e0e7}.bpf-water-caption{display:block;margin-bottom:4px}.bpf-water-choice{display:inline-flex;align-items:center;gap:5px;margin:4px 16px 4px 0}.bpf-water-detail{padding:6px 10px;margin-top:4px;background:#f2f7fa;border-radius:5px}.bpf-water-field{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0}.bpf-water-field input,.bpf-water-field select{font:inherit;max-width:100%;padding:5px}.bpf-water-unit [hidden]{display:none!important}';
    document.head.append(style);
   }
+  const answerGrid=element('div');
+  answerGrid.className='bpf-answer-grid';
+  card.append(answerGrid);
+  const boxes=new Map();
+  for(const [answer,heading] of [['1','Sim'],['0','Não']]){
+   const box=element('fieldset');
+   box.className='bpf-answer-box';
+   box.append(element('legend',heading));
+   answerGrid.append(box);
+   boxes.set(answer,box);
+  }
   for(const entry of panel.entries){
    const previous=read(entry,values);
    const state=previous||{};
-   const section=element('details');
-   section.className='bpf-water-unit';
-   section.dataset.waterEntry=entry.name;
-   const summary=element('summary');
-   section.append(summary);
-   section.open=entry===panel.entries[0];
    const label=bpfScopeLabel(page,entry.scope);
    const legacy=previous?'':bpfAnswerLabel(values[entry.name]);
-   const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
-   legacyLine.hidden=!legacy;
-   section.append(legacyLine);
+   const headings=[];
+   const legacyLines=[];
    const rows=[];
    const save=()=>{
-    legacyLine.hidden=true;
+    for(const line of legacyLines)line.hidden=true;
     values[key(entry)]=JSON.stringify(state);
     values[entry.name]=result(config,state);
     if(!values[entry.name])values[entry.scope.name]='Off';
@@ -324,23 +344,29 @@ const bpfWaterCheck = (() => {
    };
    const refresh=()=>{
     const assessment=bpfAnswerLabel(values[entry.name]);
-    summary.textContent=label+(assessment?' — '+assessment:'');
+    for(const heading of headings)heading.textContent=label+(assessment?' — '+assessment:'');
     for(const control of rows)control();
    };
-   const answerGrid=element('div');
-   answerGrid.className='bpf-answer-grid';
-   section.append(answerGrid);
-   for(const [answer,heading] of [['1','Sim'],['0','Não']]){
-    const box=element('fieldset');
-    box.className='bpf-answer-box';
-    box.append(element('legend',heading));
-    answerGrid.append(box);
+   for(const [answer,box] of boxes){
+    const heading=answer==='1'?'Sim':'Não';
+    const section=element('details');
+    section.className='bpf-water-unit';
+    section.dataset.waterEntry=entry.name;
+    section.open=entry===panel.entries[0];
+    const title=element('summary');
+    headings.push(title);
+    section.append(title);
+    const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
+    legacyLine.hidden=!legacy;
+    legacyLines.push(legacyLine);
+    section.append(legacyLine);
+    box.append(section);
     for(const criterion of config.checks){
      if(criterion.yesOnly&&answer==='0')continue;
      const item=state[criterion.id]??={};
      const line=element('div');
      line.className='bpf-water-row';
-     box.append(line);
+     section.append(line);
      if(criterion.details==='sanitizers'&&answer==='1'){
       const title=element('strong',criterion.label);
       title.className='bpf-water-caption';
@@ -377,7 +403,6 @@ const bpfWaterCheck = (() => {
     }
    }
    refresh();
-   card.append(section);
   }
   const grid=element('div');
   grid.className='bpf-answer-grid';
