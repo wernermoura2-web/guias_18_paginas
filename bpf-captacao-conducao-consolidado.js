@@ -163,13 +163,13 @@ const bpfWaterCheck = (() => {
    1:{all:true,checks:[
     check('integro','Reservatório sem avarias e/ou liso e íntegro',{noLabel:'Reservatório com avarias e/ou sem superfície lisa e íntegra'}),
     check('corrosao','Reservatório e conexões sem corrosão',{noLabel:'Reservatório e/ou conexões com corrosão'}),
-    check('conexoes-sanitarias','Reservatório com conexões sanitárias',{noLabel:'Reservatório sem conexões sanitárias'})
+    check('conexoes-sanitarias','Reservatório com conexões sanitárias',{noLabel:'Reservatório sem conexões sanitárias'}),
+    check('sem-vincos-amassados','Reservatório com paredes sem vincos ou amassados',{noLabel:'Reservatório com paredes com vincos ou amassados'})
    ]},
    2:{all:true,checks:[
-    check('sem-vazamento','Reservatório e/ou conexões sem vazamento'),
-    check('sem-vincos-amassados','Reservatório com paredes sem vincos ou amassados'),
-    check('escotilha-parede','Reservatório com escotilha na parede para acesso interno'),
-    check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual',{yesOnly:true})
+    check('sem-vazamento','Reservatório e/ou conexões sem vazamento',{noLabel:'Reservatório e/ou conexões com vazamento'}),
+    check('escotilha-parede','Reservatório com escotilha na parede para acesso interno',{noLabel:'Reservatório sem escotilha na parede para acesso interno'}),
+    check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual',{yesOnly:true,informationOnly:true})
    ]}
   },
   '4.2.7':{0:{separateInformation:true,checks:[
@@ -223,7 +223,14 @@ const bpfWaterCheck = (() => {
  const read = (entry,data) => {
   try {
    const name=key(entry);
-   const state=JSON.parse(data[name]||'null');
+   let state=JSON.parse(data[name]||'null');
+   if(entry.index===1&&!state?.['sem-vincos-amassados']&&reservoirStructureEntry(entry)){
+    const older=JSON.parse(data[key({name:bpfPhraseName(entry.scope,2)})]||'null');
+    const previous=older?.['sem-vincos-amassados']?.answer;
+    const legacy=older?.['vincos-amassados']?.answer;
+    const answer=previous??({'1':'0','0':'1'}[legacy]);
+    if(answer==='1'||answer==='0')state={...state,'sem-vincos-amassados':{answer}};
+   }
    if(entry.index===0&&!state?.['nao-captacao']&&
       (state?['higienizacao-adequada','filtro','registro-filtro','pop-registros'].some(id=>state[id]?.answer==='0'):data[entry.name]==='0')&&
       BPF_PHRASES.some(page=>page.page===0&&page.rows.some(row=>row.code==='4.1.3'&&row.scopes.some(scope=>scope.name===entry.scope.name)))){
@@ -257,7 +264,7 @@ const bpfWaterCheck = (() => {
    }
    if((entry.index===0&&!state?.['sim-reservatorio']&&!state?.['nao-reservatorio']||
        entry.index===1&&state?.['conexoes-nao-sanitarias']&&!state['conexoes-sanitarias'])&&
-      BPF_PHRASES.find(page=>page.page===2)?.rows.find(row=>row.code==='4.3.2')?.scopes.some(scope=>scope.name===entry.scope.name)){
+      reservoirStructureEntry(entry)){
     if(entry.index===0){
      const documents=['certificado','declaracao','nota-fiscal'].map(id=>state?.[id]?.answer);
      const previous=documents.includes('1')?'1':documents.includes('0')?'0':data[entry.name];
@@ -270,12 +277,9 @@ const bpfWaterCheck = (() => {
      if(previous==='0'||previous==='1')return {...state,'conexoes-sanitarias':{answer:previous==='0'?'1':'0'}};
     }
    }
-   if(state&&entry.index===2&&(state.vazamento||state['vincos-amassados'])&&
-      BPF_PHRASES.find(page=>page.page===2)?.rows.find(row=>row.code==='4.3.2')?.scopes.some(scope=>scope.name===entry.scope.name)){
-    for(const id of ['vazamento','vincos-amassados']){
-     const previous=state[id]?.answer;
-     if(!state['sem-'+id]&&(previous==='1'||previous==='0'))state['sem-'+id]={answer:previous==='1'?'0':'1'};
-    }
+   if(state&&entry.index===2&&!state['sem-vazamento']&&reservoirStructureEntry(entry)){
+    const previous=state.vazamento?.answer;
+    if(previous==='1'||previous==='0')state['sem-vazamento']={answer:previous==='1'?'0':'1'};
    }
    if(state&&entry.index===1&&getConductionCheckEntry(entry)&&!state.integrityPositive){
     for(const id of ['vazamento','abaulada','emendas']){
@@ -288,6 +292,10 @@ const bpfWaterCheck = (() => {
    return state;
   }catch (_) { return null; }
  };
+ function reservoirStructureEntry(entry){
+  const row=BPF_PHRASES.find(page=>page.page===2)?.rows.find(row=>row.code==='4.3.2');
+  return row?.scopes.some(scope=>scope.name===entry.scope.name);
+ }
  function getConductionCheckEntry(entry,code='4.2.2'){
   const row=BPF_PHRASES.find(page=>page.page===1)?.rows.find(row=>row.code===code);
   return row?.scopes.some(scope=>scope.name===entry.scope.name);
