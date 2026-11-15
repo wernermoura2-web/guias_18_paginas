@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-espaco-nao-conformidades';
+const CACHE='guia18-20261115-espacamento-quarto-linha';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -655,11 +655,12 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
-  altered=altered.replace('</head>', '<script src="./bpf-paginacao-observacoes.js?v=20261115-espaco-nao-conformidades"></script><style>.bpf-nc-gap{display:block;height:calc(1.3em / 3)}#pages .bpf-overflow-observation{display:block;padding:.8cqw 1.17cqw;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;text-align:left;cursor:default}</style></head>');
+  altered=altered.replace('</head>', '<script src="./bpf-paginacao-observacoes.js?v=20261115-espacamento-quarto-linha"></script><style>.bpf-nc-gap{display:block;height:calc(1.3em / 4)}#pages .bpf-overflow-observation{display:block;padding:.8cqw 1.17cqw;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;text-align:left;cursor:default}</style></head>');
+  altered=altered.replace("function bpfRenderNCObservation(el,text){","function bpfRenderNCObservation(el,text,spacing='nc'){");
   altered=altered.replace('if(match.index>at)fragment.append(document.createTextNode(text.slice(at,match.index)));',
-   'if(match.index>at)bpfAppendNCObservationText(fragment,text.slice(at,match.index));');
+   'if(match.index>at)bpfAppendNCObservationText(fragment,text.slice(at,match.index),spacing);');
   altered=altered.replace('if(at<text.length)fragment.append(document.createTextNode(text.slice(at)));',
-   'if(at<text.length)formatted=bpfAppendNCObservationText(fragment,text.slice(at))||formatted;');
+   'if(at<text.length)formatted=bpfAppendNCObservationText(fragment,text.slice(at),spacing)||formatted;');
   altered=altered.replace(/(const BPF_(?:NC|CQ)_FONT_SIZE=)6;/g,(_,prefix)=>prefix+'8;');
   altered=altered.replace(/function bpfGeneralFlow\(full\)\{[\s\S]*?(?=function bpfDocumentObservations)/,
    'function bpfGeneralFlow(full){bpfRunNCObservationFlow(full);}\n');
@@ -670,7 +671,10 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   altered=altered.replace("const bpfNCPageTitle='OBSERVAÇÕES GERAIS DOS PROCESSOS — CONTINUAÇÃO';", 'const bpfNCPageTitle=bpfNCTitle;');
   altered=altered.replace("values.obs_gerais_continuacao=bpfDocumentObservations();for(let i=0;",
    "values.obs_gerais_continuacao=bpfDocumentObservations();bpfReconcileObservationPages();for(let i=0;");
-  altered=altered.replace("bpfCQCompactLines(String(text||''))", "bpfCQCompactLines(bpfCQObservationFlow.parts[0])");
+  altered=altered.replace("bpfCQCompactLines(String(text||'')).map(({line,space})=>{",
+   "bpfObservationParagraphs(bpfCQObservationFlow.parts[0],'cq').map(({line,gap})=>{");
+  altered=altered.replace("if(line.trim())div.textContent=line;\n   else div.style.height=(space*1.35)+'em';",
+   "if(gap)div.style.marginTop=(gap*1.35)+'em';if(line.trim())div.textContent=line;else div.style.height='1.35em';");
   altered=altered.replace(/ if\(el\.dataset\.field==='obs_gerais_continuacao'\)\{[\s\S]*?(?= if\(el\.classList\.contains\('bpf-process-observation'\)\))/,
    ` if(el.dataset.field==='obs_gerais_continuacao'){
     const size=(BPF_CQ_FONT_SIZE/595.32*100)+'cqw';

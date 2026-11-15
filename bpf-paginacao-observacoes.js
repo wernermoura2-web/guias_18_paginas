@@ -28,17 +28,30 @@ function bpfIsNCEntry(line){
  return /^\s*\d+\.\s+(?:Frase\b|Considerando que a frase\b)/i.test(line);
 }
 
-function bpfObservationParagraphs(text,spaceNC){
- const paragraphs=text.split('\n');
- return paragraphs.map((line,index)=>({
-  line,
-  gap:spaceNC&&bpfIsNCEntry(line)&&bpfIsNCEntry(paragraphs[index-1]||'')?1/3:0
- }));
+function bpfIsNCDefinition(line){
+ return /^\s*(?:BPF|APPCC|PCC|PPRO|PPR|PC|POP)\s+[—–-]\s+/i.test(line);
 }
 
-function bpfAppendNCObservationText(fragment,text){
+function bpfObservationParagraphs(text,spacing){
+ const rows=[];
+ const isNCRecord=line=>bpfIsNCEntry(line)||bpfIsNCDefinition(line);
+ for(const line of text.split('\n')){
+  let gap=0;
+  if((spacing==='nc'&&isNCRecord(line))||(spacing==='cq'&&/^ITEM 4\.10\.\d+\b/i.test(line))){
+   let previous=rows.length-1;
+   while(previous>=0&&(!rows[previous].line.trim()||
+    (spacing==='cq'&&/^-{4,}\s*$/.test(rows[previous].line))))previous--;
+   const follows=spacing==='cq'?previous>=0:previous>=0&&isNCRecord(rows[previous].line);
+   if(follows){rows.length=previous+1;gap=1/4;}
+  }
+  rows.push({line,gap});
+ }
+ return rows;
+}
+
+function bpfAppendNCObservationText(fragment,text,spacing='nc'){
  let spaced=false;
- for(const [index,{line,gap}] of bpfObservationParagraphs(text,true).entries()){
+ for(const [index,{line,gap}] of bpfObservationParagraphs(text,spacing).entries()){
   if(gap){
    const divider=document.createElement('span');
    divider.className='bpf-nc-gap';
@@ -51,7 +64,7 @@ function bpfAppendNCObservationText(fragment,text){
  return spaced;
 }
 
-function bpfPaginateObservation(text,firstRect,nextRect,size,font,spaceNC=false){
+function bpfPaginateObservation(text,firstRect,nextRect,size,font,spacing){
  const parts=[];
  let remaining=text;
  do{
@@ -60,7 +73,7 @@ function bpfPaginateObservation(text,firstRect,nextRect,size,font,spaceNC=false)
   const fits=part=>{
    const content=part.trimEnd();
    if(!content)return true;
-   const lines=bpfObservationParagraphs(content,spaceNC).reduce((total,{line,gap})=>
+   const lines=bpfObservationParagraphs(content,spacing).reduce((total,{line,gap})=>
     total+Math.max(1,bpfObservationLines(line,font,width,size).length)+gap,0);
    return lines<=maxLines;
   };
@@ -92,7 +105,7 @@ function bpfObservationScreenFont(size){
 function bpfRunNCObservationFlow(full){
  full=String(full||'').replace(/\r\n?/g,'\n');
  if(full!==bpfNCObservationCache.full){
-  bpfNCObservationCache={full,parts:bpfPaginateObservation(full,bpfNCFirstRect,bpfNCPageRect,BPF_NC_FONT_SIZE,bpfObservationScreenFont(BPF_NC_FONT_SIZE),true)};
+  bpfNCObservationCache={full,parts:bpfPaginateObservation(full,bpfNCFirstRect,bpfNCPageRect,BPF_NC_FONT_SIZE,bpfObservationScreenFont(BPF_NC_FONT_SIZE),'nc')};
  }
  const [first='',second='',...extra]=bpfNCObservationCache.parts;
  values['OBS 1']=first;
@@ -122,7 +135,7 @@ function bpfReconcileObservationPages(){
  const full=String(values.obs_gerais_continuacao||'').replace(/\r\n?/g,'\n');
  const rect=D.widgets.find(widget=>widget.name==='obs_gerais_continuacao')?.rect;
  if(rect&&full!==bpfCQObservationFlow.full){
-  bpfCQObservationFlow={full,parts:bpfPaginateObservation(full,rect,bpfNCPageRect,BPF_CQ_FONT_SIZE,bpfObservationScreenFont(BPF_CQ_FONT_SIZE))};
+  bpfCQObservationFlow={full,parts:bpfPaginateObservation(full,rect,bpfNCPageRect,BPF_CQ_FONT_SIZE,bpfObservationScreenFont(BPF_CQ_FONT_SIZE),'cq')};
  }
  const groups=[
   {anchor:13,kind:'nc',title:bpfNCTitle,parts:bpfNCObservationCache.parts.slice(1)},
@@ -132,7 +145,7 @@ function bpfReconcileObservationPages(){
  for(const {anchor,kind,title,parts} of groups){
   for(const [offset,text] of parts.entries()){
    const id=kind==='nc'&&offset===0?bpfNCPageIndex:bpfObservationPageId(kind,offset);
-   next.set(id,{anchor,title,text,spaceNC:kind==='nc'});
+   next.set(id,{anchor,title,text,spacing:kind});
   }
  }
  let changed=false;
@@ -150,7 +163,7 @@ function bpfReconcileObservationPages(){
   changed=true;
  }
  const previous=new Map();
- for(const [id,{anchor,title,text}] of next){
+ for(const [id,{anchor,title,text,spacing}] of next){
   const page=bpfSheets[id]??=bpfMakeObservationOverflowPage(id,title);
   const predecessor=previous.get(anchor)??anchor;
   if(!bpfPageOrder.includes(id)){
@@ -163,7 +176,7 @@ function bpfReconcileObservationPages(){
   previous.set(anchor,id);
   const body=page.querySelector('.bpf-overflow-observation');
   if(body&&body.bpfRenderedObservation!==text){
-   bpfRenderNCObservation(body,text);
+   bpfRenderNCObservation(body,text,spacing);
    body.removeAttribute('aria-hidden');
   }
  }
@@ -186,12 +199,11 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
  const bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
  const template=bpfOverflowPages.size?await pdf.embedJpg(bpfNCBackground):null;
  const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
- const draw=(page,rect,text,size,spaceNC=false)=>{
+ const draw=(page,rect,text,size,spacing)=>{
   const content=normalize(text.trimEnd());
-  if(!spaceNC){bpfPdfDrawObservation(page,rect,content,size,font,ink);return;}
   const [x,,right,top]=rect,leading=size*1.35;
   let y=top-7-size;
-  for(const {line,gap} of bpfObservationParagraphs(content,true)){
+  for(const {line,gap} of bpfObservationParagraphs(content,spacing)){
    y-=gap*leading;
    const wrapped=bpfObservationLines(line,font,right-x-14,size);
    for(const row of wrapped){
@@ -202,7 +214,7 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   }
  };
  let offset=0;
- for(const [id,{anchor,title,text,spaceNC}] of bpfOverflowPages){
+ for(const [id,{anchor,title,text,spacing}] of bpfOverflowPages){
   const [width,height]=bpfNCPageSize;
   const page=pdf.insertPage(anchor+(++offset),bpfNCPageSize);
   page.drawImage(template,{x:0,y:0,width,height});
@@ -212,16 +224,16 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   page.drawRectangle({x:460,y:52,width:width-460,height:26,color:white});
   const number='Página '+(bpfPageOrder.indexOf(id)+1)+' de '+bpfPageOrder.length;
   page.drawText(number,{x:550-font.widthOfTextAtSize(number,7),y:58,size:7,font,color:black});
-  draw(page,bpfNCPageRect,text,BPF_NC_FONT_SIZE,spaceNC);
+  draw(page,bpfNCPageRect,text,BPF_NC_FONT_SIZE,spacing);
  }
  form.removeField(form.getTextField('OBS 1'));
- draw(pdf.getPage(13),bpfNCFirstRect,String(values['OBS 1']||''),BPF_NC_FONT_SIZE,true);
+ draw(pdf.getPage(13),bpfNCFirstRect,String(values['OBS 1']||''),BPF_NC_FONT_SIZE,'nc');
  const docPage=pdf.getPage(bpfObservationPDFSourceIndex(14));
  bpfPdfLegalDocuments(docPage,form,font,bold,ink);
  const documents=form.getTextField('obs_gerais_continuacao');
  const box=documents.acroField.getWidgets()[0].getRectangle();
  form.removeField(documents);
- draw(docPage,[box.x,box.y,box.x+box.width,box.y+box.height],bpfCQObservationFlow.parts[0],BPF_CQ_FONT_SIZE);
+ draw(docPage,[box.x,box.y,box.x+box.width,box.y+box.height],bpfCQObservationFlow.parts[0],BPF_CQ_FONT_SIZE,'cq');
  for(let source=14;source<=20;source++){
   if(!bpfPageOrder.includes(source))continue;
   const page=pdf.getPage(bpfObservationPDFSourceIndex(source)),w=page.getWidth(),h=page.getHeight();
