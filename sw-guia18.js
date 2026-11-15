@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-limpeza-reservatorios';
+const CACHE='guia18-20261115-observacoes-tres-linhas';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -89,6 +89,34 @@ for(const [i,w]of D.widgets.entries())bpfMountWidget(w,i);
   altered=altered.replace('</head>', '<style>@media screen{#pages .page>button.bpf-clear-action{white-space:pre-line;font-size:1.18cqw;line-height:1.1;font-weight:700;text-align:center;padding:0 1px}}</style></head>');
   altered=altered.replace(' for(const n of names){values[n]=D.fields[n].type===',
     " const keepIdentity=w.name==='LIMPAR CAPTAÇÃO'?new Set(['ENVASADORA','ENDEREÇO','DATA']):null;\n for(const n of names){if(keepIdentity?.has(n))continue;values[n]=D.fields[n].type===");
+  altered=altered.replace(/function bpfSpaceProcessObservations\(\)\{[\s\S]*?(?=function bpfMergeObservation)/, String.raw`
+function bpfCompactObservation(text){
+ return String(text??'').replace(/\r\n?/g,'\n').split('\n').filter(line=>line.trim()).join('\n').trimEnd();
+}
+function bpfFormatProcessObservation(text){
+ const compact=bpfCompactObservation(bpfSpaceItemObservations(text));
+ return compact?compact+'\n\n\n':'';
+}
+function bpfSpaceProcessObservations(){
+ const editing=document.activeElement?.dataset.field;
+ for(const name of bpfObservationTargets){
+  if(name!==editing&&typeof values[name]==='string')values[name]=bpfFormatProcessObservation(values[name]);
+ }
+}
+`.trimStart());
+  altered=altered.replace('if(previous){const i=text.indexOf(previous);if(i>=0)text=text.slice(0,i)+text.slice(i+previous.length);}', `
+ if(previous){
+  const old=text.includes(previous)?previous:bpfCompactObservation(bpfSpaceItemObservations(previous));
+  const index=old?text.indexOf(old):-1;
+  if(index>=0)text=text.slice(0,index)+text.slice(index+old.length);
+ }
+`.trimStart());
+  altered=altered.replace("el.setAttribute('aria-description','Observações editáveis, com inserção automática das frases F.');",
+   `el.setAttribute('aria-description','Observações editáveis, com inserção automática das frases F.');
+    el.addEventListener('blur',()=>{
+     const formatted=bpfFormatProcessObservation(values[w.name]);
+     if(formatted!==values[w.name]){values[w.name]=formatted;recalc();}
+    });`);
   // Contar uma linha em branco na medição do quadro, sem acrescentá-la ao texto salvo.
   altered=altered.replace('function bpfSplitGeneralText(full,fits,sizes){', `
 function bpfSplitGeneralText(full,fitsPart,sizes){
