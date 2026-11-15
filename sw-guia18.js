@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-observacoes-tres-linhas';
+const CACHE='guia18-20261115-observacoes-tres-linhas-v2';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -103,13 +103,6 @@ function bpfSpaceProcessObservations(){
   if(name!==editing&&typeof values[name]==='string')values[name]=bpfFormatProcessObservation(values[name]);
  }
 }
-`.trimStart());
-  altered=altered.replace('if(previous){const i=text.indexOf(previous);if(i>=0)text=text.slice(0,i)+text.slice(i+previous.length);}', `
- if(previous){
-  const old=text.includes(previous)?previous:bpfCompactObservation(bpfSpaceItemObservations(previous));
-  const index=old?text.indexOf(old):-1;
-  if(index>=0)text=text.slice(0,index)+text.slice(index+old.length);
- }
 `.trimStart());
   altered=altered.replace("el.setAttribute('aria-description','Observações editáveis, com inserção automática das frases F.');",
    `el.setAttribute('aria-description','Observações editáveis, com inserção automática das frases F.');
@@ -352,9 +345,9 @@ function bpfSyncNCLists(){
   altered=altered.replace(mergeObservation,`function bpfMergeObservation(text,code,previous,summary){
  const start='[Frases '+code+']',end='[/Frases '+code+']',a=text.indexOf(start);
  if(a>=0){const b=text.indexOf(end,a);if(b>=0)text=text.slice(0,a)+text.slice(b+end.length);}
- text=bpfSpaceItemObservations(text).trimEnd();
- previous=bpfSpaceItemObservations(previous).trim();
- summary=bpfSpaceItemObservations(summary).trim();
+ text=bpfCompactObservation(bpfSpaceItemObservations(text));
+ previous=bpfCompactObservation(bpfSpaceItemObservations(previous));
+ summary=bpfCompactObservation(bpfSpaceItemObservations(summary));
  const index=previous?text.indexOf(previous):-1;
  if(index>=0){
   const before=text.slice(0,index),after=text.slice(index+previous.length);
