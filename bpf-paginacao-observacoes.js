@@ -2,6 +2,7 @@
 const bpfObservationContinuationTitle='OBSERVAÇÕES GERAIS DOS PROCESSOS — CONTINUAÇÃO';
 const bpfNCTitle='OBSERVAÇÕES GERAIS — CONTINUAÇÃO DAS NÃO CONFORMIDADES';
 const bpfOverflowPages=new Map();
+const bpfPdfObservationBlankLines=1;
 let bpfCQObservationFlow={full:null,parts:['']};
 let bpfNCObservationCache={full:null,parts:[]};
 
@@ -81,8 +82,7 @@ function bpfAppendNCObservationText(fragment,text,spacing='nc'){
 
 function bpfObservationPageMeasure(rect,size,font,spacing){
  const [left,bottom,right,top]=rect;
- const blankLines=spacing==='cq'?1:3;
- const width=right-left-16,capacity=Math.max(1,(top-bottom-16)/(size*1.35)-blankLines);
+ const width=right-left-16,capacity=Math.max(1,(top-bottom-16)/(size*1.35)-bpfPdfObservationBlankLines);
  function height(text){
   const content=text.trimEnd();
   if(!content)return 0;
@@ -243,18 +243,17 @@ function bpfPrintProcessObservations(pdf,form,font,normalize,black){
   if(!source)continue;
   const text=normalize(String(values[name]||'').trimEnd());
   const page=pdf.getPage(source.page);
-  const blankLines=bpfSingleBlankObservationFields.has(name)?1:3;
   for(const widget of field.acroField.getWidgets()){
    const {x,y,width,height}=widget.getRectangle();
    if(!text)continue;
    const usableWidth=Math.max(1,width-6),usableHeight=Math.max(1,height-6);
    const leading=size=>size*1.25;
    const wrap=size=>bpfObservationLines(text,font,usableWidth,size);
-   const fits=size=>(wrap(size).length+blankLines)*leading(size)<=usableHeight;
+   const fits=size=>(wrap(size).length+bpfPdfObservationBlankLines)*leading(size)<=usableHeight;
    let size=9;
    if(!fits(size)){
     let low=.25,high=size;
-    if(!fits(low))throw Error('Observações extensas demais para imprimir com a folga de '+blankLines+' linha(s): '+name);
+    if(!fits(low))throw Error('Observações extensas demais para imprimir com a folga de '+bpfPdfObservationBlankLines+' linha(s): '+name);
     for(let n=0;n<15;n++){
      const mid=(low+high)/2;
      if(fits(mid))low=mid;else high=mid;
