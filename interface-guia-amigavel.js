@@ -206,9 +206,9 @@
   const printActions=document.createElement('div');
   printActions.className='bpf-ui-print-actions';
   printActions.append(
-    makePrintDownload('Imprimir guia em branco (18 páginas)','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
-    makePrintDownload('Imprimir Anexo F com observações (20 páginas)','Anexo_F_20_Paginas_Retrato.pdf'),
-    makePrintDownload('CHECKLIST DE DOCUMENTOS','Checklist_de_Documentos_Envasadora.pdf')
+    makePrintDownload('Imprimir Guia em Branco','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
+    makePrintDownload('Imprimir Anexo em Branco','Anexo_F_20_Paginas_Retrato.pdf'),
+    makePrintDownload('Imprimir Check-List','Checklist_de_Documentos_Envasadora.pdf')
   );
   extra.content.append(
     printActions,
