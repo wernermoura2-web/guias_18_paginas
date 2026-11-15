@@ -101,8 +101,7 @@ const bpfWaterCheck = (() => {
     check('abaulada','Tubulação sem abaulamento e/ou com suportes suficientes'),
     check('integra','Tubulação sem avarias e/ou lisa e íntegra'),
     check('corrosao','Tubulação e conexões sem corrosão'),
-    check('emendas','Tubulações com emendas ou conexões sanitárias'),
-    check('acessivel','Tubulação acessível em todo o percurso / trajeto e com ausência de mato',{informationOnly:true,yesOnly:true})
+    check('emendas','Tubulações com emendas ou conexões sanitárias')
    ]}
   },
   '4.6.8':{
@@ -254,7 +253,7 @@ const bpfWaterCheck = (() => {
   return row?.scopes.some(scope=>scope.name===entry.scope.name);
  }
  const informationHeading=panel=>panel.informationHeading||(panel.separateInformation?'Outras informações':'Outras observações');
- const isInformation=(panel,criterion)=>criterion.informationOnly||(panel.separateInformation&&!criterion.scopeAnswer);
+ const isInformation=(panel,criterion)=>panel.separateInformation&&!criterion.scopeAnswer;
  const active = (criterion,state) =>
   (!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1');
  const answered = (criterion,state) => active(criterion,state)&&
