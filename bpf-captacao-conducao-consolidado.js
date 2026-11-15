@@ -89,10 +89,12 @@ const bpfWaterCheck = (() => {
    ]}
   },
   '4.2.2':{
-   0:{alternatives:true,checks:[
-    check('certificado','Certificado de grau alimentício'),
-    check('declaracao','Declaração de grau alimentício'),
-    check('nota-fiscal','Nota Fiscal do material')
+   0:{separateInformation:true,informationHeading:'Outras observações',checks:[
+    check('sim-conducao','Sim',{yesOnly:true,scopeAnswer:true}),
+    check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
+    yes('certificado','Certificado de grau alimentício'),
+    yes('declaracao','Declaração de grau alimentício'),
+    yes('nota-fiscal','Nota Fiscal do material')
    ]},
    1:{all:true,checks:[
     check('vazamento','Tubulação e/ou conexões sem vazamento'),
@@ -222,7 +224,15 @@ const bpfWaterCheck = (() => {
       BPF_PHRASES.some(page=>page.page===0&&page.rows.some(row=>row.code==='4.1.3'&&row.scopes.some(scope=>scope.name===entry.scope.name)))){
     return {...state,'nao-captacao':{answer:'0'}};
    }
-   if(state&&entry.index===1&&getConductionIntegrityEntry(entry)&&!state.integrityPositive){
+   if(entry.index===0&&!state?.['sim-conducao']&&!state?.['nao-conducao']&&getConductionCheckEntry(entry)){
+    const documents=['certificado','declaracao','nota-fiscal'].map(id=>state?.[id]?.answer);
+    const previous=documents.includes('1')?'1':documents.includes('0')?'0':data[entry.name];
+    if(previous==='1'||previous==='0'){
+     const id=previous==='1'?'sim-conducao':'nao-conducao';
+     return {...state,[id]:{answer:previous}};
+    }
+   }
+   if(state&&entry.index===1&&getConductionCheckEntry(entry)&&!state.integrityPositive){
     for(const id of ['vazamento','abaulada','emendas']){
      const check=state[id];
      if(check?.answer==='1'||check?.answer==='0')check.answer=check.answer==='1'?'0':'1';
@@ -233,7 +243,7 @@ const bpfWaterCheck = (() => {
    return state;
   }catch (_) { return null; }
  };
- function getConductionIntegrityEntry(entry){
+ function getConductionCheckEntry(entry){
   const row=BPF_PHRASES.find(page=>page.page===1)?.rows.find(row=>row.code==='4.2.2');
   return row?.scopes.some(scope=>scope.name===entry.scope.name);
  }
@@ -269,7 +279,7 @@ const bpfWaterCheck = (() => {
     const index=panel.id;
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
-     const mode=config.separateInformation&&!criterion.scopeAnswer?'Outras informações.':criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
+     const mode=config.separateInformation&&!criterion.scopeAnswer?(config.informationHeading||'Outras informações')+'.':criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
      const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      const optionalDetails=criterion.details==='filter'?'A frequência de troca pode ficar em branco.':
       criterion.frequencyOptional?'A periodicidade pode ficar em branco.':'';
@@ -635,7 +645,7 @@ const bpfWaterCheck = (() => {
   card.append(answerGrid);
   const boxes=new Map();
   const sections=[['1','Sim'],['0','Não']];
-  if(config.separateInformation)sections.push(['info','Outras informações']);
+  if(config.separateInformation)sections.push(['info',config.informationHeading||'Outras informações']);
   for(const [answer,heading] of sections){
    const box=element('fieldset');
    box.className='bpf-answer-box';
