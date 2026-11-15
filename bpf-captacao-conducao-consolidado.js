@@ -97,9 +97,9 @@ const bpfWaterCheck = (() => {
  };
  const fillingF2Indices={'4.7.4':[4,1,2,3],'4.7.5':[1,4,2,5,3]};
  const panels = {
-  '4.7.4':{1:{...returnableInspection(fillingChecks['4.7.4']),collapseAnswers:true}},
-  '4.7.5':{1:{...returnableInspection(fillingChecks['4.7.5']),collapseAnswers:true}},
-  '4.7.6':{0:{...returnableInspection(fillingChecks['4.7.6']),collapseAnswers:true}},
+  '4.7.4':{1:returnableInspection(fillingChecks['4.7.4'])},
+  '4.7.5':{1:returnableInspection(fillingChecks['4.7.5'])},
+  '4.7.6':{0:returnableInspection(fillingChecks['4.7.6'])},
   '4.7.2':{0:returnableInspection([...surfaceChecks,...doorChecks])},
   '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
@@ -992,7 +992,7 @@ const bpfWaterCheck = (() => {
     const answer=information?'1':sectionType;
     const heading=information?informationHeading(config):answer==='1'?'Sim':'Não';
     const directChoice=config.simple||(config.separateInformation&&!information)||(config.singleNo&&answer==='0');
-    const collapsed=config.collapseAnswers||!directChoice;
+    const collapsed=!directChoice;
     const section=element(collapsed?'details':'div');
     section.className='bpf-water-unit';
     section.dataset.waterEntry=entry.name;
