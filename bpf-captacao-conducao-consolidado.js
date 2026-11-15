@@ -73,14 +73,14 @@ const bpfWaterCheck = (() => {
    ]}
   },
   '4.1.3':{
-   0:{negativePerScope:true,checks:[
+   0:{separateInformation:true,checks:[
     check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
     sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina do poço ou surgência',{yesOnly:true}),
     check('filtro','Possui filtro de ar microbiológico no poço (surgência apenas em drenos)',{details:'filter',yesOnly:true}),
     check('registro-filtro','Possui registro de troca do filtro de ar microbiológico',{requires:'filtro',yesOnly:true}),
     yes('pop-registros','O POP e os registros de limpeza e higienização estão disponíveis na casa de proteção'),
     ...controls('do poço ou surgência'),
-    check('nao-captacao','Não',{noOnly:true})
+    check('nao-captacao','Não',{noOnly:true,scopeAnswer:true})
    ]},
    2:{all:true,answerPrompts:{'1':'informe os registros de limpeza apresentados','0':'informe os registros de limpeza não apresentados'},checks:[
     check('externa','Área externa (pavimentação, calhas de drenagem, etc.)'),
@@ -269,7 +269,7 @@ const bpfWaterCheck = (() => {
     const index=panel.id;
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
-     const mode=criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
+     const mode=config.separateInformation&&!criterion.scopeAnswer?'Outras informações.':criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
      const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      const optionalDetails=criterion.details==='filter'?'A frequência de troca pode ficar em branco.':
       criterion.frequencyOptional?'A periodicidade pode ficar em branco.':'';
@@ -312,7 +312,7 @@ const bpfWaterCheck = (() => {
 
  function result(panel,state){
   if(panel.allowNA&&state.notApplicable)return '2';
-  const selected=panel.checks.filter(c=>answered(c,state));
+  const selected=panel.checks.filter(c=>(!panel.separateInformation||c.scopeAnswer)&&answered(c,state));
   if(!selected.length||(panel.capRoute&&!panel.optional&&!state.route)||requiredChecks(panel,selected,state).some(c=>!answered(c,state)))return '';
   if(panel.alternatives)return selected.some(c=>state[c.id].answer==='1')?'1':'0';
   return selected.some(c=>!c.yesOnly&&state[c.id].answer===(c.negative?'1':'0'))?'0':'1';
@@ -634,7 +634,9 @@ const bpfWaterCheck = (() => {
   answerGrid.className='bpf-answer-grid bpf-water-grid';
   card.append(answerGrid);
   const boxes=new Map();
-  for(const [answer,heading] of [['1','Sim'],['0','Não']]){
+  const sections=[['1','Sim'],['0','Não']];
+  if(config.separateInformation)sections.push(['info','Outras informações']);
+  for(const [answer,heading] of sections){
    const box=element('fieldset');
    box.className='bpf-answer-box';
    const prompt=config.answerPrompts?.[answer];
@@ -692,9 +694,11 @@ const bpfWaterCheck = (() => {
     control.prepend(input);
     answerGrid.prepend(control);
    }
-   for(const [answer,box] of boxes){
-    const heading=answer==='1'?'Sim':'Não';
-    const directChoice=config.simple||(config.negativePerScope&&answer==='0');
+   for(const [sectionType,box] of boxes){
+    const information=sectionType==='info';
+    const answer=information?'1':sectionType;
+    const heading=information?'Outras informações':answer==='1'?'Sim':'Não';
+    const directChoice=config.simple||(config.separateInformation&&!information);
     const section=element(directChoice?'div':'details');
     section.className='bpf-water-unit';
     section.dataset.waterEntry=entry.name;
@@ -706,6 +710,7 @@ const bpfWaterCheck = (() => {
     box.append(section);
     const groups=new Map();
     for(const criterion of config.checks){
+     if(config.separateInformation&&information===Boolean(criterion.scopeAnswer))continue;
      if((criterion.yesOnly&&answer==='0')||(criterion.noOnly&&answer==='1'))continue;
      const item=state[criterion.id]??={};
      const line=element('div');
