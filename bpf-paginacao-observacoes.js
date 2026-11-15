@@ -32,26 +32,29 @@ function bpfIsNCDefinition(line){
  return /^\s*(?:BPF|APPCC|PCC|PPRO|PPR|PC|POP)\s+[—–-]\s+/i.test(line);
 }
 
-function bpfObservationParagraphs(text,spacing){
+function bpfObservationParagraphs(text,spacing,afterHeading=false){
  const rows=[];
  const isNCRecord=line=>bpfIsNCEntry(line)||bpfIsNCDefinition(line);
  for(const line of text.split('\n')){
   let gap=0;
-  if((spacing==='nc'&&isNCRecord(line))||(spacing==='cq'&&/^ITEM 4\.10\.\d+\b/i.test(line))){
+  const cqTitle=spacing==='cq'&&/^\s*(?:CONTINUAÇÃO DAS OBSERVAÇÕES\s+[—–-]\s+CONTROLE DA QUALIDADE|ITEM 4\.10\.\d+\b)/i.test(line);
+  if((spacing==='nc'&&isNCRecord(line))||cqTitle){
    let previous=rows.length-1;
    while(previous>=0&&(!rows[previous].line.trim()||
     (spacing==='cq'&&/^-{4,}\s*$/.test(rows[previous].line))))previous--;
-   const follows=spacing==='cq'?previous>=0:previous>=0&&isNCRecord(rows[previous].line);
-   if(follows){rows.length=previous+1;gap=1/4;}
+   const precedingLine=rows[previous]?.line||'';
+   const followsHeading=bpfIsNCDefinition(line)&&
+    (/^NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b/i.test(precedingLine)||(afterHeading&&previous<0));
+   if(cqTitle||isNCRecord(precedingLine)||followsHeading){rows.length=previous+1;gap=1/4;}
   }
   rows.push({line,gap});
  }
  return rows;
 }
 
-function bpfAppendNCObservationText(fragment,text,spacing='nc'){
+function bpfAppendNCObservationText(fragment,text,spacing='nc',afterHeading=false){
  let spaced=false;
- for(const [index,{line,gap}] of bpfObservationParagraphs(text,spacing).entries()){
+ for(const [index,{line,gap}] of bpfObservationParagraphs(text,spacing,afterHeading).entries()){
   if(gap){
    const divider=document.createElement('span');
    divider.className='bpf-nc-gap';
