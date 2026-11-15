@@ -37,7 +37,8 @@ const bpfWaterCheck = (() => {
  }
  const returnableRinse=rinsePanel(false), disposableRinse=rinsePanel(true);
  const fillingMachine={all:true,inline:true,checks:[
-  check('higienizacao-envasadora','Envasadora Automática descontaminada e higienizada adequadamente?',{boldPrefix:'Envasadora Automática'}),
+  check('higienizacao-envasadora','Envasadora Automática descontaminada e higienizada adequadamente?',{boldText:'Envasadora Automática'}),
+  check('registros-desinfeccao-envasadora','Registros de descontaminação ou desinfecção da envasadora Automática',{boldText:'Automática'}),
   check('saneantes','Sanitizantes utilizados para descontaminação ou desinfecção de rotina da envasadora',{yesOnly:true,details:'sanitizers',explicitAnswer:true,frequencyOptional:true}),
   {...yes('residuo','Após a desinfecção da envasadora, testa a ausência de resíduo de saneante na água após o enxágue?','residue'),
    tests:[['dpd','Fotômetro de bolso (DPD)'],['ortotolidina','Kit de gotas (Ortotolidina)'],['outros','Outro']]},
@@ -714,8 +715,10 @@ const bpfWaterCheck = (() => {
      }
      const caption=config.simple?label:criterion.label;
      const control=element('label');
-     if(criterion.boldPrefix&&caption.startsWith(criterion.boldPrefix)){
-      control.append(element('strong',criterion.boldPrefix),caption.slice(criterion.boldPrefix.length));
+     const emphasisIndex=criterion.boldText?caption.indexOf(criterion.boldText):-1;
+     if(emphasisIndex>=0){
+      control.append(caption.slice(0,emphasisIndex),element('strong',criterion.boldText),
+       caption.slice(emphasisIndex+criterion.boldText.length));
      }else{
       control.textContent=caption;
      }
