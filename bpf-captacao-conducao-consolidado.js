@@ -178,8 +178,8 @@ const bpfWaterCheck = (() => {
   ]}},
   '4.2.8':{
    0:{all:true,checks:[
-    check('pop-desmonte','POP contempla o desmonte e a frequência'),
-    check('registros-desmonte','Registros do desmonte, troca de componentes (o-ring) e higienização posterior',{optional:true}),
+    check('pop-desmonte','POP contempla o desmonte e a frequência',{noLabel:'O POP não contempla o desmonte e a frequência'}),
+    check('registros-desmonte','Registros do desmonte e troca de componentes (o-ring)',{optional:true,noLabel:'Não possui registros de desmonte e troca de componentes (o-ring)'}),
     check('inspecao-visual','Realiza e registra inspeção visual interna das tubulações',{yesOnly:true})
    ]},
    1:{checks:[
