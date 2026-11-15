@@ -73,13 +73,14 @@ const bpfWaterCheck = (() => {
    ]}
   },
   '4.1.3':{
-   0:{checks:[
-    adequateHygiene,
+   0:{negativePerScope:true,checks:[
+    {...adequateHygiene,yesOnly:true},
     sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina do poço ou surgência',{yesOnly:true}),
-    check('filtro','Possui filtro de ar microbiológico no poço (surgência apenas em drenos)',{details:'filter'}),
-    check('registro-filtro','Possui registro de troca do filtro de ar microbiológico',{requires:'filtro'}),
-    check('pop-registros','O POP e os registros de limpeza e higienização estão disponíveis na casa de proteção'),
-    ...controls('do poço ou surgência')
+    check('filtro','Possui filtro de ar microbiológico no poço (surgência apenas em drenos)',{details:'filter',yesOnly:true}),
+    check('registro-filtro','Possui registro de troca do filtro de ar microbiológico',{requires:'filtro',yesOnly:true}),
+    yes('pop-registros','O POP e os registros de limpeza e higienização estão disponíveis na casa de proteção'),
+    ...controls('do poço ou surgência'),
+    check('nao-captacao','Não',{noOnly:true})
    ]},
    2:{all:true,answerPrompts:{'1':'informe os registros de limpeza apresentados','0':'informe os registros de limpeza não apresentados'},checks:[
     check('externa','Área externa (pavimentação, calhas de drenagem, etc.)'),
@@ -216,6 +217,11 @@ const bpfWaterCheck = (() => {
   try {
    const name=key(entry);
    const state=JSON.parse(data[name]||'null');
+   if(entry.index===0&&!state?.['nao-captacao']&&
+      (state?['higienizacao-adequada','filtro','registro-filtro','pop-registros'].some(id=>state[id]?.answer==='0'):data[entry.name]==='0')&&
+      BPF_PHRASES.some(page=>page.page===0&&page.rows.some(row=>row.code==='4.1.3'&&row.scopes.some(scope=>scope.name===entry.scope.name)))){
+    return {...state,'nao-captacao':{answer:'0'}};
+   }
    if(state&&entry.index===1&&getConductionIntegrityEntry(entry)&&!state.integrityPositive){
     for(const id of ['vazamento','abaulada','emendas']){
      const check=state[id];
@@ -688,10 +694,11 @@ const bpfWaterCheck = (() => {
    }
    for(const [answer,box] of boxes){
     const heading=answer==='1'?'Sim':'Não';
-    const section=element(config.simple?'div':'details');
+    const directChoice=config.simple||(config.negativePerScope&&answer==='0');
+    const section=element(directChoice?'div':'details');
     section.className='bpf-water-unit';
     section.dataset.waterEntry=entry.name;
-    if(!config.simple)section.append(element('summary',label));
+    if(!directChoice)section.append(element('summary',label));
     const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
     legacyLine.hidden=!legacy;
     legacyLines.push(legacyLine);
@@ -717,7 +724,7 @@ const bpfWaterCheck = (() => {
       fields(line,criterion,item,save,rows);
       continue;
      }
-     const caption=config.simple?label:criterion.label;
+     const caption=directChoice?label:criterion.label;
      const control=element('label');
      const emphasisIndex=criterion.boldText?caption.indexOf(criterion.boldText):-1;
      if(emphasisIndex>=0){
@@ -730,7 +737,7 @@ const bpfWaterCheck = (() => {
      if(criterion.guidance)control.title=criterion.guidance;
      const input=element('input');
      input.type='checkbox';
-     input.setAttribute('aria-label',config.simple?label+' — '+heading:label+' — '+criterion.label+' — '+heading);
+     input.setAttribute('aria-label',directChoice?label+' — '+heading:label+' — '+criterion.label+' — '+heading);
      input.onchange=()=>{
       item.answer=input.checked?answer:'';
       if(criterion.details==='sanitizers'&&item.answer==='0'){
