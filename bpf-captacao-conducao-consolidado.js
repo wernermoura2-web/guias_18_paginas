@@ -387,9 +387,11 @@ const bpfWaterCheck = (() => {
   'instrumento-adequado':[/ é adequado /,' não é adequado '],
   'enxague-final':[/ indicou /,' não indicou ']
  };
+ const isQuestion=criterion=>criterion.informationQuestion||/\?\s*$/.test(criterion.label);
+ const hasAnswer=answer=>answer==='1'||answer==='0';
  const statementForAnswer=(criterion,answer)=>{
   if(answer==='0'&&criterion.noLabel)return criterion.noLabel;
-  const statement=criterion.label.replace(/\?$/,'');
+  const statement=criterion.label.trim().replace(/\?$/,'');
   if(answer!=='0')return statement;
   const rule=negativeStatements[criterion.id];
   if(!rule||!rule[0].test(statement))return 'Resposta Não: '+statement;
@@ -581,7 +583,7 @@ const bpfWaterCheck = (() => {
     }
     if(details.size){
      const labels=[...details].map(([detail,labels])=>labels.join(', ')+(detail?' — '+detail:''));
-     const caption=criterion.label.endsWith('?')?statementForAnswer(criterion,answer):answerLabel(criterion,answer);
+     const caption=isQuestion(criterion)?statementForAnswer(criterion,answer):answerLabel(criterion,answer);
      checklist.push(caption+' ('+labels.join(' / ')+')');
     }
    }
@@ -978,7 +980,10 @@ const bpfWaterCheck = (() => {
       const prompt=element('div',caption);
       line.append(prompt,choices);
       rows.push(()=>{
-       prompt.textContent=item.answer==='1'||item.answer==='0'?statementForAnswer(criterion,item.answer):caption;
+       const wording=hasAnswer(item.answer)?statementForAnswer(criterion,item.answer):caption;
+       prompt.textContent=wording;
+       input.setAttribute('aria-label',label+' — '+wording+' — Sim');
+       noInput.setAttribute('aria-label',label+' — '+wording+' — Não');
        noInput.disabled=state.notApplicable||!active(criterion,state);
        noInput.checked=!noInput.disabled&&item.answer==='0';
       });
@@ -993,8 +998,10 @@ const bpfWaterCheck = (() => {
       input.checked=enabled&&item.answer===answer;
       input.disabled=!enabled;
       line.hidden=!enabled;
-      if(!information&&criterion.label.endsWith('?')&&!directChoice){
-       displayCaption(input.checked?statementForAnswer(criterion,answer):caption);
+      if(!information&&isQuestion(criterion)&&!directChoice){
+       const wording=enabled&&hasAnswer(item.answer)?statementForAnswer(criterion,answer):caption;
+       displayCaption(wording);
+       input.setAttribute('aria-label',label+' — '+wording+' — '+heading);
       }
       extra.hidden=!enabled||item.answer!==answer||!showDetails;
      });
