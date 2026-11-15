@@ -420,7 +420,6 @@ const bpfWaterCheck = (() => {
     return !criterion.products.some(([id])=>item.products?.[id])||(item.products?.outros&&!text(item.otherProduct));
    case 'telemetry': return !telemetry.some(([id])=>item.parameters?.[id]);
    case 'residue': return !item.recorded||!(criterion.tests||tests).some(([id])=>item.tests?.[id])||(item.tests.outros&&!text(item.otherTest));
-   case 'filter': return !text(item.frequency);
    case 'recirculation': return !recirculation.includes(item.procedure);
    case 'measure': return !text(item.description);
    default: return false;
