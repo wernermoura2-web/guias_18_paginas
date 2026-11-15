@@ -193,8 +193,10 @@ const bpfWaterCheck = (() => {
     check('pop-canalizacao','Possui POP referente às operações de higienização da canalização'),
     check('implementacao','A limpeza e a higienização são realizadas conforme o POP, com os mesmos desinfetantes, concentrações e formas de aplicação')
    ]},
-   1:{all:true,checks:[
-    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina da condução',{yesOnly:true})
+   1:{separateInformation:true,informationHeading:'Outras observações',checks:[
+    check('sim-conducao','Sim',{yesOnly:true,scopeAnswer:true}),
+    check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
+    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina da condução',{yesOnly:true,frequencyOptional:true})
    ]}
   }
  };
@@ -237,6 +239,13 @@ const bpfWaterCheck = (() => {
     if(previous==='0')return {...state,'nao-conducao':{answer:'0'}};
     if(previous==='1'&&!state)return {'higienizacao-adequada':{answer:'1'}};
    }
+   if(entry.index===1&&!state?.['sim-conducao']&&!state?.['nao-conducao']&&getConductionCheckEntry(entry,'4.2.9')){
+    const previous=(data[entry.name+'_POP_NA_anterior']??data[entry.name])||state?.saneantes?.answer;
+    if(previous==='1'||previous==='0'){
+     const id=previous==='1'?'sim-conducao':'nao-conducao';
+     return {...state,[id]:{answer:previous}};
+    }
+   }
    if(state&&entry.index===1&&getConductionCheckEntry(entry)&&!state.integrityPositive){
     for(const id of ['vazamento','abaulada','emendas']){
      const check=state[id];
@@ -263,7 +272,10 @@ const bpfWaterCheck = (() => {
 
  const capsDisinfected=(scope,data)=>read({scope,index:0,name:bpfPhraseName(scope,0)},data)
   ?.['desinfeccao-envasadora']?.answer==='1';
- const panelEnabled=(row,entry,data)=>row.code!=='4.6.8'||entry.index!==1||capsDisinfected(entry.scope,data);
+ const conductionF2=(row,index)=>row.code==='4.2.9'&&index===1;
+ const panelEnabled=(row,entry,data)=>conductionF2(row,entry.index)
+  ?!bpfPopNAForced(row,entry.scope,entry.index,data)
+  :row.code!=='4.6.8'||entry.index!==1||capsDisinfected(entry.scope,data);
 
  function prepareCaps(){
   const phrase={
@@ -338,6 +350,10 @@ const bpfWaterCheck = (() => {
 
  function apply(row,scope,data){
   for(const entry of entriesFor(row,scope)){
+   if(conductionF2(row,entry.index)){
+    bpfApplyPopF2NA(row,scope,data);
+    if(!panelEnabled(row,entry,data))continue;
+   }
    const state=read(entry,data);
    if(!panelEnabled(row,entry,data)){
     data[entry.name]='';
@@ -639,6 +655,8 @@ const bpfWaterCheck = (() => {
    card.dataset.bpfCapsF2='';
    card.hidden=!panel.entries.some(entry=>panelEnabled(row,entry,values));
   }
+  const dependentF2=conductionF2(row,panel.id);
+  if(dependentF2)card.dataset.bpfConductionF2='';
   const hint=element('p',config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
@@ -678,7 +696,10 @@ const bpfWaterCheck = (() => {
     values[entry.name]=result(config,state);
     if(!values[entry.name])values[entry.scope.name]='Off';
     refresh();
-    if(config.inline)apply(row,entry.scope,values);
+    if(config.inline||(row.code==='4.2.9'&&panel.id===0))apply(row,entry.scope,values);
+    if(row.code==='4.2.9'&&panel.id===0){
+     card.parentElement?.querySelector('[data-bpf-conduction-f2]')?.dispatchEvent(new Event('bpf-f2-refresh'));
+    }
     if(config.capRoute){
      const followup=card.parentElement?.querySelector('[data-bpf-caps-f2]');
      if(followup)followup.hidden=!capsDisinfected(entry.scope,values);
@@ -689,6 +710,12 @@ const bpfWaterCheck = (() => {
    const refresh=()=>{
     for(const control of rows)control();
    };
+   if(dependentF2){
+    const notice=element('p',label+' — Não se aplica (F1 marcado como Não).');
+    answerGrid.prepend(notice);
+    rows.push(()=>{notice.hidden=panelEnabled(row,entry,values);});
+    card.addEventListener('bpf-f2-refresh',refresh);
+   }
    if(config.capRoute){
     const label=element('label','Transporte das tampas');
     const route=element('select');
@@ -726,6 +753,7 @@ const bpfWaterCheck = (() => {
     legacyLines.push(legacyLine);
     section.append(legacyLine);
     box.append(section);
+    if(dependentF2)rows.push(()=>{section.hidden=!panelEnabled(row,entry,values);});
     const groups=new Map();
     for(const criterion of config.checks){
      if(information!==Boolean(isInformation(config,criterion)))continue;
