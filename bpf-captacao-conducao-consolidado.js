@@ -23,7 +23,7 @@ const bpfWaterCheck = (() => {
    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
    ...(disposable?[check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?')]:[]),
    check('sanitizantes-embalagens','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens',{
-    details:'packaging-sanitizers',
+    yesOnly:true,details:'packaging-sanitizers',
     products:disposable?[
      ['ozonio','Ozônio'],['outros','Outro']
     ]:[
@@ -73,7 +73,7 @@ const bpfWaterCheck = (() => {
   '4.1.3':{
    0:{checks:[
     adequateHygiene,
-    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina do poço ou surgência'),
+    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina do poço ou surgência',{yesOnly:true}),
     check('filtro','Possui filtro de ar microbiológico no poço (surgência apenas em drenos)',{details:'filter'}),
     check('registro-filtro','Possui registro de troca do filtro de ar microbiológico',{requires:'filtro'}),
     check('pop-registros','O POP e os registros de limpeza e higienização estão disponíveis na casa de proteção'),
@@ -141,8 +141,8 @@ const bpfWaterCheck = (() => {
   },
   '4.3.5':{0:{all:true,checks:[
    adequateHygiene,
-    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório',{frequencyOptional:true}),
-   check('recirculacao','Procedimento adotado para recirculação do sanitizante no tanque',{details:'recirculation'}),
+    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório',{yesOnly:true,frequencyOptional:true}),
+   check('recirculacao','Procedimento adotado para recirculação do sanitizante no tanque',{yesOnly:true,details:'recirculation'}),
    ...controls('do reservatório','armazenada')
   ]}},
   '4.3.4':{0:{simple:true,checks:[
@@ -168,7 +168,7 @@ const bpfWaterCheck = (() => {
   },
   '4.2.7':{0:{checks:[
    adequateHygiene,
-    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução',{frequencyOptional:true}),
+    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução',{yesOnly:true,frequencyOptional:true}),
    ...controls('da condução','conduzida')
   ]}},
   '4.2.8':{
@@ -189,7 +189,7 @@ const bpfWaterCheck = (() => {
     check('implementacao','A limpeza e a higienização são realizadas conforme o POP, com os mesmos desinfetantes, concentrações e formas de aplicação')
    ]},
    1:{all:true,checks:[
-    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina da condução')
+    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina da condução',{yesOnly:true})
    ]}
   }
  };
