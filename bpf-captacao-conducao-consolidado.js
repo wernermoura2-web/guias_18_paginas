@@ -40,15 +40,15 @@ const bpfWaterCheck = (() => {
   ]}:{sectioned:true,checks:rinseChecks};
  }
  const returnableRinse=rinsePanel(false), disposableRinse=rinsePanel(true);
- const fillingMachine={all:true,inline:true,checks:[
-  check('higienizacao-envasadora','Envasadora Automática descontaminada e higienizada adequadamente?',{boldText:'Envasadora Automática'}),
-  check('registros-desinfeccao-envasadora','Registros de descontaminação ou desinfecção da envasadora Automática',{boldText:'Automática'}),
-  check('saneantes','Sanitizantes utilizados para descontaminação ou desinfecção de rotina da envasadora',{yesOnly:true,details:'sanitizers',explicitAnswer:true,frequencyOptional:true}),
-  {...yes('residuo','Após a desinfecção da envasadora, testa a ausência de resíduo de saneante na água após o enxágue?','residue'),
-   tests:[['dpd','Fotômetro de bolso (DPD)'],['ortotolidina','Kit de gotas (Ortotolidina)'],['outros','Outro']]},
-  yes('microbiologia','Após o enxágue da envasadora, testa a ausência de contaminação microbiológica?'),
-  yes('atp','Após o enxágue da envasadora, faz teste fluorescente / ATP?'),
-  yes('medida','Adota outra medida de controle para o perigo identificado de contaminação microbiológica ou química da água envasada?','measure')
+ const fillingMachine={inline:true,separateInformation:true,questionsInInformation:true,checks:[
+  check('registros-desinfeccao-envasadora','Apresentou registros de descontaminação ou desinfecção da envasadora Automática?',{
+   noLabel:'Não apresentou registros de descontaminação ou desinfecção da envasadora Automática'}),
+  check('saneantes','Quais são os sanitizantes utilizados para descontaminação ou desinfecção de rotina da envasadora?',{
+   details:'sanitizers',informationList:true,reportLabel:'Sanitizantes utilizados para descontaminação ou desinfecção de rotina da envasadora',frequencyOptional:true}),
+  check('residuo','Após a desinfecção da envasadora, testa a ausência de resíduo de saneante na água após o enxágue?',{
+   details:'residue',optionalDetails:true,tests:[['dpd','Fotômetro de bolso (DPD)'],['ortotolidina','Kit de gotas (Ortotolidina)'],['outros','Outro']]}),
+  check('microbiologia','Após o enxágue da envasadora, testa a ausência de contaminação microbiológica?'),
+  check('atp','Após o enxágue da envasadora, faz teste fluorescente / ATP?')
  ]};
  const returnableInspection=checks=>({
   separateInformation:true,exclusiveScopeAnswer:true,questionsInInformation:true,
@@ -596,13 +596,20 @@ const bpfWaterCheck = (() => {
    const state=read(entry,data);
    if(!panelEnabled(row,entry,data)){
     data[entry.name]='';
-   }else if(state){
-    data[entry.name]=result(get(row,entry.index),state);
+   }else if(state||row.code==='4.7.8'){
+    const config=get(row,entry.index);
+    if(!config.inline)data[entry.name]=result(config,state);
     if(entry.index===1&&fillingF2Indices[row.code]){
      if(!data[key(entry)])data[key(entry)]=JSON.stringify(state);
      for(const index of fillingF2Indices[row.code])data[bpfPhraseName(scope,index)]=data[entry.name];
     }
     if(row.code==='4.7.8'){
+     const legacy=state?.['higienizacao-envasadora'];
+     if(legacy){
+      if(!hasAnswer(data[entry.name])&&hasAnswer(legacy.answer))data[entry.name]=legacy.answer;
+      delete state['higienizacao-envasadora'];
+      data[key(entry)]=JSON.stringify(state);
+     }
      const answers=bpfF1Checks(row,scope).map(check=>data[check.name]);
      const answer=answers.includes('0')?'0':answers.every(value=>value==='1')?'1':'';
      data[bpfPhraseName(scope,0)]=answer;
@@ -660,14 +667,14 @@ const bpfWaterCheck = (() => {
     records(row,entry,data)
   }));
   if(!units.some(unit=>unit.checks.length))return [];
-  const responses=reservoir?['1','0']:['1','0','2'];
+  const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
   const information=[];
   for(const criterion of config.checks.filter(check=>isInformation(config,check))){
    for(const answer of ['1','0']){
     const recorded=units.flatMap(unit=>unit.checks.filter(check=>check.id===criterion.id&&check.answer===answer)
      .map(check=>unit.label+(check.details?' — '+check.details:'')));
     if(recorded.length){
-     const caption=criterion.informationQuestion?statementForAnswer(criterion,answer):criterion.informationList?'Produtos químicos utilizados para limpeza das embalagens':criterion.label;
+     const caption=criterion.informationQuestion?statementForAnswer(criterion,answer):criterion.informationList?(criterion.reportLabel||'Produtos químicos utilizados para limpeza das embalagens'):criterion.label;
      information.push((criterion.section?criterion.section+' · ':'')+caption+' ('+recorded.join(' / ')+')');
     }
    }
@@ -709,6 +716,7 @@ const bpfWaterCheck = (() => {
  }
 
  function missingDetail(criterion,item){
+  if(criterion.optionalDetails)return false;
   if(item.answer!=='1')return !!(criterion.detailsOnNo&&item.answer==='0'&&item.products?.outros&&!text(item.otherProduct));
   switch(criterion.details){
    case 'sanitizers': {
@@ -908,7 +916,7 @@ const bpfWaterCheck = (() => {
   }
   const dependentF2=conductionF2(row,panel.id);
   if(dependentF2)card.dataset.bpfConductionF2='';
-  const hint=element('p',fillingChecks[row.code]?'Marque uma avaliação por linha e registre as verificações em Outras informações.':config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
+  const hint=element('p',config.inline?'Registre as informações da envasadora por linha.':fillingChecks[row.code]?'Marque uma avaliação por linha e registre as verificações em Outras informações.':config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
   if(!document.getElementById('bpf-water-css')){
@@ -921,13 +929,13 @@ const bpfWaterCheck = (() => {
   answerGrid.className='bpf-answer-grid bpf-water-grid';
   card.append(answerGrid);
   const boxes=new Map();
-  const sections=[['1','Sim'],['0','Não']];
+  const sections=config.inline?[]:[['1','Sim'],['0','Não']];
   if(config.checks.some(criterion=>isInformation(config,criterion)))sections.push(['info',informationHeading(config)]);
   for(const [answer,heading] of sections){
    const box=element('fieldset');
    box.className='bpf-answer-box';
    const prompt=config.answerPrompts?.[answer];
-   box.append(element('legend',panel.label+' — '+heading+(prompt?' ('+prompt+')':'')));
+   box.append(element('legend',(config.inline?'':panel.label+' — ')+heading+(prompt?' ('+prompt+')':'')));
    answerGrid.append(box);
    boxes.set(answer,box);
   }
@@ -944,8 +952,10 @@ const bpfWaterCheck = (() => {
    const save=()=>{
     for(const line of legacyLines)line.hidden=true;
     values[key(entry)]=JSON.stringify(state);
-    values[entry.name]=result(config,state);
-    if(!values[entry.name])values[entry.scope.name]='Off';
+    if(!config.inline){
+     values[entry.name]=result(config,state);
+     if(!values[entry.name])values[entry.scope.name]='Off';
+    }
     refresh();
     if(config.inline||(row.code==='4.2.9'&&panel.id===0))apply(row,entry.scope,values);
     if(row.code==='4.2.9'&&panel.id===0){
@@ -1117,9 +1127,7 @@ const bpfWaterCheck = (() => {
  }
  function renderMachine(card,page,row,panel){
   if(row.code!=='4.7.8'||panel.id!==0)return;
-  const section=element('fieldset');
-  section.className='bpf-answer-box';
-  section.append(element('legend','Envasadora Automática'));
+  const section=element('div');
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }

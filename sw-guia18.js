@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-472-linhas-visiveis';
+const CACHE='guia18-20261115-478-avaliacao-envasadora';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -518,7 +518,7 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
 
   // Carregar as verificações antes de inicializar os campos do guia.
   if(!altered.includes('bpf-captacao-conducao.js')){
-   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261115-472-linhas-visiveis"></script>';
+   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261115-478-avaliacao-envasadora"></script>';
    altered=altered.replace(inspectorScript,checkTag+'<script>bpfWaterCheck.prepareCaps();</script>'+inspectorScript);
    altered=altered.replace("panel.id===0&&['4.6.4','4.7.2','4.7.6',",
     "panel.id===0&&[");
@@ -550,8 +550,6 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
     }else if(splitHygiene){
      if(!optionGroups.has(entry.option)){`);
    altered=altered.replace("content.querySelectorAll('input[type=checkbox]')","content.querySelectorAll('input[data-answer-name]')");
-   altered=altered.replace("   }else for(const entry of panel.entries){\n    if(answer==='2'",
-    "   }else for(const entry of panel.entries){\n    if(splitHygiene&&entry.option==='Envasadora Automática')continue;\n    if(answer==='2'");
 
    altered=altered.replace(" dlg.bpfCommit=()=>{\n  const special=",
     ` const hasWaterPanels=panels.some(panel=>bpfWaterCheck.get(row,panel.id));
