@@ -153,15 +153,17 @@ const bpfWaterCheck = (() => {
    check('inspecao-visual','Inspeção visual do reservatório na frequência definida pelo estabelecimento',{details:'inspection-frequency'})
   ]}},
   '4.3.2':{
-   0:{alternatives:true,checks:[
-    check('certificado','Certificado de grau alimentício'),
-    check('declaracao','Declaração de grau alimentício'),
-    check('nota-fiscal','Nota Fiscal do material')
+   0:{separateInformation:true,checks:[
+    check('sim-reservatorio','Sim',{yesOnly:true,scopeAnswer:true}),
+    check('nao-reservatorio','Não',{noOnly:true,scopeAnswer:true}),
+    yes('certificado','Certificado de grau alimentício'),
+    yes('declaracao','Declaração de grau alimentício'),
+    yes('nota-fiscal','Nota Fiscal do material')
    ]},
    1:{all:true,checks:[
-    check('integro','Reservatório sem avarias e/ou liso e íntegro'),
-    check('corrosao','Reservatório e conexões sem corrosão'),
-    check('conexoes-nao-sanitarias','Reservatório com conexões não sanitárias',{negative:true})
+    check('integro','Reservatório sem avarias e/ou liso e íntegro',{noLabel:'Reservatório com avarias e/ou sem superfície lisa e íntegra'}),
+    check('corrosao','Reservatório e conexões sem corrosão',{noLabel:'Reservatório e/ou conexões com corrosão'}),
+    check('conexoes-sanitarias','Reservatório com conexões sanitárias',{noLabel:'Reservatório sem conexões sanitárias'})
    ]},
    2:{all:true,checks:[
     check('vazamento','Reservatório e/ou conexões com vazamento',{negative:true}),
@@ -252,6 +254,21 @@ const bpfWaterCheck = (() => {
      return {...state,'nao-conducao':{answer:'0'},'sem-historico-pop':{answer:'1'}};
     }
     if(data[entry.name]==='0')return {...state,'nao-conducao':{answer:'0'}};
+   }
+   if((entry.index===0&&!state?.['sim-reservatorio']&&!state?.['nao-reservatorio']||
+       entry.index===1&&state?.['conexoes-nao-sanitarias']&&!state['conexoes-sanitarias'])&&
+      BPF_PHRASES.find(page=>page.page===2)?.rows.find(row=>row.code==='4.3.2')?.scopes.some(scope=>scope.name===entry.scope.name)){
+    if(entry.index===0){
+     const documents=['certificado','declaracao','nota-fiscal'].map(id=>state?.[id]?.answer);
+     const previous=documents.includes('1')?'1':documents.includes('0')?'0':data[entry.name];
+     if(previous==='1'||previous==='0'){
+      const id=previous==='1'?'sim-reservatorio':'nao-reservatorio';
+      return {...state,[id]:{answer:previous}};
+     }
+    }else{
+     const previous=state['conexoes-nao-sanitarias'].answer;
+     if(previous==='0'||previous==='1')return {...state,'conexoes-sanitarias':{answer:previous==='0'?'1':'0'}};
+    }
    }
    if(state&&entry.index===1&&getConductionCheckEntry(entry)&&!state.integrityPositive){
     for(const id of ['vazamento','abaulada','emendas']){
