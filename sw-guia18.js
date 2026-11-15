@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-obs-linha-final';
+const CACHE='guia18-20261114-nc-sem-duplicata';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -62,6 +62,32 @@ function bpfSplitGeneralText(full,fitsPart,sizes){
     '&&old.baseFont===BPF_NC_FONT_SIZE&&old.reservedLastLine===true&&old.height===');
   altered=altered.replace('full,font:result.size,baseFont:BPF_NC_FONT_SIZE,height:',
     'full,font:result.size,baseFont:BPF_NC_FONT_SIZE,reservedLastLine:true,height:');
+  // Relatórios antigos gravavam a lista por extenso no mesmo campo das notas manuais.
+  altered=altered.replace('function bpfSyncNCLists(){', String.raw`
+function bpfStripLegacyNCLists(text){
+ const heading=/^NÃO CONFORMIDADES (?:CRÍTICAS \(PCC\)|MAIORES \(PPRO e PC\)|MENORES \(POP e PPR\))\s*[—–-]\s*Total:\s*(\d+)\s*$/i;
+ const entry=/^\s*(\d+)\.\s+Considerando que a frase .+?, do (?:item|indicador) .+?, do processo .+?, na unidade .+?, classificada como (?:PCC|PPRO|PC|POP|PPR), apresentou resultado insatisfatório\.\s*$/i;
+ const lines=String(text||'').replace(/\r\n?/g,'\n').split('\n');
+ return lines.filter((line,i)=>{
+  if(!heading.test(line.trim()))return true;
+  let start=i+1;
+  while(start<lines.length&&!lines[start].trim())start++;
+  let end=start;
+  while(end<lines.length){
+   const match=entry.exec(lines[end]);
+   if(!match||Number(match[1])!==end-start+1)break;
+   end++;
+  }
+  if(end===start)return true;
+  // Remove somente as linhas reconhecidas, mantendo observações digitadas à parte.
+  for(let j=start;j<end;j++)lines[j]='';
+  return false;
+ }).join('\n');
+}
+function bpfSyncNCLists(){
+`.trimStart());
+  altered=altered.replace("let priorText=bpfGeneralFullText().replace(/\\r\\n?/g,'\\n');",
+    "let priorText=bpfStripLegacyNCLists(bpfGeneralFullText());");
   // Atualizar o padrão da recuperação em equipe sem sobrescrever a preferência salva.
   if(/\/equipe\.html$/i.test(url.pathname)){
     altered=altered.replace('let minutes=5;try', 'let minutes=1;try')
