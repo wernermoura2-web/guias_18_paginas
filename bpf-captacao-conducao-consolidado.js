@@ -190,8 +190,8 @@ const bpfWaterCheck = (() => {
   },
   '4.2.9':{
    0:{all:true,checks:[
-    check('pop-canalizacao','Possui POP referente às operações de higienização da canalização'),
-    check('implementacao','A limpeza e a higienização são realizadas conforme o POP, com os mesmos desinfetantes, concentrações e formas de aplicação')
+    check('pop-canalizacao','Possui POP referente às operações de higienização da canalização',{noLabel:'Não possui POP referente às operações de higienização da canalização'}),
+    check('implementacao','A limpeza e a higienização são realizadas com os mesmos desinfetantes informados no POP',{noLabel:'A limpeza e a higienização não são realizadas com os mesmos desinfetantes informados no POP.'})
    ]},
    1:{separateInformation:true,informationHeading:'Outras observações',checks:[
     check('sim-conducao','Sim',{yesOnly:true,scopeAnswer:true}),
