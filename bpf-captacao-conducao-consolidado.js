@@ -3,14 +3,12 @@ const bpfWaterCheck = (() => {
  const check = (id, label, options = {}) => ({id, label, ...options});
  const sanitizers = (label, options) => check('saneantes', label, {details:'sanitizers', ...options});
  const yes = (id, label, details) => check(id, label, {yesOnly:true, details});
- const controls = (disinfection, water) => [
+ const controls = disinfection => [
   yes('telemetria','Existe telemetria em linha','telemetry'),
   yes('residuo','Após a desinfecção '+disinfection+', testa a ausência de resíduo de saneante na água após o enxágue','residue'),
   yes('microbiologia','Após a desinfecção '+disinfection+', testa a ausência de contaminação microbiológica'),
-  yes('atp','Após a desinfecção '+disinfection+', faz teste fluorescente / ATP'),
-  ...(water?[yes('medida','Adota outra medida de controle adicional ao perigo identificado de contaminação microbiológica ou química da água '+water,'measure')]:[])
+  yes('atp','Após a desinfecção '+disinfection+', faz teste fluorescente / ATP')
  ];
- const adequateHygiene = check('higienizacao-adequada','A rotina de limpeza informada encontra-se em conformidade com as instruções apresentadas');
  const blownChecks = [
   check('uso-imediato','As embalagens sopradas são utilizadas imediatamente, sem contato manual?'),
   yes('ar-sopro-filtrado','As pré-formas são sopradas com ar comprimido com filtro de ar microbiológico.'),
@@ -143,11 +141,12 @@ const bpfWaterCheck = (() => {
     yes('criterio-zero','O teste de arraste é adequado ao desinfetante utilizado e adota 0,0 mg/L como critério de aceitação, interpretado conforme o limite de detecção do método.')
    ]}
   },
-  '4.3.5':{0:{all:true,checks:[
-   adequateHygiene,
+  '4.3.5':{0:{separateInformation:true,checks:[
+   check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
+   check('nao-reservatorio','Não',{noOnly:true,scopeAnswer:true}),
     sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório',{yesOnly:true,frequencyOptional:true}),
    check('recirculacao','Procedimento adotado para recirculação do sanitizante no tanque',{yesOnly:true,details:'recirculation'}),
-   ...controls('do reservatório','armazenada')
+   ...controls('do reservatório')
   ]}},
   '4.3.4':{0:{simple:true,checks:[
    check('inspecao-visual','Inspeção visual do reservatório na frequência definida pelo estabelecimento',{details:'inspection-frequency'})
@@ -277,6 +276,11 @@ const bpfWaterCheck = (() => {
      if(previous==='0'||previous==='1')return {...state,'conexoes-sanitarias':{answer:previous==='0'?'1':'0'}};
     }
    }
+   if(entry.index===0&&!state?.['nao-reservatorio']&&reservoirStructureEntry(entry,'4.3.5')){
+    const previous=state?.['higienizacao-adequada']?.answer??data[entry.name];
+    if(previous==='0')return {...state,'nao-reservatorio':{answer:'0'}};
+    if(previous==='1'&&!state)return {'higienizacao-adequada':{answer:'1'}};
+   }
    if(state&&entry.index===2&&!state['sem-vazamento']&&reservoirStructureEntry(entry)){
     const previous=state.vazamento?.answer;
     if(previous==='1'||previous==='0')state['sem-vazamento']={answer:previous==='1'?'0':'1'};
@@ -292,8 +296,8 @@ const bpfWaterCheck = (() => {
    return state;
   }catch (_) { return null; }
  };
- function reservoirStructureEntry(entry){
-  const row=BPF_PHRASES.find(page=>page.page===2)?.rows.find(row=>row.code==='4.3.2');
+ function reservoirStructureEntry(entry,code='4.3.2'){
+  const row=BPF_PHRASES.find(page=>page.page===2)?.rows.find(row=>row.code===code);
   return row?.scopes.some(scope=>scope.name===entry.scope.name);
  }
  function getConductionCheckEntry(entry,code='4.2.2'){
