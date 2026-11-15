@@ -208,7 +208,7 @@
   printActions.append(
     makePrintDownload('Imprimir Guia em Branco','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
     makePrintDownload('Imprimir Anexo em Branco','Anexo_F_20_Paginas_Retrato.pdf'),
-    makePrintDownload('Imprimir Check-List','Checklist_de_Documentos_Envasadora.pdf')
+    makePrintDownload('Imprimir Check-List de Documentos','Checklist_de_Documentos_Envasadora.pdf')
   );
   extra.content.append(
     printActions,
