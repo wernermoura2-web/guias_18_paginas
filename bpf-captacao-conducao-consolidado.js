@@ -10,7 +10,7 @@ const bpfWaterCheck = (() => {
   yes('atp','Após a desinfecção '+disinfection+', faz teste fluorescente / ATP'),
   yes('medida','Adota outra medida de controle adicional ao perigo identificado de contaminação microbiológica ou química da água '+water,'measure')
  ];
- const adequateHygiene = check('higienizacao-adequada','A higienização é realizada de forma adequada?');
+ const adequateHygiene = check('higienizacao-adequada','A rotina de limpeza informada encontra-se em conformidade com as instruções apresentadas');
  const blownChecks = [
   check('uso-imediato','As embalagens sopradas são utilizadas imediatamente, sem contato manual?'),
   yes('ar-sopro-filtrado','As pré-formas são sopradas com ar comprimido com filtro de ar microbiológico.'),
