@@ -81,7 +81,8 @@ function bpfAppendNCObservationText(fragment,text,spacing='nc'){
 
 function bpfObservationPageMeasure(rect,size,font,spacing){
  const [left,bottom,right,top]=rect;
- const width=right-left-16,capacity=Math.max(1,(top-bottom-16)/(size*1.35));
+ const blankLines=spacing==='cq'?1:3;
+ const width=right-left-16,capacity=Math.max(1,(top-bottom-16)/(size*1.35)-blankLines);
  function height(text){
   const content=text.trimEnd();
   if(!content)return 0;
@@ -234,6 +235,39 @@ function bpfObservationPDFSourceIndex(source){
  return source+[...bpfOverflowPages.values()].filter(page=>page.anchor<source).length;
 }
 
+function bpfPrintProcessObservations(pdf,form,font,normalize,black){
+ for(const name of bpfObservationTargets){
+  const field=form.getFieldMaybe(name);
+  if(!field)continue;
+  const source=D.widgets.find(widget=>widget.name===name);
+  if(!source)continue;
+  const text=normalize(String(values[name]||'').trimEnd());
+  const page=pdf.getPage(source.page);
+  const blankLines=bpfSingleBlankObservationFields.has(name)?1:3;
+  for(const widget of field.acroField.getWidgets()){
+   const {x,y,width,height}=widget.getRectangle();
+   if(!text)continue;
+   const usableWidth=Math.max(1,width-6),usableHeight=Math.max(1,height-6);
+   const leading=size=>size*1.25;
+   const wrap=size=>bpfObservationLines(text,font,usableWidth,size);
+   const fits=size=>(wrap(size).length+blankLines)*leading(size)<=usableHeight;
+   let size=9;
+   if(!fits(size)){
+    let low=.25,high=size;
+    if(!fits(low))throw Error('Observações extensas demais para imprimir com a folga de '+blankLines+' linha(s): '+name);
+    for(let n=0;n<15;n++){
+     const mid=(low+high)/2;
+     if(fits(mid))low=mid;else high=mid;
+    }
+    size=low;
+   }
+   const top=y+height-3;
+   wrap(size).forEach((row,i)=>page.drawText(row,{x:x+3,y:top-size-i*leading(size),size,font,color:black}));
+  }
+  form.removeField(field);
+ }
+}
+
 async function bpfPDFWithObservationOverflows(pdf,form,font){
  for(const field of form.getFields()){
   if(/^Rotulo_Pagina_3_/.test(field.getName()))form.removeField(field);
@@ -244,6 +278,7 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
  const bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
  const template=bpfOverflowPages.size?await pdf.embedJpg(bpfNCBackground):null;
  const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
+ bpfPrintProcessObservations(pdf,form,font,normalize,black);
  const draw=(page,rect,text,size,spacing)=>{
   const content=normalize(text.trimEnd());
   const [x,,right,top]=rect,leading=size*1.35;
@@ -253,7 +288,7 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
    const wrapped=bpfObservationLines(line,font,right-x-14,size);
    for(const [index,row] of wrapped.entries()){
     if(definition&&index)y-=leading/3;
-    page.drawText(row,{x:x+7,y,size,font,color:ink});
+    page.drawText(row,{x:x+7,y,size,font,color:black});
     y-=leading;
    }
    if(!wrapped.length)y-=leading;
