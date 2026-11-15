@@ -75,7 +75,31 @@ const bpfWaterCheck = (() => {
   check('ajuste-batentes','São ajustadas aos batentes?',{yesLabel:'As portas são ajustadas aos batentes',noLabel:'As portas não são ajustadas aos batentes'}),
   check('conservacao-portas','Estão em adequado estado de conservação?',{yesLabel:'As portas estão em adequado estado de conservação',noLabel:'As portas não estão em adequado estado de conservação'})
  ].map(criterion=>({...criterion,section:'Portas da antessala e sala de envase'}));
+ const fillingChecks={
+  '4.7.4':[
+   check('inclinacao-piso','O piso possui inclinação suficiente para facilitar o escoamento de água?',{yesLabel:'O piso possui inclinação suficiente para facilitar o escoamento de água',noLabel:'O piso não possui inclinação suficiente para facilitar o escoamento de água'}),
+   check('ralo-sifonado','A sala de envase possui ralo sifonado com tampa escamoteável?',{yesLabel:'A sala de envase possui ralo sifonado com tampa escamoteável',noLabel:'A sala de envase não possui ralo sifonado com tampa escamoteável'}),
+   check('luminarias-protegidas','As luminárias da sala de envase são protegidas contra quebras?',{yesLabel:'As luminárias da sala de envase são protegidas contra quebras',noLabel:'As luminárias da sala de envase não são protegidas contra quebras'}),
+   check('ventilacao','A sala de envase possui ventilação capaz de manter o ambiente livre de condensação de vapor de água?',{yesLabel:'A sala de envase possui ventilação capaz de manter o ambiente livre de condensação de vapor de água',noLabel:'A sala de envase não possui ventilação capaz de manter o ambiente livre de condensação de vapor de água'})
+  ],
+  '4.7.5':[
+   check('lavatorio-exclusivo','Lavatório exclusivo para higiene das mãos?',{yesLabel:'O lavatório é exclusivo para higiene das mãos',noLabel:'O lavatório não é exclusivo para higiene das mãos'}),
+   check('torneira','Lavatório com torneira acionada sem contato manual?',{yesLabel:'O lavatório possui torneira acionada sem contato manual',noLabel:'O lavatório não possui torneira acionada sem contato manual'}),
+   check('sabonete','Lavatório com sabonete líquido inodoro?',{yesLabel:'O lavatório dispõe de sabonete líquido inodoro',noLabel:'O lavatório não dispõe de sabonete líquido inodoro'}),
+   check('antisseptico','Lavatório com produto antisséptico?',{yesLabel:'O lavatório dispõe de produto antisséptico',noLabel:'O lavatório não dispõe de produto antisséptico'}),
+   check('secagem','Sistema de secagem das mãos acionado sem contato manual?',{yesLabel:'O sistema de secagem das mãos é acionado sem contato manual',noLabel:'O sistema de secagem das mãos não é acionado sem contato manual'})
+  ],
+  '4.7.6':[
+   check('uniforme-limpo','Utiliza uniformes limpos?',{yesLabel:'Utiliza uniformes limpos',noLabel:'Não utiliza uniformes limpos'}),
+   check('troca-uniforme','Troca os uniformes diariamente?',{yesLabel:'Troca os uniformes diariamente',noLabel:'Não troca os uniformes diariamente'}),
+   check('uniforme-exclusivo','Utiliza uniformes de uso exclusivo para essa área?',{yesLabel:'Utiliza uniformes de uso exclusivo para essa área',noLabel:'Não utiliza uniformes de uso exclusivo para essa área'})
+  ],
+ };
+ const fillingF2Indices={'4.7.4':[4,1,2,3],'4.7.5':[1,4,2,5,3]};
  const panels = {
+  '4.7.4':{1:{...returnableInspection(fillingChecks['4.7.4']),collapseAnswers:true}},
+  '4.7.5':{1:{...returnableInspection(fillingChecks['4.7.5']),collapseAnswers:true}},
+  '4.7.6':{0:{...returnableInspection(fillingChecks['4.7.6']),collapseAnswers:true}},
   '4.7.2':{0:{...returnableInspection([...surfaceChecks,...doorChecks]),collapseAnswers:true}},
   '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
@@ -261,18 +285,20 @@ const bpfWaterCheck = (() => {
    let state=JSON.parse(data[name]||'null');
    if(!state?.['sim-lavagem']&&!state?.['nao-lavagem']){
     const row=BPF_PHRASES.filter(page=>[7,8,9,10].includes(page.page)).flatMap(page=>page.rows)
-     .find(row=>['4.6.4','4.6.5','4.6.6','4.6.8','4.7.2'].includes(row.code)&&
+     .find(row=>['4.6.4','4.6.5','4.6.6','4.6.8','4.7.2','4.7.4','4.7.5','4.7.6'].includes(row.code)&&
       row.scopes.some(scope=>scope.name===entry.scope.name));
     if(row&&panels[row.code][entry.index]){
      let previous=data[entry.name];
-     if((row.code==='4.6.4'||row.code==='4.7.2')&&entry.index===0){
-      const old=bpfF1Checks(row,entry.scope).map(check=>data[check.name]);
-      const priorChecks=row.code==='4.6.4'?prewashChecks:[...surfaceChecks,...doorChecks];
-      if(!state)state={};
+     const groupedIndices=entry.index===1?fillingF2Indices[row.code]:null;
+     const priorChecks=entry.index===0?({'4.6.4':prewashChecks,'4.7.2':[...surfaceChecks,...doorChecks],'4.7.6':fillingChecks['4.7.6']})[row.code]:groupedIndices?fillingChecks[row.code]:null;
+     if(priorChecks){
+      const names=groupedIndices?groupedIndices.map(index=>bpfPhraseName(entry.scope,index)):bpfF1Checks(row,entry.scope).map(check=>check.name);
+      const old=names.map(name=>data[name]);
+      state??={};
       for(const [i,criterion] of priorChecks.entries()){
-       if(hasAnswer(old[i]))state[criterion.id]={answer:old[i]};
+       if(hasAnswer(old[i])&&!state[criterion.id])state[criterion.id]={answer:old[i]};
       }
-      if(!hasAnswer(previous))previous=old.includes('0')?'0':old.includes('1')?'1':'';
+      if(groupedIndices||!hasAnswer(previous))previous=old.includes('0')?'0':old.includes('1')?'1':previous;
      }
      if(row.code==='4.6.8'&&entry.index===1&&hasAnswer(state?.['transporte-tampas']?.answer)){
       const first=JSON.parse(data[key({name:bpfPhraseName(entry.scope,0)})]||'null');
@@ -499,7 +525,7 @@ const bpfWaterCheck = (() => {
    for(const scope of row.scopes)scope.phrases.push({...phrase});
   }
  }
- const synchronizedItems=new Set(['4.1.3','4.2.2','4.2.7','4.2.8','4.2.9','4.3.2','4.3.5','4.6.3','4.6.4','4.6.5','4.6.6','4.6.8','4.7.2','4.7.8']);
+ const synchronizedItems=new Set(['4.1.3','4.2.2','4.2.7','4.2.8','4.2.9','4.3.2','4.3.5','4.6.3','4.6.4','4.6.5','4.6.6','4.6.8','4.7.2','4.7.4','4.7.5','4.7.6','4.7.8']);
  function registerReview(entries,byKey){
   for(const page of BPF_PHRASES)for(const row of page.rows){
    if(!synchronizedItems.has(row.code))continue;
@@ -537,7 +563,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
-   if(row.code==='4.6.4'||row.code==='4.7.2')for(const entry of bpfF1Checks(row,scope)){
+   if(['4.6.4','4.7.2','4.7.6'].includes(row.code))for(const entry of bpfF1Checks(row,scope)){
     data.fields[entry.name]={name:entry.name,type:'/Ch',flags:0,label:entry.option,options:[],calc:'',phrasePage:page.page};
    }
    for(const entry of entriesFor(row,scope)){
@@ -572,6 +598,10 @@ const bpfWaterCheck = (() => {
     data[entry.name]='';
    }else if(state){
     data[entry.name]=result(get(row,entry.index),state);
+    if(entry.index===1&&fillingF2Indices[row.code]){
+     if(!data[key(entry)])data[key(entry)]=JSON.stringify(state);
+     for(const index of fillingF2Indices[row.code])data[bpfPhraseName(scope,index)]=data[entry.name];
+    }
     if(row.code==='4.7.8'){
      const answers=bpfF1Checks(row,scope).map(check=>data[check.name]);
      const answer=answers.includes('0')?'0':answers.every(value=>value==='1')?'1':'';
@@ -623,7 +653,8 @@ const bpfWaterCheck = (() => {
   const config=reservoir?{checks:panel.entries.filter(entry=>entry.scope===panel.entries[0]?.scope)
    .map(entry=>({id:entry.index,label:bpfUnifiedOption(row,entry)}))}:get(row,panel.id);
   if(!config)return [];
-  const units=(config.inline?machineEntries(panel):panel.entries).map(entry=>({
+  const entries=config.inline?machineEntries(panel):panel.id===1&&fillingF2Indices[row.code]?panel.entries.filter(entry=>entry.index===1):panel.entries;
+  const units=entries.map(entry=>({
    entry,label:bpfScopeLabel(page,entry.scope),checks:reservoir?
     (['1','0'].includes(data[entry.name])?[{id:entry.index,answer:data[entry.name],details:''}]:[]):
     records(row,entry,data)
@@ -870,13 +901,14 @@ const bpfWaterCheck = (() => {
  function render(card,page,row,panel){
   const config=get(row,panel.id);
   if(!config||config.inline&&!panel.machineDetails)return false;
+  if(panel.id===1&&fillingF2Indices[row.code])panel={...panel,entries:panel.entries.filter(entry=>entry.index===1)};
   if(row.code==='4.6.8'&&panel.id===1){
    card.dataset.bpfCapsF2='';
    card.hidden=!panel.entries.some(entry=>panelEnabled(row,entry,values));
   }
   const dependentF2=conductionF2(row,panel.id);
   if(dependentF2)card.dataset.bpfConductionF2='';
-  const hint=element('p',config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
+  const hint=element('p',fillingChecks[row.code]?'Marque uma avaliação por linha e registre as verificações em Outras informações.':config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
   if(!document.getElementById('bpf-water-css')){
