@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-observacoes-uma-linha';
+const CACHE='guia18-20261115-anexo-f-sem-folha-avulsa';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -247,7 +247,7 @@ function bpfSyncNCLists(){
       altered=altered.replace(fillPreparation,fillPreparation+
         '\n const bpfPrintPccLabels=bpfPrintPrepareRisk();');
       altered=altered.replace(beforeSave,
-        '\n if(window.bpfConclusaoNC?.hasNC()){const cfg=window.bpfConclusaoNC;const conclusion=form.getFieldMaybe(cfg.field);if(conclusion){conclusion.setText(cfg.include(values[cfg.field]));conclusion.updateAppearances(observationFont);}}\n bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n if(window.bpfPrintSampling404)await window.bpfPrintSampling404(pdf);\n'+beforeSave);
+        '\n if(window.bpfConclusaoNC?.hasNC()){const cfg=window.bpfConclusaoNC;const conclusion=form.getFieldMaybe(cfg.field);if(conclusion){conclusion.setText(cfg.include(values[cfg.field]));conclusion.updateAppearances(observationFont);}}\n bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n'+beforeSave);
       altered=altered.replace(oldDownload,
         "a.download='Guia_BPF_Relatorio_Inspecao_FINAL.pdf'");
       altered=altered.replace(oldStatus,"status.textContent='PDF final não editável gerado'");
@@ -573,8 +573,8 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   if(!altered.includes("v.BPF_Sampling_4104_native='1'"))
    altered=altered.replace(checklistApply,checklistApply+samplingMigration);
   altered=altered.replace("      values[selectedKey]=JSON.stringify([...selected]);","      if(row.code==='4.10.4'&&panel.id===1&&option===panel.checklist[2]&&check.checked){\n       values.BPF_Sampling_4104_mensal_registro='';\n       const na=checklistInputs.get('2'+option);\n       if(na)na.checked=false;\n      }\n      values[selectedKey]=JSON.stringify([...selected]);");
-  const samplingTag='<script src="./bpf-amostragem-4104.js?v=20261115-conferencia-anexos-manual"></script>';
-  if(!altered.includes('bpf-amostragem-4104.js'))altered=altered.replace('</head>',samplingTag+'</head>');
+  const samplingTag='<script src="./bpf-amostragem-4104.js?v=20261115-anexo-compacto"></script>';
+  if(!altered.includes('bpf-amostragem-4104.js'))altered=altered.replace(inspectorScript,samplingTag+inspectorScript);
   altered=altered.replace("text.textContent=option;label.append(check,text);",
    "text.textContent=row.code==='4.10.4'?(window.bpfSamplingCaption404?.(option)||option):option;label.append(check,text);");
   altered=altered.replace("?'Outros: '+other:option);",
@@ -708,6 +708,8 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
    'const pdf=await PDFLib.PDFDocument.load(templateBytes),bpfSourcePages=pdf.getPages().slice(),form=pdf.getForm(),');
   altered=altered.replace(' bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);',
    ' bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n await window.bpfStampReportItemLabels(pdf,bpfSourcePages);');
+  altered=altered.replace('  const panels=bpfPanels(page,row);\n  for(const panel of panels.filter(panel=>panel.checklist))',
+   '  const panels=bpfPanels(page,row);\n  if(row.code===\'4.10.4\'){result.push(...bpfSamplingAnnex404(page,row,panels,values));continue;}\n  for(const panel of panels.filter(panel=>panel.checklist))');
   altered=altered.replace(/async function bpfAppendCompactAnnex\(pdf\)\{[\s\S]*?\n\}/,annex=>
    annex.replaceAll('(item.page.page+1)','(bpfPageOrder.indexOf(item.page.page)+1)')
     .replaceAll('(source.page+1)','(bpfPageOrder.indexOf(source.page)+1)'));
