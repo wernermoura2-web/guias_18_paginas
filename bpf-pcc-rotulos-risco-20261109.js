@@ -1,6 +1,6 @@
 /* Risco por PCC: valores numéricos/categorias separados do rótulo visual.
  * Um PCC NÃO torna ALTO o risco da linha/grupo, processo, matriz e estabelecimento.
- * O texto ALTO - PCC aparece nas células correspondentes, sem alterar F/NC/OBS.
+ * O texto ALTO-PCC aparece nas células correspondentes, sem alterar F/NC/OBS.
  */
 (function(){
 'use strict';
@@ -95,12 +95,12 @@ function addLabel(active,data,field,pageIndex,label){
    'font-size:clamp(8px,1.55cqw,12px);line-height:1;';
   pageEl.appendChild(element);
  }
- const inset=.8;
- element.style.left=((x1+inset)/W*100)+'%';
+ const inset=.8, expansion=pageIndex===17&&x2-x1<28?4:0;
+ element.style.left=((x1+inset-expansion)/W*100)+'%';
  element.style.top=((H-y2+inset)/H*100)+'%';
- element.style.width=((x2-x1-2*inset)/W*100)+'%';
+ element.style.width=((x2-x1-2*inset+2*expansion)/W*100)+'%';
  element.style.height=((y2-y1-2*inset)/H*100)+'%';
- if(x2-x1<48)element.style.fontSize='clamp(6px,1.0cqw,8px)';
+ if(x2-x1<48)element.style.fontSize='min(1.2cqw,'+((x2-x1-2*inset+2*expansion)/W*100/5)+'cqw)';
  if(element.textContent!==label)element.textContent=label;
 }
 function refresh(){
@@ -123,21 +123,24 @@ function refresh(){
      const unit=group.units[pageNo]?.[col-1];
      if(unit){
       if(v[unit]!=='ALTO'){v[unit]='ALTO';dirty=true;}
-      addLabel(active,data,unit,pageNo,'ALTO - PCC');
+      addLabel(active,data,unit,pageNo,'ALTO-PCC');
      }
-     const matrixCell=group.cells[pageNo]?.[col-1];
-     if(matrixCell&&v[matrixCell]!=='3'){v[matrixCell]='3';dirty=true;}
+     const matrixCell=(group.cells[pageNo]||group.cells[group.pages[0]])?.[col-1];
+     if(matrixCell){
+      if(v[matrixCell]!=='3'){v[matrixCell]='3';dirty=true;}
+      addLabel(active,data,matrixCell,17,'ALTO-PCC');
+     }
     }
     const final=group.finals[pageNo];
     if(final){
      if(v[final]!=='ALTO'){v[final]='ALTO';dirty=true;}
-     addLabel(active,data,final,pageNo,'ALTO - PCC');
+     addLabel(active,data,final,pageNo,'ALTO-PCC');
     }
    }
    if(groupPCC){
     if(v[group.matrix]!=='ALTO'){v[group.matrix]='ALTO';dirty=true;}
     if(v[group.score]!=='3'){v[group.score]='3';dirty=true;}
-    addLabel(active,data,group.matrix,17,'ALTO - PCC');
+    addLabel(active,data,group.matrix,17,'ALTO-PCC');
    }
    if(v[group.matrix]==='ALTO')anyProcessHigh=true;
   }

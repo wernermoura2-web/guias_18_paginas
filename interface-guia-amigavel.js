@@ -439,32 +439,6 @@
    }
    return failed;
   }
-  function showPCC(failed){
-   const host=document.getElementById('pages');
-   const page=host?.querySelector('.page[data-page="17"]'),data=window.Guia?.data;
-   if(!page||!data?.widgets)return;
-   page.querySelectorAll('[data-bpf-matriz-pcc]').forEach(el=>el.remove());
-   for(const group of groups){
-    for(const p of group.pages){
-     for(const col of (failed.get(p)||[])){
-      const field=group.units[p]?.[col-1];
-      if(!field)continue;
-      const widget=data.widgets.find(w=>w.page===17&&w.name===field);
-      if(!widget?.rect||!widget?.size)continue;
-      const [x1,y1,,]=widget.rect,[width,height]=widget.size;
-      const badge=document.createElement('span');
-      badge.dataset.bpfMatrizPcc=field;
-      badge.textContent='PCC';
-      badge.title='ALTO RISCO — PCC não atendido';
-      badge.style.cssText='position:absolute;z-index:48;pointer-events:none;'+
-       'left:'+(100*x1/width)+'%;top:'+(100*(height-y1+1)/height)+'%;'+
-       'color:#a81212;background:#fff;font:700 clamp(8px,1.05cqw,12px)/1.1 Arial,sans-serif;'+
-       'padding:0 2px;border-radius:2px';
-      page.appendChild(badge);
-     }
-    }
-   }
-  }
   function corrected(...args){
    const result=previous.apply(this,args),v=window.Guia?.values;
    if(!v)return result;
@@ -493,7 +467,6 @@
    if(anyHigh)v.Dropdown58='ALTO';
    v.Group279=v.Dropdown58==='BAIXO'?'0':v.Dropdown58==='MÉDIO'?'1':v.Dropdown58==='ALTO'?'2':'Off';
    if(typeof window.sync==='function')window.sync();
-   showPCC(failed);
    return result;
   }
   corrected.__bpfRiskPCCMatrixV97=true;
