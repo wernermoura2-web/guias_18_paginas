@@ -1,7 +1,7 @@
 /* Verificações de Captação e Condução, registradas por unidade e frase. */
 const bpfWaterCheck = (() => {
  const check = (id, label, options = {}) => ({id, label, ...options});
- const sanitizers = label => check('saneantes', label, {details:'sanitizers'});
+ const sanitizers = (label, options) => check('saneantes', label, {details:'sanitizers', ...options});
  const yes = (id, label, details) => check(id, label, {yesOnly:true, details});
  const controls = (disinfection, water) => [
   yes('telemetria','Existe telemetria em linha','telemetry'),
@@ -168,7 +168,7 @@ const bpfWaterCheck = (() => {
   },
   '4.2.7':{0:{checks:[
    adequateHygiene,
-    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução'),
+    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução',{frequencyOptional:true}),
    ...controls('da condução','conduzida')
   ]}},
   '4.2.8':{
@@ -413,7 +413,7 @@ const bpfWaterCheck = (() => {
     const selected=products.filter(([id])=>item.products?.[id]?.selected);
     return !selected.length||selected.some(([id])=>{
      const p=item.products[id];
-     return !p.frequency||(id==='outros'&&!text(p.name))||(p.frequency==='Outra'&&!text(p.otherFrequency));
+     return (!criterion.frequencyOptional&&!p.frequency)||(id==='outros'&&!text(p.name))||(p.frequency==='Outra'&&!text(p.otherFrequency));
     });
    }
    case 'packaging-sanitizers':
