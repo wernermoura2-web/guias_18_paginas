@@ -284,7 +284,49 @@ function fitBadge(badge){
  badge.style.setProperty('font-size',size.toFixed(2)+'px','important');
  badge.style.setProperty('gap',(w*.006).toFixed(2)+'px','important');
 }
+const numberedBackgrounds=new WeakSet();
+function clearBackgroundNumber(bg,source){
+ if(!bg||numberedBackgrounds.has(bg))return;
+ numberedBackgrounds.add(bg);
+ if(source===15||source===16){
+  const prefix='data:image/svg+xml;base64,';
+  if(!bg.src.startsWith(prefix))return;
+  const oldSvg=atob(bg.src.slice(prefix.length));
+  const svg=oldSvg.replace(/ \| P.{1,2}gina \d+(?=<\/text>)/,'');
+  if(svg!==oldSvg)bg.src=prefix+btoa(svg);
+  return;
+ }
+ if(!bg.src.startsWith('data:image/jpeg;'))return;
+ const height=BPF_PAGE_HEIGHTS[source]||841.92;
+ const [left,right,fromBottom,toBottom]=source===14?[522,579,29,16]:[492,553,66,53];
+ const x1=100*left/pageWidth+'%',x2=100*right/pageWidth+'%';
+ const y1=100*(height-fromBottom)/height+'%',y2=100*(height-toBottom)/height+'%';
+ bg.style.clipPath='polygon(evenodd,0% 0%,100% 0%,100% 100%,0% 100%,0% 0%,'+
+  x1+' '+y1+','+x2+' '+y1+','+x2+' '+y2+','+x1+' '+y2+','+x1+' '+y1+')';
+}
+function syncPageNumbers(){
+ if(typeof bpfPageOrder==='undefined')return;
+ const pages=new Map(Array.from(document.querySelectorAll('#pages>.page'),page=>[Number(page.dataset.page),page]));
+ bpfPageOrder.forEach((source,index)=>{
+  const page=pages.get(source);
+  if(!page)return;
+  clearBackgroundNumber(page.querySelector('img.background'),source);
+  let footer=page.querySelector('.bpf-guide-footer');
+  if(!footer){
+   footer=document.createElement('div');
+   footer.className='bpf-guide-footer';
+   page.append(footer);
+  }
+  if(source!==21){
+   footer.style.right=source===14?'3.2%':'7.5%';
+   footer.style.bottom=source===14?'1.6%':'5.6%';
+  }
+  const label='Página '+(index+1)+' de '+bpfPageOrder.length;
+  if(footer.textContent!==label)footer.textContent=label;
+ });
+}
 function apply(){
+ syncPageNumbers();
  if(typeof BPF_PHRASES==='undefined'||!Array.isArray(BPF_PHRASES))return;
  if(typeof GUIDE_DATA==='undefined'||!Array.isArray(GUIDE_DATA.widgets))return;
  const pages=document.querySelectorAll('#pages>.page');
@@ -339,7 +381,11 @@ function apply(){
  }
  window.__bpfEtiquetasDiagnosticoV69=diag;
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();
+function initSummaries(){
+ document.getElementById('nav')?.addEventListener('change',syncPageNumbers);
+ apply();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initSummaries,{once:true});else initSummaries();
 let count=0;const interval=setInterval(()=>{apply();observePages();if(++count>30)clearInterval(interval)},1000);
 window.addEventListener('resize',()=>requestAnimationFrame(apply),{passive:true});
 // As 22 páginas são alternadas no celular: recalcular a fonte quando cada
