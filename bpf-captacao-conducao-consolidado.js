@@ -166,8 +166,8 @@ const bpfWaterCheck = (() => {
     check('conexoes-sanitarias','Reservatório com conexões sanitárias',{noLabel:'Reservatório sem conexões sanitárias'})
    ]},
    2:{all:true,checks:[
-    check('vazamento','Reservatório e/ou conexões com vazamento',{negative:true}),
-    check('vincos-amassados','Reservatório com paredes com vincos ou amassadas',{negative:true}),
+    check('sem-vazamento','Reservatório e/ou conexões sem vazamento'),
+    check('sem-vincos-amassados','Reservatório com paredes sem vincos ou amassados'),
     check('escotilha-parede','Reservatório com escotilha na parede para acesso interno'),
     check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual',{yesOnly:true})
    ]}
@@ -268,6 +268,13 @@ const bpfWaterCheck = (() => {
     }else{
      const previous=state['conexoes-nao-sanitarias'].answer;
      if(previous==='0'||previous==='1')return {...state,'conexoes-sanitarias':{answer:previous==='0'?'1':'0'}};
+    }
+   }
+   if(state&&entry.index===2&&(state.vazamento||state['vincos-amassados'])&&
+      BPF_PHRASES.find(page=>page.page===2)?.rows.find(row=>row.code==='4.3.2')?.scopes.some(scope=>scope.name===entry.scope.name)){
+    for(const id of ['vazamento','vincos-amassados']){
+     const previous=state[id]?.answer;
+     if(!state['sem-'+id]&&(previous==='1'||previous==='0'))state['sem-'+id]={answer:previous==='1'?'0':'1'};
     }
    }
    if(state&&entry.index===1&&getConductionCheckEntry(entry)&&!state.integrityPositive){
