@@ -332,6 +332,34 @@ const bpfWaterCheck = (() => {
   declaracao:'Foi apresentada declaração de grau alimentício?',
   'nota-fiscal':'Foi apresentada nota fiscal do material?'
  };
+ const negativeStatements={
+  filtro:[/^Possui /,'Não possui '],
+  'registro-filtro':[/^Possui /,'Não possui '],
+  'pop-registros':[/ estão disponíveis/,' não estão disponíveis'],
+  telemetria:[/^Existe /,'Não existe '],
+  residuo:[/, testa /,', não testa '],
+  microbiologia:[/, testa /,', não testa '],
+  atp:[/, faz /,', não faz '],
+  certificado:[/^Foi apresentado /,'Não foi apresentado '],
+  declaracao:[/^Foi apresentada /,'Não foi apresentada '],
+  'nota-fiscal':[/^Foi apresentada /,'Não foi apresentada '],
+  'sem-historico-pop':[/ não contempla /,' contempla '],
+  'escotilha-teto':[/ com escotilha /,' sem escotilha '],
+  'uso-imediato':[/ são utilizadas /,' não são utilizadas '],
+  'ar-sopro-filtrado':[/ são sopradas /,' não são sopradas '],
+  'analise-ar-comprimido':[/ é coletado /,' não é coletado '],
+  'transporte-ar-filtrado':[/ são movimentadas /,' não são movimentadas '],
+  concentracao:[/ é feito /,' não é feito '],
+  'bicos-pressao':[/^.*$/,'Os bicos estão obstruídos e/ou a pressão dos jatos não permite que a solução desinfetante alcance o fundo das garrafas'],
+  escoamento:[/ é suficiente /,' não é suficiente '],
+  'telemetria-concentracao':[/^Existe /,'Não existe ']
+ };
+ const informationStatement=(criterion,answer)=>{
+  const statement=criterion.label.replace(/\?$/,'');
+  if(answer!=='0')return statement;
+  const [pattern,replacement]=negativeStatements[criterion.id];
+  return statement.replace(pattern,replacement);
+ };
  const informationalPanels=[disposableRinse,returnableRinse,
   ...Object.values(panels).flatMap(phrases=>Object.values(phrases))];
  for(const panel of informationalPanels)for(const criterion of panel.checks){
@@ -500,7 +528,7 @@ const bpfWaterCheck = (() => {
     const recorded=units.flatMap(unit=>unit.checks.filter(check=>check.id===criterion.id&&check.answer===answer)
      .map(check=>unit.label+(check.details?' — '+check.details:'')));
     if(recorded.length){
-     const caption=criterion.informationQuestion?criterion.label+' — '+bpfAnswerLabel(answer):criterion.label;
+     const caption=criterion.informationQuestion?informationStatement(criterion,answer):criterion.label;
      information.push((criterion.section?criterion.section+' · ':'')+caption+' ('+recorded.join(' / ')+')');
     }
    }
@@ -909,8 +937,10 @@ const bpfWaterCheck = (() => {
       yesControl.prepend(input);
       noControl.prepend(noInput);
       choices.append(yesControl,noControl);
-      line.append(element('div',caption),choices);
+      const prompt=element('div',caption);
+      line.append(prompt,choices);
       rows.push(()=>{
+       prompt.textContent=item.answer==='1'||item.answer==='0'?informationStatement(criterion,item.answer):caption;
        noInput.disabled=state.notApplicable||!active(criterion,state);
        noInput.checked=!noInput.disabled&&item.answer==='0';
       });
