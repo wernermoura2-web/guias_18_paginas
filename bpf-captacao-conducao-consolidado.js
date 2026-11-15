@@ -115,7 +115,7 @@ const bpfWaterCheck = (() => {
     yes('desinfeccao-envasadora','Faz a desinfecção das tampas na envasadora.')
    ]},
    1:{all:true,checks:[
-    check('desinfetante-tampas','As tampas são desinfetadas na envasadora com desinfetantes adequados?',{
+    check('desinfetante-tampas','As tampas são desinfetadas com desinfetantes adequados?',{
      details:'packaging-sanitizers',detailsOnNo:true,products:[['ozonio','Ozônio'],['outros','Outro']]
     }),
     check('ambiente-desinfeccao','O ambiente onde é feita a desinfecção é adequado?'),
