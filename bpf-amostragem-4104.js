@@ -2,7 +2,6 @@
 'use strict';
 if(window.__bpfSampling404)return;
 window.__bpfSampling404=true;
-const phrases={"F1":{"title":"Elaboração do plano de amostragem","text":"O estabelecimento possui plano de amostragem que especifica o número de amostras, os locais de coleta, os parâmetros analíticos e a frequência nas etapas avaliadas?","guide":"Confira os pontos, o número de amostras, os parâmetros e a frequência. Quando aplicável, verifique se o plano prevê análise mensal terceirizada e identifica produto ou lote, número de amostras, ponto de coleta e parâmetros.","obs":"O plano [versão/data] especifica as coletas e prevê a análise mensal terceirizada de [produto/lote].","nc":"O plano não identifica [ponto, frequência, parâmetro ou número de amostras] ou não prevê a análise mensal terceirizada quando aplicável."},"F2":{"title":"Execução do plano e limites de aceitação","text":"O estabelecimento executa o plano de amostragem conforme previsto e tem definidos os limites de aceitação aplicáveis aos parâmetros analisados?","guide":"Compare coletas e laudos com o plano. Confira os limites de aceitação no plano ou em documento vinculado. Quando aplicável, verifique a execução mensal terceirizada e o registro em planilha ou sistema de data, ponto, produto/lote, laboratório, laudo, parâmetro, resultado, unidade e comparação com o limite. Para bactérias heterotróficas, confira separadamente os limites internos de alerta e de ação por ponto monitorado.","obs":"Os laudos de [meses] foram vinculados aos lotes amostrados e os resultados foram comparados aos limites identificados.","nc":"Não foi apresentado laudo terceirizado de [mês], ou o registro não indica o limite de aceitação para [parâmetro]."}};
 const checks=[["F1","mensal_plano","Análise mensal terceirizada prevista no plano, quando aplicável",true],["F2","execucao","Execução do plano conforme previsto",false],["F2","aceitacao","Limites de aceitação definidos",false],["F2","mensal_registro","Análise mensal terceirizada executada, registrada e comparada aos limites",true],["F2","heterotroficas","Limites internos de alerta e de ação para bactérias heterotróficas definidos",false]];
 const key=id=>'BPF_Sampling_4104_'+id;
 const revised=new Map(),guidance=new Map();
@@ -63,58 +62,44 @@ function install(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',install,{once:true});else install();
 
-window.bpfPrintSampling404=async function(pdf){
- const annexEnabled=[...document.querySelectorAll('input[type=checkbox]')].some(el=>el.checked&&/anexar.*(?:frases|F).*pdf/i.test(el.parentElement?.textContent||''));
- if(!annexEnabled)return;
- const state=data();
- if(!state)return;
- const source=BPF_PHRASES.find(page=>page.rows.some(row=>row.code==='4.10.4'));
- const item=source?.rows.find(row=>row.code==='4.10.4');
- const panels=item?bpfPanels(source,item):[];
- const recorded=checks.some(([,id])=>['1','0','2'].includes(state[key(id)]))||
-  panels.some(panel=>panel.entries.some(entry=>['1','0','2'].includes(state[entry.name]))||
-   panel.checklist&&['1','0'].some(answer=>bpfChecklistSelected(source,item,panel,answer,state).length));
- if(!recorded)return;
- const fonts=[await pdf.embedFont(PDFLib.StandardFonts.Helvetica),await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold)];
- const page=pdf.addPage([595.28,841.89]);
- let y=799;
- function add(text,size,bold=false){
-   const font=fonts[Number(bold)];
-   let row='';
-   for(const word of text.split(/\s+/)){
-     const next=row?row+' '+word:word;
-     if(row&&font.widthOfTextAtSize(next,size)>521){page.drawText(row,{x:37,y,font,size});y-=size+4;row=word;}
-     else row=next;
+window.bpfSamplingAnnex404=(page,row,panels,state)=>{
+ const result=[];
+ for(const panel of panels){
+  const f='F'+(panel.id+1);
+  const itemChecks=checks.filter(([group])=>group===f);
+  const checklist=panel.checklist;
+  const selected=checklist?Object.fromEntries(['1','0'].map(answer=>[
+   answer,bpfChecklistSelected(page,row,panel,answer,state)
+  ])):{};
+  const storedAnswers=itemChecks.map(([,id,label])=>{
+   const answer=f==='F2'&&checklist
+    ?['0','1'].find(value=>selected[value].includes(label))||
+      (id==='mensal_registro'&&state[key(id)]==='2'?'2':'')
+    :state[key(id)];
+   return [label,answer];
+  });
+  for(const answer of ['1','0','2']){
+   const marked=storedAnswers.filter(([,value])=>value===answer).map(([label])=>captionFor(label));
+   const entry=panel.entries[0];
+   const overall=entry&&state[entry.name];
+   if(f==='F1'&&answer!=='2'){
+    const references=selected[answer]||[];
+    const other=String(state[bpfChecklistKey(page,row,panel,'Other',answer)]||'').trim();
+    marked.unshift(...references.map(reference=>reference==='Outros'&&other?'Outros: '+other:reference));
    }
-   if(row){page.drawText(row,{x:37,y,font,size});y-=size+4;}
- }
- add('4.10.4 — Plano de amostragem',17,true);
- add('Anexo de frases F · Controle da Qualidade',11);
- y-=12;
- for(const f of ['F1','F2']){
-   const p=phrases[f];
-   add(f+' — '+p.title+' (PPRO)',13,true);
-   add(p.text,10);
-   add('Orientação ao inspetor: '+p.guide,10);
-   y-=7;
-   for(const [,id,label] of checks.filter(item=>item[0]===f)){
-     const state=data();
-     let answer=state?.[key(id)];
-     if(f==='F2'&&typeof BPF_PHRASES!=='undefined'&&typeof bpfPanels==='function'){
-       const page=BPF_PHRASES.find(p=>p.rows.some(r=>r.code==='4.10.4'));
-       const item=page?.rows.find(r=>r.code==='4.10.4');
-       const panel=item&&bpfPanels(page,item).find(p=>p.id===1);
-       if(panel?.checklist?.includes(label))answer=['0','1'].find(value=>
-         bpfChecklistSelected(page,item,panel,value,state).includes(label)
-       )||(id==='mensal_registro'&&answer==='2'?'2':'');
-     }
-     const result={'1':'Sim','0':'Não','2':'NA'}[answer]||'Em branco';
-     add(captionFor(label)+' — '+result,10);
+   if(f==='F1'&&overall===answer&&!marked.length){
+    marked.push('Avaliação geral registrada — '+bpfAnswerLabel(answer));
    }
-   y-=7;
-   add('OBS — Exemplo: '+p.obs,10);
-   add('NC — Exemplo: '+p.nc,10);
-   y-=18;
+   if(f==='F2'&&overall===answer&&!storedAnswers.some(([,value])=>['1','0'].includes(value))){
+    marked.unshift('Avaliação geral registrada — '+bpfAnswerLabel(answer));
+   }
+   if(!marked.length)continue;
+   const note=overall===answer||checklist&&answer!=='2'
+    ?String(state[bpfGroupNoteName(page,row,panel,answer)]||
+      (overall===answer&&entry?state[bpfNoteName(entry.scope,entry.index)]:'')||'').trim():'';
+   result.push({page,row,panel,checklist:marked,answer,note});
+  }
  }
+ return result;
 };
 })();
