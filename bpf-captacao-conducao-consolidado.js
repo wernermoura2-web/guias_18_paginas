@@ -97,11 +97,11 @@ const bpfWaterCheck = (() => {
     yes('nota-fiscal','Nota Fiscal do material')
    ]},
    1:{all:true,checks:[
-    check('vazamento','Tubulação e/ou conexões sem vazamento'),
-    check('abaulada','Tubulação sem abaulamento e/ou com suportes suficientes'),
-    check('integra','Tubulação sem avarias e/ou lisa e íntegra'),
-    check('corrosao','Tubulação e conexões sem corrosão'),
-    check('emendas','Tubulações com emendas ou conexões sanitárias')
+    check('vazamento','Tubulação e/ou conexões sem vazamento',{noLabel:"Tubulação e/ou conexões com vazamento"}),
+    check('abaulada','Tubulação sem abaulamento e/ou com suportes suficientes',{noLabel:"Tubulação com abaulamento e/ou com suportes insuficientes"}),
+    check('integra','Tubulação sem avarias e/ou lisa e íntegra',{noLabel:"Tubulação com avarias e/ou sem superfície lisa e íntegra"}),
+    check('corrosao','Tubulação e conexões sem corrosão',{noLabel:"Tubulação e/ou conexões com corrosão"}),
+    check('emendas','Tubulações com emendas ou conexões sanitárias',{noLabel:"Tubulações sem emendas ou conexões sanitárias"})
    ]}
   },
   '4.6.8':{
@@ -254,6 +254,7 @@ const bpfWaterCheck = (() => {
  }
  const informationHeading=panel=>panel.informationHeading||(panel.separateInformation?'Outras informações':'Outras observações');
  const isInformation=(panel,criterion)=>panel.separateInformation&&!criterion.scopeAnswer;
+ const answerLabel=(criterion,answer)=>answer==='0'?(criterion.noLabel||criterion.label):criterion.label;
  const active = (criterion,state) =>
   (!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1');
  const answered = (criterion,state) => active(criterion,state)&&
@@ -411,7 +412,7 @@ const bpfWaterCheck = (() => {
     }
     if(details.size){
      const labels=[...details].map(([detail,labels])=>labels.join(', ')+(detail?' — '+detail:''));
-     checklist.push(criterion.label+' ('+labels.join(' / ')+')');
+     checklist.push(answerLabel(criterion,answer)+' ('+labels.join(' / ')+')');
     }
    }
    const selected=units.filter(({entry})=>data[entry.name]===answer);
@@ -746,7 +747,7 @@ const bpfWaterCheck = (() => {
       fields(line,criterion,item,save,rows);
       continue;
      }
-     const caption=directChoice?label:criterion.scopeAnswer?heading+' — '+label:criterion.label;
+     const caption=directChoice?label:criterion.scopeAnswer?heading+' — '+label:answerLabel(criterion,answer);
      const control=element('label');
      const emphasisIndex=criterion.boldText?caption.indexOf(criterion.boldText):-1;
      if(emphasisIndex>=0){
@@ -759,7 +760,7 @@ const bpfWaterCheck = (() => {
      if(criterion.guidance)control.title=criterion.guidance;
      const input=element('input');
      input.type='checkbox';
-     input.setAttribute('aria-label',directChoice||criterion.scopeAnswer?label+' — '+heading:label+' — '+criterion.label+' — '+heading);
+     input.setAttribute('aria-label',directChoice||criterion.scopeAnswer?label+' — '+heading:label+' — '+caption+' — '+heading);
      input.onchange=()=>{
       item.answer=input.checked?answer:'';
       if(criterion.details==='sanitizers'&&item.answer==='0'){
