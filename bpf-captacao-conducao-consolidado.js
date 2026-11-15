@@ -17,13 +17,14 @@ const bpfWaterCheck = (() => {
  ].map(criterion=>({...criterion,section:'Embalagens sopradas no estabelecimento'}));
  function rinsePanel(disposable){
   const rinseChecks=[
-   check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada (validada)?',{
-    affirmativeInformation:true,noLabel:'O enxágue com desinfetante das embalagens é feito na concentração adequada?'
-   }),
+   check('concentracao',disposable
+    ?'O enxágue com desinfetante das embalagens é feito na concentração adequada?'
+    :'O enxágue com desinfetante das embalagens é feito na concentração adequada (validada)?',
+    {affirmativeInformation:!disposable,noLabel:'O enxágue com desinfetante das embalagens é feito na concentração adequada?'}),
    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
    ...(disposable?[check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?')]:[]),
    check('sanitizantes-embalagens','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens',{
-    yesOnly:true,informationOnly:true,details:'packaging-sanitizers',
+    yesOnly:true,informationOnly:!disposable,details:'packaging-sanitizers',
     products:disposable?[
      ['ozonio','Ozônio'],['outros','Outro']
     ]:[
@@ -31,7 +32,7 @@ const bpfWaterCheck = (() => {
      ['hipoclorito','Hipoclorito de sódio'],['ozonio','Ozônio'],['outros','Outro']
     ]
    }),
-   check('telemetria-concentracao','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.',{yesOnly:true,informationOnly:true})
+   check('telemetria-concentracao','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.',{yesOnly:true,informationOnly:!disposable})
   ].map(criterion=>({...criterion,section:'Enxágue com solução desinfetante'}));
   return {sectioned:true,allowNA:disposable,checks:disposable?[...blownChecks,...rinseChecks]:rinseChecks};
  }
