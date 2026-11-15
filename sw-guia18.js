@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-anexo-f-pauta-alta';
+const CACHE='guia18-20261114-respostas-descartaveis';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -205,6 +205,9 @@ for(const [start,end] of BPF_MATRIX_PCC_GROUPS){
  if(row.code==='4.5.8'&&Number(entry.scope.col)===1&&entry.index<3)
   return entry.scope.phrases[entry.index]?.allowNA===true;`);
   altered=altered.replace("  const cleared=bpfNormalizeDependentNA(r,s,v);","  bpfApplyPopF2NA(r,s,v);\n  const cleared=bpfNormalizeDependentNA(r,s,v);");
+  altered=altered.replace("if(!s.observationOnly&&(a!==null||cleared))v[s.name]=a??'Off';", `
+  const isDisposableAnswer=p.page===8&&['4.6.3','4.6.7','4.6.12'].includes(r.code);
+  if(!s.observationOnly&&(a!==null||cleared||isDisposableAnswer))v[s.name]=a??'Off';`);
   altered=altered.replace("panel.entries.some(e=>e.phrase.allowNA||values[e.name]==='2')","panel.entries.some(e=>e.phrase.allowNA||values[e.name]==='2'||bpfIsPopDependent(row,e.index))");
   altered=altered.replace("if(answer==='2'&&!entry.phrase.allowNA&&values[entry.name]!=='2')continue;","if(answer==='2'&&!entry.phrase.allowNA&&values[entry.name]!=='2'&&!bpfIsPopDependent(row,entry.index))continue;");
   altered=altered.replace("input.checked=values[entry.name]===answer;\n    if(answer==='2'){","input.checked=values[entry.name]===answer;\n    if(bpfIsPopDependent(row,entry.index)){\n     input.dataset.popDependent=String(entry.index);\n     if(bpfPopNAForced(row,entry.scope,entry.index,values))input.disabled=true;\n    }\n    if(answer==='2'){");
