@@ -28,6 +28,7 @@
   .bpf-ui-hub summary:after{content:'⌄';font-size:24px;line-height:.7;transform-origin:center;transition:transform .15s;color:#247da4}
   .bpf-ui-hub details[open]>summary:after{transform:rotate(180deg)}
   .bpf-ui-detail{padding:3px 13px 14px;border-top:1px solid #e2edf3;display:grid;gap:9px}
+  .bpf-ui-print-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
   .bpf-ui-detail .bpf-ui-action{width:100%;min-height:49px;font-size:15px;text-align:left;padding:12px 15px}
   .bpf-ui-hint{margin:0;font-size:13px;line-height:1.4;color:#537084}
   .bpf-ui-hub .bpf-ui-mini{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;color:#365768;font-size:14px}
@@ -47,6 +48,8 @@
   @media(max-width:520px){
     .bpf-ui-hub{padding:13px 12px;margin:12px 9px 16px;border-radius:15px}
     .bpf-ui-actions{gap:7px}
+    .bpf-ui-print-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .bpf-ui-print-actions>:last-child{grid-column:1/-1}
     .bpf-ui-action{font-size:12.5px;padding:9px 6px;min-height:58px}
     .bpf-ui-detail .bpf-ui-action{font-size:15px}
   }
@@ -200,9 +203,15 @@
     root.appendChild(t.details);
   }
   const extra=makeAccordion('Mais opções');
-  extra.content.append(
+  const printActions=document.createElement('div');
+  printActions.className='bpf-ui-print-actions';
+  printActions.append(
+    makePrintDownload('Imprimir guia em branco (18 páginas)','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
     makePrintDownload('Imprimir Anexo F com observações (20 páginas)','Anexo_F_20_Paginas_Retrato.pdf'),
-    makePrintDownload('CHECKLIST DE DOCUMENTOS','Checklist_de_Documentos_Envasadora.pdf'),
+    makePrintDownload('CHECKLIST DE DOCUMENTOS','Checklist_de_Documentos_Envasadora.pdf')
+  );
+  extra.content.append(
+    printActions,
     makePrintDownload('Descritores dos documentos','Descritores_de_Documentos_Envasadora.pdf')
   );
   if(revise)extra.content.appendChild(makeButton('Revisar frases',revise));
