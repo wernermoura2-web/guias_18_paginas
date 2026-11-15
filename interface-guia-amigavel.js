@@ -173,7 +173,7 @@
   const importBtn=lookup(/^Importar processos$/i);
   const teamBtn=lookup(/^(?:Trabalho em equipe|Configurar equipe)$/i);
   const revise=lookup(/^Revisar frases dos inspetores$/i);
-  const reset=lookup(/^Novo\s*\/\s*(?:limpar tudo|importar tudo)$/i);
+  const reset=lookup(/^(?:Limpar todo o guia|Novo\s*\/\s*(?:limpar tudo|importar tudo))$/i);
   const remove=lookup(/^Remover imagem$/i);
   const root=document.createElement('section');root.id='bpf-ui-hub';root.className='bpf-ui-hub';root.setAttribute('aria-label','Menu do Guia de Avaliação de Risco');
   const heading=document.createElement('h2');heading.textContent='Menu do guia';root.appendChild(heading);
@@ -225,7 +225,7 @@
     if(zoom.parentElement?.tagName==='LABEL')zoom.parentElement.classList.add('bpf-ui-original');
     else mark(zoom);
   }
-  if(reset)extra.content.appendChild(makeButton('Novo / limpar tudo',reset));
+  if(reset)extra.content.appendChild(makeButton('Limpar todo o guia',reset));
   if(extra.content.children.length)root.appendChild(extra.details);
   if(remove)mark(remove);
   // Esconder repetições de Importar processos sem esconder confirmação em diálogos.

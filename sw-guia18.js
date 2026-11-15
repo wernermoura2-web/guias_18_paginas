@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-espacamento-f';
+const CACHE='guia18-20261115-rotulos-limpeza';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -9,8 +9,8 @@ const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.p
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
-  const tag='<script src="./interface-guia-amigavel.js?v=20261114-matriz-alto-pcc" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261114-matriz-alto-pcc');
+  const tag='<script src="./interface-guia-amigavel.js?v=20261115-rotulos-limpeza" defer></script>';
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261115-rotulos-limpeza');
   // Manter a coluna de Recepção com a faixa percentual original, entre os dois grupos de PCC.
   altered=altered.replace(/\/\* Faixa vermelha dos seis primeiros processos na matriz\.[\s\S]*?(?=function place\(el,w\))/,`
 const BPF_MATRIX_PCC_BAND={left:100,right:348.28,top:185,bottom:223,width:595.32,height:841.92};
@@ -48,6 +48,34 @@ for(const [start,end] of BPF_MATRIX_PCC_GROUPS){
  }
  pccPage.pushOperators(PDFLib.popGraphicsState());
 `);
+  altered=altered.replace('id="new">Novo / limpar tudo', 'id="new">Limpar todo o guia');
+  altered=altered.replace('function bpfMountWidget(w,i){', String.raw`
+function bpfClearLabel(name){
+ return ({
+  'LIMPAR TUDO':'Limpar todo o guia',
+  'LIMPAR CAPTAÇÃO':'Limpar captação',
+  'LIMPAR CONDUÇÃO':'Limpar condução',
+  'LIMPAR RES 1':'Limpar reservatórios\nda captação 1',
+  'LIMPAR RES 2':'Limpar reservatórios\nda captação 2',
+  'LIMPAR REC EMB INS':'Limpar recepção de\nembalagens e insumos',
+  'LIMPAR EMB RET':'Limpar higienização\nde retornáveis',
+  'LIMPAR HIG DESC':'Limpar higienização\nde descartáveis',
+  'LIMPAR ENV RET':'Limpar envase\nde retornáveis',
+  'LIMPAR ENV DESC':'Limpar envase\nde descartáveis',
+  'LIMPAR CQ':'Limpar controle\nda qualidade',
+  'LIMPAR MR':'Limpar responsáveis\ne manipuladores',
+  'LIMPAR RISCO':'Limpar página\nde risco',
+  'LIMPAR CONSIDERAÇÃO':'Limpar página\nde risco',
+  'LIMPAR CONCLUSÃO':'Limpar ações\ne responsáveis'
+ })[name];
+}
+function bpfMountWidget(w,i){
+`.trimStart());
+  altered=altered.replace("el.textContent=w.name.replace('LIMPAR','Limpar');el.onclick=()=>clearScope(w)",
+   "const label=bpfClearLabel(w.name);el.textContent=label||w.name;if(label){el.classList.add('bpf-clear-action');el.setAttribute('aria-label',label.replace(/\\n/g,' '));}el.onclick=()=>clearScope(w)");
+  altered=altered.replace("if(!confirm('Limpar '+(w.name==='LIMPAR TUDO'?'todo o guia':'este bloco')+'?'))return;",
+   "if(!confirm((bpfClearLabel(w.name)||'Limpar este bloco').replace(/\\n/g,' ')+'?'))return;");
+  altered=altered.replace('</head>', '<style>@media screen{#pages .page>button.bpf-clear-action{white-space:pre-line;font-size:1.18cqw;line-height:1.1;font-weight:700;text-align:center;padding:0 1px}}</style></head>');
   altered=altered.replace(' for(const n of names){values[n]=D.fields[n].type===',
     " const keepIdentity=w.name==='LIMPAR CAPTAÇÃO'?new Set(['ENVASADORA','ENDEREÇO','DATA']):null;\n for(const n of names){if(keepIdentity?.has(n))continue;values[n]=D.fields[n].type===");
   // Contar uma linha em branco na medição do quadro, sem acrescentá-la ao texto salvo.
@@ -161,11 +189,11 @@ function bpfSyncNCLists(){
   // O cálculo original do guia foi preservado; retirar o interceptor de valores que impedia abertura.
   // Identificação visual explícita "ALTO - PCC" nas células de risco,
   // sem mudar o valor de cálculo dos campos de seleção.
-  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261114-matriz-alto-pcc"></script>';
+  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261115-rotulos-limpeza"></script>';
   if(!altered.includes('bpf-pcc-rotulos-risco-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,pccTag+'</body>');
   altered=altered.replace(/bpf-pcc-rotulos-risco-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-pcc-rotulos-risco-20261109.js?v=20261114-matriz-alto-pcc');
+    'bpf-pcc-rotulos-risco-20261109.js?v=20261115-rotulos-limpeza');
   // Relatório de inspeção impresso: congelar os campos (inclusive SIM/NÃO)
   // e evitar recálculo posterior pelo Foxit ou outros leitores.
   // O botão de PDF EM BRANCO permanece independente e editável.
