@@ -182,10 +182,11 @@ const bpfWaterCheck = (() => {
     check('registros-desmonte','Registros do desmonte e troca de componentes (o-ring)',{optional:true,noLabel:'Não possui registros de desmonte e troca de componentes (o-ring)'}),
     check('inspecao-visual','Realiza e registra inspeção visual interna das tubulações',{yesOnly:true})
    ]},
-   1:{checks:[
-    check('reparo','Possui registro de reparo das tubulações e conexões',{yesOnly:true}),
-    check('passivacao','Registros de passivação e/ou desincrustação',{yesOnly:true}),
-    check('historico-pop','POP contempla o histórico de revisão de operações de higienização')
+   1:{singleNo:true,checks:[
+    yes('reparo','Possui registro de reparo das tubulações e conexões'),
+    yes('passivacao','Possui registros de passivação e/ou desincrustação'),
+    check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
+    check('sem-historico-pop','O POP não contempla histórico de revisão de operações de higienização',{informationOnly:true,yesOnly:true})
    ]}
   },
   '4.2.9':{
@@ -246,6 +247,12 @@ const bpfWaterCheck = (() => {
      return {...state,[id]:{answer:previous}};
     }
    }
+   if(entry.index===1&&!state?.['nao-conducao']&&getConductionCheckEntry(entry,'4.2.8')){
+    if(state?.['historico-pop']?.answer==='0'){
+     return {...state,'nao-conducao':{answer:'0'},'sem-historico-pop':{answer:'1'}};
+    }
+    if(data[entry.name]==='0')return {...state,'nao-conducao':{answer:'0'}};
+   }
    if(state&&entry.index===1&&getConductionCheckEntry(entry)&&!state.integrityPositive){
     for(const id of ['vazamento','abaulada','emendas']){
      const check=state[id];
@@ -261,8 +268,8 @@ const bpfWaterCheck = (() => {
   const row=BPF_PHRASES.find(page=>page.page===1)?.rows.find(row=>row.code===code);
   return row?.scopes.some(scope=>scope.name===entry.scope.name);
  }
- const informationHeading=panel=>panel.informationHeading||(panel.separateInformation?'Outras informações':'Outras observações');
- const isInformation=(panel,criterion)=>panel.separateInformation&&!criterion.scopeAnswer;
+ const informationHeading=panel=>panel.informationHeading||'Outras informações';
+ const isInformation=(panel,criterion)=>criterion.informationOnly||(panel.separateInformation&&!criterion.scopeAnswer);
  const answerLabel=(criterion,answer)=>answer==='0'?(criterion.noLabel||criterion.label):criterion.label;
  const active = (criterion,state) =>
   (!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1');
@@ -743,7 +750,7 @@ const bpfWaterCheck = (() => {
     const information=sectionType==='info';
     const answer=information?'1':sectionType;
     const heading=information?informationHeading(config):answer==='1'?'Sim':'Não';
-    const directChoice=config.simple||(config.separateInformation&&!information);
+    const directChoice=config.simple||(config.separateInformation&&!information)||(config.singleNo&&answer==='0');
     const section=element(directChoice?'div':'details');
     section.className='bpf-water-unit';
     section.dataset.waterEntry=entry.name;
