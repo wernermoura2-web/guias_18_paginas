@@ -424,51 +424,39 @@ observePages();
 document.querySelectorAll('#pages>.page').forEach(fitFNumbers);
 window.addEventListener('resize',()=>document.querySelectorAll('#pages>.page').forEach(fitFNumbers),{passive:true});
 
-// As etiquetas desenhadas na tela não entram automaticamente no PDF editável:
-// o exportador usa o modelo PDF incorporado. Aplicar as mesmas classificações
-// ao documento efetivamente salvo, sem alterar os F ou os campos editáveis.
-(function prepareEditablePdfOverlay(){
- const Lib=window.PDFLib;
- if(!Lib?.PDFDocument||window.__bpfPdfOverlayV72)return;
- window.__bpfPdfOverlayV72=true;
- const oldSave=Lib.PDFDocument.prototype.save;
- Lib.PDFDocument.prototype.save=async function(options){
-  if(!this.__bpfStampedV72&&this.getPageCount()>=22){
-   this.__bpfStampedV72=true;
-   try{
-    const font=await this.embedFont(Lib.StandardFonts.HelveticaBold);
-    const byScope=new Map();
-    for(const w of GUIDE_DATA.widgets||[]){
-     if(w.rect&&!byScope.has(w.page+'_'+w.name))byScope.set(w.page+'_'+w.name,w);
-    }
-    const bg=[Lib.rgb(.86,.96,.87),Lib.rgb(1,.95,.71),Lib.rgb(1,.85,.86)];
-    const bd=[Lib.rgb(.09,.61,.20),Lib.rgb(.94,.67,.02),Lib.rgb(.91,.08,.12)];
-    let count=0;
-    for(const data of BPF_PHRASES||[]){
-     if(data.page>=this.getPageCount())continue;
-     const page=this.getPage(data.page);
-     for(const row of data.rows||[]){
-      const widget=(row.scopes||[]).map(scope=>byScope.get(data.page+'_'+scope.name)).find(Boolean);
-      if(!widget)continue;
-      const cats=[...new Set((row.phrases||[]).map(p=>String(p.appcc||'').trim().toUpperCase()).filter(c=>Object.hasOwnProperty.call(rank,c)))];
-      if(!cats.length)continue;
-      cats.sort((a,b)=>rank[b]-rank[a]);
-      const grade=Math.max(...cats.map(c=>rank[c]));
-      const label=row.code+'  |  '+cats.join(' e ');
-      const width=65.1, height=15.2, x=87.2;
-      const y=(widget.rect[1]+widget.rect[3])/2-height/2;
-      // Uma escala para todas as etiquetas; reduzir apenas para os textos longos.
-      const size=Math.min(FONT_BASE_PT,(width-6)/font.widthOfTextAtSize(label,1));
-      page.drawRectangle({x,y,width,height,color:bg[grade],borderColor:bd[grade],borderWidth:1});
-      const textSize=size; // mesmo padrão tipográfico da tela
-      page.drawText(label,{x:x+(width-font.widthOfTextAtSize(label,textSize))/2,y:y+(height-textSize)/2+.65,size:textSize,font,color:Lib.rgb(0,0,0)});
-      count++;
-     }
-    }
-    console.info('Classificações APPCC incluídas no PDF:',count);
-   }catch(err){console.error('Falha ao inserir as classificações no PDF',err);}
+// Os índices de origem só são válidos no modelo inicial. As referências PDF
+// continuam apontando para as mesmas páginas depois das alterações da montagem.
+window.bpfStampReportItemLabels=async function(pdf,sourcePages){
+ const lib=window.PDFLib;
+ const retained=new Set(pdf.getPages().map(page=>page.ref));
+ const widgets=new Map();
+ for(const widget of GUIDE_DATA.widgets){
+  const key=widget.page+'_'+widget.name;
+  if(widget.rect&&!widgets.has(key))widgets.set(key,widget);
+ }
+ const font=await pdf.embedFont(lib.StandardFonts.HelveticaBold);
+ const bg=[lib.rgb(.86,.96,.87),lib.rgb(1,.95,.71),lib.rgb(1,.85,.86)];
+ const bd=[lib.rgb(.09,.61,.20),lib.rgb(.94,.67,.02),lib.rgb(.91,.08,.12)];
+ for(const source of BPF_PHRASES){
+  const page=sourcePages[source.page];
+  if(!page||!retained.has(page.ref))continue;
+  for(const row of source.rows){
+   const widget=row.scopes.map(scope=>widgets.get(source.page+'_'+scope.name)).find(Boolean);
+   if(!widget)continue;
+   const categories=[...new Set(row.phrases.map(phrase=>String(phrase.appcc||'').trim().toUpperCase())
+    .filter(category=>Object.hasOwn(rank,category)))];
+   if(!categories.length)continue;
+   categories.sort((a,b)=>rank[b]-rank[a]);
+   const grade=rank[categories[0]];
+   const label=row.code+' | '+categories.join(' e ');
+   const x=87.2,width=65.1,height=15.2;
+   const centerY=(widget.rect[1]+widget.rect[3])/2+page.getHeight()-widget.size[1];
+   const y=centerY-height/2;
+   const size=Math.min(FONT_BASE_PT,(width-6)/font.widthOfTextAtSize(label,1));
+   page.drawRectangle({x,y,width,height,color:bg[grade],borderColor:bd[grade],borderWidth:1});
+   page.drawText(label,{x:x+(width-font.widthOfTextAtSize(label,size))/2,
+    y:centerY-size/2+.65,size,font,color:lib.rgb(0,0,0)});
   }
-  return oldSave.call(this,options);
- };
-})();
+ }
+};
 })();
