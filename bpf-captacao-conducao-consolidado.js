@@ -202,8 +202,11 @@ const bpfWaterCheck = (() => {
   'Outro'
  ];
  const tests = [['telemetria','Telemetria'],['indicador','Teste com indicador'],['outros','Outros']];
- const get = (row,index) => row.code==='4.6.3'&&index===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA)
-  ?disposableRinse:panels[row.code]?.[index];
+ function get(row,index){
+  const config=row.code==='4.6.3'&&index===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA)
+   ?disposableRinse:panels[row.code]?.[index];
+  return config&&synchronizedItems.has(row.code)?{...config,optional:true}:config;
+ }
  const key = entry => 'BPF_FWater_'+entry.name;
  const machineEntries=panel=>panel.entries.filter(entry=>entry.name.endsWith('_EnvasadoraAutomatica'));
  const entriesFor = (row,scope) => row.code==='4.7.8'?bpfF1Checks(row,scope).filter(entry=>entry.name.endsWith('_EnvasadoraAutomatica')):Object.keys(panels[row.code]||{}).map(Number).map(index=>({scope,index,name:bpfPhraseName(scope,index)}));
@@ -260,7 +263,7 @@ const bpfWaterCheck = (() => {
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
      const mode=criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
      const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
-     criterion.guidance=[mode,context].filter(Boolean).join(' ');
+     criterion.guidance=[mode,context,config.optional&&!criterion.optional?'A verificação pode ficar em branco.':''].filter(Boolean).join(' ');
      const ref={
       set text(value){criterion.label=value;},
       set guidance(value){criterion.guidance=value;}
@@ -291,6 +294,7 @@ const bpfWaterCheck = (() => {
  }
 
  function requiredChecks(panel,selected,state){
+  if(panel.optional)return [];
   if(panel.sectioned)return panel.checks.filter(c=>!c.yesOnly&&selected.some(item=>item.section===c.section));
   return panel.all?panel.checks.filter(c=>!c.yesOnly&&!c.noOnly&&!c.optional&&active(c,state)):[];
  }
@@ -298,7 +302,7 @@ const bpfWaterCheck = (() => {
  function result(panel,state){
   if(panel.allowNA&&state.notApplicable)return '2';
   const selected=panel.checks.filter(c=>answered(c,state));
-  if(!selected.length||(panel.capRoute&&!state.route)||requiredChecks(panel,selected,state).some(c=>!answered(c,state)))return '';
+  if(!selected.length||(panel.capRoute&&!panel.optional&&!state.route)||requiredChecks(panel,selected,state).some(c=>!answered(c,state)))return '';
   if(panel.alternatives)return selected.some(c=>state[c.id].answer==='1')?'1':'0';
   return selected.some(c=>!c.yesOnly&&state[c.id].answer===(c.negative?'1':'0'))?'0':'1';
  }
@@ -429,7 +433,7 @@ const bpfWaterCheck = (() => {
  function validate(page,row,panels,content){
   for(const panel of panels){
    const config=get(row,panel.id);
-   if(!config)continue;
+   if(!config||config.optional)continue;
    for(const entry of config.inline?machineEntries(panel):panel.entries){
     const state=read(entry,values);
     if(!panelEnabled(row,entry,values)||(config.allowNA&&state?.notApplicable))continue;
@@ -606,7 +610,7 @@ const bpfWaterCheck = (() => {
    card.dataset.bpfCapsF2='';
    card.hidden=!panel.entries.some(entry=>panelEnabled(row,entry,values));
   }
-  const hint=element('p',config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
+  const hint=element('p',config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
   if(!document.getElementById('bpf-water-css')){
