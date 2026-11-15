@@ -53,6 +53,16 @@ fixes.textContent=`
    A separacao absoluta evita que o F cubra a numeracao dos itens.
    Nao vale para PDF, nem altera frases/estado dos F. */
 @media screen {
+ #pages .page>.bpf-guide-footer{
+   background:transparent!important;
+   pointer-events:none;
+ }
+ #pages .page>button.overlay.action[data-field^="LIMPAR"]:not([data-field="LIMPAR TUDO"]){
+   z-index:85;
+   visibility:visible;
+   opacity:1;
+   pointer-events:auto;
+ }
  #pages .page>.bpf-item-code {
    position:absolute!important;
    display:block!important;
