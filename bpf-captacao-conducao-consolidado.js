@@ -17,10 +17,12 @@ const bpfWaterCheck = (() => {
  ].map(criterion=>({...criterion,section:'Embalagens sopradas no estabelecimento'}));
  function rinsePanel(disposable){
   const rinseChecks=[
-   check('concentracao',disposable
-    ?'O enxágue com desinfetante das embalagens é feito na concentração adequada?'
-    :'O enxágue com desinfetante das embalagens é feito na concentração adequada (validada)?',
-    {affirmativeInformation:!disposable,noLabel:'O enxágue com desinfetante das embalagens é feito na concentração adequada?'}),
+   ...(disposable
+    ?[check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada?')]
+    :[
+     check('enxague-automatico','O enxágue é realizado em equipamento automático e com uso de desinfetante?'),
+     check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada (validada)?',{yesOnly:true,informationOnly:true})
+    ]),
    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
    ...(disposable?[check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?')]:[]),
    check('sanitizantes-embalagens','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens',{
@@ -308,7 +310,7 @@ const bpfWaterCheck = (() => {
   return row?.scopes.some(scope=>scope.name===entry.scope.name);
  }
  const informationHeading=panel=>panel.informationHeading||'Outras informações';
- const isInformation=(panel,criterion,answer='1')=>criterion.informationOnly||(criterion.affirmativeInformation&&answer==='1')||(panel.separateInformation&&!criterion.scopeAnswer);
+ const isInformation=(panel,criterion)=>criterion.informationOnly||(panel.separateInformation&&!criterion.scopeAnswer);
  const answerLabel=(criterion,answer)=>answer==='0'?(criterion.noLabel||criterion.label):criterion.label;
  const active = (criterion,state) =>
   (!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1');
@@ -345,7 +347,7 @@ const bpfWaterCheck = (() => {
     const index=panel.id;
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
-     const mode=criterion.affirmativeInformation?'Sim em Outras informações. Não no quadro Não.':isInformation(config,criterion)?informationHeading(config)+'.':criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
+     const mode=isInformation(config,criterion)?informationHeading(config)+'.':criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
      const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      const optionalDetails=criterion.details==='filter'?'A frequência de troca pode ficar em branco.':
       criterion.frequencyOptional?'A periodicidade pode ficar em branco.':'';
@@ -388,7 +390,7 @@ const bpfWaterCheck = (() => {
 
  function result(panel,state){
   if(panel.allowNA&&state.notApplicable)return '2';
-  const selected=panel.checks.filter(c=>!isInformation(panel,c,state[c.id]?.answer)&&answered(c,state));
+  const selected=panel.checks.filter(c=>!isInformation(panel,c)&&answered(c,state));
   if(!selected.length||(panel.capRoute&&!panel.optional&&!state.route)||requiredChecks(panel,selected,state).some(c=>!answered(c,state)))return '';
   if(panel.alternatives)return selected.some(c=>state[c.id].answer==='1')?'1':'0';
   return selected.some(c=>!c.yesOnly&&state[c.id].answer===(c.negative?'1':'0'))?'0':'1';
@@ -802,7 +804,7 @@ const bpfWaterCheck = (() => {
     if(dependentF2)rows.push(()=>{section.hidden=!panelEnabled(row,entry,values);});
     const groups=new Map();
     for(const criterion of config.checks){
-     if(information!==Boolean(isInformation(config,criterion,answer)))continue;
+     if(information!==Boolean(isInformation(config,criterion)))continue;
      if((criterion.yesOnly&&answer==='0')||(criterion.noOnly&&answer==='1'))continue;
      const item=state[criterion.id]??={};
      const line=element('div');
