@@ -141,7 +141,7 @@ const bpfWaterCheck = (() => {
   },
   '4.3.5':{0:{all:true,checks:[
    adequateHygiene,
-    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório'),
+    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório',{frequencyOptional:true}),
    check('recirculacao','Procedimento adotado para recirculação do sanitizante no tanque',{details:'recirculation'}),
    ...controls('do reservatório','armazenada')
   ]}},
