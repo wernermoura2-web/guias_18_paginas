@@ -29,8 +29,8 @@ function bpfPaginateObservation(text,firstRect,nextRect,size,font){
  let remaining=text;
  do{
   const [left,bottom,right,top]=parts.length?nextRect:firstRect;
-  const width=right-left-23,maxLines=Math.max(1,Math.floor((top-bottom-23)/(size*1.35)));
-  const fits=part=>bpfObservationLines(part,font,width,size).length<=maxLines;
+  const width=right-left-16,maxLines=Math.max(1,Math.floor((top-bottom-16)/(size*1.35)));
+  const fits=part=>bpfObservationLines(part.trimEnd(),font,width,size).length<=maxLines;
   if(parts.length&&!remaining.trim()){parts[parts.length-1]+=remaining;break;}
   if(fits(remaining)){parts.push(remaining);break;}
   let lo=0,hi=remaining.length;
@@ -38,9 +38,11 @@ function bpfPaginateObservation(text,firstRect,nextRect,size,font){
    const mid=Math.ceil((lo+hi)/2);
    if(fits(remaining.slice(0,mid)))lo=mid;else hi=mid-1;
   }
-  const paragraph=remaining.lastIndexOf('\n',lo-1)+1;
-  const word=remaining.lastIndexOf(' ',lo-1)+1;
-  let cut=paragraph>0&&lo-paragraph<180?paragraph:word>0&&lo-word<28?word:Math.max(1,lo);
+  let cut=Math.max(1,lo);
+  if(!/\s/.test(remaining.charAt(cut-1))&&!/\s/.test(remaining.charAt(cut))){
+   const separator=remaining.slice(0,cut).search(/\s(?=\S*$)/);
+   if(separator>0&&cut-separator<28)cut=separator+1;
+  }
   if(/[\uDC00-\uDFFF]/.test(remaining.charAt(cut)))cut=cut>1?cut-1:cut+1;
   parts.push(remaining.slice(0,cut));
   remaining=remaining.slice(cut);
@@ -151,7 +153,7 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
  const bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
  const template=bpfOverflowPages.size?await pdf.embedJpg(bpfNCBackground):null;
  const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
- const draw=(page,rect,text,size)=>bpfPdfDrawObservation(page,rect,normalize(text),size,font,ink);
+ const draw=(page,rect,text,size)=>bpfPdfDrawObservation(page,rect,normalize(text.trimEnd()),size,font,ink);
  let offset=0;
  for(const [id,{anchor,title,text}] of bpfOverflowPages){
   const [width,height]=bpfNCPageSize;

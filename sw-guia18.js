@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-observacoes-9pt';
+const CACHE='guia18-20261115-observacoes-8pt';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -655,8 +655,8 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
-  altered=altered.replace('</head>', '<script src="./bpf-paginacao-observacoes.js?v=20261115-observacoes-9pt"></script><style>#pages .bpf-overflow-observation{display:block;padding:.8cqw 1.17cqw;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;text-align:left;cursor:default}</style></head>');
-  altered=altered.replace(/(const BPF_(?:NC|CQ)_FONT_SIZE=)6;/g,(_,prefix)=>prefix+'9;');
+  altered=altered.replace('</head>', '<script src="./bpf-paginacao-observacoes.js?v=20261115-observacoes-8pt"></script><style>#pages .bpf-overflow-observation{display:block;padding:.8cqw 1.17cqw;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;text-align:left;cursor:default}</style></head>');
+  altered=altered.replace(/(const BPF_(?:NC|CQ)_FONT_SIZE=)6;/g,(_,prefix)=>prefix+'8;');
   altered=altered.replace(/function bpfGeneralFlow\(full\)\{[\s\S]*?(?=function bpfDocumentObservations)/,
    'function bpfGeneralFlow(full){bpfRunNCObservationFlow(full);}\n');
   altered=altered.replace('  return first+continuation;',
