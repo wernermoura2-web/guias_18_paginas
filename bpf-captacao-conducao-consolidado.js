@@ -102,7 +102,7 @@ const bpfWaterCheck = (() => {
     check('integra','Tubulação sem avarias e/ou lisa e íntegra'),
     check('corrosao','Tubulação e conexões sem corrosão'),
     check('emendas','Tubulações com emendas ou conexões sanitárias'),
-    check('acessivel','Tubulação acessível em todo o percurso / trajeto e com ausência de mato')
+    check('acessivel','Tubulação acessível em todo o percurso / trajeto e com ausência de mato',{informationOnly:true,yesOnly:true})
    ]}
   },
   '4.6.8':{
@@ -247,6 +247,8 @@ const bpfWaterCheck = (() => {
   const row=BPF_PHRASES.find(page=>page.page===1)?.rows.find(row=>row.code==='4.2.2');
   return row?.scopes.some(scope=>scope.name===entry.scope.name);
  }
+ const informationHeading=panel=>panel.informationHeading||(panel.separateInformation?'Outras informações':'Outras observações');
+ const isInformation=(panel,criterion)=>criterion.informationOnly||(panel.separateInformation&&!criterion.scopeAnswer);
  const active = (criterion,state) =>
   (!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1');
  const answered = (criterion,state) => active(criterion,state)&&
@@ -279,7 +281,7 @@ const bpfWaterCheck = (() => {
     const index=panel.id;
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
-     const mode=config.separateInformation&&!criterion.scopeAnswer?(config.informationHeading||'Outras informações')+'.':criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
+     const mode=isInformation(config,criterion)?informationHeading(config)+'.':criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
      const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      const optionalDetails=criterion.details==='filter'?'A frequência de troca pode ficar em branco.':
       criterion.frequencyOptional?'A periodicidade pode ficar em branco.':'';
@@ -322,7 +324,7 @@ const bpfWaterCheck = (() => {
 
  function result(panel,state){
   if(panel.allowNA&&state.notApplicable)return '2';
-  const selected=panel.checks.filter(c=>(!panel.separateInformation||c.scopeAnswer)&&answered(c,state));
+  const selected=panel.checks.filter(c=>!isInformation(panel,c)&&answered(c,state));
   if(!selected.length||(panel.capRoute&&!panel.optional&&!state.route)||requiredChecks(panel,selected,state).some(c=>!answered(c,state)))return '';
   if(panel.alternatives)return selected.some(c=>state[c.id].answer==='1')?'1':'0';
   return selected.some(c=>!c.yesOnly&&state[c.id].answer===(c.negative?'1':'0'))?'0':'1';
@@ -645,7 +647,7 @@ const bpfWaterCheck = (() => {
   card.append(answerGrid);
   const boxes=new Map();
   const sections=[['1','Sim'],['0','Não']];
-  if(config.separateInformation)sections.push(['info',config.informationHeading||'Outras informações']);
+  if(config.checks.some(criterion=>isInformation(config,criterion)))sections.push(['info',informationHeading(config)]);
   for(const [answer,heading] of sections){
    const box=element('fieldset');
    box.className='bpf-answer-box';
@@ -707,7 +709,7 @@ const bpfWaterCheck = (() => {
    for(const [sectionType,box] of boxes){
     const information=sectionType==='info';
     const answer=information?'1':sectionType;
-    const heading=information?'Outras informações':answer==='1'?'Sim':'Não';
+    const heading=information?informationHeading(config):answer==='1'?'Sim':'Não';
     const directChoice=config.simple||(config.separateInformation&&!information);
     const section=element(directChoice?'div':'details');
     section.className='bpf-water-unit';
@@ -720,7 +722,7 @@ const bpfWaterCheck = (() => {
     box.append(section);
     const groups=new Map();
     for(const criterion of config.checks){
-     if(config.separateInformation&&information===Boolean(criterion.scopeAnswer))continue;
+     if(information!==Boolean(isInformation(config,criterion)))continue;
      if((criterion.yesOnly&&answer==='0')||(criterion.noOnly&&answer==='1'))continue;
      const item=state[criterion.id]??={};
      const line=element('div');
