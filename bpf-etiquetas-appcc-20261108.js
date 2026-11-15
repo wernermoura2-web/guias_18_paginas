@@ -16,7 +16,7 @@ css.textContent=`
  border-radius:.43cqw!important;background:var(--bpf-fundo)!important;
  color:#000!important;font:800 1.025cqw/1.08 Arial,Helvetica,sans-serif!important;
  white-space:nowrap!important;overflow:hidden!important;
- text-align:center!important;pointer-events:none!important;
+ text-align:center!important;pointer-events:auto!important;cursor:help!important;
  -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
 }
 .page .bpf-etiqueta-overlay-v69.bpf-longa{font-size:1.025cqw!important;gap:.06cqw!important}
@@ -26,6 +26,18 @@ css.textContent=`
    Não aumentar fonte em etiquetas curtas; somente reduzir quando necessário. */
 .page .bpf-etiqueta-overlay-v69>span {flex:0 0 auto!important;min-width:0!important}
 .page .bpf-etiqueta-overlay-v69[data-etiqueta-id$="-4-5-3"] {letter-spacing:-.012em!important}
+`;
+css.textContent+=`
+#bpf-resumo-frases{position:fixed;z-index:99890;box-sizing:border-box;width:min(355px,calc(100vw - 16px));
+ max-height:calc(100dvh - 16px);overflow:auto;background:#fff;color:#182d38;padding:8px;
+ border:1px solid #9cb1bd;border-radius:8px;box-shadow:0 5px 18px #17374835;font:13px/1.35 Arial,sans-serif}
+#bpf-resumo-frases[hidden]{display:none}
+#bpf-resumo-frases .bpf-resumo-item{display:block;padding:1px 2px 6px;font-size:13px}
+#bpf-resumo-frases .bpf-resumo-quadro{padding:6px 8px;border:1px solid var(--bpf-borda);
+ border-left-width:4px;background:var(--bpf-fundo);border-radius:4px}
+#bpf-resumo-frases .bpf-resumo-quadro+.bpf-resumo-quadro{margin-top:5px}
+#bpf-resumo-frases p{margin:3px 0 0}
+@media print{#bpf-resumo-frases{display:none!important}}
 `;
 document.head.appendChild(css);
 
@@ -108,6 +120,100 @@ const rank={PPR:0,POP:0,PC:1,PPRO:1,PCC:2};
 const outlines=['#159a33','#f0b400','#e91a20'];
 const fills=['linear-gradient(110deg,#dbf7dc,#a9eeb5)','linear-gradient(110deg,#fff7bc,#ffe47a)','linear-gradient(110deg,#ffd6da,#ffa9b0)'];
 const pageWidth=595.32;
+const summaryTooltip=document.createElement('div');
+summaryTooltip.id='bpf-resumo-frases';
+summaryTooltip.setAttribute('role','tooltip');
+summaryTooltip.hidden=true;
+let summaryAnchor=null, summaryTimer;
+
+function shortPhrase(value){
+ const text=String(value||'').replace(/\s+/g,' ').trim();
+ if(text.length<=150)return text;
+ const end=text.lastIndexOf(' ',147);
+ return text.slice(0,end>112?end:147).replace(/[,:;]$/,'')+'…';
+}
+
+function summaryCards(data,row){
+ const groups=new Map();
+ for(const panel of bpfPanels(data,row)){
+  const phrases=panel.entries.length?panel.entries.map(entry=>entry.phrase):
+   (panel.indices||[panel.id]).map(i=>row.phrases[i]);
+  for(const phrase of phrases){
+   const category=String(phrase?.appcc||'').trim().toUpperCase();
+   const text=shortPhrase(phrase?.text);
+   if(!Object.hasOwn(rank,category)||!text)continue;
+   const label='F'+(panel.id+1)+' · '+category;
+   if(!groups.has(label))groups.set(label,{label,category,texts:new Set()});
+   groups.get(label).texts.add(text);
+  }
+ }
+ return groups.values();
+}
+
+function hideSummary(){
+ clearTimeout(summaryTimer);
+ if(summaryAnchor)summaryAnchor.removeAttribute('aria-describedby');
+ summaryAnchor=null;
+ summaryTooltip.hidden=true;
+}
+function scheduleHide(){
+ clearTimeout(summaryTimer);
+ summaryTimer=setTimeout(hideSummary,190);
+}
+function positionSummary(){
+ if(!summaryAnchor||summaryTooltip.hidden)return;
+ const r=summaryAnchor.getBoundingClientRect();
+ if(r.bottom<0||r.top>window.innerHeight||r.right<0||r.left>window.innerWidth){hideSummary();return;}
+ const width=summaryTooltip.offsetWidth,height=summaryTooltip.offsetHeight, gap=8;
+ const x=r.right+gap+width<=window.innerWidth-gap?r.right+gap:r.left-gap-width;
+ summaryTooltip.style.left=Math.max(gap,Math.min(x,window.innerWidth-width-gap))+'px';
+ summaryTooltip.style.top=Math.max(gap,Math.min(r.top,window.innerHeight-height-gap))+'px';
+}
+function showSummary(anchor,data,row){
+ clearTimeout(summaryTimer);
+ if(summaryAnchor===anchor&&!summaryTooltip.hidden){positionSummary();return;}
+ hideSummary();
+ const cards=[...summaryCards(data,row)];
+ if(!cards.length)return;
+ if(!summaryTooltip.isConnected)document.body.append(summaryTooltip);
+ const title=document.createElement('strong');
+ title.className='bpf-resumo-item';
+ title.textContent='Item '+row.code;
+ summaryTooltip.replaceChildren(title);
+ for(const {label,category,texts} of cards){
+  const box=document.createElement('div'),name=document.createElement('strong');
+  box.className='bpf-resumo-quadro';
+  box.style.setProperty('--bpf-borda',outlines[rank[category]]);
+  box.style.setProperty('--bpf-fundo',fills[rank[category]]);
+  name.textContent=label;
+  box.append(name);
+  for(const text of texts){
+   const p=document.createElement('p');
+   p.textContent=text;
+   box.append(p);
+  }
+  summaryTooltip.append(box);
+ }
+ summaryAnchor=anchor;
+ anchor.setAttribute('aria-describedby',summaryTooltip.id);
+ summaryTooltip.hidden=false;
+ positionSummary();
+}
+const summaryTriggers=new WeakSet();
+function addSummaryTrigger(anchor,data,row,focusable=false){
+ if(!anchor||summaryTriggers.has(anchor))return;
+ summaryTriggers.add(anchor);
+ if(focusable)anchor.tabIndex=0;
+ anchor.addEventListener('pointerenter',()=>showSummary(anchor,data,row));
+ anchor.addEventListener('pointerleave',scheduleHide);
+ anchor.addEventListener('focus',()=>showSummary(anchor,data,row));
+ anchor.addEventListener('blur',hideSummary);
+}
+summaryTooltip.addEventListener('pointerenter',()=>clearTimeout(summaryTimer));
+summaryTooltip.addEventListener('pointerleave',scheduleHide);
+document.addEventListener('keydown',event=>{if(event.key==='Escape')hideSummary();});
+window.addEventListener('scroll',positionSummary,{capture:true,passive:true});
+window.addEventListener('resize',positionSummary,{passive:true});
 /* Ajustar as letras à área útil real da etiqueta, em vez de cqw
    relativo ao viewport, que fica pequeno ao ampliar o PDF no celular. */
 const measureCanvas=document.createElement('canvas');
@@ -143,10 +249,12 @@ function apply(){
  }
  const diag={pages:pages.length,total:0,aplicadas:0,semCoordenadas:[]};
  for(const data of BPF_PHRASES){
-  const page=pages[data.page];if(!page)continue;
+  const page=Array.from(pages).find(el=>Number(el.dataset.page)===data.page);if(!page)continue;
   for(const row of data.rows){
    const id='bpf-etiqueta-superior-v69-'+data.page+'-'+row.code.replace(/\./g,'-');
    const existing=page.querySelector('[data-etiqueta-id="'+id+'"]');
+   const itemCode=page.querySelector('.bpf-f[data-code="'+row.code+'"]')?.parentElement?.firstElementChild;
+   addSummaryTrigger(itemCode,data,row);
    if(existing){fitBadge(existing);continue;}
    diag.total++;
    let widget=null;
@@ -174,10 +282,11 @@ function apply(){
    badge.style.height=(100*badgeHeight/height)+'%';
    badge.style.setProperty('--bpf-borda',outlines[grade]);
    badge.style.setProperty('--bpf-fundo',fills[grade]);
-   badge.title='Item '+row.code+' — '+cats.join(', ')+' — não conformidade '+['menor','maior','crítica'][grade];
+   badge.setAttribute('aria-label','Resumo do item '+row.code+' — '+cats.join(', '));
    const number=document.createElement('span'),divider=document.createElement('span'),suffix=document.createElement('span');
    number.textContent=row.code;divider.textContent='|';suffix.textContent=label;
    badge.append(number,divider,suffix);page.append(badge);fitBadge(badge);
+   addSummaryTrigger(badge,data,row,true);
    diag.aplicadas++;
   }
  }
