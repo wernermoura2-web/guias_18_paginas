@@ -18,7 +18,7 @@ const bpfWaterCheck = (() => {
  function rinsePanel(disposable){
   const rinseChecks=[
    ...(disposable
-    ?[check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada?')]
+    ?[check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada (validada)?')]
     :[check('enxague-automatico','O enxágue é realizado em equipamento automático e com uso de desinfetante?')]),
    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
    ...(disposable?[check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?')]:[]),
@@ -33,7 +33,11 @@ const bpfWaterCheck = (() => {
    }),
    check('telemetria-concentracao','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.',{yesOnly:true,informationOnly:!disposable})
   ].map(criterion=>({...criterion,section:'Enxágue com solução desinfetante'}));
-  return {sectioned:true,allowNA:disposable,checks:disposable?[...blownChecks,...rinseChecks]:rinseChecks};
+  return disposable?{allowNA:true,separateInformation:true,checks:[
+   check('sim-descartaveis','Sim',{yesOnly:true,scopeAnswer:true}),
+   check('nao-descartaveis','Não',{noOnly:true,scopeAnswer:true}),
+   ...blownChecks,...rinseChecks
+  ]}:{sectioned:true,checks:rinseChecks};
  }
  const returnableRinse=rinsePanel(false), disposableRinse=rinsePanel(true);
  const fillingMachine={all:true,inline:true,checks:[
@@ -225,6 +229,15 @@ const bpfWaterCheck = (() => {
   try {
    const name=key(entry);
    let state=JSON.parse(data[name]||'null');
+   if(entry.index===0&&!state?.['sim-descartaveis']&&!state?.['nao-descartaveis']&&
+      entry.scope.phrases?.[0]?.allowNA&&BPF_PHRASES.some(page=>page.page===8&&
+       page.rows.some(row=>row.code==='4.6.3'&&row.scopes.some(scope=>scope.name===entry.scope.name)))){
+    const previous=data[entry.name];
+    if(previous==='1'||previous==='0'){
+     const id=previous==='1'?'sim-descartaveis':'nao-descartaveis';
+     state={...state,[id]:{answer:previous}};
+    }
+   }
    if(entry.index===1&&!state?.['sem-vincos-amassados']&&reservoirStructureEntry(entry)){
     const older=JSON.parse(data[key({name:bpfPhraseName(entry.scope,2)})]||'null');
     const previous=older?.['sem-vincos-amassados']?.answer;
@@ -308,6 +321,25 @@ const bpfWaterCheck = (() => {
  }
  const informationHeading=panel=>panel.informationHeading||'Outras informações';
  const isInformation=(panel,criterion)=>criterion.informationOnly||(panel.separateInformation&&!criterion.scopeAnswer);
+ const informationQuestions=new Set([
+  'filtro','registro-filtro','pop-registros','telemetria','residuo','microbiologia','atp',
+  'certificado','declaracao','nota-fiscal','sem-historico-pop','escotilha-teto',
+  'uso-imediato','ar-sopro-filtrado','analise-ar-comprimido','transporte-ar-filtrado',
+  'concentracao','bicos-pressao','escoamento','telemetria-concentracao'
+ ]);
+ const documentQuestions={
+  certificado:'Foi apresentado certificado de grau alimentício?',
+  declaracao:'Foi apresentada declaração de grau alimentício?',
+  'nota-fiscal':'Foi apresentada nota fiscal do material?'
+ };
+ const informationalPanels=[disposableRinse,returnableRinse,
+  ...Object.values(panels).flatMap(phrases=>Object.values(phrases))];
+ for(const panel of informationalPanels)for(const criterion of panel.checks){
+  if(!isInformation(panel,criterion)||!informationQuestions.has(criterion.id))continue;
+  criterion.label=documentQuestions[criterion.id]||criterion.label.replace(/[.?]$/,'')+'?';
+  criterion.yesOnly=false;
+  criterion.informationQuestion=true;
+ }
  const answerLabel=(criterion,answer)=>answer==='0'?(criterion.noLabel||criterion.label):criterion.label;
  const active = (criterion,state) =>
   (!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1');
@@ -344,7 +376,7 @@ const bpfWaterCheck = (() => {
     const index=panel.id;
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
-     const mode=isInformation(config,criterion)?informationHeading(config)+'.':criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
+     const mode=isInformation(config,criterion)?informationHeading(config)+(criterion.informationQuestion?' — Sim ou Não.':'.'):criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
      const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      const optionalDetails=criterion.details==='filter'?'A frequência de troca pode ficar em branco.':
       criterion.frequencyOptional?'A periodicidade pode ficar em branco.':'';
@@ -461,9 +493,22 @@ const bpfWaterCheck = (() => {
     records(row,entry,data)
   }));
   if(!units.some(unit=>unit.checks.length))return [];
-  return (reservoir?['1','0']:['1','0','2']).flatMap(answer=>{
+  const responses=reservoir?['1','0']:['1','0','2'];
+  const information=[];
+  for(const criterion of config.checks.filter(check=>isInformation(config,check))){
+   for(const answer of ['1','0']){
+    const recorded=units.flatMap(unit=>unit.checks.filter(check=>check.id===criterion.id&&check.answer===answer)
+     .map(check=>unit.label+(check.details?' — '+check.details:'')));
+    if(recorded.length){
+     const caption=criterion.informationQuestion?criterion.label+' — '+bpfAnswerLabel(answer):criterion.label;
+     information.push((criterion.section?criterion.section+' · ':'')+caption+' ('+recorded.join(' / ')+')');
+    }
+   }
+  }
+  const report=responses.flatMap(answer=>{
    const checklist=[];
    for(const criterion of config.checks){
+    if(isInformation(config,criterion))continue;
     const details=new Map();
     for(const unit of units){
      const check=unit.checks.find(check=>check.id===criterion.id&&check.answer===answer);
@@ -490,12 +535,14 @@ const bpfWaterCheck = (() => {
    }
    return [{page,row,panel,answer,checklist,note,selected:selected.map(unit=>unit.entry)}];
   });
+  if(information.length)report.push({page,row,panel,heading:informationHeading(config),checklist:information,note:'',selected:[]});
+  return report;
  }
 
  function summary(page,panel,report){
-  return report.map(({answer,checklist,note,selected})=>{
+  return report.map(({answer,heading,checklist,note,selected})=>{
    const labels=checklist.length?checklist:[selected.map(entry=>bpfScopeLabel(page,entry.scope)).join(', ')];
-   return panel.label+' — '+bpfAnswerLabel(answer).toUpperCase()+' — '+labels.join(' | ')+
+   return panel.label+' — '+(heading||bpfAnswerLabel(answer).toUpperCase())+' — '+labels.join(' | ')+
     (note?': '+bpfObservationMarker(answer,selected.length?selected:panel.entries)+note:'');
   });
  }
@@ -839,11 +886,35 @@ const bpfWaterCheck = (() => {
       if(criterion.details==='sanitizers'&&item.answer==='0'){
        for(const product of Object.values(item.products))product.selected=false;
       }
-      if(criterion.id==='filtro'&&item.answer!=='1')delete state['registro-filtro'].answer;
+      if(criterion.id==='filtro'&&item.answer!=='1'&&state['registro-filtro'])delete state['registro-filtro'].answer;
       save();
      };
      control.prepend(input);
-     line.append(control);
+     if(information&&criterion.informationQuestion){
+      const choices=element('div');
+      choices.style.display='flex';
+      choices.style.gap='1rem';
+      const yesControl=element('label','Sim');
+      const noControl=element('label','Não');
+      const noInput=element('input');
+      noInput.type='checkbox';
+      yesControl.className=noControl.className='bpf-water-choice';
+      input.setAttribute('aria-label',label+' — '+caption+' — Sim');
+      noInput.setAttribute('aria-label',label+' — '+caption+' — Não');
+      noInput.onchange=()=>{
+       item.answer=noInput.checked?'0':'';
+       if(criterion.id==='filtro'&&state['registro-filtro'])delete state['registro-filtro'].answer;
+       save();
+      };
+      yesControl.prepend(input);
+      noControl.prepend(noInput);
+      choices.append(yesControl,noControl);
+      line.append(element('div',caption),choices);
+      rows.push(()=>{
+       noInput.disabled=state.notApplicable||!active(criterion,state);
+       noInput.checked=!noInput.disabled&&item.answer==='0';
+      });
+     }else line.append(control);
      const extra=element('div');
      extra.className='bpf-water-detail';
      const showDetails=criterion.details&&(answer==='1'||criterion.detailsOnNo);

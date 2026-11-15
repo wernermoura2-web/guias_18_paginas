@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-463-retira-concentracao';
+const CACHE='guia18-20261115-informacoes-sim-nao';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -518,7 +518,7 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
 
   // Carregar as verificações antes de inicializar os campos do guia.
   if(!altered.includes('bpf-captacao-conducao.js')){
-   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261115-463-retira-concentracao"></script>';
+   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261115-informacoes-sim-nao"></script>';
    altered=altered.replace(inspectorScript,checkTag+'<script>bpfWaterCheck.prepareCaps();</script>'+inspectorScript);
    altered=altered.replace('let bpfInspectorLastApplied=null,bpfInspectorLocalChecked=false;',
     'bpfWaterCheck.registerReview(BPF_INSPECTOR_ENTRIES,BPF_INSPECTOR_BY_KEY);\nlet bpfInspectorLastApplied=null,bpfInspectorLocalChecked=false;');
@@ -572,6 +572,8 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
     "const groupedPanels=panels.filter(panel=>bpfSplitPanel(row,panel));\n  const machineReport=row.code==='4.7.8'?bpfWaterCheck.report(page,row,panels[0],values):[];\n  result.push(...machineReport);\n  const machineReported=new Set(machineReport.flatMap(item=>item.selected.map(entry=>entry.name)));\n  if(row.code==='4.3.3'){result.push(...bpfWaterCheck.report(page,row,panels[0],values));continue;}");
    altered=altered.replace("const entries=bpfPanelRecords(row,panel).filter(e=>values[e.name]===answer);",
     "const entries=bpfPanelRecords(row,panel).filter(e=>values[e.name]===answer&&!machineReported.has(e.name));");
+   altered=altered.replace("(bpfAnswerLabel(item.answer)||'Registro anterior sem classificação')",
+    "(item.heading||bpfAnswerLabel(item.answer)||'Registro anterior sem classificação')");
    altered=altered.replace("   text(item.row.phrases[item.panel.id].text);",
     "   const phrase=item.row.phrases[item.panel.id];\n   if(phrase?.appcc)text('Classificação APPCC: '+phrase.appcc,8,true);\n   if(phrase?.text)text(phrase.text);");
    altered=altered.replace("if(records.length)result.push({page,row,phrase,index:i,records});",
