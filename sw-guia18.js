@@ -1,9 +1,9 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-observacoes-tres-linhas-v2';
+const CACHE='guia18-20261115-paginacao-observacoes';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
-CORE.push('./bpf-conclusao-nc.js','./bpf-captacao-conducao-consolidado.js');
+CORE.push('./bpf-conclusao-nc.js','./bpf-captacao-conducao-consolidado.js','./bpf-paginacao-observacoes.js');
 CORE.push('./impressao/Anexo_Resumido_Frases_BPF_APPCC.pdf.b64','./impressao/Checklist_de_Documentos_Envasadora.pdf.b64','./impressao/Descritores_de_Documentos_Envasadora.pdf.b64');
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
@@ -653,6 +653,40 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
+  altered=altered.replace('</head>', '<script src="./bpf-paginacao-observacoes.js?v=20261115-paginacao-observacoes"></script><style>#pages .bpf-overflow-observation{display:block;padding:.8cqw 1.17cqw;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;text-align:left;cursor:default}</style></head>');
+  altered=altered.replace(/function bpfGeneralFlow\(full\)\{[\s\S]*?(?=function bpfDocumentObservations)/,
+   'function bpfGeneralFlow(full){bpfRunNCObservationFlow(full);}\n');
+  altered=altered.replace('  return first+continuation;',
+   "  return first+continuation+(Array.isArray(old.extra)?old.extra.join(''):'');");
+  altered=altered.replace("if(!old.second&&continuation)return [first,continuation].filter(Boolean).join('\\n\\n');",
+   "if(!old.second&&continuation)return [first,continuation].filter(Boolean).join('\\n\\n')+(Array.isArray(old.extra)?old.extra.join(''):'');");
+  altered=altered.replace("const bpfNCPageTitle='OBSERVAÇÕES GERAIS DOS PROCESSOS — CONTINUAÇÃO';", 'const bpfNCPageTitle=bpfNCTitle;');
+  altered=altered.replace("values.obs_gerais_continuacao=bpfDocumentObservations();for(let i=0;",
+   "values.obs_gerais_continuacao=bpfDocumentObservations();bpfReconcileObservationPages();for(let i=0;");
+  altered=altered.replace("bpfCQCompactLines(String(text||''))", "bpfCQCompactLines(bpfCQObservationFlow.parts[0])");
+  altered=altered.replace(/ if\(el\.dataset\.field==='obs_gerais_continuacao'\)\{[\s\S]*?(?= if\(el\.classList\.contains\('bpf-process-observation'\)\))/,
+   ` if(el.dataset.field==='obs_gerais_continuacao'){
+    const size=(BPF_CQ_FONT_SIZE/595.32*100)+'cqw';
+    el.style.fontSize=size;
+    el.style.lineHeight='1.35';
+    el.style.overflowY='auto';
+    const mirror=el.parentElement.querySelector('.bpf-cq-continuation');
+    if(mirror){mirror.style.fontSize=size;mirror.style.lineHeight='1.35';}
+    return;
+   }
+`);
+  altered=altered.replace("id>=22?'Fotos '+(id-19):id<0?'Rótulos '+(-id):titles[id]",
+   "bpfOverflowPages.get(id)?.title||(id>=22?'Fotos '+(id-19):id<0?'Rótulos '+(-id):titles[id])");
+  altered=altered.replace(/function bpfPdfNCLines\(text,font,width,size\)\{[\s\S]*?\n\}/,
+   'function bpfPdfNCLines(text,font,width,size){return bpfObservationLines(text,font,width,size);}');
+  altered=altered.replace(/async function bpfPdfUpdatePages\(pdf,form,font,flow\)\{[\s\S]*?\n\}/,
+   'async function bpfPdfUpdatePages(pdf,form,font){await bpfPDFWithObservationOverflows(pdf,form,font);}');
+  altered=altered.replace(' const pdfFlow=bpfPdfGeneralSplit(bpfGeneralFullText(),observationFont);\n','');
+  altered=altered.replace('await bpfPdfUpdatePages(pdf,form,observationFont,pdfFlow);',
+   'await bpfPdfUpdatePages(pdf,form,observationFont);');
+  altered=altered.replace("if(total===22&&count===2&&bpfCurrentGalleryPages('labels')===2)return;", '');
+  altered=altered.replace(/pdf\.removePage\(source(?:<14\?source:source)?\+1\);/,
+   'pdf.removePage(bpfObservationPDFSourceIndex(source));');
   return new Response(altered,{status:response.status,statusText:response.statusText,headers});
 }
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(path=>new Request(new URL(path,ROOT),{cache:'reload'})))).then(()=>self.skipWaiting())));
