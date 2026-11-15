@@ -37,7 +37,7 @@ const bpfWaterCheck = (() => {
  }
  const returnableRinse=rinsePanel(false), disposableRinse=rinsePanel(true);
  const fillingMachine={all:true,inline:true,checks:[
-  check('saneantes','Sanitizantes utilizados para descontaminação ou desinfecção de rotina da envasadora',{details:'sanitizers',explicitAnswer:true}),
+  check('saneantes','Sanitizantes utilizados para descontaminação ou desinfecção de rotina da envasadora',{details:'sanitizers',explicitAnswer:true,frequencyOptional:true}),
   {...yes('residuo','Após a desinfecção da envasadora, testa a ausência de resíduo de saneante na água após o enxágue?','residue'),
    tests:[['dpd','Fotômetro de bolso (DPD)'],['ortotolidina','Kit de gotas (Ortotolidina)'],['outros','Outro']]},
   yes('microbiologia','Após o enxágue da envasadora, testa a ausência de contaminação microbiológica?'),
