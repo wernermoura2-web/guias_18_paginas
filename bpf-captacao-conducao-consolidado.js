@@ -8,7 +8,7 @@ const bpfWaterCheck = (() => {
   yes('residuo','Após a desinfecção '+disinfection+', testa a ausência de resíduo de saneante na água após o enxágue','residue'),
   yes('microbiologia','Após a desinfecção '+disinfection+', testa a ausência de contaminação microbiológica'),
   yes('atp','Após a desinfecção '+disinfection+', faz teste fluorescente / ATP'),
-  yes('medida','Adota outra medida de controle adicional ao perigo identificado de contaminação microbiológica ou química da água '+water,'measure')
+  ...(water?[yes('medida','Adota outra medida de controle adicional ao perigo identificado de contaminação microbiológica ou química da água '+water,'measure')]:[])
  ];
  const adequateHygiene = check('higienizacao-adequada','A rotina de limpeza informada encontra-se em conformidade com as instruções apresentadas');
  const blownChecks = [
@@ -79,7 +79,7 @@ const bpfWaterCheck = (() => {
     check('filtro','Possui filtro de ar microbiológico no poço (surgência apenas em drenos)',{details:'filter'}),
     check('registro-filtro','Possui registro de troca do filtro de ar microbiológico',{requires:'filtro'}),
     check('pop-registros','O POP e os registros de limpeza e higienização estão disponíveis na casa de proteção'),
-    ...controls('do poço ou surgência','captada')
+    ...controls('do poço ou surgência')
    ]},
    2:{all:true,checks:[
     check('externa','Área externa (pavimentação, calhas de drenagem, etc.)'),
