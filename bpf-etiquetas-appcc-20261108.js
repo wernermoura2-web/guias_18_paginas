@@ -215,10 +215,10 @@ function showSummary(anchor,data,row){
  openSummary(anchor);
 }
 const summaryTriggers=new WeakSet();
-function addSummaryTrigger(anchor,data,row,focusable=false){
+function addSummaryTrigger(anchor,data,row){
  if(!anchor||summaryTriggers.has(anchor))return;
  summaryTriggers.add(anchor);
- if(focusable)anchor.tabIndex=0;
+ anchor.tabIndex=0;
  anchor.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')showSummary(anchor,data,row);});
  anchor.addEventListener('pointerleave',scheduleHide);
  anchor.addEventListener('focus',()=>{if(anchor.matches(':focus-visible'))showSummary(anchor,data,row);});
@@ -346,8 +346,6 @@ function apply(){
   for(const row of data.rows){
    const id='bpf-etiqueta-superior-v69-'+data.page+'-'+row.code.replace(/\./g,'-');
    const existing=page.querySelector('[data-etiqueta-id="'+id+'"]');
-   const itemCode=page.querySelector('.bpf-f[data-code="'+row.code+'"]')?.parentElement?.firstElementChild;
-   addSummaryTrigger(itemCode,data,row);
    if(existing){fitBadge(existing);continue;}
    diag.total++;
    let widget=null;
@@ -379,7 +377,7 @@ function apply(){
    const number=document.createElement('span'),divider=document.createElement('span'),suffix=document.createElement('span');
    number.textContent=row.code;divider.textContent='|';suffix.textContent=label;
    badge.append(number,divider,suffix);page.append(badge);fitBadge(badge);
-   addSummaryTrigger(badge,data,row,true);
+   addSummaryTrigger(badge,data,row);
    diag.aplicadas++;
   }
  }
