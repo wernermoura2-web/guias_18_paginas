@@ -33,7 +33,7 @@ const bpfWaterCheck = (() => {
    }),
    check('telemetria-concentracao','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.',{yesOnly:true,informationOnly:!disposable})
   ].map(criterion=>({...criterion,section:'Enxágue com solução desinfetante'}));
-  return disposable?{allowNA:true,separateInformation:true,checks:[
+  return disposable?{allowNA:true,separateInformation:true,exclusiveScopeAnswer:true,checks:[
    check('sim-descartaveis','Sim',{yesOnly:true,scopeAnswer:true}),
    check('nao-descartaveis','Não',{noOnly:true,scopeAnswer:true}),
    ...blownChecks,...rinseChecks
@@ -229,6 +229,9 @@ const bpfWaterCheck = (() => {
   try {
    const name=key(entry);
    let state=JSON.parse(data[name]||'null');
+   if(state?.['sim-descartaveis']?.answer==='1'&&state?.['nao-descartaveis']?.answer==='0'){
+    state['sim-descartaveis'].answer='';
+   }
    if(entry.index===0&&!state?.['sim-descartaveis']&&!state?.['nao-descartaveis']&&
       entry.scope.phrases?.[0]?.allowNA&&BPF_PHRASES.some(page=>page.page===8&&
        page.rows.some(row=>row.code==='4.6.3'&&row.scopes.some(scope=>scope.name===entry.scope.name)))){
@@ -951,6 +954,11 @@ const bpfWaterCheck = (() => {
      input.setAttribute('aria-label',directChoice||criterion.scopeAnswer?label+' — '+heading:label+' — '+caption+' — '+heading);
      input.onchange=()=>{
       item.answer=input.checked?answer:'';
+      if(input.checked&&config.exclusiveScopeAnswer&&criterion.scopeAnswer){
+       for(const other of config.checks){
+        if(other.scopeAnswer&&other.id!==criterion.id&&state[other.id])state[other.id].answer='';
+       }
+      }
       if(criterion.details==='sanitizers'&&item.answer==='0'){
        for(const product of Object.values(item.products))product.selected=false;
       }
