@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-numero-captacao';
+const CACHE='guia18-20261114-obs-linha-final';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -50,6 +50,18 @@ for(const [start,end] of BPF_MATRIX_PCC_GROUPS){
 `);
   altered=altered.replace(' for(const n of names){values[n]=D.fields[n].type===',
     " const keepIdentity=w.name==='LIMPAR CAPTAÇÃO'?new Set(['ENVASADORA','ENDEREÇO','DATA']):null;\n for(const n of names){if(keepIdentity?.has(n))continue;values[n]=D.fields[n].type===");
+  // Contar uma linha em branco na medição do quadro, sem acrescentá-la ao texto salvo.
+  altered=altered.replace('function bpfSplitGeneralText(full,fits,sizes){', `
+function bpfSplitGeneralText(full,fitsPart,sizes){
+ const fits=(part,index,size)=>{
+  const probe=part.endsWith('\\n')?part+'\\u00a0':part+'\\n\\u00a0';
+  return fitsPart(probe,index,size);
+ };
+`.trimStart());
+  altered=altered.replace('&&old.baseFont===BPF_NC_FONT_SIZE&&old.height===',
+    '&&old.baseFont===BPF_NC_FONT_SIZE&&old.reservedLastLine===true&&old.height===');
+  altered=altered.replace('full,font:result.size,baseFont:BPF_NC_FONT_SIZE,height:',
+    'full,font:result.size,baseFont:BPF_NC_FONT_SIZE,reservedLastLine:true,height:');
   // Atualizar o padrão da recuperação em equipe sem sobrescrever a preferência salva.
   if(/\/equipe\.html$/i.test(url.pathname)){
     altered=altered.replace('let minutes=5;try', 'let minutes=1;try')
