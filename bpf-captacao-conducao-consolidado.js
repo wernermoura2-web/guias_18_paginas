@@ -50,8 +50,8 @@ const bpfWaterCheck = (() => {
   yes('atp','Após o enxágue da envasadora, faz teste fluorescente / ATP?'),
   yes('medida','Adota outra medida de controle para o perigo identificado de contaminação microbiológica ou química da água envasada?','measure')
  ]};
- const returnableInspection=(checks,collapseAnswers=false)=>({
-  separateInformation:true,exclusiveScopeAnswer:true,collapseAnswers,questionsInInformation:true,
+ const returnableInspection=checks=>({
+  separateInformation:true,exclusiveScopeAnswer:true,questionsInInformation:true,
   checks:[
    check('sim-lavagem','Sim',{yesOnly:true,scopeAnswer:true}),
    check('nao-lavagem','Não',{noOnly:true,scopeAnswer:true}),
@@ -67,7 +67,7 @@ const bpfWaterCheck = (() => {
  const panels = {
   '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
-  '4.6.4':{0:returnableInspection(prewashChecks,true)},
+  '4.6.4':{0:returnableInspection(prewashChecks)},
   '4.6.5':{
    0:returnableInspection([
     check('concentracao-limpeza','O enxágue com produto químico para limpeza das embalagens no primeiro estágio da lavadora é feito na concentração adequada (validada)?'),
@@ -953,11 +953,10 @@ const bpfWaterCheck = (() => {
     const answer=information?'1':sectionType;
     const heading=information?informationHeading(config):answer==='1'?'Sim':'Não';
     const directChoice=config.simple||(config.separateInformation&&!information)||(config.singleNo&&answer==='0');
-    const collapsed=config.collapseAnswers||!directChoice;
-    const section=element(collapsed?'details':'div');
+    const section=element(directChoice?'div':'details');
     section.className='bpf-water-unit';
     section.dataset.waterEntry=entry.name;
-    if(collapsed)section.append(element('summary',label));
+    if(!directChoice)section.append(element('summary',label));
     const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
     legacyLine.hidden=!legacy;
     legacyLines.push(legacyLine);
