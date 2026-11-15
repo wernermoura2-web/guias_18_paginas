@@ -32,6 +32,7 @@ css.textContent+=`
  max-height:calc(100dvh - 16px);overflow:auto;background:#fff;color:#182d38;padding:8px;
  border:1px solid #9cb1bd;border-radius:8px;box-shadow:0 5px 18px #17374835;font:13px/1.35 Arial,sans-serif}
 #bpf-resumo-frases[hidden]{display:none}
+#bpf-resumo-frases.bpf-aviso-botao{pointer-events:none}
 #bpf-resumo-frases .bpf-resumo-item{display:block;padding:1px 2px 6px;font-size:13px}
 #bpf-resumo-frases .bpf-resumo-quadro{padding:6px 8px;border:1px solid var(--bpf-borda);
  border-left-width:4px;background:var(--bpf-fundo);border-radius:4px}
@@ -195,6 +196,7 @@ function showSummary(anchor,data,row){
  const title=document.createElement('strong');
  title.className='bpf-resumo-item';
  title.textContent='Item '+row.code;
+ summaryTooltip.classList.remove('bpf-aviso-botao');
  summaryTooltip.replaceChildren(title);
  for(const {label,category,texts} of cards){
   const box=document.createElement('div'),name=document.createElement('strong');
@@ -217,9 +219,9 @@ function addSummaryTrigger(anchor,data,row,focusable=false){
  if(!anchor||summaryTriggers.has(anchor))return;
  summaryTriggers.add(anchor);
  if(focusable)anchor.tabIndex=0;
- anchor.addEventListener('pointerenter',()=>showSummary(anchor,data,row));
+ anchor.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')showSummary(anchor,data,row);});
  anchor.addEventListener('pointerleave',scheduleHide);
- anchor.addEventListener('focus',()=>showSummary(anchor,data,row));
+ anchor.addEventListener('focus',()=>{if(anchor.matches(':focus-visible'))showSummary(anchor,data,row);});
  anchor.addEventListener('blur',hideSummary);
 }
 const guidanceSelector='button.bpf-f, button.bpf-regra-pcc-botao';
@@ -236,10 +238,12 @@ function showButtonGuidance(button){
   ?'Abre as frases e orientações do item. Responda às verificações aplicáveis. Ao marcar Não, descreva a não conformidade. Registre observações quando necessário.'
   :'Abre a regra de risco dos Pontos Críticos de Controle. Use este botão para consulta. O preenchimento é feito no botão F de cada item.';
  if(!summaryTooltip.isConnected)document.body.append(summaryTooltip);
+ summaryTooltip.classList.add('bpf-aviso-botao');
  summaryTooltip.replaceChildren(title,message);
  openSummary(button);
 }
 document.addEventListener('pointerover',event=>{
+ if(event.pointerType==='touch')return;
  const button=event.target?.closest?.(guidanceSelector);
  if(button&&!button.contains(event.relatedTarget))showButtonGuidance(button);
 });
@@ -248,7 +252,7 @@ document.addEventListener('pointerout',event=>{
  if(button&&button===summaryAnchor&&!button.contains(event.relatedTarget))scheduleHide();
 });
 document.addEventListener('focusin',event=>{
- if(event.target?.matches?.(guidanceSelector))showButtonGuidance(event.target);
+ if(event.target?.matches?.(guidanceSelector)&&event.target.matches(':focus-visible'))showButtonGuidance(event.target);
 });
 document.addEventListener('focusout',event=>{
  if(event.target===summaryAnchor)hideSummary();
