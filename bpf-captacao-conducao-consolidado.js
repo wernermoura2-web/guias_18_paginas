@@ -81,7 +81,7 @@ const bpfWaterCheck = (() => {
     check('pop-registros','O POP e os registros de limpeza e higienização estão disponíveis na casa de proteção'),
     ...controls('do poço ou surgência')
    ]},
-   2:{all:true,checks:[
+   2:{all:true,answerPrompts:{'1':'informe os registros de limpeza apresentados','0':'informe os registros de limpeza não apresentados'},checks:[
     check('externa','Área externa (pavimentação, calhas de drenagem, etc.)'),
     check('interior','Interior da casa de captação (piso, paredes, tubulações, etc.)'),
     check('captacao','Captação (poço ou surgência)')
@@ -631,7 +631,8 @@ const bpfWaterCheck = (() => {
   for(const [answer,heading] of [['1','Sim'],['0','Não']]){
    const box=element('fieldset');
    box.className='bpf-answer-box';
-   box.append(element('legend',panel.label+' — '+heading));
+   const prompt=config.answerPrompts?.[answer];
+   box.append(element('legend',panel.label+' — '+heading+(prompt?' ('+prompt+')':'')));
    answerGrid.append(box);
    boxes.set(answer,box);
   }
