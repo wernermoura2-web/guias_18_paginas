@@ -41,8 +41,9 @@ main>section:target{display:block}
 @media print{main>section{display:block}}
 .capitulo-nav{display:flex;justify-content:space-between;align-items:center;gap:.55rem;flex-wrap:wrap;border:0;padding:0;margin:.8rem 0}
 .capitulo-nav a{display:inline-block;padding:.38rem .68rem;border:1px solid var(--line);border-radius:.35rem;text-decoration:none;font-weight:650}
+main>section>h2+.capitulo-nav{position:sticky;top:0;z-index:2;background:white;padding:.6rem 0;border-bottom:1px solid var(--line);border-radius:0}
 .capitulo-nav .posicao{color:var(--muted);font-size:.88rem}
-@media print{.capitulo-nav{display:none}}
+@media print{.capitulo-nav{display:none}main>section>h2+.capitulo-nav{position:static}}
 </style>
 </head>
 <body>
@@ -64,12 +65,12 @@ main>section:target{display:block}
 <p>Clique em <strong>Abrir preenchimento</strong>, selecione o JSON e confira envasadora, endereço e data. Salve o preenchimento que estava aberto antes de carregar outro arquivo. A cópia automática auxilia a retomada no mesmo aparelho. O JSON exportado permite recuperar a inspeção em outro navegador ou aparelho.</p>
 <h3>4. Imprimir ou navegar</h3>
 <p>Use <strong>Imprimir PDF</strong> para emitir o relatório. Para mudar de página, use o seletor <strong>Processo</strong> ou as setas. Em <strong>Mais opções</strong>, ajuste o zoom ou use <strong>Limpar todo o guia</strong> para iniciar outra inspeção depois de salvar a atual.</p>
-<a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a><h3>Revisar frases</h3>
+<h3>Revisar frases</h3>
 <p>No <strong>Menu do guia</strong>, abra <strong>Mais opções</strong> e clique em <strong>Revisar frases</strong>. Use o filtro por processo e a busca para localizar o item ou a frase F. Verificações que têm uma redação própria para Sim ou Não aparecem com cartões específicos para cada resposta. As revisões são aplicadas ao guia digital e ao relatório gerado a partir dele. O Anexo F de campo é um PDF estático da versão publicada.</p>
 <p>Compare as colunas <strong>Original</strong> e <strong>Editável</strong>. Revise o texto da frase e a orientação ao inspetor. Edite os exemplos de <strong>Sim (OBS)</strong> e <strong>Não (NC)</strong> nos respectivos campos.</p>
 <p>Clique em <strong>Salvar revisões</strong> e depois em <strong>Salvar arquivo</strong> para guardar as alterações no JSON da inspeção. Para compartilhar apenas os textos revisados, use <strong>Baixar revisões JSON</strong>. Em outro preenchimento, use <strong>Importar revisões</strong>, confira e salve.</p>
 <p>Para conferir o relatório, marque <strong>Anexar frases F ao PDF</strong> em <strong>Mais opções</strong> e clique em <strong>Imprimir PDF</strong>. O anexo reúne as frases preenchidas com as opções registradas, OBS e NC. Consulte a orientação ao inspetor na tela de revisão.</p>
-</section>
+<a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
 <section id="incluir-excluir-restaurar-paginas"><h2 tabindex="-1">Incluir, excluir e restaurar páginas</h2>
 <h3>1. Adicionar uma página</h3>
 <p>No <strong>Menu do guia</strong>, abaixo de <strong>Processo</strong>, clique em <strong>Adicionar página de fotos</strong> ou <strong>Adicionar página de rótulos</strong>. O Guia abre a página criada.</p>
@@ -91,9 +92,11 @@ main>section:target{display:block}
 <h3>1. Conferir e salvar</h3>
 <p>Revise processos, NC, documentos, fotos, rótulos, matriz e responsáveis. Clique em <strong>Salvar arquivo</strong> para preservar o JSON consolidado.</p>
 <h3>2. Incluir o anexo no mesmo PDF</h3>
-<p>Em <strong>Mais opções</strong>, marque <strong>Anexar frases F ao PDF</strong>. Volte a <strong>Imprimir PDF</strong> no menu superior. O relatório reúne os registros da inspeção e acrescenta o anexo compacto das frases preenchidas. Confira se os itens esperados aparecem.</p>
+<p>Em <strong>Mais opções</strong>, marque <strong>Anexar frases F ao PDF</strong>. Volte a <strong>Imprimir PDF</strong> no menu superior. O relatório reúne os registros da inspeção e acrescenta o anexo compacto das frases preenchidas. Sem registros de frases, o PDF sai sem anexo. Sem registros de frases, o PDF sai sem anexo. Sem registros de frases, o PDF sai sem anexo. Confira se os itens esperados aparecem.</p>
 <h3>3. Imprimir ou encaminhar</h3>
 <p>Abra o PDF gerado, revise a paginação e selecione a impressora e o papel A4. Para ajustar um registro, corrija o guia pelo JSON e gere outro PDF.</p>
+<h3>Conferir o Anexo F da inspeção</h3><p>No final do PDF, confira item, frase, avaliação e unidade nos registros incluídos. No <strong>4.10.4</strong>, confira a previsão de análise mensal terceirizada em F1. Em F2, confira a execução do plano, os registros, os limites de aceitação e os limites internos de alerta e ação para heterotróficas.</p>
+<figure class="captura"><a href="./assets/manual/relatorio-anexo-f.png" target="_blank" rel="noopener"><img src="./assets/manual/relatorio-anexo-f.png" loading="lazy" alt="Anexo F gerado em uma inspeção de teste. O cabeçalho de cada registro indica a página do guia e o F correspondente."></a><figcaption>Anexo F gerado em uma inspeção de teste. O cabeçalho de cada registro indica a página do guia e o F correspondente.</figcaption></figure>
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
 <section id="ajustes-e-conferencia-da-impressao"><h2 tabindex="-1">Ajustes e conferência da impressão</h2>
 <h3>1. Emitir o relatório preenchido</h3>
@@ -106,6 +109,8 @@ main>section:target{display:block}
 <p>Compare o PDF com o Guia e confira a última linha de cada registro. Verifique sobretudo as observações, sua continuação e as considerações finais, além das margens, fotos e rótulos. Se faltar espaço, separe os itens com Enter e transfira o excedente para <strong>Documentos e continuação das observações</strong>, citando o item de origem.</p>
 <h3>4. Gerar novamente</h3>
 <p>Salve o JSON, gere outro PDF e confirme que registros e imagens aparecem completos e legíveis. Confira a prévia em papel A4 antes de imprimir ou encaminhar.</p>
+<h3>Conferir as etiquetas BPF/APPCC</h3><p>Confira se o número e a sigla aparecem na coluna <strong>Itens</strong> do processo correspondente. Ao excluir reservatórios sem uso ou ao acrescentar continuações de observações, confira também a nova sequência das páginas. As páginas de continuação trazem o texto das observações e não conformidades.</p>
+<figure class="captura"><a href="./assets/manual/relatorio-etiquetas.png" target="_blank" rel="noopener"><img src="./assets/manual/relatorio-etiquetas.png" loading="lazy" alt="Relatório de teste. As etiquetas 4.6.3 a 4.6.12 ficam junto das linhas da higienização de retornáveis."></a><figcaption>Relatório de teste. As etiquetas 4.6.3 a 4.6.12 ficam junto das linhas da higienização de retornáveis.</figcaption></figure>
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
 <section id="copia-de-seguranca-e-recuperacao"><h2 tabindex="-1">Cópia de segurança e recuperação</h2>
 <figure><img src="./assets/manual/04-1.jpeg" width="1200" height="655" loading="lazy" alt=""><figcaption>Abra a seção Cópia de segurança logo abaixo do menu do guia.</figcaption></figure>
@@ -124,12 +129,11 @@ main>section:target{display:block}
 <h3>Guia de 18 páginas</h3>
 <p>Clique em <strong>Imprimir guia em branco (18 páginas)</strong>. Abra o PDF baixado e confira a contagem e a legibilidade antes de imprimir. As pautas servem para anotar observações, considerações e responsáveis. O guia em branco tem paginação fixa. O relatório da inspeção preenchida ganha páginas de continuação conforme a extensão do texto.</p>
 <h3>Anexo resumido das frases (F) de 10 páginas</h3>
-<p>O Anexo resumido das frases (F), de 10 páginas, apresenta frases simplificadas para facilitar a inspeção e a avaliação de cada item do Guia. Em Mais opções, selecione Imprimir anexo resumido das frases (F).</p>
-<p><strong>Quadro à esquerda.</strong> No quadro à esquerda, marque SIM ou NÃO para cada frase avaliada e preencha, no próprio quadro, as observações e as informações solicitadas.</p>
-<p><strong>Quadro à direita.</strong> No quadro à direita, registre todas as observações sobre os itens avaliados. Identifique cada registro pelo número do item e, quando aplicável, pela frase (F1, F2 etc.) e pela unidade avaliada.</p>
-<figure class="captura"><a href="./assets/manual/anexo-f-pauta-atual.png"><img src="./assets/manual/anexo-f-pauta-atual.png" loading="lazy" alt="Recorte atual do Anexo F de campo. Use as verificações à esquerda e a pauta de observações à direita."></a><figcaption>Recorte atual do Anexo F de campo. Use as verificações à esquerda e a pauta de observações à direita.</figcaption></figure>
-<h3>Identificar os anexos</h3>
-<p>Quando os formulários forem usados em papel, identifique o anexo com a mesma inspeção do guia. Para inspeção digital, use a opção de incluir o anexo no relatório descrita na seção anterior.</p>
+<p>Em <strong>Mais opções</strong>, selecione <strong>Imprimir anexo resumido das frases (F)</strong>. Abra o PDF e imprima em A4, orientação retrato, no tamanho real. As dez folhas de campo têm texto preto e campos de marcação por unidade.</p>
+<p>Identifique a envasadora, a data e a inspeção. Marque <strong>S</strong> para Sim, <strong>N</strong> para Não e <strong>NA</strong> nos campos em que a opção estiver disponível. Em campos com apenas a caixa <strong>S</strong>, assinale quando a informação for confirmada.</p>
+<p>Registre as observações e não conformidades no item correspondente do Guia, com a frase F e a unidade. Exemplo fictício: “4.2.2 F2, Condução 2. Vegetação impedia a inspeção visual junto ao apoio da tubulação.”</p>
+<figure class="captura"><a href="./assets/manual/campo-captacao.png" target="_blank" rel="noopener"><img src="./assets/manual/campo-captacao.png" loading="lazy" alt="No cabeçalho, vincule a folha à inspeção. Marque o resultado na coluna da captação avaliada."></a><figcaption>No cabeçalho, vincule a folha à inspeção. Marque o resultado na coluna da captação avaliada.</figcaption></figure><figure class="captura"><a href="./assets/manual/anexo-conducao-acesso.png" target="_blank" rel="noopener"><img src="./assets/manual/anexo-conducao-acesso.png" loading="lazy" alt="Em 4.2.2 F2, confira vazamentos, suportes, avarias, corrosão, conexões sanitárias e acesso à tubulação."></a><figcaption>Em 4.2.2 F2, confira vazamentos, suportes, avarias, corrosão, conexões sanitárias e acesso à tubulação.</figcaption></figure><figure class="captura"><a href="./assets/manual/anexo-reservatorio-frequencia.png" target="_blank" rel="noopener"><img src="./assets/manual/anexo-reservatorio-frequencia.png" loading="lazy" alt="Em 4.3.3 F1, registre a frequência por reservatório. Em 4.3.4, assinale Sim ou Não nos campos de cada reservatório."></a><figcaption>Em 4.3.3 F1, registre a frequência por reservatório. Em 4.3.4, assinale Sim ou Não nos campos de cada reservatório.</figcaption></figure><figure class="captura"><a href="./assets/manual/campo-lavadora.png" target="_blank" rel="noopener"><img src="./assets/manual/campo-lavadora.png" loading="lazy" alt="Em 4.6.5 F2, confira se o relatório de avaliação da lavadora foi apresentado e se está atualizado."></a><figcaption>Em 4.6.5 F2, confira se o relatório de avaliação da lavadora foi apresentado e se está atualizado.</figcaption></figure><figure class="captura"><a href="./assets/manual/anexo-4104-amostragem.png" target="_blank" rel="noopener"><img src="./assets/manual/anexo-4104-amostragem.png" loading="lazy" alt="Em 4.10.4, confira a previsão de análise mensal no F1 e a execução, os registros e os limites no F2."></a><figcaption>Em 4.10.4, confira a previsão de análise mensal no F1 e a execução, os registros e os limites no F2.</figcaption></figure>
+<p>Para emitir o anexo dos registros digitais, use <a href="#imprimir-relatorio-e-anexar-as-frases-f">Imprimir relatório e anexar as frases F</a>.</p>
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
 <section id="descritores-e-checklist"><h2 tabindex="-1">Descritores e checklist de documentos</h2>
 <h3>Abrir e imprimir os dois documentos</h3>
@@ -138,12 +142,15 @@ main>section:target{display:block}
 <p>Use o checklist para organizar os documentos da inspeção. Antes da visita, encaminhe uma cópia à envasadora para separar os documentos. Durante a inspeção, marque <strong>Entregue</strong> quando o documento for apresentado e <strong>Não possui</strong> quando a envasadora informar que não o possui. Se o documento existir, mas não for apresentado, registre a pendência no Guia.</p>
 <figure class="captura"><a href="./assets/manual/checklist-exemplo.png"><img src="./assets/manual/checklist-exemplo.png" loading="lazy" alt="Checklist de documentos"></a><figcaption>As colunas Entregue e Não possui ficam ao lado de cada documento solicitado.</figcaption></figure>
 <h4>Quando consultar os descritores e onde registrar a análise</h4>
-<p>Use os <strong>Descritores dos documentos</strong> para saber o que conferir em cada documento do checklist. Para os documentos entregues, registre a análise no <strong>Anexo resumido das frases (F) de 10 páginas</strong> ou diretamente no <strong>Guia de Avaliação de Risco</strong>, no item correspondente. A marcação <strong>Entregue</strong> indica o recebimento.</p>
+<p>Use os <strong>Descritores dos documentos</strong> para saber o que conferir em cada documento do checklist. Para os documentos entregues, marque as verificações pertinentes no <strong>Anexo F de campo</strong> ou avalie diretamente no <strong>Guia de Avaliação de Risco</strong>. Registre a análise documental no Guia, no item correspondente. A marcação <strong>Entregue</strong> indica o recebimento.</p>
 <figure class="captura"><a href="./assets/manual/descritores-exemplo.png"><img src="./assets/manual/descritores-exemplo.png" loading="lazy" alt="Descritores dos documentos"></a><figcaption>Os descritores detalham o que conferir. O exemplo mostra orientações para avaliar a higienização da captação.</figcaption></figure>
 
 <h3>Exemplo de registro durante a inspeção</h3>
 <p>Se a envasadora entregar o relatório de avaliação da lavadora automática, marque <strong>Entregue</strong> no checklist. Consulte o descritor do relatório, confira a identificação do equipamento e compare os desinfetantes e as concentrações do relatório com os usados no momento da inspeção. Registre a análise no <strong>F2 do item 4.6.5</strong>. Indique se o relatório foi apresentado e, quando apresentado, se está atualizado.</p>
 <p>Se a envasadora informar que possui o relatório, mas não o entregar, deixe as duas caixas sem marcação e registre a pendência no item correspondente. Ao consolidar os documentos, confira a situação e o atendimento ao descritor na página <strong>Documentos e continuação das observações</strong>.</p>
+<h3>Relacionar o documento à evidência</h3><p>Localize o documento pelo processo e pelo título. Confira a referência no descritor e abra a frase correspondente no Guia. No registro da inspeção, indique a identificação do documento, a linha avaliada e o que foi constatado. Exemplo fictício no 4.6.5 F2. “Relatório da lavadora, versão 2, Linha 1. O documento foi apresentado. A concentração observada no equipamento era diferente da concentração registrada no relatório.”</p>
+<figure class="captura"><a href="./assets/manual/checklist-lavadora.png" target="_blank" rel="noopener"><img src="./assets/manual/checklist-lavadora.png" loading="lazy" alt="Checklist. Localize a linha do relatório de avaliação do maquinário automático."></a><figcaption>Checklist. Localize a linha do relatório de avaliação do maquinário automático.</figcaption></figure>
+<figure class="captura"><a href="./assets/manual/descritor-lavadora.png" target="_blank" rel="noopener"><img src="./assets/manual/descritor-lavadora.png" loading="lazy" alt="Descritor. Confira a apresentação do relatório, os sanitizantes e as concentrações utilizadas."></a><figcaption>Descritor. Confira a apresentação do relatório, os sanitizantes e as concentrações utilizadas.</figcaption></figure>
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
 <section id="trabalho-em-grupo-gerar-e-distribuir"><h2 tabindex="-1">Trabalho em grupo: gerar e distribuir</h2>
 <figure><img src="./assets/manual/06-1.jpeg" width="1060" height="700" loading="lazy" alt=""><figcaption>Em Configurar equipe → Dados da equipe, localize Gerar arquivo inicial da equipe.</figcaption></figure>
@@ -394,6 +401,33 @@ function chapterNav(index){
 chapters.forEach((chapter,index)=>{
  chapter.querySelector('h2').after(chapterNav(index));
  chapter.querySelector('a.top')?.replaceWith(chapterNav(index));
+});
+window.addEventListener('keydown',event=>{
+  if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||
+     event.target?.closest?.('a,button,input,textarea,select,[contenteditable]'))return;
+  const index=chapters.findIndex(chapter=>'#'+chapter.id===location.hash);
+  const step=event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:0;
+  if(index<0||!step||!chapters[index+step])return;
+  event.preventDefault();
+  location.hash=chapters[index+step].id;
+});
+window.addEventListener('keydown',event=>{
+  if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||
+     event.target?.closest?.('a,button,input,textarea,select,[contenteditable]'))return;
+  const index=chapters.findIndex(chapter=>'#'+chapter.id===location.hash);
+  const step=event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:0;
+  if(index<0||!step||!chapters[index+step])return;
+  event.preventDefault();
+  location.hash=chapters[index+step].id;
+});
+window.addEventListener('keydown',event=>{
+  if(event.defaultPrevented||event.altKey||event.ctrlKey||event.metaKey||event.shiftKey||
+     event.target?.closest?.('a,button,input,textarea,select,[contenteditable]'))return;
+  const index=chapters.findIndex(chapter=>'#'+chapter.id===location.hash);
+  const step=event.key==='ArrowLeft'?-1:event.key==='ArrowRight'?1:0;
+  if(index<0||!step||!chapters[index+step])return;
+  event.preventDefault();
+  location.hash=chapters[index+step].id;
 });
 window.addEventListener('hashchange', focusChapter);
 focusChapter();

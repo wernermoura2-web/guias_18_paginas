@@ -284,9 +284,10 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   let y=top-7-size;
   for(const {line,gap,definition} of bpfObservationParagraphs(content,spacing)){
    y-=gap*leading;
-   const wrapped=bpfObservationLines(line,font,right-x-14,size);
-   for(const [index,row] of wrapped.entries()){
-    if(definition&&index)y-=leading/3;
+   if(spacing==='nc'&&/^NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b/.test(line))y-=.85*leading;
+   const wrapped=bpfObservationLines(line,font,right-x-16,size);
+   for(const row of wrapped){
+    if(definition)y-=leading/3;
     page.drawText(row,{x:x+7,y,size,font,color:black});
     y-=leading;
    }

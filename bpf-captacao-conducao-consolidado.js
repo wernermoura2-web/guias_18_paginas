@@ -4,7 +4,7 @@ const bpfWaterCheck = (() => {
  const sanitizers = (label, options) => check('saneantes', label, {details:'sanitizers', ...options});
  const yes = (id, label, details) => check(id, label, {yesOnly:true, details});
  const controls = disinfection => [
-  yes('telemetria','Existe telemetria em linha','telemetry'),
+  check('telemetria','Existe telemetria em linha',{yesOnly:true,confirmationOnly:true,details:'telemetry'}),
   yes('residuo','Após a desinfecção '+disinfection+', testa a ausência de resíduo de saneante na água após o enxágue','residue'),
   yes('microbiologia','Após a desinfecção '+disinfection+', testa a ausência de contaminação microbiológica'),
   yes('atp','Após a desinfecção '+disinfection+', faz teste fluorescente / ATP')
@@ -130,7 +130,7 @@ const bpfWaterCheck = (() => {
   '4.1.3':{
    0:{separateInformation:true,checks:[
     check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
-    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina do poço ou surgência',{yesOnly:true}),
+    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina do poço ou surgência',{yesOnly:true,frequencyOptional:true}),
     check('filtro','Possui filtro de ar microbiológico no poço (surgência apenas em drenos)',{details:'filter',yesOnly:true}),
     check('registro-filtro','Possui registro de troca do filtro de ar microbiológico',{requires:'filtro',yesOnly:true}),
     yes('pop-registros','O POP e os registros de limpeza e higienização estão disponíveis na casa de proteção'),
@@ -156,13 +156,14 @@ const bpfWaterCheck = (() => {
     check('abaulada','Tubulação sem abaulamento e/ou com suportes suficientes',{noLabel:"Tubulação com abaulamento e/ou sem suportes adequados"}),
     check('integra','Tubulação sem avarias e/ou lisa e íntegra',{noLabel:"Tubulação com avarias e/ou sem superfície lisa e íntegra"}),
     check('corrosao','Tubulação e conexões sem corrosão',{noLabel:"Tubulação e/ou conexões com corrosão"}),
-    check('emendas','Tubulações com emendas ou conexões sanitárias',{noLabel:"Tubulações sem emendas ou conexões sanitárias"})
+    check('emendas','Tubulações com emendas ou conexões sanitárias',{noLabel:"Tubulações sem emendas ou conexões sanitárias"}),
+    check('acesso','Tubulação acessível e sem vegetação que impeça a inspeção',{noLabel:'Tubulação inacessível ou com vegetação que impeça a inspeção'})
    ]}
   },
   '4.6.8':{
    0:returnableInspection([
-    check('declaracao','Possui declaração do fabricante de desinfecção do lote de tampas em uso?'),
-    check('analise-tampas-recebidas','É feita a análise microbiológica dos lotes das tampas recebidas com declaração de desinfecção?'),
+    check('declaracao','Possui declaração do fabricante de desinfecção do lote de tampas em uso?',{keepLabel:true}),
+    check('analise-tampas-recebidas','É feita a análise microbiológica dos lotes das tampas recebidas com declaração de desinfecção?',{yesOnly:true,confirmationOnly:true}),
     check('dupla-embalagem','Os sacos com as tampas são enviados com embalagens primária e secundária?'),
     check('desinfeccao-envasadora','Faz a desinfecção das tampas na envasadora?'),
     check('retirada-envase','A embalagem secundária é retirada imediatamente antes do transporte para a sala de envase?',{section:'Sem Silo'}),
@@ -209,7 +210,7 @@ const bpfWaterCheck = (() => {
    ...controls('do reservatório')
   ]}},
   '4.3.4':{0:{simple:true,checks:[
-   check('inspecao-visual','Inspeção visual do reservatório na frequência definida pelo estabelecimento',{details:'inspection-frequency'})
+   check('inspecao-visual','Inspeção visual do reservatório')
   ]}},
   '4.3.2':{
    0:{separateInformation:true,checks:[
@@ -228,7 +229,7 @@ const bpfWaterCheck = (() => {
    2:{all:true,checks:[
     check('sem-vazamento','Reservatório e/ou conexões sem vazamento',{noLabel:'Reservatório e/ou conexões com vazamento'}),
     check('escotilha-parede','Reservatório com escotilha na parede para acesso interno',{noLabel:'Reservatório sem escotilha na parede para acesso interno'}),
-    check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual',{yesOnly:true,informationOnly:true})
+    check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual',{yesOnly:true,informationOnly:true,confirmationOnly:true})
    ]}
   },
   '4.2.7':{0:{separateInformation:true,checks:[
@@ -494,8 +495,8 @@ const bpfWaterCheck = (() => {
  const informationalPanels=[disposableRinse,returnableRinse,
   ...Object.values(panels).flatMap(phrases=>Object.values(phrases))];
  for(const panel of informationalPanels)for(const criterion of panel.checks){
-  if(!isInformation(panel,criterion)||criterion.informationList||!(panel.questionsInInformation||informationQuestions.has(criterion.id)))continue;
-  criterion.label=documentQuestions[criterion.id]||criterion.label.replace(/[.?]$/,'')+'?';
+  if(!isInformation(panel,criterion)||criterion.informationList||criterion.confirmationOnly||!(panel.questionsInInformation||informationQuestions.has(criterion.id)))continue;
+  if(!criterion.keepLabel)criterion.label=documentQuestions[criterion.id]||criterion.label.replace(/[.?]$/,'')+'?';
   criterion.yesOnly=false;
   criterion.informationQuestion=true;
  }
@@ -513,21 +514,75 @@ const bpfWaterCheck = (() => {
   ?!bpfPopNAForced(row,entry.scope,entry.index,data)
   :row.code!=='4.6.8'||entry.index!==1||capsDisinfected(entry.scope,data);
 
- function prepareCaps(){
+ function preparePhrases(){
   const phrase={
    text:'Quando a envasadora realiza a desinfecção das tampas, deve controlar o processo e proteger os lotes até o envase.',
    guidance:'Confira a adequação do desinfetante e da área de desinfecção, os registros de controle e os laudos microbiológicos por lote. Acompanhe o transporte das tampas em recipientes higienizados e fechados. Verifique se a desinfecção ocorre fora do silo e da área de envase.',
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(row.code==='4.3.4'){
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     phrases[0].text='Inspeção visual do reservatório.';
+    }
+   }
    if(row.code!=='4.6.8'||row.phrases.length!==1)continue;
    row.phrases.push({...phrase});
    for(const scope of row.scopes)scope.phrases.push({...phrase});
   }
  }
  const synchronizedItems=new Set(['4.1.3','4.2.2','4.2.7','4.2.8','4.2.9','4.3.2','4.3.5','4.6.3','4.6.4','4.6.5','4.6.6','4.6.8','4.7.2','4.7.4','4.7.5','4.7.6','4.7.8']);
+ const visualFrequency={
+  label:'Frequência da inspeção visual interna',
+  guidance:'Selecione a frequência por reservatório ou deixe em branco.',
+  details:'inspection-frequency'
+ };
+ function visualInspectionState(page,scope,data){
+  const row=page.rows.find(item=>item.code==='4.3.4');
+  const related=row?.scopes.find(item=>item.col===scope.col);
+  const field=related&&key({name:bpfPhraseName(related,0)});
+  let state={};
+  try{state=JSON.parse(data[field]||'null')||{};}catch{}
+  const details=state['inspecao-visual']??={};
+  if(related&&!details.answer){
+   const answer=data[bpfPhraseName(related,0)];
+   if(['1','0'].includes(answer))details.answer=answer;
+  }
+  return {field,state,details};
+ }
+ function renderReservoirFrequency(card,page,row,panel){
+  const section=element('fieldset');
+  section.append(element('legend',visualFrequency.label));
+  for(const scope of new Set(panel.entries.map(entry=>entry.scope))){
+   const unit=element('details');
+   unit.title=visualFrequency.guidance;
+   unit.append(element('summary',bpfScopeLabel(page,scope)));
+   const {field,state,details}=visualInspectionState(page,scope,values);
+   fields(unit,visualFrequency,details,()=>{
+    values[field]=JSON.stringify(state);
+    changed();
+   },[]);
+   section.append(unit);
+  }
+  card.append(section);
+ }
+ function reservoirFrequencyAnnex(page,row,panel,data){
+  const checklist=[];
+  for(const scope of new Set(panel.entries.map(entry=>entry.scope))){
+   const frequency=text(visualInspectionState(page,scope,data).details.frequency);
+   if(frequency)checklist.push(bpfScopeLabel(page,scope)+' — '+frequency);
+  }
+  return checklist.length?[{page,row,panel,heading:visualFrequency.label,checklist,answer:'',note:''}]:[];
+ }
  function registerReview(entries,byKey){
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(row.code==='4.3.3'){
+    const key=page.page+':4.3.3:F1:frequencia-visual';
+    const entry={key,page:page.page,code:row.code,index:0,label:'F1 — '+visualFrequency.label,scopes:[],
+     appcc:row.phrases[0].appcc,original:{text:'Frequência da inspeção visual interna',guidance:'Selecione a frequência por reservatório ou deixe em branco.'},
+     refs:[{set text(value){visualFrequency.label=value;},set guidance(value){visualFrequency.guidance=value;}}]};
+    entries.push(entry);byKey.set(key,entry);
+   }
    if(!synchronizedItems.has(row.code)&&row.code!=='4.3.4')continue;
    for(const panel of bpfPanels(page,row)){
     const config=get(row,panel.id);
@@ -654,7 +709,6 @@ const bpfWaterCheck = (() => {
       ...(c.tests||tests).filter(([id])=>item.tests?.[id]).map(([id,label])=>id==='outros'?text(item.otherTest)||label:label)
      ].filter(Boolean).join(', ');
      break;
-    case 'inspection-frequency': details=text(item.frequency)&&'Frequência da inspeção visual interna: '+text(item.frequency);break;
     case 'filter': details=text(item.frequency)&&'Frequência de troca: '+text(item.frequency);break;
     case 'recirculation': details=text(item.procedure);break;
     case 'measure': details=text(item.description);break;
@@ -881,11 +935,11 @@ const bpfWaterCheck = (() => {
     break;
    }
    case 'inspection-frequency': {
-    const periods=['Mensal','Trimestral','Semestral','Outros'];
+    const periods=['Mensal','Trimestral','Semestral','Anual','Outros'];
     const saved=item.frequency||'';
     const custom=!!saved&&!periods.includes(saved);
     let other;
-    field('Frequência da inspeção visual interna',custom?'Outros':saved,value=>{
+    field(criterion.label,custom?'Outros':saved,value=>{
      other.hidden=value!=='Outros';
      item.frequency=value==='Outros'?other.querySelector('textarea').value:value;
      save();
@@ -1141,6 +1195,6 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,prepareCaps,capsExamples,init,apply,report,summary,validate,render};
+ return {get,registerReview,renderMachine,preparePhrases,renderReservoirFrequency,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,render};
 })();
 

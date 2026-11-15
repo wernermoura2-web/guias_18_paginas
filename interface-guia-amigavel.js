@@ -202,6 +202,7 @@
   extra.content.append(
     makePrintDownload('Imprimir guia em branco (18 páginas)','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
     makePrintDownload('Imprimir anexo resumido das frases (F)','Anexo_Resumido_Frases_BPF_APPCC.pdf'),
+    makePrintDownload('Imprimir Anexo F com observações (20 páginas)','Anexo_F_20_Paginas_Retrato.pdf'),
     makePrintDownload('CHECKLIST DE DOCUMENTOS','Checklist_de_Documentos_Envasadora.pdf'),
     makePrintDownload('Descritores dos documentos','Descritores_de_Documentos_Envasadora.pdf')
   );

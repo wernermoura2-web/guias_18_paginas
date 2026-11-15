@@ -1,16 +1,16 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-anexo-f-sem-folha-avulsa';
+const CACHE='guia18-20261115-matriz-anexos-manual';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
-CORE.push('./bpf-amostragem-4104.js');
+CORE.push('./bpf-amostragem-4104.js','./manual.html');
 CORE.push('./bpf-conclusao-nc.js','./bpf-captacao-conducao-consolidado.js','./bpf-paginacao-observacoes.js');
-CORE.push('./impressao/Anexo_Resumido_Frases_BPF_APPCC.pdf.b64','./impressao/Checklist_de_Documentos_Envasadora.pdf.b64','./impressao/Descritores_de_Documentos_Envasadora.pdf.b64');
+CORE.push('./impressao/Anexo_F_20_Paginas_Retrato.pdf.b64','./impressao/Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf.b64','./impressao/Anexo_Resumido_Frases_BPF_APPCC.pdf.b64','./impressao/Checklist_de_Documentos_Envasadora.pdf.b64','./impressao/Descritores_de_Documentos_Envasadora.pdf.b64');
 const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.pathname);
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
-  const tag='<script src="./interface-guia-amigavel.js?v=20261115-rotulos-limpeza" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261115-rotulos-limpeza');
+  const tag='<script src="./interface-guia-amigavel.js?v=20261115-matriz-anexos-manual" defer></script>';
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261115-matriz-anexos-manual');
   // Manter a coluna de Recepção com a faixa percentual original, entre os dois grupos de PCC.
   altered=altered.replace(/\/\* Faixa vermelha dos seis primeiros processos na matriz\.[\s\S]*?(?=function place\(el,w\))/,`
 const BPF_MATRIX_PCC_BAND={left:100,right:348.28,top:185,bottom:223,width:595.32,height:841.92};
@@ -223,11 +223,11 @@ function bpfSyncNCLists(){
   // O cálculo original do guia foi preservado; retirar o interceptor de valores que impedia abertura.
   // Identificação visual explícita "ALTO - PCC" nas células de risco,
   // sem mudar o valor de cálculo dos campos de seleção.
-  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261115-rotulos-limpeza"></script>';
+  const pccTag='<script defer src="./bpf-pcc-rotulos-risco-20261109.js?v=20261115-matriz-anexos-manual"></script>';
   if(!altered.includes('bpf-pcc-rotulos-risco-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,pccTag+'</body>');
   altered=altered.replace(/bpf-pcc-rotulos-risco-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-pcc-rotulos-risco-20261109.js?v=20261115-rotulos-limpeza');
+    'bpf-pcc-rotulos-risco-20261109.js?v=20261115-matriz-anexos-manual');
   // Relatório de inspeção impresso: congelar os campos (inclusive SIM/NÃO)
   // e evitar recálculo posterior pelo Foxit ou outros leitores.
   // O botão de PDF EM BRANCO permanece independente e editável.
@@ -247,7 +247,7 @@ function bpfSyncNCLists(){
       altered=altered.replace(fillPreparation,fillPreparation+
         '\n const bpfPrintPccLabels=bpfPrintPrepareRisk();');
       altered=altered.replace(beforeSave,
-        '\n if(window.bpfConclusaoNC?.hasNC()){const cfg=window.bpfConclusaoNC;const conclusion=form.getFieldMaybe(cfg.field);if(conclusion){conclusion.setText(cfg.include(values[cfg.field]));conclusion.updateAppearances(observationFont);}}\n bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n'+beforeSave);
+        '\n if(window.bpfConclusaoNC?.hasNC()){const cfg=window.bpfConclusaoNC;const conclusion=form.getFieldMaybe(cfg.field);if(conclusion){conclusion.setText(cfg.include(values[cfg.field]));conclusion.updateAppearances(observationFont);}}\n bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n\n'+beforeSave);
       altered=altered.replace(oldDownload,
         "a.download='Guia_BPF_Relatorio_Inspecao_FINAL.pdf'");
       altered=altered.replace(oldStatus,"status.textContent='PDF final não editável gerado'");
@@ -573,7 +573,7 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   if(!altered.includes("v.BPF_Sampling_4104_native='1'"))
    altered=altered.replace(checklistApply,checklistApply+samplingMigration);
   altered=altered.replace("      values[selectedKey]=JSON.stringify([...selected]);","      if(row.code==='4.10.4'&&panel.id===1&&option===panel.checklist[2]&&check.checked){\n       values.BPF_Sampling_4104_mensal_registro='';\n       const na=checklistInputs.get('2'+option);\n       if(na)na.checked=false;\n      }\n      values[selectedKey]=JSON.stringify([...selected]);");
-  const samplingTag='<script src="./bpf-amostragem-4104.js?v=20261115-anexo-compacto"></script>';
+  const samplingTag='<script src="./bpf-amostragem-4104.js?v=20261115-revisao-impressao"></script>';
   if(!altered.includes('bpf-amostragem-4104.js'))altered=altered.replace(inspectorScript,samplingTag+inspectorScript);
   altered=altered.replace("text.textContent=option;label.append(check,text);",
    "text.textContent=row.code==='4.10.4'?(window.bpfSamplingCaption404?.(option)||option):option;label.append(check,text);");
@@ -582,10 +582,13 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   const conclusionTag='<script defer src="./bpf-conclusao-nc.js?v=20261113"></script>';
   if(!altered.includes('bpf-conclusao-nc.js'))altered=altered.replace(/<\/body\s*>/i,conclusionTag+'</body>');
 
+  altered=altered.replace("suffix:'EnvasadoraAutomatica',option:'Envasadora Automática'",
+   "suffix:'EnvasadoraAutomatica',option:'Envasadora automática descontaminada e higienizada adequadamente?'");
   // Carregar as verificações antes de inicializar os campos do guia.
   if(!altered.includes('bpf-captacao-conducao.js')){
-   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261115-conferencia-anexos-manual"></script>';
-   altered=altered.replace(inspectorScript,checkTag+'<script>bpfWaterCheck.prepareCaps();</script>'+inspectorScript);
+   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261115-revisao-sem-pauta"></script>';
+   altered=altered.replace(inspectorScript,checkTag+inspectorScript);
+   altered=altered.replace('/* Frases BPF: respostas portáteis', 'bpfWaterCheck.preparePhrases();\n/* Frases BPF: respostas portáteis');
    altered=altered.replace("panel.id===0&&['4.6.4','4.7.2','4.7.6',",
     "panel.id===0&&[");
    altered=altered.replace('let bpfInspectorLastApplied=null,bpfInspectorLocalChecked=false;',
@@ -659,7 +662,7 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
-  altered=altered.replace('</head>', '<script src="./bpf-paginacao-observacoes.js?v=20261115-observacoes-uma-linha"></script><style>#pages .bpf-nc-heading{margin-bottom:0}#pages :is(.bpf-overflow-observation,.bpf-nc-formatted,.bpf-cq-continuation){scrollbar-width:none}#pages :is(.bpf-overflow-observation,.bpf-nc-formatted,.bpf-cq-continuation)::-webkit-scrollbar{display:none}#pages .bpf-overflow-observation{display:block;padding:.8cqw 1.17cqw;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;text-align:left;cursor:default}</style></head>');
+  altered=altered.replace('</head>', '<script src="./bpf-paginacao-observacoes.js?v=20261115-retrato-conferencia-anexos-manual"></script><style>#pages .bpf-nc-heading{margin-bottom:0}#pages :is(.bpf-overflow-observation,.bpf-nc-formatted,.bpf-cq-continuation){scrollbar-width:none}#pages :is(.bpf-overflow-observation,.bpf-nc-formatted,.bpf-cq-continuation)::-webkit-scrollbar{display:none}#pages .bpf-overflow-observation{display:block;padding:.8cqw 1.17cqw;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;text-align:left;cursor:default}</style></head>');
   altered=altered.replace("function bpfRenderNCObservation(el,text){","function bpfRenderNCObservation(el,text,spacing='nc'){");
   altered=altered.replace('if(match.index>at)fragment.append(document.createTextNode(text.slice(at,match.index)));',
    'if(match.index>at)bpfAppendNCObservationText(fragment,text.slice(at,match.index),spacing);');
@@ -704,12 +707,16 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   altered=altered.replace("if(total===22&&count===2&&bpfCurrentGalleryPages('labels')===2)return;", '');
   altered=altered.replace(/pdf\.removePage\(source(?:<14\?source:source)?\+1\);/,
    'pdf.removePage(bpfObservationPDFSourceIndex(source));');
+  altered=altered.replace('  const panels=bpfPanels(page,row);\n  for(const panel of panels.filter(panel=>panel.checklist))',
+   '  const panels=bpfPanels(page,row);\n  if(row.code===\'4.10.4\'){result.push(...bpfSamplingAnnex404(page,row,panels,values));continue;}\n  for(const panel of panels.filter(panel=>panel.checklist))');
+  altered=altered.replace("if(row.code==='4.3.3'){result.push(...bpfWaterCheck.report(page,row,panels[0],values));continue;}",
+   "if(row.code==='4.3.3'){result.push(...bpfWaterCheck.report(page,row,panels[0],values),...bpfWaterCheck.reservoirFrequencyAnnex(page,row,panels[0],values));continue;}");
+  altered=altered.replace("  if(row.code==='4.10.6'&&panel.id===0){\n   const hint=",
+   "  if(row.code==='4.3.3'&&panel.id===0)bpfWaterCheck.renderReservoirFrequency(card,page,row,panel);\n  if(row.code==='4.10.6'&&panel.id===0){\n   const hint=");
   altered=altered.replace('const pdf=await PDFLib.PDFDocument.load(templateBytes),form=pdf.getForm(),',
    'const pdf=await PDFLib.PDFDocument.load(templateBytes),bpfSourcePages=pdf.getPages().slice(),form=pdf.getForm(),');
   altered=altered.replace(' bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);',
    ' bpfPrintFinalizePdf(pdf,form,observationFont,bpfPrintPccLabels);\n await window.bpfStampReportItemLabels(pdf,bpfSourcePages);');
-  altered=altered.replace('  const panels=bpfPanels(page,row);\n  for(const panel of panels.filter(panel=>panel.checklist))',
-   '  const panels=bpfPanels(page,row);\n  if(row.code===\'4.10.4\'){result.push(...bpfSamplingAnnex404(page,row,panels,values));continue;}\n  for(const panel of panels.filter(panel=>panel.checklist))');
   altered=altered.replace(/async function bpfAppendCompactAnnex\(pdf\)\{[\s\S]*?\n\}/,annex=>
    annex.replaceAll('(item.page.page+1)','(bpfPageOrder.indexOf(item.page.page)+1)')
     .replaceAll('(source.page+1)','(bpfPageOrder.indexOf(source.page)+1)'));
@@ -723,7 +730,8 @@ self.addEventListener('fetch',event=>{
  event.respondWith((async()=>{
   try{
    const isHtml=req.mode==='navigate'||IS_GUIDE(url)||url.pathname===ROOT.pathname||url.pathname.endsWith('/index.html');
-   const isPrintAnnex=url.pathname.endsWith('/impressao/Anexo_Resumido_Frases_BPF_APPCC.pdf.b64');
+   const isPrintAnnex=url.pathname.endsWith('/impressao/Anexo_Resumido_Frases_BPF_APPCC.pdf.b64')||
+     url.pathname.endsWith('/impressao/Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf.b64');
    const response=await fetch(req,isHtml||isPrintAnnex?{cache:'reload'}:undefined);
    if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(c=>c.put(req,copy)));}
    return attachFriendlyMenu(response,url);
