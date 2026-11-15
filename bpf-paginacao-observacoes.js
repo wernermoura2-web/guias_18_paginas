@@ -32,39 +32,51 @@ function bpfIsNCDefinition(line){
  return /^\s*(?:BPF|APPCC|PCC|PPRO|PPR|PC|POP)\s+[—–-]\s+/i.test(line);
 }
 
-function bpfObservationParagraphs(text,spacing,afterHeading=false){
+function bpfObservationParagraphs(text,spacing){
  const rows=[];
- const isNCRecord=line=>bpfIsNCEntry(line)||bpfIsNCDefinition(line);
  for(const line of text.split('\n')){
-  let gap=0;
-  const cqTitle=spacing==='cq'&&/^\s*(?:CONTINUAÇÃO DAS OBSERVAÇÕES\s+[—–-]\s+CONTROLE DA QUALIDADE|ITEM 4\.10\.\d+\b)/i.test(line);
-  if((spacing==='nc'&&isNCRecord(line))||cqTitle){
-   let previous=rows.length-1;
-   while(previous>=0&&(!rows[previous].line.trim()||
-    (spacing==='cq'&&/^-{4,}\s*$/.test(rows[previous].line))))previous--;
-   const precedingLine=rows[previous]?.line||'';
-   const followsHeading=bpfIsNCDefinition(line)&&
-    (/^NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b/i.test(precedingLine)||(afterHeading&&previous<0));
-   if(cqTitle||isNCRecord(precedingLine)||followsHeading){rows.length=previous+1;gap=1/4;}
+  const definition=spacing==='nc'&&bpfIsNCDefinition(line);
+  const ncEntry=spacing==='nc'&&bpfIsNCEntry(line);
+  const cqStart=spacing==='cq'&&/^\s*CONTINUAÇÃO DAS OBSERVAÇÕES\s+[—–-]\s+CONTROLE DA QUALIDADE\s*$/i.test(line);
+  const cqEnd=spacing==='cq'&&/^\s*FIM DAS OBSERVAÇÕES DO CONTROLE DA QUALIDADE\s*$/i.test(line);
+  const cqItem=spacing==='cq'&&/^\s*ITEM 4\.10\.\d+\b/i.test(line);
+  let previous=rows.length-1;
+  while(previous>=0&&!rows[previous].line.trim())previous--;
+  if(cqItem){
+   while(previous>=0&&(!rows[previous].line.trim()||/^-{4,}\s*$/.test(rows[previous].line)))previous--;
   }
-  rows.push({line,gap});
+  const before=rows[previous];
+  let gap=0;
+  if(definition)gap=before?.definition?1/3:1;
+  else if(before?.definition&&line.trim())gap=1;
+  else if(cqStart||before?.cqEnd&&line.trim())gap=1;
+  else if(cqItem||before?.cqItem&&line.trim())gap=1/3;
+  else if(ncEntry&&before&&bpfIsNCEntry(before.line))gap=1/4;
+  if(gap)rows.length=previous+1;
+  rows.push({line,gap,definition,cqItem,cqEnd});
+ }
+ let last=rows.length-1;
+ while(last>=0&&!rows[last].line.trim())last--;
+ if(last>=0&&(rows[last].cqEnd||rows[last].definition)){
+  rows.length=last+1;
+  rows.push({line:'',gap:0,definition:false});
  }
  return rows;
 }
 
-function bpfAppendNCObservationText(fragment,text,spacing='nc',afterHeading=false){
- let spaced=false;
- for(const [index,{line,gap}] of bpfObservationParagraphs(text,spacing,afterHeading).entries()){
-  if(gap){
-   const divider=document.createElement('span');
-   divider.className='bpf-nc-gap';
-   divider.setAttribute('aria-hidden','true');
-   fragment.append(divider);
-   spaced=true;
-  }else if(index)fragment.append(document.createTextNode('\n'));
-  if(line)fragment.append(document.createTextNode(line));
+function bpfAppendNCObservationText(fragment,text,spacing='nc'){
+ const rows=bpfObservationParagraphs(text,spacing);
+ const formatted=rows.some(row=>row.gap||row.definition);
+ if(!formatted){fragment.append(document.createTextNode(text));return false;}
+ for(const {line,gap,definition} of rows){
+  const paragraph=document.createElement('div');
+  paragraph.textContent=line;
+  if(!line.trim())paragraph.style.height='1.3em';
+  if(gap)paragraph.style.paddingTop=(gap*1.3)+'em';
+  if(definition)paragraph.style.lineHeight=String(1.3*4/3);
+  fragment.append(paragraph);
  }
- return spaced;
+ return true;
 }
 
 function bpfPaginateObservation(text,firstRect,nextRect,size,font,spacing){
@@ -76,8 +88,10 @@ function bpfPaginateObservation(text,firstRect,nextRect,size,font,spacing){
   const fits=part=>{
    const content=part.trimEnd();
    if(!content)return true;
-   const lines=bpfObservationParagraphs(content,spacing).reduce((total,{line,gap})=>
-    total+Math.max(1,bpfObservationLines(line,font,width,size).length)+gap,0);
+   const lines=bpfObservationParagraphs(content,spacing).reduce((total,{line,gap,definition})=>{
+    const count=Math.max(1,bpfObservationLines(line,font,width,size).length);
+    return total+count+gap+(definition?(count-1)/3:0);
+   },0);
    return lines<=maxLines;
   };
   if(parts.length&&!remaining.trim()){parts[parts.length-1]+=remaining;break;}
@@ -206,10 +220,11 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   const content=normalize(text.trimEnd());
   const [x,,right,top]=rect,leading=size*1.35;
   let y=top-7-size;
-  for(const {line,gap} of bpfObservationParagraphs(content,spacing)){
+  for(const {line,gap,definition} of bpfObservationParagraphs(content,spacing)){
    y-=gap*leading;
    const wrapped=bpfObservationLines(line,font,right-x-14,size);
-   for(const row of wrapped){
+   for(const [index,row] of wrapped.entries()){
+    if(definition&&index)y-=leading/3;
     page.drawText(row,{x:x+7,y,size,font,color:ink});
     y-=leading;
    }
