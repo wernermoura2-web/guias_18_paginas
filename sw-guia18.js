@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-rotulos-limpeza';
+const CACHE='guia18-20261115-rotulos-limpeza-v2';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -57,7 +57,7 @@ function bpfClearLabel(name){
   'LIMPAR CONDUÇÃO':'Limpar condução',
   'LIMPAR RES 1':'Limpar reservatórios\nda captação 1',
   'LIMPAR RES 2':'Limpar reservatórios\nda captação 2',
-  'LIMPAR REC EMB INS':'Limpar recepção de\nembalagens e insumos',
+  'LIMPAR REC EMB INS':'Limpar recepção',
   'LIMPAR EMB RET':'Limpar higienização\nde retornáveis',
   'LIMPAR HIG DESC':'Limpar higienização\nde descartáveis',
   'LIMPAR ENV RET':'Limpar envase\nde retornáveis',
