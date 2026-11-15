@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-respostas-descartaveis';
+const CACHE='guia18-20261114-cq-coluna-resultado';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -227,11 +227,11 @@ for(const [start,end] of BPF_MATRIX_PCC_GROUPS){
   altered=altered.replace(riskAnchor,riskText);
   // Controle de Qualidade: botão opcional para transferir observações extensas
   // dos itens 4.10.1–4.10.6 para a página de continuação.
-  const cqTransfer='<script defer src="./bpf-cq-continuacao-20261109.js?v=20261112-retomada-v130"></script>';
+  const cqTransfer='<script defer src="./bpf-cq-continuacao-20261109.js?v=20261114-coluna-resultado"></script>';
   if(!altered.includes('bpf-cq-continuacao-20261109.js'))
     altered=altered.replace(/<\/body\s*>/i,cqTransfer+'</body>');
   altered=altered.replace(/bpf-cq-continuacao-20261109\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-cq-continuacao-20261109.js?v=20261112-retomada-v130');
+    'bpf-cq-continuacao-20261109.js?v=20261114-coluna-resultado');
   // Complemento da impressão: proteger também o acesso direto aos formulários.
   const printUnicodeTag='<script defer src="./bpf-impressao-unicode-compat-20261109.js?v=20261112-retomada-v130"></script>';
   if(!altered.includes('bpf-impressao-unicode-compat-20261109.js'))

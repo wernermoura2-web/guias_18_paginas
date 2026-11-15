@@ -72,24 +72,29 @@ function toggle(i){
 const className='bpf-cq-transfer-v108';
 function paint(){
  const v=valuesRef(),guide=window.Guia;
- const page=document.getElementById('pages')?.children?.[11];
+ const page=document.querySelector('#pages .page[data-page="11"]');
  if(!v||!page||!guide?.data?.widgets)return;
+ const resultColumn=guide.data.widgets.find(w=>w.page===11&&w.name==='fill_10_7'&&w.rect);
+ if(!resultColumn)return;
+ const [columnLeft,,columnRight]=resultColumn.rect;
+ const horizontalInset=2, bottomInset=2, buttonHeight=19;
  for(let i=0;i<ids.length;i++){
   const w=guide.data.widgets.find(w=>w.page===11&&w.name===names[i]&&w.rect&&w.size);
   if(!w)continue;
   let btn=page.querySelector('button.'+className+'[data-i="'+i+'"]');
   if(!btn){btn=document.createElement('button');btn.className=className;btn.type='button';btn.dataset.i=String(i);btn.onclick=e=>{e.preventDefault();e.stopPropagation();toggle(i);};page.append(btn);}
-  const [,y1,x2,y2]=w.rect,[W,H]=w.size;
-  btn.style.left=((x2+5)/W*100)+'%';
-  btn.style.top=((H-y2+(y2-y1)*.67)/H*100)+'%';
-  btn.style.width=(Math.min(95,Math.max(52,W-x2-7))/W*100)+'%';
+  const [,rowBottom]=w.rect,[W,H]=w.size;
+  btn.style.left=((columnLeft+horizontalInset)/W*100)+'%';
+  btn.style.top=((H-rowBottom-bottomInset-buttonHeight)/H*100)+'%';
+  btn.style.width=((columnRight-columnLeft-2*horizontalInset)/W*100)+'%';
+  btn.style.height=(buttonHeight/H*100)+'%';
   btn.textContent=moved(v,i)?'↩ Voltar':'→ Continuar';
   btn.title=moved(v,i)?'Voltar observação do item '+ids[i]+' à tabela':'Transferir observação do item '+ids[i]+' para a continuação';
   btn.setAttribute('aria-pressed',String(moved(v,i)));
  }
 }
 const css=document.createElement('style');
-css.textContent='.'+className+'{position:absolute;z-index:80;padding:1px 2px;min-height:12px;font:700 clamp(6px,.9cqw,9px)/1.1 Arial,sans-serif;white-space:normal;text-align:center;color:#145578;background:#eef7fb;border:1px solid #216789;border-radius:3px;cursor:pointer;box-sizing:border-box}.'+className+'[aria-pressed=true]{background:#d9edf4}@media print{.'+className+'{display:none!important}}';
+css.textContent='.'+className+'{position:absolute;z-index:80;padding:0 1px;display:grid;place-items:center;font:700 clamp(7px,1.7cqw,15px)/1 Arial,sans-serif;white-space:nowrap;text-align:center;color:#145578;background:#eef7fb;border:1px solid #216789;border-radius:3px;cursor:pointer;box-sizing:border-box}.'+className+'[aria-pressed=true]{background:#d9edf4}@media print{.'+className+'{display:none!important}}';
 document.head.append(css);
 function sync(){update();paint();}
 function init(){
