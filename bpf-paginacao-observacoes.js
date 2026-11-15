@@ -79,37 +79,65 @@ function bpfAppendNCObservationText(fragment,text,spacing='nc'){
  return true;
 }
 
+function bpfObservationPageMeasure(rect,size,font,spacing){
+ const [left,bottom,right,top]=rect;
+ const width=right-left-16,capacity=Math.max(1,(top-bottom-16)/(size*1.35));
+ function height(text){
+  const content=text.trimEnd();
+  if(!content)return 0;
+  return bpfObservationParagraphs(content,spacing).reduce((total,{line,gap,definition})=>{
+   const count=Math.max(1,bpfObservationLines(line,font,width,size).length);
+   const heading=spacing==='nc'&&/^NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b/.test(line);
+   return total+count+gap+(definition?count/3:0)+(heading ? .85 : 0);
+  },0);
+ }
+ return {capacity,height};
+}
+
+function bpfObservationBreak(text,accept){
+ let lo=0,hi=text.length;
+ while(lo<hi){
+  const mid=Math.ceil((lo+hi)/2);
+  if(accept(text.slice(0,mid)))lo=mid;else hi=mid-1;
+ }
+ let cut=Math.max(1,lo);
+ if(!/\s/.test(text.charAt(cut-1))&&!/\s/.test(text.charAt(cut))){
+  const separator=text.slice(0,cut).search(/\s(?=\S*$)/);
+  if(separator>0&&cut-separator<28)cut=separator+1;
+ }
+ if(/[\uDC00-\uDFFF]/.test(text.charAt(cut)))cut=cut>1?cut-1:cut+1;
+ return cut;
+}
+
 function bpfPaginateObservation(text,firstRect,nextRect,size,font,spacing){
  const parts=[];
  let remaining=text;
+ const first=bpfObservationPageMeasure(firstRect,size,font,spacing);
+ const next=bpfObservationPageMeasure(nextRect,size,font,spacing);
  do{
-  const [left,bottom,right,top]=parts.length?nextRect:firstRect;
-  const width=right-left-16,maxLines=Math.max(1,Math.floor((top-bottom-16)/(size*1.35)));
-  const fits=part=>{
-   const content=part.trimEnd();
-   if(!content)return true;
-   const lines=bpfObservationParagraphs(content,spacing).reduce((total,{line,gap,definition})=>{
-    const count=Math.max(1,bpfObservationLines(line,font,width,size).length);
-    return total+count+gap+(definition?(count-1)/3:0);
-   },0);
-   return lines<=maxLines;
-  };
+  const {height,capacity}=parts.length?next:first;
   if(parts.length&&!remaining.trim()){parts[parts.length-1]+=remaining;break;}
-  if(fits(remaining)){parts.push(remaining);break;}
-  let lo=0,hi=remaining.length;
-  while(lo<hi){
-   const mid=Math.ceil((lo+hi)/2);
-   if(fits(remaining.slice(0,mid)))lo=mid;else hi=mid-1;
-  }
-  let cut=Math.max(1,lo);
-  if(!/\s/.test(remaining.charAt(cut-1))&&!/\s/.test(remaining.charAt(cut))){
-   const separator=remaining.slice(0,cut).search(/\s(?=\S*$)/);
-   if(separator>0&&cut-separator<28)cut=separator+1;
-  }
-  if(/[\uDC00-\uDFFF]/.test(remaining.charAt(cut)))cut=cut>1?cut-1:cut+1;
+  if(height(remaining)<=capacity){parts.push(remaining);break;}
+  const cut=bpfObservationBreak(remaining,part=>height(part)<=capacity);
   parts.push(remaining.slice(0,cut));
   remaining=remaining.slice(cut);
  }while(remaining);
+
+ const last=parts.length-1;
+ if(last>0&&next.height(parts[last])<=next.capacity/4){
+  const previous=last===1?first:next;
+  const combined=parts[last-1]+parts[last];
+  const used=previous.height(combined);
+  if(used<=previous.capacity)parts.splice(last-1,2,combined);
+  else{
+   const goal=used*previous.capacity/(previous.capacity+next.capacity);
+   const cut=bpfObservationBreak(combined,part=>previous.height(part)<=goal);
+   const left=combined.slice(0,cut),right=combined.slice(cut);
+   if(next.height(right)>next.capacity/4&&next.height(right)<=next.capacity){
+    parts.splice(last-1,2,left,right);
+   }
+  }
+ }
  return parts;
 }
 
