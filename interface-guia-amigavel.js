@@ -181,6 +181,7 @@
   const lbl=document.createElement('div');lbl.className='bpf-ui-label';lbl.textContent='ARQUIVOS E RELATÓRIOS';root.appendChild(lbl);
   const actions=document.createElement('div');actions.className='bpf-ui-actions';
   actions.append(makeButton('Salvar arquivo',save,true),makeButton('Abrir preenchimento',open),makeButton('Imprimir PDF',pdf));
+  actions.append(makePrintDownload('Imprimir guia em branco (18 páginas)','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'));
   const fullHint=document.createElement('p');
   fullHint.className='bpf-ui-hint';
   fullHint.textContent='Imprimir PDF: relatório final sem edição e sem recálculo; inclui respostas, observações, fotos e rótulos anexados.';
@@ -200,7 +201,6 @@
   }
   const extra=makeAccordion('Mais opções');
   extra.content.append(
-    makePrintDownload('Imprimir guia em branco (18 páginas)','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
     makePrintDownload('Imprimir anexo resumido das frases (F)','Anexo_Resumido_Frases_BPF_APPCC.pdf'),
     makePrintDownload('Imprimir Anexo F com observações (20 páginas)','Anexo_F_20_Paginas_Retrato.pdf'),
     makePrintDownload('CHECKLIST DE DOCUMENTOS','Checklist_de_Documentos_Envasadora.pdf'),
