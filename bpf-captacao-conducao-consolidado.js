@@ -174,7 +174,7 @@ const bpfWaterCheck = (() => {
   '4.2.8':{
    0:{all:true,checks:[
     check('pop-desmonte','POP contempla o desmonte e a frequência'),
-    check('registros-desmonte','Registros do desmonte, troca de componentes (o-ring) e higienização posterior'),
+    check('registros-desmonte','Registros do desmonte, troca de componentes (o-ring) e higienização posterior',{optional:true}),
     check('inspecao-visual','Realiza e registra inspeção visual interna das tubulações',{yesOnly:true})
    ]},
    1:{checks:[
@@ -258,7 +258,7 @@ const bpfWaterCheck = (() => {
     const index=panel.id;
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
-     const mode=criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':'Responda Sim ou Não quando aplicável.';
+     const mode=criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
      const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      criterion.guidance=[mode,context].filter(Boolean).join(' ');
      const ref={
@@ -292,7 +292,7 @@ const bpfWaterCheck = (() => {
 
  function requiredChecks(panel,selected,state){
   if(panel.sectioned)return panel.checks.filter(c=>!c.yesOnly&&selected.some(item=>item.section===c.section));
-  return panel.all?panel.checks.filter(c=>!c.yesOnly&&!c.noOnly&&active(c,state)):[];
+  return panel.all?panel.checks.filter(c=>!c.yesOnly&&!c.noOnly&&!c.optional&&active(c,state)):[];
  }
 
  function result(panel,state){
