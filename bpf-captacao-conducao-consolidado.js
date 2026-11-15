@@ -922,7 +922,7 @@ const bpfWaterCheck = (() => {
   if(!document.getElementById('bpf-water-css')){
    const style=element('style');
    style.id='bpf-water-css';
-   style.textContent='#bpf-editor .bpf-water-grid{grid-template-columns:minmax(0,1fr)}.bpf-water-unit+.bpf-water-unit{margin-top:4px}.bpf-water-unit>summary{padding:8px 0;cursor:pointer;font-weight:700}.bpf-water-row{padding:5px 0}.bpf-water-caption{display:block;margin-bottom:4px}.bpf-water-choice{display:flex;align-items:flex-start;gap:8px;margin:4px 0}.bpf-water-choice input{flex:none}.bpf-water-detail{padding:6px 10px;margin-top:4px;background:#f2f7fa;border-radius:5px}.bpf-water-field{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0}.bpf-water-field select{font:inherit;max-width:100%;padding:5px}#bpf-editor .bpf-water-text-field{display:block}#bpf-editor .bpf-water-text-field textarea{display:block;width:100%;max-width:100%;min-height:3.5em;box-sizing:border-box;margin:6px 0 0;padding:8px;font:inherit;resize:vertical}.bpf-water-unit [hidden]{display:none!important}';
+   style.textContent='#bpf-editor .bpf-water-grid{grid-template-columns:minmax(0,1fr)}.bpf-water-unit+.bpf-water-unit{margin-top:4px}.bpf-water-unit.bpf-water-unit-direct{margin-top:0}.bpf-water-unit-direct .bpf-water-row{padding:0}.bpf-water-unit>summary{padding:8px 0;cursor:pointer;font-weight:700}.bpf-water-row{padding:5px 0}.bpf-water-caption{display:block;margin-bottom:4px}.bpf-water-choice{display:flex;align-items:flex-start;gap:8px;margin:4px 0}.bpf-water-choice input{flex:none}.bpf-water-detail{padding:6px 10px;margin-top:4px;background:#f2f7fa;border-radius:5px}.bpf-water-field{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:7px 0}.bpf-water-field select{font:inherit;max-width:100%;padding:5px}#bpf-editor .bpf-water-text-field{display:block}#bpf-editor .bpf-water-text-field textarea{display:block;width:100%;max-width:100%;min-height:3.5em;box-sizing:border-box;margin:6px 0 0;padding:8px;font:inherit;resize:vertical}.bpf-water-unit [hidden]{display:none!important}';
    document.head.append(style);
   }
   const answerGrid=element('div');
@@ -994,7 +994,7 @@ const bpfWaterCheck = (() => {
     const directChoice=config.simple||(config.separateInformation&&!information)||(config.singleNo&&answer==='0');
     const collapsed=!directChoice;
     const section=element(collapsed?'details':'div');
-    section.className='bpf-water-unit';
+    section.className='bpf-water-unit'+(directChoice?' bpf-water-unit-direct':'');
     section.dataset.waterEntry=entry.name;
     if(collapsed)section.append(element('summary',label));
     const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
@@ -1035,7 +1035,7 @@ const bpfWaterCheck = (() => {
      };
      displayCaption(caption);
      control.append(captionNode);
-     control.className='bpf-water-choice';
+     control.className=directChoice?'bpf-answer-item':'bpf-water-choice';
      if(criterion.guidance)control.title=criterion.guidance;
      const input=element('input');
      input.type='checkbox';
