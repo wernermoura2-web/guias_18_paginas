@@ -24,13 +24,46 @@ function bpfObservationLines(text,font,width,size){
  return lines;
 }
 
-function bpfPaginateObservation(text,firstRect,nextRect,size,font){
+function bpfIsNCEntry(line){
+ return /^\s*\d+\.\s+(?:Frase\b|Considerando que a frase\b)/i.test(line);
+}
+
+function bpfObservationParagraphs(text,spaceNC){
+ const paragraphs=text.split('\n');
+ return paragraphs.map((line,index)=>({
+  line,
+  gap:spaceNC&&bpfIsNCEntry(line)&&bpfIsNCEntry(paragraphs[index-1]||'')?1/3:0
+ }));
+}
+
+function bpfAppendNCObservationText(fragment,text){
+ let spaced=false;
+ for(const [index,{line,gap}] of bpfObservationParagraphs(text,true).entries()){
+  if(gap){
+   const divider=document.createElement('span');
+   divider.className='bpf-nc-gap';
+   divider.setAttribute('aria-hidden','true');
+   fragment.append(divider);
+   spaced=true;
+  }else if(index)fragment.append(document.createTextNode('\n'));
+  if(line)fragment.append(document.createTextNode(line));
+ }
+ return spaced;
+}
+
+function bpfPaginateObservation(text,firstRect,nextRect,size,font,spaceNC=false){
  const parts=[];
  let remaining=text;
  do{
   const [left,bottom,right,top]=parts.length?nextRect:firstRect;
   const width=right-left-16,maxLines=Math.max(1,Math.floor((top-bottom-16)/(size*1.35)));
-  const fits=part=>bpfObservationLines(part.trimEnd(),font,width,size).length<=maxLines;
+  const fits=part=>{
+   const content=part.trimEnd();
+   if(!content)return true;
+   const lines=bpfObservationParagraphs(content,spaceNC).reduce((total,{line,gap})=>
+    total+Math.max(1,bpfObservationLines(line,font,width,size).length)+gap,0);
+   return lines<=maxLines;
+  };
   if(parts.length&&!remaining.trim()){parts[parts.length-1]+=remaining;break;}
   if(fits(remaining)){parts.push(remaining);break;}
   let lo=0,hi=remaining.length;
@@ -59,7 +92,7 @@ function bpfObservationScreenFont(size){
 function bpfRunNCObservationFlow(full){
  full=String(full||'').replace(/\r\n?/g,'\n');
  if(full!==bpfNCObservationCache.full){
-  bpfNCObservationCache={full,parts:bpfPaginateObservation(full,bpfNCFirstRect,bpfNCPageRect,BPF_NC_FONT_SIZE,bpfObservationScreenFont(BPF_NC_FONT_SIZE))};
+  bpfNCObservationCache={full,parts:bpfPaginateObservation(full,bpfNCFirstRect,bpfNCPageRect,BPF_NC_FONT_SIZE,bpfObservationScreenFont(BPF_NC_FONT_SIZE),true)};
  }
  const [first='',second='',...extra]=bpfNCObservationCache.parts;
  values['OBS 1']=first;
@@ -99,7 +132,7 @@ function bpfReconcileObservationPages(){
  for(const {anchor,kind,title,parts} of groups){
   for(const [offset,text] of parts.entries()){
    const id=kind==='nc'&&offset===0?bpfNCPageIndex:bpfObservationPageId(kind,offset);
-   next.set(id,{anchor,title,text});
+   next.set(id,{anchor,title,text,spaceNC:kind==='nc'});
   }
  }
  let changed=false;
@@ -153,9 +186,23 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
  const bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
  const template=bpfOverflowPages.size?await pdf.embedJpg(bpfNCBackground):null;
  const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
- const draw=(page,rect,text,size)=>bpfPdfDrawObservation(page,rect,normalize(text.trimEnd()),size,font,ink);
+ const draw=(page,rect,text,size,spaceNC=false)=>{
+  const content=normalize(text.trimEnd());
+  if(!spaceNC){bpfPdfDrawObservation(page,rect,content,size,font,ink);return;}
+  const [x,,right,top]=rect,leading=size*1.35;
+  let y=top-7-size;
+  for(const {line,gap} of bpfObservationParagraphs(content,true)){
+   y-=gap*leading;
+   const wrapped=bpfObservationLines(line,font,right-x-14,size);
+   for(const row of wrapped){
+    page.drawText(row,{x:x+7,y,size,font,color:ink});
+    y-=leading;
+   }
+   if(!wrapped.length)y-=leading;
+  }
+ };
  let offset=0;
- for(const [id,{anchor,title,text}] of bpfOverflowPages){
+ for(const [id,{anchor,title,text,spaceNC}] of bpfOverflowPages){
   const [width,height]=bpfNCPageSize;
   const page=pdf.insertPage(anchor+(++offset),bpfNCPageSize);
   page.drawImage(template,{x:0,y:0,width,height});
@@ -165,10 +212,10 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   page.drawRectangle({x:460,y:52,width:width-460,height:26,color:white});
   const number='Página '+(bpfPageOrder.indexOf(id)+1)+' de '+bpfPageOrder.length;
   page.drawText(number,{x:550-font.widthOfTextAtSize(number,7),y:58,size:7,font,color:black});
-  draw(page,bpfNCPageRect,text,BPF_NC_FONT_SIZE);
+  draw(page,bpfNCPageRect,text,BPF_NC_FONT_SIZE,spaceNC);
  }
  form.removeField(form.getTextField('OBS 1'));
- draw(pdf.getPage(13),bpfNCFirstRect,String(values['OBS 1']||''),BPF_NC_FONT_SIZE);
+ draw(pdf.getPage(13),bpfNCFirstRect,String(values['OBS 1']||''),BPF_NC_FONT_SIZE,true);
  const docPage=pdf.getPage(bpfObservationPDFSourceIndex(14));
  bpfPdfLegalDocuments(docPage,form,font,bold,ink);
  const documents=form.getTextField('obs_gerais_continuacao');
