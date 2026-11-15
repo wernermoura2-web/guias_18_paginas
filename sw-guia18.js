@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-rotulos-limpeza-v2';
+const CACHE='guia18-20261115-limpeza-reservatorios';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -51,12 +51,12 @@ for(const [start,end] of BPF_MATRIX_PCC_GROUPS){
   altered=altered.replace('id="new">Novo / limpar tudo', 'id="new">Limpar todo o guia');
   altered=altered.replace('function bpfMountWidget(w,i){', String.raw`
 function bpfClearLabel(name){
+ const reservoir=/^LIMPAR RES ([1-4])$/.exec(name);
+ if(reservoir)return 'Limpar reservatórios da captação '+reservoir[1];
  return ({
   'LIMPAR TUDO':'Limpar todo o guia',
   'LIMPAR CAPTAÇÃO':'Limpar captação',
   'LIMPAR CONDUÇÃO':'Limpar condução',
-  'LIMPAR RES 1':'Limpar reservatórios\nda captação 1',
-  'LIMPAR RES 2':'Limpar reservatórios\nda captação 2',
   'LIMPAR REC EMB INS':'Limpar recepção',
   'LIMPAR EMB RET':'Limpar higienização\nde retornáveis',
   'LIMPAR HIG DESC':'Limpar higienização\nde descartáveis',
@@ -71,8 +71,19 @@ function bpfClearLabel(name){
 }
 function bpfMountWidget(w,i){
 `.trimStart());
-  altered=altered.replace("el.textContent=w.name.replace('LIMPAR','Limpar');el.onclick=()=>clearScope(w)",
-   "const label=bpfClearLabel(w.name);el.textContent=label||w.name;if(label){el.classList.add('bpf-clear-action');el.setAttribute('aria-label',label.replace(/\\n/g,' '));}el.onclick=()=>clearScope(w)");
+  altered=altered.replace('for(const [i,w]of D.widgets.entries())bpfMountWidget(w,i);', String.raw`
+const reservoirResetTemplate=D.widgets.find(widget=>widget.name==='LIMPAR RES 2');
+if(reservoirResetTemplate)for(const capture of [3,4]){
+ const name='LIMPAR RES '+capture,page=capture+1;
+ if(!bpfSheets[page]||D.widgets.some(widget=>widget.name===name))continue;
+ D.fields[name]={...D.fields[reservoirResetTemplate.name],name,label:bpfClearLabel(name)};
+ D.widgets.push({...reservoirResetTemplate,name,page,size:[reservoirResetTemplate.size[0],BPF_PAGE_HEIGHTS[page]]});
+ values[name]='Off';
+}
+for(const [i,w]of D.widgets.entries())bpfMountWidget(w,i);
+`.trimStart());
+  altered=altered.replace("el.textContent=w.name.replace('LIMPAR','Limpar');el.onclick=()=>clearScope(w)", String.raw`const label=bpfClearLabel(w.name);el.textContent=/^LIMPAR RES [1-4]$/.test(w.name)?'Limpar\nreservatórios':label||w.name;if(label)el.classList.add('bpf-clear-action');el.onclick=()=>clearScope(w)`);
+  altered=altered.replace("el.title=f.label+' · '+w.name;el.setAttribute('aria-label',f.label+", String.raw`const clearLabel=bpfClearLabel(w.name)?.replace(/\n/g,' ');el.title=clearLabel||f.label+' · '+w.name;el.setAttribute('aria-label',clearLabel||f.label+`);
   altered=altered.replace("if(!confirm('Limpar '+(w.name==='LIMPAR TUDO'?'todo o guia':'este bloco')+'?'))return;",
    "if(!confirm((bpfClearLabel(w.name)||'Limpar este bloco').replace(/\\n/g,' ')+'?'))return;");
   altered=altered.replace('</head>', '<style>@media screen{#pages .page>button.bpf-clear-action{white-space:pre-line;font-size:1.18cqw;line-height:1.1;font-weight:700;text-align:center;padding:0 1px}}</style></head>');
