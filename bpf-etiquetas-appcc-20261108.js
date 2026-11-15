@@ -169,6 +169,12 @@ function positionSummary(){
  summaryTooltip.style.left=Math.max(gap,Math.min(x,window.innerWidth-width-gap))+'px';
  summaryTooltip.style.top=Math.max(gap,Math.min(r.top,window.innerHeight-height-gap))+'px';
 }
+function openSummary(anchor){
+ summaryAnchor=anchor;
+ anchor.setAttribute('aria-describedby',summaryTooltip.id);
+ summaryTooltip.hidden=false;
+ positionSummary();
+}
 function showSummary(anchor,data,row){
  clearTimeout(summaryTimer);
  if(summaryAnchor===anchor&&!summaryTooltip.hidden){positionSummary();return;}
@@ -194,10 +200,7 @@ function showSummary(anchor,data,row){
   }
   summaryTooltip.append(box);
  }
- summaryAnchor=anchor;
- anchor.setAttribute('aria-describedby',summaryTooltip.id);
- summaryTooltip.hidden=false;
- positionSummary();
+ openSummary(anchor);
 }
 const summaryTriggers=new WeakSet();
 function addSummaryTrigger(anchor,data,row,focusable=false){
@@ -209,6 +212,40 @@ function addSummaryTrigger(anchor,data,row,focusable=false){
  anchor.addEventListener('focus',()=>showSummary(anchor,data,row));
  anchor.addEventListener('blur',hideSummary);
 }
+const guidanceSelector='button.bpf-f, button.bpf-regra-pcc-botao';
+function showButtonGuidance(button){
+ clearTimeout(summaryTimer);
+ if(summaryAnchor===button&&!summaryTooltip.hidden)return;
+ hideSummary();
+ button.removeAttribute('title');
+ const isF=button.classList.contains('bpf-f');
+ const title=document.createElement('strong'),message=document.createElement('p');
+ title.className='bpf-resumo-item';
+ title.textContent=isF?'F — Frases e verificações do item':'R — Regra de risco por PCC';
+ message.textContent=isF
+  ?'Abre as frases e orientações do item. Responda às verificações aplicáveis. Ao marcar Não, descreva a não conformidade. Registre observações quando necessário.'
+  :'Abre a regra de risco dos Pontos Críticos de Controle. Use este botão para consulta. O preenchimento é feito no botão F de cada item.';
+ if(!summaryTooltip.isConnected)document.body.append(summaryTooltip);
+ summaryTooltip.replaceChildren(title,message);
+ openSummary(button);
+}
+document.addEventListener('pointerover',event=>{
+ const button=event.target?.closest?.(guidanceSelector);
+ if(button&&!button.contains(event.relatedTarget))showButtonGuidance(button);
+});
+document.addEventListener('pointerout',event=>{
+ const button=event.target?.closest?.(guidanceSelector);
+ if(button&&button===summaryAnchor&&!button.contains(event.relatedTarget))scheduleHide();
+});
+document.addEventListener('focusin',event=>{
+ if(event.target?.matches?.(guidanceSelector))showButtonGuidance(event.target);
+});
+document.addEventListener('focusout',event=>{
+ if(event.target===summaryAnchor)hideSummary();
+});
+document.addEventListener('click',event=>{
+ if(event.target?.closest?.(guidanceSelector))hideSummary();
+},true);
 summaryTooltip.addEventListener('pointerenter',()=>clearTimeout(summaryTimer));
 summaryTooltip.addEventListener('pointerleave',scheduleHide);
 document.addEventListener('keydown',event=>{if(event.key==='Escape')hideSummary();});

@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261114-resumo-itens';
+const CACHE='guia18-20261114-orientacao-r-f';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -83,13 +83,13 @@ for(const [start,end] of BPF_MATRIX_PCC_GROUPS){
 
   // Aplicar também aos acessos diretos equipe.html / individual.html:
   // navegador e PDF editável devem receber o mesmo complemento.
-  const upperTag='<script defer src="./bpf-etiquetas-appcc-20261108.js?v=20261114-resumo-itens"></script>';
+  const upperTag='<script defer src="./bpf-etiquetas-appcc-20261108.js?v=20261114-orientacao-r-f"></script>';
   const fFixTag='<script defer src="./bpf-correcao-f-pdf-v72.js?v=20261109-export-completo-nc-v86"></script>';
   if(!altered.includes('bpf-etiquetas-appcc-20261108.js'))altered=altered.replace('</body>',upperTag+'</body>');
   if(!altered.includes('bpf-correcao-f-pdf-v72.js'))altered=altered.replace('</body>',fFixTag+'</body>');
   // Normalizar também URLs já inseridas ou recuperadas do cache anterior.
   altered=altered.replace(/bpf-etiquetas-appcc-20261108\.js(?:\?v=[^"'<> ]*)?/g,
-    'bpf-etiquetas-appcc-20261108.js?v=20261114-resumo-itens');
+    'bpf-etiquetas-appcc-20261108.js?v=20261114-orientacao-r-f');
   altered=altered.replace(/bpf-correcao-f-pdf-v72\.js(?:\?v=[^"'<> ]*)?/g,
     'bpf-correcao-f-pdf-v72.js?v=20261109-export-completo-nc-v86');
   // Em ambos os modos, fotos nos F com SIM ou NÃO: SIM dispensa OBS; NÃO exige NC.
