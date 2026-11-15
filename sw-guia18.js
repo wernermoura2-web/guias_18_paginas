@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261115-observacoes-sem-barra';
+const CACHE='guia18-20261115-conferencia-anexos-manual';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js');
@@ -573,22 +573,26 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   if(!altered.includes("v.BPF_Sampling_4104_native='1'"))
    altered=altered.replace(checklistApply,checklistApply+samplingMigration);
   altered=altered.replace("      values[selectedKey]=JSON.stringify([...selected]);","      if(row.code==='4.10.4'&&panel.id===1&&option===panel.checklist[2]&&check.checked){\n       values.BPF_Sampling_4104_mensal_registro='';\n       const na=checklistInputs.get('2'+option);\n       if(na)na.checked=false;\n      }\n      values[selectedKey]=JSON.stringify([...selected]);");
-  const samplingTag='<script defer src="./bpf-amostragem-4104.js?v=20261113-amostragem-caixas"></script>';
-  if(!altered.includes('bpf-amostragem-4104.js'))altered=altered.replace(/<\/body\s*>/i,samplingTag+'</body>');
+  const samplingTag='<script src="./bpf-amostragem-4104.js?v=20261115-conferencia-anexos-manual"></script>';
+  if(!altered.includes('bpf-amostragem-4104.js'))altered=altered.replace('</head>',samplingTag+'</head>');
+  altered=altered.replace("text.textContent=option;label.append(check,text);",
+   "text.textContent=row.code==='4.10.4'?(window.bpfSamplingCaption404?.(option)||option):option;label.append(check,text);");
+  altered=altered.replace("?'Outros: '+other:option);",
+   "?'Outros: '+other:row.code==='4.10.4'?(window.bpfSamplingCaption404?.(option)||option):option);");
   const conclusionTag='<script defer src="./bpf-conclusao-nc.js?v=20261113"></script>';
   if(!altered.includes('bpf-conclusao-nc.js'))altered=altered.replace(/<\/body\s*>/i,conclusionTag+'</body>');
 
   // Carregar as verificações antes de inicializar os campos do guia.
   if(!altered.includes('bpf-captacao-conducao.js')){
-   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261115-espacamento-f"></script>';
+   const checkTag='<script src="./bpf-captacao-conducao-consolidado.js?v=20261115-conferencia-anexos-manual"></script>';
    altered=altered.replace(inspectorScript,checkTag+'<script>bpfWaterCheck.prepareCaps();</script>'+inspectorScript);
    altered=altered.replace("panel.id===0&&['4.6.4','4.7.2','4.7.6',",
     "panel.id===0&&[");
    altered=altered.replace('let bpfInspectorLastApplied=null,bpfInspectorLocalChecked=false;',
-    'bpfWaterCheck.registerReview(BPF_INSPECTOR_ENTRIES,BPF_INSPECTOR_BY_KEY);\nlet bpfInspectorLastApplied=null,bpfInspectorLocalChecked=false;');
+    'bpfWaterCheck.registerReview(BPF_INSPECTOR_ENTRIES,BPF_INSPECTOR_BY_KEY);\nwindow.bpfRegisterSamplingReview404?.(BPF_INSPECTOR_ENTRIES,BPF_INSPECTOR_BY_KEY,BPF_PHRASES);\nlet bpfInspectorLastApplied=null,bpfInspectorLocalChecked=false;');
    altered=altered.replace('const BPF_EXAMPLE_REVISIONS=new Map();',
     'bpfWaterCheck.capsExamples(BPF_FILL_EXAMPLES);\nconst BPF_EXAMPLE_REVISIONS=new Map();');
-   altered=altered.replace('bpfInitFields(D);','bpfWaterCheck.init(D);bpfInitFields(D);');
+   altered=altered.replace('bpfInitFields(D);','bpfWaterCheck.init(D);window.bpfInitSampling404?.(D);bpfInitFields(D);');
    altered=altered.replace('  const cleared=bpfNormalizeDependentNA(r,s,v);',
     '  bpfWaterCheck.apply(r,s,v);\n  const cleared=bpfNormalizeDependentNA(r,s,v);');
    altered=altered.replace("  if(row.code==='4.10.6'&&panel.id===0){\n   const hint=",
@@ -655,7 +659,7 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   const headers=new Headers(response.headers);
   headers.delete('content-length');headers.delete('content-encoding');headers.delete('etag');
   headers.set('content-type','text/html; charset=utf-8');
-  altered=altered.replace('</head>', '<script src="./bpf-paginacao-observacoes.js?v=20261115-observacoes-sem-barra"></script><style>#pages .bpf-nc-heading{margin-bottom:0}#pages :is(.bpf-overflow-observation,.bpf-nc-formatted,.bpf-cq-continuation){scrollbar-width:none}#pages :is(.bpf-overflow-observation,.bpf-nc-formatted,.bpf-cq-continuation)::-webkit-scrollbar{display:none}#pages .bpf-overflow-observation{display:block;padding:.8cqw 1.17cqw;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;text-align:left;cursor:default}</style></head>');
+  altered=altered.replace('</head>', '<script src="./bpf-paginacao-observacoes.js?v=20261115-conferencia-anexos-manual"></script><style>#pages .bpf-nc-heading{margin-bottom:0}#pages :is(.bpf-overflow-observation,.bpf-nc-formatted,.bpf-cq-continuation){scrollbar-width:none}#pages :is(.bpf-overflow-observation,.bpf-nc-formatted,.bpf-cq-continuation)::-webkit-scrollbar{display:none}#pages .bpf-overflow-observation{display:block;padding:.8cqw 1.17cqw;line-height:1.3;white-space:pre-wrap;overflow-wrap:anywhere;overflow:auto;text-align:left;cursor:default}</style></head>');
   altered=altered.replace("function bpfRenderNCObservation(el,text){","function bpfRenderNCObservation(el,text,spacing='nc'){");
   altered=altered.replace('if(match.index>at)fragment.append(document.createTextNode(text.slice(at,match.index)));',
    'if(match.index>at)bpfAppendNCObservationText(fragment,text.slice(at,match.index),spacing);');
@@ -698,6 +702,9 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   altered=altered.replace("if(total===22&&count===2&&bpfCurrentGalleryPages('labels')===2)return;", '');
   altered=altered.replace(/pdf\.removePage\(source(?:<14\?source:source)?\+1\);/,
    'pdf.removePage(bpfObservationPDFSourceIndex(source));');
+  altered=altered.replace(/async function bpfAppendCompactAnnex\(pdf\)\{[\s\S]*?\n\}/,annex=>
+   annex.replaceAll('(item.page.page+1)','(bpfPageOrder.indexOf(item.page.page)+1)')
+    .replaceAll('(source.page+1)','(bpfPageOrder.indexOf(source.page)+1)'));
   return new Response(altered,{status:response.status,statusText:response.statusText,headers});
 }
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(path=>new Request(new URL(path,ROOT),{cache:'reload'})))).then(()=>self.skipWaiting())));

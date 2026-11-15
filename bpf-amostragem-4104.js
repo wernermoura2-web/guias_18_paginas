@@ -5,6 +5,22 @@ window.__bpfSampling404=true;
 const phrases={"F1":{"title":"Elaboração do plano de amostragem","text":"O estabelecimento possui plano de amostragem que especifica o número de amostras, os locais de coleta, os parâmetros analíticos e a frequência nas etapas avaliadas?","guide":"Confira os pontos, o número de amostras, os parâmetros e a frequência. Quando aplicável, verifique se o plano prevê análise mensal terceirizada e identifica produto ou lote, número de amostras, ponto de coleta e parâmetros.","obs":"O plano [versão/data] especifica as coletas e prevê a análise mensal terceirizada de [produto/lote].","nc":"O plano não identifica [ponto, frequência, parâmetro ou número de amostras] ou não prevê a análise mensal terceirizada quando aplicável."},"F2":{"title":"Execução do plano e limites de aceitação","text":"O estabelecimento executa o plano de amostragem conforme previsto e tem definidos os limites de aceitação aplicáveis aos parâmetros analisados?","guide":"Compare coletas e laudos com o plano. Confira os limites de aceitação no plano ou em documento vinculado. Quando aplicável, verifique a execução mensal terceirizada e o registro em planilha ou sistema de data, ponto, produto/lote, laboratório, laudo, parâmetro, resultado, unidade e comparação com o limite. Para bactérias heterotróficas, confira separadamente os limites internos de alerta e de ação por ponto monitorado.","obs":"Os laudos de [meses] foram vinculados aos lotes amostrados e os resultados foram comparados aos limites identificados.","nc":"Não foi apresentado laudo terceirizado de [mês], ou o registro não indica o limite de aceitação para [parâmetro]."}};
 const checks=[["F1","mensal_plano","Análise mensal terceirizada prevista no plano, quando aplicável",true],["F2","execucao","Execução do plano conforme previsto",false],["F2","aceitacao","Limites de aceitação definidos",false],["F2","mensal_registro","Análise mensal terceirizada executada, registrada e comparada aos limites",true],["F2","heterotroficas","Limites internos de alerta e de ação para bactérias heterotróficas definidos",false]];
 const key=id=>'BPF_Sampling_4104_'+id;
+const revised=new Map(),guidance=new Map();
+const captionFor=label=>revised.get(label)||label;
+window.bpfSamplingCaption404=captionFor;
+window.bpfInitSampling404=(data)=>{for(const [,id,label] of checks){const name=key(id);data.fields[name]={name,type:'/Tx',flags:0,label,options:[],calc:'',phrasePage:11};}};
+window.bpfRegisterSamplingReview404=(entries,byKey,pages)=>{
+ for(const page of pages)if(page.rows.some(row=>row.code==='4.10.4')){
+  for(const [f,id,label] of checks){
+   const entry={key:page.page+':4.10.4:'+f+':amostragem:'+id,page:page.page,code:'4.10.4',
+    index:Number(f[1])-1,label:f+' — '+label,scopes:[],appcc:'PPRO',
+    original:{text:label,guidance:'Verificação do plano de amostragem e de seus registros.'},
+    refs:[{set text(value){revised.set(label,value);},set guidance(value){guidance.set(label,value);}}]};
+   entries.push(entry);
+   byKey.set(entry.key,entry);
+  }
+ }
+};
 const data=()=>window.Guia?.values||(typeof values==='object'?values:null);
 function refresh(){
  const editor=document.getElementById('bpf-editor');
@@ -19,7 +35,7 @@ function refresh(){
    for(const [,id,label,na] of checks.filter(item=>item[0]===f)){
      const row=document.createElement('label');
      row.style.cssText='display:flex;justify-content:space-between;gap:8px;align-items:center;margin:6px 0';
-     const caption=document.createElement('span');caption.textContent=label;
+     const caption=document.createElement('span');caption.textContent=captionFor(label);caption.title=guidance.get(label)||'';
      const input=document.createElement('select');
      for(const [value,name] of [['','Selecione'],['1','Sim'],['0','Não'],...(na?[['2','NA']]:[])]){
        const option=document.createElement('option');option.value=value;option.textContent=name;input.append(option);
@@ -50,6 +66,15 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 window.bpfPrintSampling404=async function(pdf){
  const annexEnabled=[...document.querySelectorAll('input[type=checkbox]')].some(el=>el.checked&&/anexar.*(?:frases|F).*pdf/i.test(el.parentElement?.textContent||''));
  if(!annexEnabled)return;
+ const state=data();
+ if(!state)return;
+ const source=BPF_PHRASES.find(page=>page.rows.some(row=>row.code==='4.10.4'));
+ const item=source?.rows.find(row=>row.code==='4.10.4');
+ const panels=item?bpfPanels(source,item):[];
+ const recorded=checks.some(([,id])=>['1','0','2'].includes(state[key(id)]))||
+  panels.some(panel=>panel.entries.some(entry=>['1','0','2'].includes(state[entry.name]))||
+   panel.checklist&&['1','0'].some(answer=>bpfChecklistSelected(source,item,panel,answer,state).length));
+ if(!recorded)return;
  const fonts=[await pdf.embedFont(PDFLib.StandardFonts.Helvetica),await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold)];
  const page=pdf.addPage([595.28,841.89]);
  let y=799;
@@ -84,7 +109,7 @@ window.bpfPrintSampling404=async function(pdf){
        )||(id==='mensal_registro'&&answer==='2'?'2':'');
      }
      const result={'1':'Sim','0':'Não','2':'NA'}[answer]||'Em branco';
-     add(label+' — '+result,10);
+     add(captionFor(label)+' — '+result,10);
    }
    y-=7;
    add('OBS — Exemplo: '+p.obs,10);

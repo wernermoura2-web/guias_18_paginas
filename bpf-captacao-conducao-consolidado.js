@@ -528,7 +528,7 @@ const bpfWaterCheck = (() => {
  const synchronizedItems=new Set(['4.1.3','4.2.2','4.2.7','4.2.8','4.2.9','4.3.2','4.3.5','4.6.3','4.6.4','4.6.5','4.6.6','4.6.8','4.7.2','4.7.4','4.7.5','4.7.6','4.7.8']);
  function registerReview(entries,byKey){
   for(const page of BPF_PHRASES)for(const row of page.rows){
-   if(!synchronizedItems.has(row.code))continue;
+   if(!synchronizedItems.has(row.code)&&row.code!=='4.3.4')continue;
    for(const panel of bpfPanels(page,row)){
     const config=get(row,panel.id);
     if(!config)continue;
@@ -550,6 +550,14 @@ const bpfWaterCheck = (() => {
       scopes:[],appcc:row.phrases[index].appcc||'',original:{text:criterion.label,guidance:criterion.guidance},refs:[ref]};
      entries.push(entry);
      byKey.set(key,entry);
+     for(const [field,answer] of [['yesLabel','Sim'],['noLabel','Não']]){
+      if(!criterion[field])continue;
+      const variant={...entry,key:key+':'+field,label:entry.label+' — Redação '+answer,
+       original:{text:criterion[field],guidance:'Redação exibida quando a resposta é '+answer+'.'},
+       refs:[{set text(value){criterion[field]=value;},set guidance(value){criterion[answer==='Sim'?'yesGuidance':'noGuidance']=value;}}]};
+      entries.push(variant);
+      byKey.set(variant.key,variant);
+     }
     }
    }
   }
@@ -1036,7 +1044,8 @@ const bpfWaterCheck = (() => {
      displayCaption(caption);
      control.append(captionNode);
      control.className=directChoice?'bpf-answer-item':'bpf-water-choice';
-     if(criterion.guidance)control.title=criterion.guidance;
+     const guidance=(answer==='0'?criterion.noGuidance:criterion.yesGuidance)||criterion.guidance;
+     if(guidance)control.title=guidance;
      const input=element('input');
      input.type='checkbox';
      input.setAttribute('aria-label',directChoice||criterion.scopeAnswer?label+' — '+heading:label+' — '+caption+' — '+heading);
@@ -1078,6 +1087,7 @@ const bpfWaterCheck = (() => {
       rows.push(()=>{
        const wording=hasAnswer(item.answer)?statementForAnswer(criterion,item.answer):caption;
        prompt.textContent=wording;
+       prompt.title=(item.answer==='1'?criterion.yesGuidance:item.answer==='0'?criterion.noGuidance:'')||criterion.guidance||'';
        input.setAttribute('aria-label',label+' — '+wording+' — Sim');
        noInput.setAttribute('aria-label',label+' — '+wording+' — Não');
        noInput.disabled=state.notApplicable||!active(criterion,state);

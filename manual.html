@@ -39,17 +39,21 @@ a:focus-visible{outline:3px solid #e89135;outline-offset:3px}
 main>section{display:none}
 main>section:target{display:block}
 @media print{main>section{display:block}}
+.capitulo-nav{display:flex;justify-content:space-between;align-items:center;gap:.55rem;flex-wrap:wrap;border:0;padding:0;margin:.8rem 0}
+.capitulo-nav a{display:inline-block;padding:.38rem .68rem;border:1px solid var(--line);border-radius:.35rem;text-decoration:none;font-weight:650}
+.capitulo-nav .posicao{color:var(--muted);font-size:.88rem}
+@media print{.capitulo-nav{display:none}}
 </style>
 </head>
 <body>
 <header><div class="wrap">
 <p class="org">COOVFA / SUVISA / SES-RJ</p>
 <h1>Manual de preenchimento do Guia BPF/APPCC</h1>
-<p>Inspeção sanitária de envasadoras de água mineral. Use o sumário para consultar a etapa de trabalho. O manual reúne capturas do Guia e esquemas identificados nas legendas. Os exemplos de observações e não conformidades são fictícios.</p>
+<p>Inspeção sanitária de envasadoras de água mineral. Escolha uma etapa no sumário. Use Anterior e Próximo para percorrer os capítulos e Sumário para voltar à lista. O manual reúne capturas do Guia e esquemas identificados nas legendas. Os exemplos de observações e não conformidades são fictícios.</p>
 <div class="actions"><a href="./index.html">Voltar à tela inicial</a><a class="pdf" href="./Manual_de_Preenchimento_Guia_BPF_APPCC.pdf" download>Baixar manual em PDF</a></div>
 </div></header>
 <main>
-<nav id="sumario" aria-labelledby="titulo-sumario"><h2 id="titulo-sumario" tabindex="-1">Sumário</h2><ol><li><a href="#menu-superior-e-arquivos">Menu superior e arquivos</a></li><li><a href="#incluir-excluir-restaurar-paginas">Incluir, excluir e restaurar páginas</a></li><li><a href="#imprimir-relatorio-e-anexar-as-frases-f">Imprimir relatório e anexar as frases F</a></li><li><a href="#ajustes-e-conferencia-da-impressao">Ajustes e conferência da impressão</a></li><li><a href="#copia-de-seguranca-e-recuperacao">Cópia de segurança e recuperação</a></li><li><a href="#guia-em-branco-e-anexo-f-para-papel">Guia em branco e Anexo F para papel</a></li><li><a href="#trabalho-em-grupo-gerar-e-distribuir">Trabalho em grupo: gerar e distribuir</a></li><li><a href="#trabalho-em-grupo-importar-e-consolidar">Trabalho em grupo: importar e consolidar</a></li><li><a href="#quadros-bpf">Quadros de BPF</a></li><li><a href="#quadros-appcc">Quadros de APPCC</a></li><li><a href="#botao-f-abrir-responder-e-registrar">Botão F: abrir, responder e registrar</a></li><li><a href="#classificacao-por-frase">Como ler a classificação em F1, F2 e F3</a></li><li><a href="#anexar-foto-no-f">Anexar foto dentro do F e identificar o local</a></li><li><a href="#fotos-durante-preenchimento">Registrar fotos enquanto responde aos itens</a></li><li><a href="#fotos-e-rotulos">Fotos e rótulos</a></li><li><a href="#4-1-captacao">4.1 Captação</a></li><li><a href="#4-2-conducao">4.2 Condução</a></li><li><a href="#4-3-reservatorios">4.3 Reservatórios</a></li><li><a href="#4-5-recepcao-de-embalagens-e-insumos">4.5 Recepção de embalagens e insumos</a></li><li><a href="#4-6-higienizacao-de-retornaveis">4.6 Higienização de retornáveis</a></li><li><a href="#4-6-higienizacao-de-descartaveis">4.6 Higienização de descartáveis</a></li><li><a href="#4-7-envase-de-retornaveis">4.7 Envase de retornáveis</a></li><li><a href="#4-7-envase-de-descartaveis">4.7 Envase de descartáveis</a></li><li><a href="#4-10-controle-da-qualidade">4.10 Controle da qualidade</a></li><li><a href="#4-11-responsaveis-e-manipuladores">4.11 Responsáveis e manipuladores</a></li><li><a href="#documentos-e-continuacao-das-observacoes">Documentos e continuação das observações</a></li><li><a href="#resultados-nao-conformidades-e-matriz">Resultados: não conformidades e matriz</a></li><li><a href="#calculo-percentual-e-risco">Cálculo automático da porcentagem e do risco</a></li><li><a href="#botao-r-e-alto-risco-por-pcc">Botão R e alto risco por PCC</a></li><li><a href="#acoes-medidas-e-responsaveis">Ações, medidas e responsáveis</a></li><li><a href="#instalar-o-app-e-salvar-nos-favoritos">Instalar o app e salvar nos favoritos</a></li></ol></nav>
+<nav id="sumario" aria-labelledby="titulo-sumario"><h2 id="titulo-sumario" tabindex="-1">Sumário</h2><ol><li><a href="#menu-superior-e-arquivos">Menu superior e arquivos</a></li><li><a href="#incluir-excluir-restaurar-paginas">Incluir, excluir e restaurar páginas</a></li><li><a href="#imprimir-relatorio-e-anexar-as-frases-f">Imprimir relatório e anexar as frases F</a></li><li><a href="#ajustes-e-conferencia-da-impressao">Ajustes e conferência da impressão</a></li><li><a href="#copia-de-seguranca-e-recuperacao">Cópia de segurança e recuperação</a></li><li><a href="#guia-em-branco-e-anexo-f-para-papel">Guia em branco e Anexo F para papel</a></li><li><a href="#descritores-e-checklist">Descritores e checklist de documentos</a></li><li><a href="#trabalho-em-grupo-gerar-e-distribuir">Trabalho em grupo: gerar e distribuir</a></li><li><a href="#trabalho-em-grupo-importar-e-consolidar">Trabalho em grupo: importar e consolidar</a></li><li><a href="#quadros-bpf">Quadros de BPF</a></li><li><a href="#quadros-appcc">Quadros de APPCC</a></li><li><a href="#botao-f-abrir-responder-e-registrar">Botão F: abrir, responder e registrar</a></li><li><a href="#classificacao-por-frase">Como ler a classificação em F1, F2 e F3</a></li><li><a href="#anexar-foto-no-f">Anexar foto dentro do F e identificar o local</a></li><li><a href="#fotos-durante-preenchimento">Registrar fotos enquanto responde aos itens</a></li><li><a href="#fotos-e-rotulos">Fotos e rótulos</a></li><li><a href="#4-1-captacao">4.1 Captação</a></li><li><a href="#4-2-conducao">4.2 Condução</a></li><li><a href="#4-3-reservatorios">4.3 Reservatórios</a></li><li><a href="#4-5-recepcao-de-embalagens-e-insumos">4.5 Recepção de embalagens e insumos</a></li><li><a href="#4-6-higienizacao-de-retornaveis">4.6 Higienização de retornáveis</a></li><li><a href="#4-6-higienizacao-de-descartaveis">4.6 Higienização de descartáveis</a></li><li><a href="#4-7-envase-de-retornaveis">4.7 Envase de retornáveis</a></li><li><a href="#4-7-envase-de-descartaveis">4.7 Envase de descartáveis</a></li><li><a href="#4-10-controle-da-qualidade">4.10 Controle da qualidade</a></li><li><a href="#4-11-responsaveis-e-manipuladores">4.11 Responsáveis e manipuladores</a></li><li><a href="#documentos-e-continuacao-das-observacoes">Documentos e continuação das observações</a></li><li><a href="#resultados-nao-conformidades-e-matriz">Resultados: não conformidades e matriz</a></li><li><a href="#calculo-percentual-e-risco">Cálculo automático da porcentagem e do risco</a></li><li><a href="#botao-r-e-alto-risco-por-pcc">Botão R e alto risco por PCC</a></li><li><a href="#acoes-medidas-e-responsaveis">Ações, medidas e responsáveis</a></li><li><a href="#instalar-o-app-e-salvar-nos-favoritos">Instalar o app e salvar nos favoritos</a></li></ol></nav>
 <section id="menu-superior-e-arquivos"><h2 tabindex="-1">Menu superior e arquivos</h2>
 <h3>1. Salvar o JSON preenchido</h3>
 <p>No <strong>Menu do guia</strong>, em <strong>Arquivos e relatórios</strong>, clique em <strong>Salvar arquivo</strong>. Guarde o JSON editável da inspeção em uma pasta organizada. Use um nome que identifique a envasadora, a data e a versão.</p>
@@ -61,7 +65,7 @@ main>section:target{display:block}
 <h3>4. Imprimir ou navegar</h3>
 <p>Use <strong>Imprimir PDF</strong> para emitir o relatório. Para mudar de página, use o seletor <strong>Processo</strong> ou as setas. Em <strong>Mais opções</strong>, ajuste o zoom ou use <strong>Limpar todo o guia</strong> para iniciar outra inspeção depois de salvar a atual.</p>
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a><h3>Revisar frases</h3>
-<p>No <strong>Menu do guia</strong>, abra <strong>Mais opções</strong> e clique em <strong>Revisar frases</strong>. Use o filtro por processo e a busca para localizar o item ou a frase F.</p>
+<p>No <strong>Menu do guia</strong>, abra <strong>Mais opções</strong> e clique em <strong>Revisar frases</strong>. Use o filtro por processo e a busca para localizar o item ou a frase F. Verificações que têm uma redação própria para Sim ou Não aparecem com cartões específicos para cada resposta. As revisões são aplicadas ao guia digital e ao relatório gerado a partir dele. O Anexo F de campo é um PDF estático da versão publicada.</p>
 <p>Compare as colunas <strong>Original</strong> e <strong>Editável</strong>. Revise o texto da frase e a orientação ao inspetor. Edite os exemplos de <strong>Sim (OBS)</strong> e <strong>Não (NC)</strong> nos respectivos campos.</p>
 <p>Clique em <strong>Salvar revisões</strong> e depois em <strong>Salvar arquivo</strong> para guardar as alterações no JSON da inspeção. Para compartilhar apenas os textos revisados, use <strong>Baixar revisões JSON</strong>. Em outro preenchimento, use <strong>Importar revisões</strong>, confira e salve.</p>
 <p>Para conferir o relatório, marque <strong>Anexar frases F ao PDF</strong> em <strong>Mais opções</strong> e clique em <strong>Imprimir PDF</strong>. O anexo reúne as frases preenchidas com as opções registradas, OBS e NC. Consulte a orientação ao inspetor na tela de revisão.</p>
@@ -118,14 +122,17 @@ main>section:target{display:block}
 <figure><img src="./assets/manual/05-1.jpeg" width="1135" height="785" loading="lazy" alt=""><figcaption>Em Mais opções, escolha o guia em branco e o anexo resumido pelos respectivos botões.</figcaption></figure>
 <figure class="captura"><a href="./assets/manual/detalhe-05-1.jpeg"><img src="./assets/manual/detalhe-05-1.jpeg" width="925" height="267" loading="lazy" alt="Os dois arquivos para uso em papel ficam na área de impressão de Mais opções."></a><figcaption>Os dois arquivos para uso em papel ficam na área de impressão de Mais opções.</figcaption></figure>
 <h3>Guia de 18 páginas</h3>
-<p>Clique em <strong>Imprimir guia em branco (18 páginas)</strong>. Abra o PDF baixado e confira a contagem e a legibilidade antes de imprimir. As pautas servem para anotar observações, considerações e responsáveis.</p>
+<p>Clique em <strong>Imprimir guia em branco (18 páginas)</strong>. Abra o PDF baixado e confira a contagem e a legibilidade antes de imprimir. As pautas servem para anotar observações, considerações e responsáveis. O guia em branco tem paginação fixa. O relatório da inspeção preenchida ganha páginas de continuação conforme a extensão do texto.</p>
 <h3>Anexo resumido das frases (F) de 10 páginas</h3>
 <p>O Anexo resumido das frases (F), de 10 páginas, apresenta frases simplificadas para facilitar a inspeção e a avaliação de cada item do Guia. Em Mais opções, selecione Imprimir anexo resumido das frases (F).</p>
 <p><strong>Quadro à esquerda.</strong> No quadro à esquerda, marque SIM ou NÃO para cada frase avaliada e preencha, no próprio quadro, as observações e as informações solicitadas.</p>
 <p><strong>Quadro à direita.</strong> No quadro à direita, registre todas as observações sobre os itens avaliados. Identifique cada registro pelo número do item e, quando aplicável, pela frase (F1, F2 etc.) e pela unidade avaliada.</p>
+<figure class="captura"><a href="./assets/manual/anexo-f-pauta-atual.png"><img src="./assets/manual/anexo-f-pauta-atual.png" loading="lazy" alt="Recorte atual do Anexo F de campo. Use as verificações à esquerda e a pauta de observações à direita."></a><figcaption>Recorte atual do Anexo F de campo. Use as verificações à esquerda e a pauta de observações à direita.</figcaption></figure>
 <h3>Identificar os anexos</h3>
 <p>Quando os formulários forem usados em papel, identifique o anexo com a mesma inspeção do guia. Para inspeção digital, use a opção de incluir o anexo no relatório descrita na seção anterior.</p>
-<h3>Checklist de documentos e descritores</h3>
+<a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
+<section id="descritores-e-checklist"><h2 tabindex="-1">Descritores e checklist de documentos</h2>
+<h3>Abrir e imprimir os dois documentos</h3>
 <p>No <strong>Menu do guia → Mais opções</strong>, toque em <strong>CHECKLIST DE DOCUMENTOS</strong> e em <strong>Descritores dos documentos</strong> para baixar os PDFs separadamente. Abra cada arquivo baixado, escolha <strong>Imprimir</strong> no leitor de PDF e selecione a impressora.</p>
 <h4>Quando usar o checklist</h4>
 <p>Use o checklist para organizar os documentos da inspeção. Antes da visita, encaminhe uma cópia à envasadora para separar os documentos. Durante a inspeção, marque <strong>Entregue</strong> quando o documento for apresentado e <strong>Não possui</strong> quando a envasadora informar que não o possui. Se o documento existir, mas não for apresentado, registre a pendência no Guia.</p>
@@ -133,6 +140,10 @@ main>section:target{display:block}
 <h4>Quando consultar os descritores e onde registrar a análise</h4>
 <p>Use os <strong>Descritores dos documentos</strong> para saber o que conferir em cada documento do checklist. Para os documentos entregues, registre a análise no <strong>Anexo resumido das frases (F) de 10 páginas</strong> ou diretamente no <strong>Guia de Avaliação de Risco</strong>, no item correspondente. A marcação <strong>Entregue</strong> indica o recebimento.</p>
 <figure class="captura"><a href="./assets/manual/descritores-exemplo.png"><img src="./assets/manual/descritores-exemplo.png" loading="lazy" alt="Descritores dos documentos"></a><figcaption>Os descritores detalham o que conferir. O exemplo mostra orientações para avaliar a higienização da captação.</figcaption></figure>
+
+<h3>Exemplo de registro durante a inspeção</h3>
+<p>Se a envasadora entregar o relatório de avaliação da lavadora automática, marque <strong>Entregue</strong> no checklist. Consulte o descritor do relatório, confira a identificação do equipamento e compare os desinfetantes e as concentrações do relatório com os usados no momento da inspeção. Registre a análise no <strong>F2 do item 4.6.5</strong>. Indique se o relatório foi apresentado e, quando apresentado, se está atualizado.</p>
+<p>Se a envasadora informar que possui o relatório, mas não o entregar, deixe as duas caixas sem marcação e registre a pendência no item correspondente. Ao consolidar os documentos, confira a situação e o atendimento ao descritor na página <strong>Documentos e continuação das observações</strong>.</p>
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
 <section id="trabalho-em-grupo-gerar-e-distribuir"><h2 tabindex="-1">Trabalho em grupo: gerar e distribuir</h2>
 <figure><img src="./assets/manual/06-1.jpeg" width="1060" height="700" loading="lazy" alt=""><figcaption>Em Configurar equipe → Dados da equipe, localize Gerar arquivo inicial da equipe.</figcaption></figure>
@@ -293,7 +304,8 @@ main>section:target{display:block}
 <h3>Exemplo de não conformidade</h3>
 <p>O laudo apresentado não permite vincular o resultado ao lote selecionado.</p>
 <h3>Conferência antes de avançar</h3>
-<p>Se usar a transferência de observações, confira a referência no item e a íntegra do texto na página de documentos e continuação.</p>
+<p>Use <strong>Continuar</strong> para transferir um texto mais longo. A referência fica no item e o texto integral aparece na continuação. Use <strong>Voltar</strong> para trazer a observação de volta à tabela. Quando necessário, o Guia cria páginas adicionais antes do registro fotográfico.</p><figure class="captura"><a href="./assets/manual/anexo-4104-amostragem.png"><img src="./assets/manual/anexo-4104-amostragem.png" loading="lazy" alt="Recorte do Anexo F de campo. O 4.10.4 inclui previsão da análise mensal no F1 e execução, registros e limites no F2."></a><figcaption>Recorte do Anexo F de campo. O 4.10.4 inclui previsão da análise mensal no F1 e execução, registros e limites no F2.</figcaption></figure>
+
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
 <section id="4-11-responsaveis-e-manipuladores"><h2 tabindex="-1">4.11 Responsáveis e manipuladores</h2>
 <figure><img src="./assets/manual/19-1.jpeg" width="955" height="480" loading="lazy" alt=""><figcaption>Selecione este processo e abra o F ao lado do item que está sendo avaliado.</figcaption></figure>
@@ -313,6 +325,7 @@ main>section:target{display:block}
 <p>Identifique o documento exigido na tabela. Preencha <strong>Situação</strong> conforme o que foi apresentado e <strong>Atende ao descritor?</strong> de acordo com o exame. Em <strong>Observações</strong>, registre número, emissor, validade, escopo e a divergência encontrada quando aplicável.</p>
 <h3>Exemplos de registro</h3>
 <p>Documento apresentado e válido: informe número, órgão emissor e data de validade. Documento apresentado com pendência: explique qual dado ou atividade ficou sem comprovação. Para certificado do cilindro em uso, quando aplicável, confira a identificação do cilindro observado.</p>
+<figure class="captura"><a href="./assets/manual/relatorio-cq-exemplo.png"><img src="./assets/manual/relatorio-cq-exemplo.png" loading="lazy" alt="Exemplo fictício de relatório. As observações transferidas aparecem com o número do item do Controle da Qualidade."></a><figcaption>Exemplo fictício de relatório. As observações transferidas aparecem com o número do item do Controle da Qualidade.</figcaption></figure>
 <h3>Verificar a continuação</h3>
 <p>Revise observações transferidas ou complementares. Use o número do item e a origem do registro para localizar o texto na versão impressa.</p>
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
@@ -321,6 +334,7 @@ main>section:target{display:block}
 <figure><img src="./assets/manual/21-2.jpeg" width="955" height="480" loading="lazy" alt=""><figcaption>Selecione Matriz de risco para conferir o resultado por processo e do estabelecimento.</figcaption></figure>
 <h3>Onde aparecem as não conformidades</h3>
 <p>Consulte <strong>Observações gerais</strong> e <strong>Observações gerais — continuação das não</strong> <strong>conformidades</strong>. O guia agrupa os registros em <strong>críticas</strong> (PCC), <strong>maiores</strong> (PPRO e PC) e <strong>menores</strong> (POP e PPR), conforme a classificação da frase não atendida. Volte ao F de origem para corrigir eventual divergência.</p>
+<figure class="captura"><a href="./assets/manual/relatorio-nc-exemplo.png"><img src="./assets/manual/relatorio-nc-exemplo.png" loading="lazy" alt="Exemplo fictício de relatório. As não conformidades seguem da página principal para a continuação quando necessário."></a><figcaption>Exemplo fictício de relatório. As não conformidades seguem da página principal para a continuação quando necessário.</figcaption></figure>
 <h3>Como interpretar os resultados</h3>
 <p>A matriz consolida os resultados dos processos preenchidos. Confira a identificação da inspeção, das unidades e dos registros consolidados. Os resultados refletem os itens efetivamente avaliados. Revise pendências e os totais antes de usar a classificação final.</p>
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
@@ -362,6 +376,25 @@ function focusChapter() {
   if (target?.matches('main > section')) target.querySelector('h2').focus({preventScroll:true});
   if (target?.id === 'sumario') target.querySelector('h2').focus({preventScroll:true});
 }
+const chapters = [...document.querySelectorAll('main > section')];
+function chapterNav(index){
+ const nav = document.createElement('nav');
+ nav.className = 'capitulo-nav';
+ nav.setAttribute('aria-label','Navegação entre capítulos');
+ const link = (text,href) => {
+  const a=document.createElement('a');a.textContent=text;a.href=href;nav.append(a);
+ };
+ if(index>0)link('← Anterior','#'+chapters[index-1].id);
+ link('Sumário','#sumario');
+ const position=document.createElement('span');position.className='posicao';
+ position.textContent=(index+1)+' de '+chapters.length;nav.append(position);
+ if(index+1<chapters.length)link('Próximo →','#'+chapters[index+1].id);
+ return nav;
+}
+chapters.forEach((chapter,index)=>{
+ chapter.querySelector('h2').after(chapterNav(index));
+ chapter.querySelector('a.top')?.replaceWith(chapterNav(index));
+});
 window.addEventListener('hashchange', focusChapter);
 focusChapter();
 </script></body>
