@@ -193,7 +193,7 @@ const bpfWaterCheck = (() => {
     yes('reparo','Possui registro de reparo das tubulações e conexões'),
     yes('passivacao','Possui registros de passivação e/ou desincrustação'),
     check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
-    check('sem-historico-pop','O POP não contempla histórico de revisão de operações de higienização',{informationOnly:true,yesOnly:true})
+    check('pop-com-historico','O POP contempla histórico de revisão de operações de higienização?',{informationOnly:true})
    ]}
   },
   '4.2.9':{
@@ -270,11 +270,15 @@ const bpfWaterCheck = (() => {
      return {...state,[id]:{answer:previous}};
     }
    }
-   if(entry.index===1&&!state?.['nao-conducao']&&getConductionCheckEntry(entry,'4.2.8')){
-    if(state?.['historico-pop']?.answer==='0'){
-     return {...state,'nao-conducao':{answer:'0'},'sem-historico-pop':{answer:'1'}};
+   if(entry.index===1&&getConductionCheckEntry(entry,'4.2.8')){
+    if(!state?.['nao-conducao']&&(data[entry.name]==='0'||state?.['historico-pop']?.answer==='0')){
+     state={...state,'nao-conducao':{answer:'0'}};
     }
-    if(data[entry.name]==='0')return {...state,'nao-conducao':{answer:'0'}};
+    if(state&&!state['pop-com-historico']){
+     const negative=state['sem-historico-pop']?.answer;
+     const previous=({'1':'0','0':'1'}[negative])??state['historico-pop']?.answer;
+     if(previous==='1'||previous==='0')state={...state,'pop-com-historico':{answer:previous}};
+    }
    }
    if((entry.index===0&&!state?.['sim-reservatorio']&&!state?.['nao-reservatorio']||
        entry.index===1&&state?.['conexoes-nao-sanitarias']&&!state['conexoes-sanitarias'])&&
@@ -323,7 +327,7 @@ const bpfWaterCheck = (() => {
  const isInformation=(panel,criterion)=>criterion.informationOnly||(panel.separateInformation&&!criterion.scopeAnswer);
  const informationQuestions=new Set([
   'filtro','registro-filtro','pop-registros','telemetria','residuo','microbiologia','atp',
-  'certificado','declaracao','nota-fiscal','sem-historico-pop','escotilha-teto',
+  'certificado','declaracao','nota-fiscal','pop-com-historico','escotilha-teto',
   'uso-imediato','ar-sopro-filtrado','analise-ar-comprimido','transporte-ar-filtrado',
   'concentracao','bicos-pressao','escoamento','telemetria-concentracao'
  ]);
@@ -343,7 +347,7 @@ const bpfWaterCheck = (() => {
   certificado:[/^Foi apresentado /,'Não foi apresentado '],
   declaracao:[/^(Foi apresentada|Possui) /,(_,verb)=>'Não '+verb.charAt(0).toLowerCase()+verb.slice(1)+' '],
   'nota-fiscal':[/^Foi apresentada /,'Não foi apresentada '],
-  'sem-historico-pop':[/ não contempla /,' contempla '],
+  'pop-com-historico':[/ contempla /,' não contempla '],
   'escotilha-teto':[/ com escotilha /,' sem escotilha '],
   'uso-imediato':[/ são utilizadas /,' não são utilizadas '],
   'ar-sopro-filtrado':[/ são sopradas /,' não são sopradas '],
