@@ -74,7 +74,7 @@ const bpfWaterCheck = (() => {
   },
   '4.1.3':{
    0:{negativePerScope:true,checks:[
-    {...adequateHygiene,yesOnly:true},
+    check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
     sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina do poço ou surgência',{yesOnly:true}),
     check('filtro','Possui filtro de ar microbiológico no poço (surgência apenas em drenos)',{details:'filter',yesOnly:true}),
     check('registro-filtro','Possui registro de troca do filtro de ar microbiológico',{requires:'filtro',yesOnly:true}),
@@ -724,7 +724,7 @@ const bpfWaterCheck = (() => {
       fields(line,criterion,item,save,rows);
       continue;
      }
-     const caption=directChoice?label:criterion.label;
+     const caption=directChoice?label:criterion.scopeAnswer?heading+' — '+label:criterion.label;
      const control=element('label');
      const emphasisIndex=criterion.boldText?caption.indexOf(criterion.boldText):-1;
      if(emphasisIndex>=0){
@@ -737,7 +737,7 @@ const bpfWaterCheck = (() => {
      if(criterion.guidance)control.title=criterion.guidance;
      const input=element('input');
      input.type='checkbox';
-     input.setAttribute('aria-label',directChoice?label+' — '+heading:label+' — '+criterion.label+' — '+heading);
+     input.setAttribute('aria-label',directChoice||criterion.scopeAnswer?label+' — '+heading:label+' — '+criterion.label+' — '+heading);
      input.onchange=()=>{
       item.answer=input.checked?answer:'';
       if(criterion.details==='sanitizers'&&item.answer==='0'){
