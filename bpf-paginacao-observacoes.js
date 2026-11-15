@@ -29,7 +29,7 @@ function bpfPaginateObservation(text,firstRect,nextRect,size,font){
  let remaining=text;
  do{
   const [left,bottom,right,top]=parts.length?nextRect:firstRect;
-  const width=right-left-15,maxLines=Math.max(1,Math.floor((top-bottom-20)/(size*1.35)));
+  const width=right-left-23,maxLines=Math.max(1,Math.floor((top-bottom-23)/(size*1.35)));
   const fits=part=>bpfObservationLines(part,font,width,size).length<=maxLines;
   if(parts.length&&!remaining.trim()){parts[parts.length-1]+=remaining;break;}
   if(fits(remaining)){parts.push(remaining);break;}
@@ -151,12 +151,7 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
  const bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
  const template=bpfOverflowPages.size?await pdf.embedJpg(bpfNCBackground):null;
  const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
- const draw=(page,rect,text,size)=>{
-  const content=normalize(text);
-  const [x,y,right,top]=rect;
-  while(bpfObservationLines(content,font,right-x-14,size).length*size*1.35>top-y-18)size*=.96;
-  bpfPdfDrawObservation(page,rect,content,size,font,ink);
- };
+ const draw=(page,rect,text,size)=>bpfPdfDrawObservation(page,rect,normalize(text),size,font,ink);
  let offset=0;
  for(const [id,{anchor,title,text}] of bpfOverflowPages){
   const [width,height]=bpfNCPageSize;
