@@ -171,10 +171,11 @@ const bpfWaterCheck = (() => {
     check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual',{yesOnly:true})
    ]}
   },
-  '4.2.7':{0:{checks:[
-   adequateHygiene,
-    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução',{yesOnly:true,frequencyOptional:true}),
-   ...controls('da condução','conduzida')
+  '4.2.7':{0:{separateInformation:true,checks:[
+   check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
+   check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
+   sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução',{yesOnly:true,frequencyOptional:true}),
+   ...controls('da condução')
   ]}},
   '4.2.8':{
    0:{all:true,checks:[
@@ -232,6 +233,11 @@ const bpfWaterCheck = (() => {
      return {...state,[id]:{answer:previous}};
     }
    }
+   if(entry.index===0&&!state?.['nao-conducao']&&getConductionCheckEntry(entry,'4.2.7')){
+    const previous=state?.['higienizacao-adequada']?.answer??data[entry.name];
+    if(previous==='0')return {...state,'nao-conducao':{answer:'0'}};
+    if(previous==='1'&&!state)return {'higienizacao-adequada':{answer:'1'}};
+   }
    if(state&&entry.index===1&&getConductionCheckEntry(entry)&&!state.integrityPositive){
     for(const id of ['vazamento','abaulada','emendas']){
      const check=state[id];
@@ -243,8 +249,8 @@ const bpfWaterCheck = (() => {
    return state;
   }catch (_) { return null; }
  };
- function getConductionCheckEntry(entry){
-  const row=BPF_PHRASES.find(page=>page.page===1)?.rows.find(row=>row.code==='4.2.2');
+ function getConductionCheckEntry(entry,code='4.2.2'){
+  const row=BPF_PHRASES.find(page=>page.page===1)?.rows.find(row=>row.code===code);
   return row?.scopes.some(scope=>scope.name===entry.scope.name);
  }
  const informationHeading=panel=>panel.informationHeading||(panel.separateInformation?'Outras informações':'Outras observações');
