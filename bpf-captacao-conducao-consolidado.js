@@ -64,7 +64,19 @@ const bpfWaterCheck = (() => {
   check('sujidade-interna','Faz a remoção das sujidades da superfície interna?'),
   check('sujidade-externa','Faz a remoção das sujidades da superfície externa?')
  ];
+ const surfaceChecks=[
+  check('revestimento-piso','Revestimento do piso adequado?',{yesLabel:'O revestimento do piso é adequado',noLabel:'O revestimento do piso não é adequado'}),
+  check('revestimento-parede','Revestimento da parede adequado?',{yesLabel:'O revestimento da parede é adequado',noLabel:'O revestimento da parede não é adequado'}),
+  check('revestimento-teto','Revestimento do teto adequado?',{yesLabel:'O revestimento do teto é adequado',noLabel:'O revestimento do teto não é adequado'}),
+  check('revestimento-porta','Revestimento da porta adequado?',{yesLabel:'O revestimento da porta é adequado',noLabel:'O revestimento da porta não é adequado'})
+ ].map(criterion=>({...criterion,section:'Revestimentos lisos, de cor clara, impermeáveis e laváveis'}));
+ const doorChecks=[
+  check('fechamento-automatico','Possuem dispositivo de fechamento automático?',{yesLabel:'As portas possuem dispositivo de fechamento automático',noLabel:'As portas não possuem dispositivo de fechamento automático'}),
+  check('ajuste-batentes','São ajustadas aos batentes?',{yesLabel:'As portas são ajustadas aos batentes',noLabel:'As portas não são ajustadas aos batentes'}),
+  check('conservacao-portas','Estão em adequado estado de conservação?',{yesLabel:'As portas estão em adequado estado de conservação',noLabel:'As portas não estão em adequado estado de conservação'})
+ ].map(criterion=>({...criterion,section:'Portas da antessala e sala de envase'}));
  const panels = {
+  '4.7.2':{0:{...returnableInspection([...surfaceChecks,...doorChecks]),collapseAnswers:true}},
   '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
   '4.6.4':{0:returnableInspection(prewashChecks)},
@@ -124,29 +136,29 @@ const bpfWaterCheck = (() => {
    ]}
   },
   '4.6.8':{
-   0:{all:true,capRoute:true,checks:[
+   0:returnableInspection([
     check('declaracao','Possui declaração do fabricante de desinfecção do lote de tampas em uso?'),
-    yes('analise-tampas-recebidas','É feita a análise microbiológica dos lotes das tampas recebidas com declaração de desinfecção?'),
+    check('analise-tampas-recebidas','É feita a análise microbiológica dos lotes das tampas recebidas com declaração de desinfecção?'),
     check('dupla-embalagem','Os sacos com as tampas são enviados com embalagens primária e secundária?'),
-    check('retirada-envase','A embalagem secundária é retirada imediatamente antes do transporte para a sala de envase?',{route:'direto'}),
-    check('armazenamento-primaria','Os sacos com apenas a embalagem primária são mantidos fora do piso e dos equipamentos?',{route:'direto'}),
-    check('retirada-silo','A embalagem secundária é retirada imediatamente antes do transporte para o silo de transferência?',{route:'silo'}),
-    check('localizacao-silo','O silo está instalado em área adequada?',{route:'silo'}),
-    check('filtro-silo','O soprador do silo possui filtro de ar microbiológico?',{route:'silo'}),
-    check('ozonio-silo','O silo opera sem aplicação de ozônio?',{route:'silo',noOnly:true}),
-    check('transporte-silo','O silo utiliza transportador fechado ou protegido?',{route:'silo'}),
-    yes('desinfeccao-envasadora','Faz a desinfecção das tampas na envasadora.')
-   ]},
-   1:{all:true,checks:[
+    check('desinfeccao-envasadora','Faz a desinfecção das tampas na envasadora?'),
+    check('retirada-envase','A embalagem secundária é retirada imediatamente antes do transporte para a sala de envase?',{section:'Sem Silo'}),
+    check('armazenamento-primaria','Os sacos com apenas a embalagem primária são mantidos fora do piso e dos equipamentos da sala de envase?',{section:'Sem Silo'}),
+    check('retirada-silo','A embalagem secundária é retirada imediatamente antes do transporte para o silo de transferência?',{section:'Com Silo'}),
+    check('localizacao-silo','O silo está instalado em área adequada?',{section:'Com Silo'}),
+    check('filtro-silo','O soprador do silo possui filtro de ar microbiológico?',{section:'Com Silo'}),
+    check('transporte-silo','O silo utiliza transportador fechado ou protegido?',{section:'Com Silo'})
+   ]),
+   1:returnableInspection([
     check('desinfetante-tampas','As tampas são desinfetadas com desinfetantes adequados?',{
      details:'packaging-sanitizers',detailsOnNo:true,products:[['ozonio','Ozônio'],['outros','Outro']]
     }),
     check('ambiente-desinfeccao','O ambiente onde é feita a desinfecção é adequado?'),
-    check('transporte-tampas','As tampas desinfetadas são transportadas para a sala de envase ou para o silo em recipientes higienizados e com tampa?'),
+    check('transporte-tampas-envase','As tampas desinfetadas são transportadas para a sala de envase em recipientes higienizados e com tampa?'),
+    check('transporte-tampas-silo','As tampas desinfetadas são transportadas para o silo em recipientes higienizados e com tampa?'),
     check('analise-tampas','É feita a análise microbiológica dos lotes desinfetados de tampas?'),
-    check('fora-silo','A desinfecção é realizada dentro do silo?',{noOnly:true}),
-    check('fora-envase','A desinfecção é realizada na sala de envase ou na antessala?',{noOnly:true})
-   ]}
+    check('fora-silo','A desinfecção é realizada dentro do silo?'),
+    check('fora-envase','A desinfecção é realizada na sala de envase ou na antessala?')
+   ].map(criterion=>({...criterion,section:'Higienização de tampas'})))
   },
   '4.6.6':{
    0:returnableInspection([
@@ -248,18 +260,24 @@ const bpfWaterCheck = (() => {
    const name=key(entry);
    let state=JSON.parse(data[name]||'null');
    if(!state?.['sim-lavagem']&&!state?.['nao-lavagem']){
-    const returnables=BPF_PHRASES.find(page=>page.page===7)?.rows;
-    const row=returnables?.find(row=>['4.6.4','4.6.5','4.6.6'].includes(row.code)&&
-     row.scopes.some(scope=>scope.name===entry.scope.name));
+    const row=BPF_PHRASES.filter(page=>[7,8,9,10].includes(page.page)).flatMap(page=>page.rows)
+     .find(row=>['4.6.4','4.6.5','4.6.6','4.6.8','4.7.2'].includes(row.code)&&
+      row.scopes.some(scope=>scope.name===entry.scope.name));
     if(row&&panels[row.code][entry.index]){
      let previous=data[entry.name];
-     if(row.code==='4.6.4'){
+     if((row.code==='4.6.4'||row.code==='4.7.2')&&entry.index===0){
       const old=bpfF1Checks(row,entry.scope).map(check=>data[check.name]);
+      const priorChecks=row.code==='4.6.4'?prewashChecks:[...surfaceChecks,...doorChecks];
       if(!state)state={};
-      for(const [i,criterion] of prewashChecks.entries()){
+      for(const [i,criterion] of priorChecks.entries()){
        if(hasAnswer(old[i]))state[criterion.id]={answer:old[i]};
       }
       if(!hasAnswer(previous))previous=old.includes('0')?'0':old.includes('1')?'1':'';
+     }
+     if(row.code==='4.6.8'&&entry.index===1&&hasAnswer(state?.['transporte-tampas']?.answer)){
+      const first=JSON.parse(data[key({name:bpfPhraseName(entry.scope,0)})]||'null');
+      const destination=first?.route==='silo'?'transporte-tampas-silo':first?.route==='direto'?'transporte-tampas-envase':'';
+      if(destination&&!state[destination])state[destination]=state['transporte-tampas'];
      }
      if(hasAnswer(previous)){
       const id=previous==='1'?'sim-lavagem':'nao-lavagem';
@@ -424,7 +442,10 @@ const bpfWaterCheck = (() => {
   'transporte-silo':[/ utiliza /,' não utiliza '],
   'desinfetante-tampas':[/ são desinfetadas /,' não são desinfetadas '],
   'ambiente-desinfeccao':[/ é adequado$/,' não é adequado'],
-  'transporte-tampas':[/ são transportadas /,' não são transportadas '],
+  'desinfeccao-envasadora':[/^Faz /,'Não faz '],
+  'analise-tampas-recebidas':[/^É feita /,'Não é feita '],
+  'transporte-tampas-envase':[/ são transportadas /,' não são transportadas '],
+  'transporte-tampas-silo':[/ são transportadas /,' não são transportadas '],
   'analise-tampas':[/^É feita /,'Não é feita '],
   'fora-silo':[/ é realizada /,' não é realizada '],
   'fora-envase':[/ é realizada /,' não é realizada '],
@@ -478,7 +499,7 @@ const bpfWaterCheck = (() => {
    for(const scope of row.scopes)scope.phrases.push({...phrase});
   }
  }
- const synchronizedItems=new Set(['4.1.3','4.2.2','4.2.7','4.2.8','4.2.9','4.3.2','4.3.5','4.6.3','4.6.4','4.6.5','4.6.6','4.6.8','4.7.8']);
+ const synchronizedItems=new Set(['4.1.3','4.2.2','4.2.7','4.2.8','4.2.9','4.3.2','4.3.5','4.6.3','4.6.4','4.6.5','4.6.6','4.6.8','4.7.2','4.7.8']);
  function registerReview(entries,byKey){
   for(const page of BPF_PHRASES)for(const row of page.rows){
    if(!synchronizedItems.has(row.code))continue;
@@ -516,7 +537,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
-   if(page.page===7&&row.code==='4.6.4')for(const entry of bpfF1Checks(row,scope)){
+   if(row.code==='4.6.4'||row.code==='4.7.2')for(const entry of bpfF1Checks(row,scope)){
     data.fields[entry.name]={name:entry.name,type:'/Ch',flags:0,label:entry.option,options:[],calc:'',phrasePage:page.page};
    }
    for(const entry of entriesFor(row,scope)){
@@ -535,7 +556,7 @@ const bpfWaterCheck = (() => {
  function result(panel,state){
   if(panel.allowNA&&state.notApplicable)return '2';
   const selected=panel.checks.filter(c=>!isInformation(panel,c)&&answered(c,state));
-  if(!selected.length||(panel.capRoute&&!panel.optional&&!state.route)||requiredChecks(panel,selected,state).some(c=>!answered(c,state)))return '';
+  if(!selected.length||requiredChecks(panel,selected,state).some(c=>!answered(c,state)))return '';
   if(panel.alternatives)return selected.some(c=>state[c.id].answer==='1')?'1':'0';
   return selected.some(c=>!c.yesOnly&&state[c.id].answer===(c.negative?'1':'0'))?'0':'1';
  }
@@ -642,13 +663,6 @@ const bpfWaterCheck = (() => {
    if(legacy.length)checklist.push('Avaliação geral ('+legacy.map(unit=>unit.label).join(', ')+')');
    const note=answer==='2'||(answer==='1'&&!selected.length)?'':text(data[bpfGroupNoteName(page,row,panel,answer)]);
    if(!checklist.length&&!(selected.length&&(answer!=='1'||note)))return [];
-   if(config.capRoute&&checklist.length){
-    const routes=units.filter(unit=>unit.checks.some(check=>check.answer===answer)).map(unit=>{
-     const route=read(unit.entry,data)?.route;
-     return route?unit.label+' — '+(route==='silo'?'Com silo':'Sem silo'):'';
-    }).filter(Boolean);
-    if(routes.length)checklist.unshift('Transporte das tampas: '+routes.join(' / '));
-   }
    return [{page,row,panel,answer,checklist,note,selected:selected.map(unit=>unit.entry)}];
   });
   if(information.length)report.push({page,row,panel,heading:informationHeading(config),checklist:information,note:'',selected:[]});
@@ -693,10 +707,6 @@ const bpfWaterCheck = (() => {
     const selected=state?config.checks.filter(c=>answered(c,state)):[];
     const requiredF2=row.code==='4.6.8'&&panel.id===1;
     if(!selected.length&&!requiredF2)continue;
-    if(config.capRoute&&!state.route){
-     alert('Item 4.6.8 — F1: selecione se a transferência das tampas utiliza silo.');
-     return false;
-    }
     const missing=requiredChecks(config,selected,state||{}).find(c=>!state||!answered(c,state));
     const detail=selected.find(c=>missingDetail(c,state[c.id]));
     const issue=missing||detail;
@@ -909,9 +919,9 @@ const bpfWaterCheck = (() => {
     if(row.code==='4.2.9'&&panel.id===0){
      card.parentElement?.querySelector('[data-bpf-conduction-f2]')?.dispatchEvent(new Event('bpf-f2-refresh'));
     }
-    if(config.capRoute){
+    if(row.code==='4.6.8'&&panel.id===0){
      const followup=card.parentElement?.querySelector('[data-bpf-caps-f2]');
-     if(followup)followup.hidden=!capsDisinfected(entry.scope,values);
+     if(followup)followup.hidden=!row.scopes.some(scope=>capsDisinfected(scope,values));
     }
     changed();
     recalc();
@@ -924,19 +934,6 @@ const bpfWaterCheck = (() => {
     answerGrid.prepend(notice);
     rows.push(()=>{notice.hidden=panelEnabled(row,entry,values);});
     card.addEventListener('bpf-f2-refresh',refresh);
-   }
-   if(config.capRoute){
-    const label=element('label','Transporte das tampas');
-    const route=element('select');
-    for(const [value,caption] of [['','Selecione'],['direto','Sem silo'],['silo','Com silo']]){
-     const option=element('option',caption);
-     option.value=value;
-     route.append(option);
-    }
-    route.value=state.route||'';
-    route.onchange=()=>{state.route=route.value;save();};
-    label.append(route);
-    answerGrid.prepend(label);
    }
    if(config.allowNA){
     const control=element('label',label+' — Não se aplica (copos descartáveis)');
@@ -953,10 +950,11 @@ const bpfWaterCheck = (() => {
     const answer=information?'1':sectionType;
     const heading=information?informationHeading(config):answer==='1'?'Sim':'Não';
     const directChoice=config.simple||(config.separateInformation&&!information)||(config.singleNo&&answer==='0');
-    const section=element(directChoice?'div':'details');
+    const collapsed=config.collapseAnswers||!directChoice;
+    const section=element(collapsed?'details':'div');
     section.className='bpf-water-unit';
     section.dataset.waterEntry=entry.name;
-    if(!directChoice)section.append(element('summary',label));
+    if(collapsed)section.append(element('summary',label));
     const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
     legacyLine.hidden=!legacy;
     legacyLines.push(legacyLine);
