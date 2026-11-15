@@ -265,7 +265,10 @@ const bpfWaterCheck = (() => {
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
      const mode=criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
      const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
-     criterion.guidance=[mode,context,config.optional&&!criterion.optional?'A verificação pode ficar em branco.':''].filter(Boolean).join(' ');
+     const optionalDetails=criterion.details==='filter'?'A frequência de troca pode ficar em branco.':
+      criterion.frequencyOptional?'A periodicidade pode ficar em branco.':'';
+     criterion.guidance=[mode,context,config.optional&&!criterion.optional?'A verificação pode ficar em branco.':'',
+      optionalDetails].filter(Boolean).join(' ');
      const ref={
       set text(value){criterion.label=value;},
       set guidance(value){criterion.guidance=value;}
