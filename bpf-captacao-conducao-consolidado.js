@@ -624,8 +624,103 @@ const bpfWaterCheck = (() => {
   ];
  }
 
+ const receptionChecks={
+  0:{question:'Possui registro comprovando a inspeção no ato do recebimento?',detailsAnswer:'1'},
+  2:{question:'O saneante conferido estava identificado, dentro da validade, regularizado na ANVISA e possui autorização para a finalidade de uso declarada?',detailsAnswer:'0'}
+ };
+ const receptionEvidence=['Formulário de recepção','Carimbo na nota fiscal','Sistema eletrônico','Ficha de estoque','Outro'];
+ const receptionKey=(name,field)=>'BPF_Recepcao_'+name+'_'+field;
+
+ function receptionSummary(page,row,panel,data){
+  const check=row.code==='4.5.3'&&receptionChecks[panel.id];
+  if(!check)return [];
+  return panel.entries.flatMap(entry=>{
+   const answer=data[receptionKey(entry.name,'Resposta')];
+   if(!['1','0'].includes(answer))return [];
+   const evidence=data[receptionKey(entry.name,'Comprovacao')];
+   const details=String(data[receptionKey(entry.name,'Detalhes')]||'').replace(/\s+/g,' ').trim();
+   const caption=panel.id===0?'Registro de inspeção no recebimento':'Identificação, validade, regularização e finalidade de uso do saneante';
+   const extra=answer!==check.detailsAnswer?'':panel.id===0
+    ?[evidence,evidence==='Outro'?details:''].filter(Boolean).join(' — ')
+    :details;
+   return [panel.label+' — '+bpfScopeLabel(page,entry.scope)+' — '+caption+': '+bpfAnswerLabel(answer)+(extra?' — '+extra:'')];
+  });
+ }
+
+ function renderReception(card,page,row,panel){
+  const check=row.code==='4.5.3'&&receptionChecks[panel.id];
+  if(!check||!panel.entries.length)return;
+  const block=element('fieldset');
+  block.className='bpf-answer-box';
+  block.append(element('legend','Informações adicionais'));
+  for(const entry of panel.entries){
+   const unit=element('fieldset');
+   unit.append(element('legend',bpfScopeLabel(page,entry.scope)));
+   unit.append(element('p',check.question));
+   const answerKey=receptionKey(entry.name,'Resposta');
+   const evidenceKey=receptionKey(entry.name,'Comprovacao');
+   const detailsKey=receptionKey(entry.name,'Detalhes');
+   const followup=element('div');
+   const area=element('textarea');
+   area.rows=panel.id===0?2:5;
+   area.value=values[detailsKey]||'';
+   const detailLabel=element('label',panel.id===0?'Especifique a outra comprovação':
+    'Informe o nome do produto, lote, validade, finalidade de uso, referência da regularização e divergência entre o rótulo encontrado e o documento apresentado.');
+   detailLabel.append(area);
+   const refresh=()=>{
+    followup.hidden=values[answerKey]!==check.detailsAnswer;
+    detailLabel.hidden=panel.id===0&&values[evidenceKey]!=='Outro';
+   };
+   const save=(key,value)=>{
+    values[key]=value;
+    refresh();
+    bpfSyncObservation(row,page);
+    changed();
+   };
+   for(const [answer,label] of [['1','Sim'],['0','Não']]){
+    const choice=element('label',label);
+    choice.style.marginRight='1rem';
+    const input=element('input');
+    input.type='radio';
+    input.name=answerKey;
+    input.value=answer;
+    input.checked=values[answerKey]===answer;
+    input.onchange=()=>save(answerKey,answer);
+    choice.prepend(input);
+    unit.append(choice);
+   }
+   if(panel.id===0){
+    const label=element('label','Comprovação');
+    const select=element('select');
+    for(const name of ['Selecione',...receptionEvidence]){
+     const option=element('option',name);
+     option.value=name==='Selecione'?'':name;
+     select.append(option);
+    }
+    select.value=values[evidenceKey]||'';
+    select.onchange=()=>save(evidenceKey,select.value);
+    label.append(select);
+    followup.append(label);
+   }
+   area.oninput=()=>save(detailsKey,area.value);
+   followup.append(detailLabel);
+   unit.append(followup);
+   block.append(unit);
+   refresh();
+  }
+  card.append(block);
+ }
+
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
+   if(row.code==='4.5.3')for(const index of [0,2]){
+    if(!scope.phrases[index])continue;
+    const fields=index===0?['Resposta','Comprovacao','Detalhes']:['Resposta','Detalhes'];
+    for(const field of fields){
+     const name=receptionKey(bpfPhraseName(scope,index),field);
+     data.fields[name]={name,type:'/Tx',flags:0,label:'4.5.3 F'+(index+1)+' — '+field,options:[],calc:'',phrasePage:page.page};
+    }
+   }
    if(['4.6.4','4.7.2','4.7.6'].includes(row.code))for(const entry of bpfF1Checks(row,scope)){
     data.fields[entry.name]={name:entry.name,type:'/Ch',flags:0,label:entry.option,options:[],calc:'',phrasePage:page.page};
    }
@@ -1195,6 +1290,6 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,preparePhrases,renderReservoirFrequency,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,render};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,preparePhrases,renderReservoirFrequency,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,render};
 })();
 
