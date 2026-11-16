@@ -263,6 +263,50 @@ function bpfRunNCObservationFlow(full){
  if(values.BPF_ObsGeneralFlow!==serialized)values.BPF_ObsGeneralFlow=serialized;
 }
 
+function bpfRenderFinalConsiderationsText(el,text){
+ if(el.bpfRenderedObservation===text)return;
+ el.bpfRenderedObservation=text;
+ const fragment=document.createDocumentFragment();
+ const generated=Object.entries(bpfFinalRead('BPF_PCCGenerated',{}));
+ const fieldText=String(values[bpfFinalConsiderationsField]||'');
+ for(const rawBlock of text.split(/(?=^Item\s+\d+(?:\.\d+)*\b)/m)){
+  const block=rawBlock.trimEnd();
+  if(!block)continue;
+  const newline=block.indexOf('\n');
+  const hasTitle=bpfIsFinalConsiderationTitle(block.split('\n',1)[0]);
+  const heading=hasTitle?block.split('\n',1)[0]:'';
+  const body=hasTitle?(newline<0?'':block.slice(newline+1)):block;
+  if(heading)bpfAppendNCObservationText(fragment,heading,'final');
+  const record=generated.find(([,item])=>item.split('\n',1)[0]===heading.replace(/ — continuação$/,''));
+  const original=record?record[1].split('\n').slice(1).join('\n'):fieldText;
+  const start=body?original.indexOf(body):0;
+  const editor=document.createElement('div');
+  bpfAppendNCObservationText(editor,body,'final');
+  if(start>=0){
+   editor.className='bpf-final-inline-edit';
+   editor.contentEditable='plaintext-only';
+   editor.setAttribute('role','textbox');
+   editor.setAttribute('aria-multiline','true');
+   editor.setAttribute('aria-label',heading||'Considerações finais');
+   editor.onblur=()=>{
+    const edited=editor.innerText.replace(/\r\n?/g,'\n').trimEnd();
+    const revised=original.slice(0,start)+edited+original.slice(start+body.length);
+    if(edited===body)return;
+    if(record){
+     const edits=bpfFinalRead('BPF_FinalConsideracoesEdicoes',{});
+     edits[record[0]]=revised;
+     values.BPF_FinalConsideracoesEdicoes=JSON.stringify(edits);
+    }else values[bpfFinalConsiderationsField]=revised;
+    bpfSyncPCCFinal();changed();
+    el.bpfRenderedObservation=null;
+    sync();
+   };
+  }
+  fragment.append(editor);
+ }
+ el.replaceChildren(fragment);
+}
+
 function bpfRenderFinalConsiderationsField(el){
  const fontSize=(bpfFinalConsiderationsSize/595.32*100)+'cqw';
  if(el.tagName==='TEXTAREA'){
@@ -274,9 +318,9 @@ function bpfRenderFinalConsiderationsField(el){
  }
  el.classList.add('bpf-final-first-page','bpf-overflow-observation');
  el.style.fontSize=fontSize;
- bpfRenderNCObservation(el,bpfFinalConsiderationsFlow.parts[0]||'','final');
+ bpfRenderFinalConsiderationsText(el,bpfFinalConsiderationsFlow.parts[0]||'');
  el.removeAttribute('aria-hidden');
- el.onclick=()=>el.parentElement.querySelector('.bpf-final-edit-area')?.focus();
+ el.onclick=()=>{if(!bpfFinalConsiderationsFlow.full)el.parentElement.querySelector('.bpf-final-edit-area')?.focus();};
 }
 
 function bpfObservationPageId(kind,offset){
@@ -353,7 +397,8 @@ function bpfReconcileObservationPages(finalFont,finalBold){
   const body=page.querySelector('.bpf-overflow-observation');
   if(body&&spacing==='final')body.style.fontSize=(bpfFinalConsiderationsSize/595.32*100)+'cqw';
   if(body&&body.bpfRenderedObservation!==text){
-   bpfRenderNCObservation(body,text,spacing);
+   if(spacing==='final')bpfRenderFinalConsiderationsText(body,text);
+   else bpfRenderNCObservation(body,text,spacing);
    body.removeAttribute('aria-hidden');
   }
  }
