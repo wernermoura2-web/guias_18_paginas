@@ -1,5 +1,5 @@
 /* Guia BPF: interface amigável e cache offline (06/11/2026). */
-const CACHE='guia18-20261116-validade-garrafoes';
+const CACHE='guia18-20261116-limpar-guia';
 const ROOT=new URL('./',self.location.href);
 const CORE=['./','./index.html','./creditos-institucionais.html','./manifest.webmanifest','./icon-bpf-appcc-192.png','./icon-bpf-appcc-512.png','./interface-guia-amigavel.js','./revisao-frases.html','./abrir-guia-corrigido.html','./revisao-orientacoes-apoio.js','./bpf-revisao-frases-ativa-20261107.js','./bpf-substituicao-campos-20261108.js','./bpf-f1-correcao-direta-20261108.js','./revisao-orientacoes-20261107.json','./bpf-f1-opcoes-visiveis.js','./individual_atualizado.html','./equipe_atualizado.html','./bpf-etiquetas-appcc-20261108.js','./bpf-correcao-f-pdf-v72.js','./bpf-fotos-somente-nc-20261109.js','./bpf-obs-livres-sem-prefixo-sim-20261109.js','./bpf-pcc-rotulos-risco-20261109.js','./bpf-impressao-unicode-compat-20261109.js','./bpf-cq-continuacao-20261109.js'];
 CORE.push('./bpf-amostragem-4104.js','./manual.html');
@@ -9,8 +9,8 @@ const IS_GUIDE=url=>/\/(?:equipe|individual)(?:_atualizado)?\.html$/i.test(url.p
 async function attachFriendlyMenu(response,url){
   if(!IS_GUIDE(url)||!response||!response.ok)return response;
   const original=await response.text();
-  const tag='<script src="./interface-guia-amigavel.js?v=20261116-menu-impressao" defer></script>';
-  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261116-menu-impressao');
+  const tag='<script src="./interface-guia-amigavel.js?v=20261116-limpar-guia" defer></script>';
+  let altered=(original.includes('interface-guia-amigavel.js')?original:original.replace(/<\/body\s*>/i,tag+'</body>')).replace(/interface-guia-amigavel\.js(?:\?v=[^\"'<> ]*)?/g,'interface-guia-amigavel.js?v=20261116-limpar-guia');
   // Manter a coluna de Recepção com a faixa percentual original, entre os dois grupos de PCC.
   altered=altered.replace(/\/\* Faixa vermelha dos seis primeiros processos na matriz\.[\s\S]*?(?=function place\(el,w\))/,`
 const BPF_MATRIX_PCC_BAND={left:100,right:348.28,top:185,bottom:223,width:595.32,height:841.92};
@@ -84,11 +84,40 @@ for(const [i,w]of D.widgets.entries())bpfMountWidget(w,i);
 `.trimStart());
   altered=altered.replace("el.textContent=w.name.replace('LIMPAR','Limpar');el.onclick=()=>clearScope(w)", String.raw`const label=bpfClearLabel(w.name);el.textContent=/^LIMPAR RES [1-4]$/.test(w.name)?'Limpar\nreservatórios':label||w.name;if(label)el.classList.add('bpf-clear-action');el.onclick=()=>clearScope(w)`);
   altered=altered.replace("el.title=f.label+' · '+w.name;el.setAttribute('aria-label',f.label+", String.raw`const clearLabel=bpfClearLabel(w.name)?.replace(/\n/g,' ');el.title=clearLabel||f.label+' · '+w.name;el.setAttribute('aria-label',clearLabel||f.label+`);
-  altered=altered.replace("if(!confirm('Limpar '+(w.name==='LIMPAR TUDO'?'todo o guia':'este bloco')+'?'))return;",
-   "if(!confirm((bpfClearLabel(w.name)||'Limpar este bloco').replace(/\\n/g,' ')+'?'))return;");
+  altered=altered.replace(/function clearScope\(w\)\{[\s\S]*?(?=\nconst BPF_GALLERY_SLOTS)/, String.raw`
+function clearScope(w){
+ const full=w.name==='LIMPAR TUDO';
+ if(!confirm((bpfClearLabel(w.name)||'Limpar este bloco').replace(/\n/g,' ')+'?'))return;
+ if(full){
+  document.activeElement?.blur();
+  document.querySelector('#bpf-editor')?.remove();
+  window.Guia?.team?.reset?.();
+ }
+ const names=full?Object.keys(values):[...D.widgets.filter(x=>x.page===w.page).map(x=>x.name),...Object.keys(D.fields).filter(n=>D.fields[n].phrasePage===w.page)];
+ const keepIdentity=w.name==='LIMPAR CAPTAÇÃO'?new Set(['ENVASADORA','ENDEREÇO','DATA']):null;
+ for(const n of names){
+  if(keepIdentity?.has(n))continue;
+  const field=D.fields[n];
+  if(field)values[n]=field.type==='/Btn'?'Off':'';
+  else delete values[n];
+  delete images[n];
+ }
+ if(full){
+  for(const name of Object.keys(images))delete images[name];
+  bpfSetPhotoPages(2);
+  bpfSetGalleryPages('labels',2);
+ }
+ changed();
+ recalc();
+ if(full){
+  const recovery=window.GuiaRecovery;
+  if(recovery?.afterClear)recovery.afterClear();
+  else recovery?.checkpoint();
+  document.querySelector('#status').textContent='Guia limpo. Pronto para uma nova inspeção.';
+ }
+}
+`.trimStart());
   altered=altered.replace('</head>', '<style>@media screen{#pages .page>button.bpf-clear-action{white-space:pre-line;font-size:1.18cqw;line-height:1.1;font-weight:700;text-align:center;padding:0 1px}}</style></head>');
-  altered=altered.replace(' for(const n of names){values[n]=D.fields[n].type===',
-    " const keepIdentity=w.name==='LIMPAR CAPTAÇÃO'?new Set(['ENVASADORA','ENDEREÇO','DATA']):null;\n for(const n of names){if(keepIdentity?.has(n))continue;values[n]=D.fields[n].type===");
   altered=altered.replace(/function bpfSpaceProcessObservations\(\)\{[\s\S]*?(?=function bpfMergeObservation)/, String.raw`
 function bpfCompactObservation(text){
  return String(text??'').replace(/\r\n?/g,'\n').split('\n').filter(line=>line.trim()).join('\n').trimEnd();
@@ -523,6 +552,13 @@ document.querySelector('#imageInput').onchange=async event=>{
     altered=altered.replace("let db,baseline=JSON.stringify(A.snapshot()),queue=Promise.resolve(),paused=false,failed=false;",
       `let db,baseline=JSON.stringify(A.snapshot()),queue=Promise.resolve(),paused=false,failed=false;
 let recoveryEdited=false,recoveryTimer,recoveryStarting=true;
+const lastClearKey='bpf-equipe-ultima-limpeza';
+function afterClear18(){
+ try{localStorage.setItem(lastClearKey,new Date().toISOString());}catch{}
+ recoveryEdited=true;
+ clearTimeout(recoveryTimer);
+ checkpoint(true);
+}
 function scheduleRecovery18(){
  recoveryEdited=true;
  clearTimeout(recoveryTimer);
@@ -541,8 +577,10 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
   status('Cópia automática disponível. Use Recuperar preenchimento para abrir outra inspeção.');
   return;
  }
+ let lastClear='';
+ try{lastClear=localStorage.getItem(lastClearKey)||'';}catch{}
  const latest=rows[0];
- if(!latest){
+ if(!latest||latest.at<=lastClear){
   baseline=JSON.stringify(A.snapshot());
   status('Cópia automática disponível neste aparelho.');
   return;
@@ -565,7 +603,7 @@ document.querySelector('#jsonInput').addEventListener('change',event=>{
  }
 }`);
     altered=altered.replace("window.GuiaRecovery={checkpoint,list,get failed()",
-      "window.GuiaRecovery={checkpoint,list,schedule:scheduleRecovery18,get failed()");
+      "window.GuiaRecovery={checkpoint,list,schedule:scheduleRecovery18,afterClear:afterClear18,get failed()");
   }
   altered=altered.replace(":['Reanálise','Parada do Envase','Higienização','Recolhimento','Quarentena','Aprovação','Outros'];",":[\"Execução do plano conforme previsto\",\"Limites de aceitação definidos\",\"Análise mensal terceirizada executada, registrada e comparada aos limites\",\"Limites internos de alerta e de ação para bactérias heterotróficas definidos\"];");
   const checklistApply='function bpfChecklistApply(page,row,panel,v){';
