@@ -19,6 +19,7 @@
   .bpf-ui-arrow{width:45px;min-width:45px;border:1px solid #bacfda;border-radius:9px;background:#fff;color:#145d83;font-size:25px;font-weight:650}
   .bpf-ui-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:15px}
   .bpf-ui-action{min-height:63px;border:1px solid #bdd4e1;border-radius:11px;padding:10px 9px;background:#fff;color:#19445c;font-size:14px;font-weight:700;text-align:center;line-height:1.25}
+  .bpf-ui-manual{display:grid;place-items:center;text-decoration:none}
   .bpf-ui-action.primary{background:#087aaa;border-color:#087aaa;color:#fff}
   .bpf-ui-action:focus-visible,.bpf-ui-arrow:focus-visible,.bpf-ui-hub summary:focus-visible{outline:3px solid #f2ad35;outline-offset:2px}
   .bpf-ui-hub details{border:1px solid #d6e5ec;border-radius:12px;background:#fff;margin:9px 0 0;overflow:hidden}
@@ -230,6 +231,13 @@
     if(zoom.parentElement?.tagName==='LABEL')zoom.parentElement.classList.add('bpf-ui-original');
     else mark(zoom);
   }
+  const manual=document.createElement('a');
+  manual.className='bpf-ui-action bpf-ui-manual';
+  manual.href='./manual.html?v=20261116-codigo-matriz-considerandos';
+  manual.target='_blank';
+  manual.rel='noopener';
+  manual.textContent='Manual de Preenchimento';
+  extra.content.appendChild(manual);
   if(reset)extra.content.appendChild(makeButton('Limpar todo o guia',reset));
   if(extra.content.children.length)root.appendChild(extra.details);
   if(remove)mark(remove);
