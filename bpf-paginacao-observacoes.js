@@ -5,6 +5,8 @@ const bpfOverflowPages=new Map();
 const bpfFinalConsiderationsField='CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1';
 const bpfFinalConsiderationsTitle='CONSIDERAÇÕES FINAIS / AVALIAÇÃO DE RISCO — CONTINUAÇÃO';
 const bpfFinalConsiderationsSize=8;
+const bpfFinalConsiderationsLeading=1.5;
+const bpfFinalConsiderationsTitleGap=2;
 let bpfFinalConsiderationsFlow={full:null,parts:[],font:null};
 const bpfPdfObservationBlankLines=1;
 let bpfCQObservationFlow={full:null,parts:['']};
@@ -35,6 +37,74 @@ function bpfIsNCEntry(line){
 
 function bpfIsNCDefinition(line){
  return /^\s*(?:BPF|APPCC|PCC|PPRO|PPR|PC|POP)\s+[—–-]\s+/i.test(line);
+}
+
+function bpfIsFinalConsiderationTitle(line){
+ return /^Item\s+\d+(?:\.\d+)*\b/.test(line.trim());
+}
+
+function bpfFinalConsiderationRows(text){
+ return text.trimEnd().split('\n').flatMap((line,index,lines)=>{
+  const title=bpfIsFinalConsiderationTitle(line);
+  if(!line.trim()&&bpfIsFinalConsiderationTitle(lines[index+1]||''))return [];
+  return [{line,title,gap:title?bpfFinalConsiderationsTitleGap:0}];
+ });
+}
+
+function bpfFinalConsiderationMeasure(rect,font,bold){
+ const [left,bottom,right,top]=rect,size=bpfFinalConsiderationsSize;
+ const width=right-left-16,leading=size*bpfFinalConsiderationsLeading;
+ return {
+  capacity:top-bottom-16-leading,
+  height(text){
+   if(!text.trim())return 0;
+   return bpfFinalConsiderationRows(text).reduce((height,{line,title,gap})=>
+    height+gap*size+Math.max(1,bpfObservationLines(line,title?bold:font,width,size).length)*leading,0);
+  }
+ };
+}
+
+function bpfPaginateFinalConsiderations(text,firstRect,nextRect,font,bold){
+ if(!text.trim())return [''];
+ const first=bpfFinalConsiderationMeasure(firstRect,font,bold);
+ const next=bpfFinalConsiderationMeasure(nextRect,font,bold);
+ const groups=[[]];
+ const join=group=>group.join('');
+ const fits=(measure,text)=>measure.height(text)<=measure.capacity;
+ let measure=first;
+ for(const block of text.split(/(?=^Item\s+\d+(?:\.\d+)*\b)/m).filter(Boolean)){
+  const group=groups.at(-1);
+  if(fits(measure,join(group)+block)){group.push(block);continue;}
+  groups.push([]);
+  measure=next;
+  let rest=block;
+  const title=block.split('\n')[0];
+  const repeat=bpfIsFinalConsiderationTitle(title)&&next.height(title)<next.capacity/2?title+' — continuação\n':'';
+  // Se um único item exceder uma A4 inteira, repetir seu título ao continuar.
+  while(!fits(next,rest)){
+   const cut=bpfObservationBreak(rest,part=>fits(next,part));
+   groups.at(-1).push(rest.slice(0,cut));
+   groups.push([]);
+   rest=repeat+rest.slice(cut);
+  }
+  groups.at(-1).push(rest);
+ }
+ const last=groups.length-1;
+ if(last>0&&next.height(join(groups[last]))<next.capacity/4){
+  const prior=groups[last-1],tail=groups[last];
+  const priorMeasure=last===1?first:next;
+  if(fits(priorMeasure,join(prior)+join(tail))){
+   prior.push(...tail);
+   groups.pop();
+  }else{
+   while(prior.length>1&&next.height(join(tail))<next.capacity/4){
+    const block=prior.at(-1);
+    if(!fits(next,block+join(tail)))break;
+    tail.unshift(prior.pop());
+   }
+  }
+ }
+ return groups.map(join);
 }
 
 function bpfObservationParagraphs(text,spacing){
@@ -70,6 +140,16 @@ function bpfObservationParagraphs(text,spacing){
 }
 
 function bpfAppendNCObservationText(fragment,text,spacing='nc'){
+ if(spacing==='final'){
+  for(const {line,title,gap} of bpfFinalConsiderationRows(text)){
+   const paragraph=document.createElement('div');
+   paragraph.textContent=line||'\u00a0';
+   paragraph.style.lineHeight=String(bpfFinalConsiderationsLeading);
+   if(title){paragraph.style.fontWeight='bold';paragraph.style.paddingTop=gap+'em';}
+   fragment.append(paragraph);
+  }
+  return true;
+ }
  const rows=bpfObservationParagraphs(text,spacing);
  const formatted=rows.some(row=>row.gap||row.definition);
  if(!formatted){fragment.append(document.createTextNode(text));return false;}
@@ -147,9 +227,9 @@ function bpfPaginateObservation(text,firstRect,nextRect,size,font,spacing){
  return parts;
 }
 
-function bpfObservationScreenFont(size){
+function bpfObservationScreenFont(size,bold=false){
  const ctx=document.createElement('canvas').getContext('2d');
- if(ctx)ctx.font=size+'px Arial';
+ if(ctx)ctx.font=(bold?'bold ':'')+size+'px Arial';
  return {widthOfTextAtSize(text){return ctx?ctx.measureText(text).width:text.length*size*.6;}};
 }
 
@@ -183,7 +263,8 @@ function bpfMakeObservationOverflowPage(id,title){
  return page;
 }
 
-function bpfReconcileObservationPages(finalFont){
+function bpfReconcileObservationPages(finalFont,finalBold){
+ if(typeof bpfRefreshFinalConsiderationsSelector==='function')bpfRefreshFinalConsiderationsSelector();
  const full=String(values.obs_gerais_continuacao||'').replace(/\r\n?/g,'\n');
  const rect=D.widgets.find(widget=>widget.name==='obs_gerais_continuacao')?.rect;
  if(rect&&full!==bpfCQObservationFlow.full){
@@ -195,7 +276,7 @@ function bpfReconcileObservationPages(finalFont){
   const normalize=finalFont?(window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String)):String;
   const measuringFont=finalFont||bpfObservationScreenFont(bpfFinalConsiderationsSize);
   bpfFinalConsiderationsFlow={full:finalText,font:finalFont||null,
-   parts:bpfPaginateObservation(normalize(finalText),finalRect,bpfNCPageRect,bpfFinalConsiderationsSize,measuringFont,'final')};
+   parts:bpfPaginateFinalConsiderations(normalize(finalText),finalRect,bpfNCPageRect,measuringFont,finalBold||bpfObservationScreenFont(bpfFinalConsiderationsSize,true))};
  }
  const groups=[
   {anchor:13,kind:'nc',title:bpfNCTitle,parts:bpfNCObservationCache.parts.slice(1)},
@@ -284,7 +365,8 @@ function bpfPrintProcessObservations(pdf,form,font,normalize,black){
 }
 
 async function bpfPDFWithObservationOverflows(pdf,form,font){
- bpfReconcileObservationPages(font);
+ const bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
+ bpfReconcileObservationPages(font,bold);
  const finalPage=pdf.getPage(17);
  const finalField=form.getFieldMaybe(bpfFinalConsiderationsField);
  const finalBox=finalField?.acroField.getWidgets()[0]?.getRectangle();
@@ -294,21 +376,22 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
  pdf.removePage(bpfNCPageIndex);
  const ink=PDFLib.rgb(.08,.22,.35),white=PDFLib.rgb(1,1,1),black=PDFLib.rgb(0,0,0);
  const blue=PDFLib.rgb(221/255,235/255,246/255);
- const bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
  const template=bpfOverflowPages.size?await pdf.embedJpg(bpfNCBackground):null;
  const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
  bpfPrintProcessObservations(pdf,form,font,normalize,black);
  const draw=(page,rect,text,size,spacing)=>{
   const content=normalize(text.trimEnd());
-  const [x,,right,top]=rect,leading=size*1.35;
+  const [x,,right,top]=rect,leading=size*(spacing==='final'?bpfFinalConsiderationsLeading:1.35);
   let y=top-7-size;
-  for(const {line,gap,definition} of bpfObservationParagraphs(content,spacing)){
-   y-=gap*leading;
+  const rows=spacing==='final'?bpfFinalConsiderationRows(content):bpfObservationParagraphs(content,spacing);
+  for(const {line,gap,definition,title} of rows){
+   y-=gap*(spacing==='final'?size:leading);
    if(spacing==='nc'&&/^NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b/.test(line))y-=.85*leading;
-   const wrapped=bpfObservationLines(line,font,right-x-16,size);
+   const lineFont=title?bold:font;
+   const wrapped=bpfObservationLines(line,lineFont,right-x-16,size);
    for(const row of wrapped){
     if(definition)y-=leading/3;
-    page.drawText(row,{x:x+7,y,size,font,color:black});
+    page.drawText(row,{x:x+7,y,size,font:lineFont,color:black});
     y-=leading;
    }
    if(!wrapped.length)y-=leading;
