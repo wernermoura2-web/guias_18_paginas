@@ -135,7 +135,7 @@ const summaryTooltip=document.createElement('div');
 summaryTooltip.id='bpf-resumo-frases';
 summaryTooltip.setAttribute('role','tooltip');
 summaryTooltip.hidden=true;
-let summaryAnchor=null, summaryTimer;
+let summaryAnchor=null, summaryTimer, summaryPinned=false;
 
 function shortPhrase(value){
  const text=String(value||'').replace(/\s+/g,' ').trim();
@@ -163,32 +163,51 @@ function summaryCards(data,row){
 
 function hideSummary(){
  clearTimeout(summaryTimer);
- if(summaryAnchor)summaryAnchor.removeAttribute('aria-describedby');
+ if(summaryAnchor){
+  summaryAnchor.removeAttribute('aria-describedby');
+  if(summaryAnchor.hasAttribute('aria-expanded'))summaryAnchor.setAttribute('aria-expanded','false');
+ }
  summaryAnchor=null;
+ summaryPinned=false;
  summaryTooltip.hidden=true;
 }
 function scheduleHide(){
+ if(summaryPinned)return;
  clearTimeout(summaryTimer);
  summaryTimer=setTimeout(hideSummary,190);
 }
 function positionSummary(){
  if(!summaryAnchor||summaryTooltip.hidden)return;
- const r=summaryAnchor.getBoundingClientRect();
- if(r.bottom<0||r.top>window.innerHeight||r.right<0||r.left>window.innerWidth){hideSummary();return;}
- const width=summaryTooltip.offsetWidth,height=summaryTooltip.offsetHeight, gap=8;
- const x=r.right+gap+width<=window.innerWidth-gap?r.right+gap:r.left-gap-width;
- summaryTooltip.style.left=Math.max(gap,Math.min(x,window.innerWidth-width-gap))+'px';
- summaryTooltip.style.top=Math.max(gap,Math.min(r.top,window.innerHeight-height-gap))+'px';
+ const r=summaryAnchor.getBoundingClientRect(), viewport=window.visualViewport, gap=8;
+ const left=viewport?.offsetLeft||0, top=viewport?.offsetTop||0;
+ const viewWidth=viewport?.width||window.innerWidth, viewHeight=viewport?.height||window.innerHeight;
+ const right=left+viewWidth, bottom=top+viewHeight;
+ if(r.bottom<top||r.top>bottom||r.right<left||r.left>right){hideSummary();return;}
+ const spaceLeft=r.left-left-2*gap, spaceRight=right-r.right-2*gap;
+ const sideSpace=Math.max(spaceLeft,spaceRight);
+ const width=Math.max(1,Math.min(355,viewWidth-2*gap,sideSpace>=155?sideSpace:Infinity));
+ summaryTooltip.style.width=width+'px';
+ summaryTooltip.style.maxHeight=Math.max(1,viewHeight-2*gap)+'px';
+ const height=summaryTooltip.offsetHeight;
+ const x=spaceRight>=width?r.right+gap:spaceLeft>=width?r.left-gap-width:r.left;
+ summaryTooltip.style.left=Math.max(left+gap,Math.min(x,right-width-gap))+'px';
+ summaryTooltip.style.top=Math.max(top+gap,Math.min(r.top,bottom-height-gap))+'px';
 }
+
 function openSummary(anchor){
  summaryAnchor=anchor;
  anchor.setAttribute('aria-describedby',summaryTooltip.id);
  summaryTooltip.hidden=false;
  positionSummary();
 }
-function showSummary(anchor,data,row){
+function showSummary(anchor,data,row,pin=false){
  clearTimeout(summaryTimer);
- if(summaryAnchor===anchor&&!summaryTooltip.hidden){positionSummary();return;}
+ if(summaryAnchor===anchor&&!summaryTooltip.hidden){
+  if(pin&&summaryPinned){hideSummary();return;}
+  if(pin)summaryPinned=true;
+  positionSummary();
+  return;
+ }
  hideSummary();
  const cards=[...summaryCards(data,row)];
  if(!cards.length)return;
@@ -212,6 +231,8 @@ function showSummary(anchor,data,row){
   }
   summaryTooltip.append(box);
  }
+ summaryPinned=pin;
+ anchor.setAttribute('aria-expanded','true');
  openSummary(anchor);
 }
 const summaryTriggers=new WeakSet();
@@ -219,10 +240,20 @@ function addSummaryTrigger(anchor,data,row){
  if(!anchor||summaryTriggers.has(anchor))return;
  summaryTriggers.add(anchor);
  anchor.tabIndex=0;
- anchor.addEventListener('pointerenter',event=>{if(event.pointerType!=='touch')showSummary(anchor,data,row);});
+ anchor.setAttribute('role','button');
+ anchor.setAttribute('aria-controls',summaryTooltip.id);
+ anchor.setAttribute('aria-expanded','false');
+ anchor.addEventListener('pointerenter',event=>{if(event.pointerType==='mouse'&&!summaryPinned)showSummary(anchor,data,row);});
  anchor.addEventListener('pointerleave',scheduleHide);
- anchor.addEventListener('focus',()=>{if(anchor.matches(':focus-visible'))showSummary(anchor,data,row);});
- anchor.addEventListener('blur',hideSummary);
+ anchor.addEventListener('focus',()=>{if(anchor.matches(':focus-visible')&&!summaryPinned)showSummary(anchor,data,row);});
+ anchor.addEventListener('blur',()=>{if(summaryAnchor===anchor&&!summaryPinned)hideSummary();});
+ anchor.addEventListener('click',()=>showSummary(anchor,data,row,true));
+ anchor.addEventListener('keydown',event=>{
+  if(event.key==='Enter'||event.key===' '){
+   event.preventDefault();
+   showSummary(anchor,data,row,true);
+  }
+ });
 }
 const guidanceSelector='button.bpf-f, button.bpf-regra-pcc-botao';
 function showButtonGuidance(button){
@@ -243,7 +274,7 @@ function showButtonGuidance(button){
  openSummary(button);
 }
 document.addEventListener('pointerover',event=>{
- if(event.pointerType==='touch')return;
+ if(event.pointerType==='touch'||summaryPinned)return;
  const button=event.target?.closest?.(guidanceSelector);
  if(button&&!button.contains(event.relatedTarget))showButtonGuidance(button);
 });
@@ -252,19 +283,21 @@ document.addEventListener('pointerout',event=>{
  if(button&&button===summaryAnchor&&!button.contains(event.relatedTarget))scheduleHide();
 });
 document.addEventListener('focusin',event=>{
- if(event.target?.matches?.(guidanceSelector)&&event.target.matches(':focus-visible'))showButtonGuidance(event.target);
+ if(!summaryPinned&&event.target?.matches?.(guidanceSelector)&&event.target.matches(':focus-visible'))showButtonGuidance(event.target);
 });
 document.addEventListener('focusout',event=>{
- if(event.target===summaryAnchor)hideSummary();
+ if(event.target===summaryAnchor&&!summaryPinned)hideSummary();
 });
 document.addEventListener('click',event=>{
- if(event.target?.closest?.(guidanceSelector))hideSummary();
+ if(summaryAnchor&&!summaryAnchor.contains(event.target)&&!summaryTooltip.contains(event.target))hideSummary();
 },true);
 summaryTooltip.addEventListener('pointerenter',()=>clearTimeout(summaryTimer));
 summaryTooltip.addEventListener('pointerleave',scheduleHide);
 document.addEventListener('keydown',event=>{if(event.key==='Escape')hideSummary();});
 window.addEventListener('scroll',positionSummary,{capture:true,passive:true});
 window.addEventListener('resize',positionSummary,{passive:true});
+window.visualViewport?.addEventListener('scroll',positionSummary,{passive:true});
+window.visualViewport?.addEventListener('resize',positionSummary,{passive:true});
 /* Ajustar as letras à área útil real da etiqueta, em vez de cqw
    relativo ao viewport, que fica pequeno ao ampliar o PDF no celular. */
 const measureCanvas=document.createElement('canvas');
