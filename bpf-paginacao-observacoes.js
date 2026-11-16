@@ -263,6 +263,22 @@ function bpfRunNCObservationFlow(full){
  if(values.BPF_ObsGeneralFlow!==serialized)values.BPF_ObsGeneralFlow=serialized;
 }
 
+function bpfRenderFinalConsiderationsField(el){
+ const fontSize=(bpfFinalConsiderationsSize/595.32*100)+'cqw';
+ if(el.tagName==='TEXTAREA'){
+  el.classList.add('bpf-final-edit-area');
+  if(el.value!==values[bpfFinalConsiderationsField])el.value=values[bpfFinalConsiderationsField]||'';
+  el.style.fontSize=fontSize;
+  el.style.lineHeight=String(bpfFinalConsiderationsLeading);
+  return;
+ }
+ el.classList.add('bpf-final-first-page','bpf-overflow-observation');
+ el.style.fontSize=fontSize;
+ bpfRenderNCObservation(el,bpfFinalConsiderationsFlow.parts[0]||'','final');
+ el.removeAttribute('aria-hidden');
+ el.onclick=()=>el.parentElement.querySelector('.bpf-final-edit-area')?.focus();
+}
+
 function bpfObservationPageId(kind,offset){
  // Intervalo reservado entre a continuação original e as páginas extras de fotos.
  if(kind==='final')return 21+1/(2+offset);
