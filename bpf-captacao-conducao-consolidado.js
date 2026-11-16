@@ -625,30 +625,34 @@ const bpfWaterCheck = (() => {
  }
 
  const receptionChecks={
-  0:{question:'Possui registro comprovando a inspeção no ato do recebimento?',detailsAnswer:'1'},
-  2:{question:'O saneante conferido estava identificado, dentro da validade, regularizado na ANVISA e possui autorização para a finalidade de uso declarada?',detailsAnswer:'0'}
+  '4.5.3':{
+   0:{question:'Possui registro comprovando a inspeção no ato do recebimento?',caption:'Registro de inspeção no recebimento',detailsAnswer:'1'},
+   2:{question:'O saneante conferido estava identificado, dentro da validade, regularizado na ANVISA e possui autorização para a finalidade de uso declarada?',caption:'Identificação, validade, regularização e finalidade de uso do saneante',detailsAnswer:'0'}
+  },
+  '4.5.4':{
+   0:{question:'Os garrafões recebidos estão na validade (fotografe o fundo de todos os garrafões com fabricantes diferentes)?',caption:'Validade dos garrafões recebidos'}
+  }
  };
  const receptionEvidence=['Formulário de recepção','Carimbo na nota fiscal','Sistema eletrônico','Ficha de estoque','Outro'];
  const receptionKey=(name,field)=>'BPF_Recepcao_'+name+'_'+field;
 
  function receptionSummary(page,row,panel,data){
-  const check=row.code==='4.5.3'&&receptionChecks[panel.id];
+  const check=receptionChecks[row.code]?.[panel.id];
   if(!check)return [];
   return panel.entries.flatMap(entry=>{
    const answer=data[receptionKey(entry.name,'Resposta')];
    if(!['1','0'].includes(answer))return [];
    const evidence=data[receptionKey(entry.name,'Comprovacao')];
    const details=String(data[receptionKey(entry.name,'Detalhes')]||'').replace(/\s+/g,' ').trim();
-   const caption=panel.id===0?'Registro de inspeção no recebimento':'Identificação, validade, regularização e finalidade de uso do saneante';
    const extra=answer!==check.detailsAnswer?'':panel.id===0
     ?[evidence,evidence==='Outro'?details:''].filter(Boolean).join(' — ')
     :details;
-   return [panel.label+' — '+bpfScopeLabel(page,entry.scope)+' — '+caption+': '+bpfAnswerLabel(answer)+(extra?' — '+extra:'')];
+   return [panel.label+' — '+bpfScopeLabel(page,entry.scope)+' — '+check.caption+': '+bpfAnswerLabel(answer)+(extra?' — '+extra:'')];
   });
  }
 
  function renderReception(card,page,row,panel){
-  const check=row.code==='4.5.3'&&receptionChecks[panel.id];
+  const check=receptionChecks[row.code]?.[panel.id];
   if(!check||!panel.entries.length)return;
   const block=element('fieldset');
   block.className='bpf-answer-box';
@@ -689,7 +693,7 @@ const bpfWaterCheck = (() => {
     choice.prepend(input);
     unit.append(choice);
    }
-   if(panel.id===0){
+   if(check.detailsAnswer==='1'){
     const label=element('label','Comprovação');
     const select=element('select');
     for(const name of ['Selecione',...receptionEvidence]){
@@ -704,7 +708,7 @@ const bpfWaterCheck = (() => {
    }
    area.oninput=()=>save(detailsKey,area.value);
    followup.append(detailLabel);
-   unit.append(followup);
+   if(check.detailsAnswer)unit.append(followup);
    block.append(unit);
    refresh();
   }
@@ -713,12 +717,15 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
-   if(row.code==='4.5.3')for(const index of [0,2]){
+   for(const [position,check] of Object.entries(receptionChecks[row.code]||{})){
+    const index=Number(position);
     if(!scope.phrases[index])continue;
-    const fields=index===0?['Resposta','Comprovacao','Detalhes']:['Resposta','Detalhes'];
+    const fields=['Resposta'];
+    if(check.detailsAnswer)fields.push('Detalhes');
+    if(check.detailsAnswer==='1')fields.push('Comprovacao');
     for(const field of fields){
      const name=receptionKey(bpfPhraseName(scope,index),field);
-     data.fields[name]={name,type:'/Tx',flags:0,label:'4.5.3 F'+(index+1)+' — '+field,options:[],calc:'',phrasePage:page.page};
+     data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(index+1)+' — '+field,options:[],calc:'',phrasePage:page.page};
     }
    }
    if(['4.6.4','4.7.2','4.7.6'].includes(row.code))for(const entry of bpfF1Checks(row,scope)){
