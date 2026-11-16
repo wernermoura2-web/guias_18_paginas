@@ -209,11 +209,8 @@
     makePrintDownload('Imprimir Anexo em Branco','Anexo_F_20_Paginas_Retrato.pdf'),
     makePrintDownload('Imprimir Check-List de Documentos','Checklist_de_Documentos_Envasadora.pdf')
   );
-  extra.content.append(
-    printActions,
-    makePrintDownload('Imprimir Descritores dos Documentos','Descritores_de_Documentos_Envasadora.pdf')
-  );
-  if(revise)extra.content.appendChild(makeButton('Abrir Revisor de Frases',revise));
+  extra.content.appendChild(printActions);
+  if(revise)mark(revise);
   const annex=Array.from(document.querySelectorAll('input[type=checkbox]'))
     .find(el=>!el.closest('#bpf-ui-hub')&&/Anexar F ao PDF/i.test(norm(el.parentElement?.textContent)));
   if(annex){
