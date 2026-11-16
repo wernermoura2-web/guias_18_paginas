@@ -47,8 +47,22 @@ function bpfFinalConsiderationRows(text){
  return text.trimEnd().split('\n').flatMap((line,index,lines)=>{
   const title=bpfIsFinalConsiderationTitle(line);
   if(!line.trim()&&bpfIsFinalConsiderationTitle(lines[index+1]||''))return [];
-  return [{line,title,gap:title?bpfFinalConsiderationsTitleGap:0}];
+  const label=line.match(/^(?:Perigo controlado|Constatação|Evidência objetiva(?: registrada)?|Requisito avaliado|Conclusão da verificação)(?=\s*[·:])/i)?.[0]||'';
+  return [{line,title,label,gap:title?bpfFinalConsiderationsTitleGap:0}];
  });
+}
+
+function bpfFinalWrappedRows(line,title,label,font,bold,width,size){
+ if(!label)return bpfObservationLines(line,title?bold:font,width,size)
+  .map(row=>({lead:'',rest:row}));
+ const measure={widthOfTextAtSize(text,pt){
+  if(label.startsWith(text))return bold.widthOfTextAtSize(text,pt);
+  if(!text.startsWith(label))return font.widthOfTextAtSize(text,pt);
+  return bold.widthOfTextAtSize(label,pt)+font.widthOfTextAtSize(text.slice(label.length),pt);
+ }};
+ return bpfObservationLines(line,measure,width,size).map((row,index)=>index===0&&row.startsWith(label)
+  ?{lead:label,rest:row.slice(label.length)}
+  :{lead:'',rest:row});
 }
 
 function bpfFinalConsiderationMeasure(rect,font,bold){
@@ -58,8 +72,8 @@ function bpfFinalConsiderationMeasure(rect,font,bold){
   capacity:top-bottom-16-leading,
   height(text){
    if(!text.trim())return 0;
-   return bpfFinalConsiderationRows(text).reduce((height,{line,title,gap})=>
-    height+gap*size+Math.max(1,bpfObservationLines(line,title?bold:font,width,size).length)*leading,0);
+   return bpfFinalConsiderationRows(text).reduce((height,{line,title,label,gap})=>
+    height+gap*size+Math.max(1,bpfFinalWrappedRows(line,title,label,font,bold,width,size).length)*leading,0);
   }
  };
 }
@@ -141,9 +155,13 @@ function bpfObservationParagraphs(text,spacing){
 
 function bpfAppendNCObservationText(fragment,text,spacing='nc'){
  if(spacing==='final'){
-  for(const {line,title,gap} of bpfFinalConsiderationRows(text)){
+  for(const {line,title,label,gap} of bpfFinalConsiderationRows(text)){
    const paragraph=document.createElement('div');
-   paragraph.textContent=line||'\u00a0';
+   if(label){
+    const strong=document.createElement('strong');
+    strong.textContent=label;
+    paragraph.append(strong,document.createTextNode(line.slice(label.length)));
+   }else paragraph.textContent=line||'\u00a0';
    paragraph.style.lineHeight=String(bpfFinalConsiderationsLeading);
    if(title){paragraph.style.fontWeight='bold';paragraph.style.paddingTop=gap+'em';}
    fragment.append(paragraph);
@@ -384,14 +402,17 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   const [x,,right,top]=rect,leading=size*(spacing==='final'?bpfFinalConsiderationsLeading:1.35);
   let y=top-7-size;
   const rows=spacing==='final'?bpfFinalConsiderationRows(content):bpfObservationParagraphs(content,spacing);
-  for(const {line,gap,definition,title} of rows){
+  for(const {line,gap,definition,title,label} of rows){
    y-=gap*(spacing==='final'?size:leading);
    if(spacing==='nc'&&/^NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b/.test(line))y-=.85*leading;
    const lineFont=title?bold:font;
-   const wrapped=bpfObservationLines(line,lineFont,right-x-16,size);
-   for(const row of wrapped){
+   const wrapped=spacing==='final'?bpfFinalWrappedRows(line,title,label,font,bold,right-x-16,size)
+    :bpfObservationLines(line,lineFont,right-x-16,size).map(rest=>({lead:'',rest}));
+   for(const {lead,rest} of wrapped){
     if(definition)y-=leading/3;
-    page.drawText(row,{x:x+7,y,size,font:lineFont,color:black});
+    const start=x+7;
+    if(lead)page.drawText(lead,{x:start,y,size,font:bold,color:black});
+    page.drawText(rest,{x:start+(lead?bold.widthOfTextAtSize(lead,size):0),y,size,font:lineFont,color:black});
     y-=leading;
    }
    if(!wrapped.length)y-=leading;
