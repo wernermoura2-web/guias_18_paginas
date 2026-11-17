@@ -47,7 +47,7 @@ function bpfFinalConsiderationRows(text){
  return text.trimEnd().split('\n').flatMap((line,index,lines)=>{
   const title=bpfIsFinalConsiderationTitle(line);
   if(!line.trim()&&bpfIsFinalConsiderationTitle(lines[index+1]||''))return [];
-  const label=line.match(/^(?:Perigo controlado|Constatação|Evidência objetiva(?: registrada)?|Requisito avaliado|Conclusão da verificação)(?=\s*[·:])/i)?.[0]||'';
+  const label=line.match(/^(?:Perigo controlado|Constatação|Evidência objetiva(?: registrada)?|Requisito (?:legal )?avaliado|Dispositivo legal não cumprido|Conclusão da verificação)(?=\s*[·:])/i)?.[0]||'';
   return [{line,title,label,gap:title?bpfFinalConsiderationsTitleGap:0}];
  });
 }
