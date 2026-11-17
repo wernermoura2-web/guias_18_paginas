@@ -7,7 +7,8 @@ const bpfWaterCheck = (() => {
   check('telemetria','Existe telemetria em linha',{yesOnly:true,confirmationOnly:true,details:'telemetry'}),
   yes('residuo','Após a desinfecção '+disinfection+', testa a ausência de resíduo de saneante na água após o enxágue','residue'),
   yes('microbiologia','Após a desinfecção '+disinfection+', testa a ausência de contaminação microbiológica'),
-  yes('atp','Após a desinfecção '+disinfection+', faz teste de bioluminescência de ATP')
+  yes('atp','Após a desinfecção '+disinfection+', faz teste de bioluminescência de ATP'),
+  check('fluorescente','Após a desinfecção '+disinfection+', faz teste fluorescente?')
  ];
  const blownChecks = [
   check('uso-imediato','As embalagens sopradas são utilizadas imediatamente e sem contato manual?',{noLabel:'As embalagens sopradas não são utilizadas imediatamente e ocorre contato manual'}),
@@ -48,7 +49,8 @@ const bpfWaterCheck = (() => {
   check('residuo','Após a desinfecção da envasadora, testa a ausência de resíduo de saneante na água após o enxágue?',{
    details:'residue',optionalDetails:true,tests:[['dpd','Fotômetro de bolso (DPD)'],['ortotolidina','Kit de gotas (Ortotolidina)'],['outros','Outro']]}),
   check('microbiologia','Após o enxágue da envasadora, testa a ausência de contaminação microbiológica?'),
-  check('atp','Após o enxágue da envasadora, faz teste de bioluminescência de ATP?')
+  check('atp','Após o enxágue da envasadora, faz teste de bioluminescência de ATP?'),
+  check('fluorescente','Após o enxágue da envasadora, faz teste fluorescente?')
  ]};
  const returnableInspection=checks=>({
   separateInformation:true,exclusiveScopeAnswer:true,questionsInInformation:true,
@@ -412,7 +414,7 @@ const bpfWaterCheck = (() => {
  const informationHeading=panel=>panel.informationHeading||'Outras informações';
  const isInformation=(panel,criterion)=>criterion.informationOnly||(panel.separateInformation&&!criterion.scopeAnswer);
  const informationQuestions=new Set([
-  'filtro','registro-filtro','pop-registros','telemetria','residuo','microbiologia','atp',
+  'filtro','registro-filtro','pop-registros','telemetria','residuo','microbiologia','atp','fluorescente',
   'certificado','declaracao','nota-fiscal','pop-com-historico','escotilha-teto',
   'uso-imediato','ar-sopro-filtrado','analise-ar-comprimido','transporte-ar-filtrado',
   'concentracao','bicos-pressao','escoamento','telemetria-concentracao'
@@ -430,6 +432,7 @@ const bpfWaterCheck = (() => {
   residuo:[/, testa /,', não testa '],
   microbiologia:[/, testa /,', não testa '],
   atp:[/, faz /,', não faz '],
+  fluorescente:[/, faz /,', não faz '],
   certificado:[/^Foi apresentado /,'Não foi apresentado '],
   declaracao:[/^(Foi apresentada|Possui) /,(_,verb)=>'Não '+verb.charAt(0).toLowerCase()+verb.slice(1)+' '],
   'nota-fiscal':[/^Foi apresentada /,'Não foi apresentada '],
