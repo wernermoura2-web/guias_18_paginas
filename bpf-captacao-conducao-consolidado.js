@@ -7,7 +7,7 @@ const bpfWaterCheck = (() => {
   check('telemetria','Existe telemetria em linha',{yesOnly:true,confirmationOnly:true,details:'telemetry'}),
   yes('residuo','Após a desinfecção '+disinfection+', testa a ausência de resíduo de saneante na água após o enxágue','residue'),
   yes('microbiologia','Após a desinfecção '+disinfection+', testa a ausência de contaminação microbiológica'),
-  yes('atp','Após a desinfecção '+disinfection+', faz teste fluorescente / ATP')
+  yes('atp','Após a desinfecção '+disinfection+', faz teste de bioluminescência de ATP')
  ];
  const blownChecks = [
   check('uso-imediato','As embalagens sopradas são utilizadas imediatamente e sem contato manual?',{noLabel:'As embalagens sopradas não são utilizadas imediatamente e ocorre contato manual'}),
@@ -48,7 +48,7 @@ const bpfWaterCheck = (() => {
   check('residuo','Após a desinfecção da envasadora, testa a ausência de resíduo de saneante na água após o enxágue?',{
    details:'residue',optionalDetails:true,tests:[['dpd','Fotômetro de bolso (DPD)'],['ortotolidina','Kit de gotas (Ortotolidina)'],['outros','Outro']]}),
   check('microbiologia','Após o enxágue da envasadora, testa a ausência de contaminação microbiológica?'),
-  check('atp','Após o enxágue da envasadora, faz teste fluorescente / ATP?')
+  check('atp','Após o enxágue da envasadora, faz teste de bioluminescência de ATP?')
  ]};
  const returnableInspection=checks=>({
   separateInformation:true,exclusiveScopeAnswer:true,questionsInInformation:true,

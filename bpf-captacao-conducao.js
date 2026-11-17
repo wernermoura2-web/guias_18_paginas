@@ -7,7 +7,7 @@ const bpfWaterCheck = (() => {
   yes('telemetria','Existe telemetria em linha','telemetry'),
   yes('residuo','Após a desinfecção '+disinfection+', testa a ausência de resíduo de saneante na água após o enxágue','residue'),
   yes('microbiologia','Após a desinfecção '+disinfection+', testa a ausência de contaminação microbiológica'),
-  yes('atp','Após a desinfecção '+disinfection+', faz teste fluorescente / ATP'),
+  yes('atp','Após a desinfecção '+disinfection+', faz teste de bioluminescência de ATP'),
   yes('medida','Adota outra medida de controle adicional ao perigo identificado de contaminação microbiológica ou química da água '+water,'measure')
  ];
  const panels = {
