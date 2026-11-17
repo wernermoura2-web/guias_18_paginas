@@ -95,12 +95,21 @@ function addLabel(active,data,field,pageIndex,label){
    'font-size:clamp(8px,1.55cqw,12px);line-height:1;';
   pageEl.appendChild(element);
  }
- const inset=.8, expansion=pageIndex===17&&x2-x1<28?4:0;
- element.style.left=((x1+inset-expansion)/W*100)+'%';
- element.style.top=((H-y2+inset)/H*100)+'%';
- element.style.width=((x2-x1-2*inset+2*expansion)/W*100)+'%';
- element.style.height=((y2-y1-2*inset)/H*100)+'%';
- if(x2-x1<48)element.style.fontSize='min(1.2cqw,'+((x2-x1-2*inset+2*expansion)/W*100/5)+'cqw)';
+ const inset=.6;
+ const matrix=pageIndex===17;
+ const heightIncrease=matrix?Math.min(2,Math.max(0,(18-y2+y1)/2)):0;
+ const height=y2-y1-2*inset+2*heightIncrease;
+ element.style.left=((x1+inset)/W*100)+'%';
+ element.style.top=((H-y2+inset-heightIncrease)/H*100)+'%';
+ element.style.width=((x2-x1-2*inset)/W*100)+'%';
+ element.style.height=(height/H*100)+'%';
+ if(matrix){
+  element.style.whiteSpace='pre-line';
+  element.style.fontSize=Math.min(height/2.05,field==='Dropdown58'?10:8.5,(x2-x1-2*inset)/2.85)/W*100+'cqw';
+  label='ALTO\nPCC';
+ }else if(x2-x1<48){
+  element.style.fontSize='min(1.2cqw,'+((x2-x1-2*inset)/W*100/5)+'cqw)';
+ }
  if(element.textContent!==label)element.textContent=label;
 }
 function refresh(){
@@ -141,6 +150,7 @@ function refresh(){
     if(v[group.matrix]!=='ALTO'){v[group.matrix]='ALTO';dirty=true;}
     if(v[group.score]!=='3'){v[group.score]='3';dirty=true;}
     addLabel(active,data,group.matrix,17,'ALTO-PCC');
+    addLabel(active,data,group.score,17,'ALTO-PCC');
    }
    if(v[group.matrix]==='ALTO')anyProcessHigh=true;
   }
@@ -194,6 +204,7 @@ function refresh(){
    }
    if(processRank===3)anyProcessHigh=true;
   }
+  if(fail.size)addLabel(active,data,'Dropdown58',17,'ALTO-PCC');
   if(anyProcessHigh){
    if(v.Dropdown58!=='ALTO'){v.Dropdown58='ALTO';dirty=true;}
    if(v.Group279!=='2'){v.Group279='2';dirty=true;}

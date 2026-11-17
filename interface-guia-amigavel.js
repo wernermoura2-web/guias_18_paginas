@@ -30,6 +30,7 @@
   .bpf-ui-hub details[open]>summary:after{transform:rotate(180deg)}
   .bpf-ui-detail{padding:3px 13px 14px;border-top:1px solid #e2edf3;display:grid;gap:9px}
   .bpf-ui-print-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+  .bpf-ui-detail .bpf-ui-action.bpf-ui-editable-guide{grid-column:1/-1;display:grid;place-items:center;text-align:center;text-decoration:none;box-sizing:border-box}
   .bpf-ui-detail .bpf-ui-action{width:100%;min-height:49px;font-size:15px;text-align:left;padding:12px 15px}
   .bpf-ui-hint{margin:0;font-size:13px;line-height:1.4;color:#537084}
   .bpf-ui-hub .bpf-ui-mini{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;color:#365768;font-size:14px}
@@ -211,10 +212,40 @@
     makePrintDownload('Imprimir Check-List de Documentos','Checklist_de_Documentos_Envasadora.pdf')
   );
   const editableGuide=document.createElement('a');
-  editableGuide.className='bpf-ui-action';
+  editableGuide.className='bpf-ui-action bpf-ui-editable-guide';
   editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf';
   editableGuide.download='Guia_Editavel_em_Branco.pdf';
-  editableGuide.textContent='Guia Editável em Branco';
+  editableGuide.textContent='Guia Editável em Branco (sem as frases)';
+  editableGuide.addEventListener('click',async event=>{
+    event.preventDefault();
+    if(editableGuide.getAttribute('aria-busy')==='true')return;
+    editableGuide.setAttribute('aria-busy','true');
+    const status=document.querySelector('#status');
+    try{
+      const paths=[editableGuide.href,'./impressao/Guia_Editavel_em_Branco_Matriz.bin'];
+      const [base,update]=await Promise.all(paths.map(async path=>{
+        const response=await fetch(path);
+        if(!response.ok)throw new Error('Arquivo indisponível');
+        return response.arrayBuffer();
+      }));
+      if(base.byteLength!==7945297||String.fromCharCode(...new Uint8Array(base,0,5))!=='%PDF-'||
+         !new TextDecoder().decode(update.slice(-64)).includes('%%EOF'))throw new Error('PDF incompatível');
+      const url=URL.createObjectURL(new Blob([base,update],{type:'application/pdf'}));
+      const download=document.createElement('a');
+      download.href=url;
+      download.download=editableGuide.download;
+      document.body.append(download);
+      download.click();
+      download.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      if(status)status.textContent='Guia Editável em Branco baixado.';
+    }catch(error){
+      const message='Não foi possível baixar o Guia Editável em Branco. Atualize a página e tente novamente.';
+      if(status)status.textContent=message; else alert(message);
+    }finally{
+      editableGuide.removeAttribute('aria-busy');
+    }
+  });
   printActions.appendChild(editableGuide);
   extra.content.appendChild(printActions);
   if(revise)mark(revise);
