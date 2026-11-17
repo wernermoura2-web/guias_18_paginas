@@ -196,9 +196,6 @@
     if(importBtn){
       const b=makeButton('Importar processos',importBtn);
       t.content.appendChild(b);
-      const hint=document.createElement('p');hint.className='bpf-ui-hint';
-      hint.textContent='Importa apenas os processos selecionados de outro fiscal.';
-      t.content.appendChild(hint);
     }
     root.appendChild(t.details);
   }
