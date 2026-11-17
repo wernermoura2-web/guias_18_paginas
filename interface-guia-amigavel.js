@@ -210,6 +210,12 @@
     makePrintDownload('Imprimir Anexo em Branco','Anexo_F_20_Paginas_Retrato.pdf'),
     makePrintDownload('Imprimir Check-List de Documentos','Checklist_de_Documentos_Envasadora.pdf')
   );
+  const editableGuide=document.createElement('a');
+  editableGuide.className='bpf-ui-action';
+  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf';
+  editableGuide.download='Guia_Editavel_em_Branco.pdf';
+  editableGuide.textContent='Guia Editável em Branco';
+  printActions.appendChild(editableGuide);
   extra.content.appendChild(printActions);
   if(revise)mark(revise);
   const annex=Array.from(document.querySelectorAll('input[type=checkbox]'))
@@ -233,7 +239,7 @@
   }
   const manual=document.createElement('a');
   manual.className='bpf-ui-action bpf-ui-manual';
-  manual.href='./manual.html?v=20261116-codigo-matriz-considerandos';
+  manual.href='./manual.html?v=20261117-guia-editavel-em-branco';
   manual.target='_blank';
   manual.rel='noopener';
   manual.textContent='Manual de Preenchimento';
