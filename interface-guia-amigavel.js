@@ -185,11 +185,7 @@
   const lbl=document.createElement('div');lbl.className='bpf-ui-label';lbl.textContent='ARQUIVOS E RELATÓRIOS';root.appendChild(lbl);
   const actions=document.createElement('div');actions.className='bpf-ui-actions';
   actions.append(makeButton('Salvar arquivo',save,true),makeButton('Abrir preenchimento',open),makeButton('Imprimir PDF',pdf));
-  const fullHint=document.createElement('p');
-  fullHint.className='bpf-ui-hint';
-  fullHint.textContent='Imprimir PDF: relatório final sem edição e sem recálculo; inclui respostas, observações, fotos e rótulos anexados.';
   root.appendChild(actions);
-  root.appendChild(fullHint);
   if(inTeam&&(teamBtn||importBtn)){
     const t=makeAccordion('Configurar equipe');
     if(teamBtn)t.content.appendChild(makeButton('Dados da equipe',teamBtn));
