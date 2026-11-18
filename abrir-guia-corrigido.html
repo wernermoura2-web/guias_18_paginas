@@ -2,12 +2,12 @@
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Guia de Avaliação de Risco — BPF/APPCC</title><meta name="theme-color" content="#0b5c91">
 <style>html,body{margin:0;width:100%;height:100%;font-family:Arial,sans-serif;background:#eff6fa;color:#17445c}#formulario{display:block;width:100%;height:100dvh;border:0}#avisos{position:fixed;bottom:12px;left:12px;z-index:10;background:#fff;border-radius:10px;padding:10px 14px;box-shadow:0 3px 12px #0002;font-size:13px}#avisos[hidden]{display:none}</style></head>
-<body><iframe id="formulario" title="Guia BPF/APPCC" allow="fullscreen; clipboard-read"></iframe><div id="avisos" role="status">Carregando o guia... <a id="direto" href="./equipe.html">Abrir diretamente</a></div>
+<body><iframe id="formulario" title="Guia BPF/APPCC" allow="fullscreen; clipboard-read; clipboard-write"></iframe><div id="avisos" role="status">Carregando o guia... <a id="direto" href="./equipe.html">Abrir diretamente</a></div>
 <script>
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261118-codigo-equipe-5-digitos');
+q.delete('modo'); q.set('v','20261118-copiar-codigo-equipe');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
