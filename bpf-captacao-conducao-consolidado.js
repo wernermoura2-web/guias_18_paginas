@@ -16,31 +16,23 @@ const bpfWaterCheck = (() => {
   yes('analise-ar-comprimido','O ar comprimido é coletado e enviado para análises microbiológicas.'),
   yes('transporte-ar-filtrado','As embalagens são movimentadas com sopradores de ar com filtro de ar microbiológico.')
  ].map(criterion=>({...criterion,section:'Embalagens sopradas no estabelecimento'}));
- function rinsePanel(disposable){
-  const rinseChecks=[
-   ...(disposable
-    ?[check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada (validada)?')]
-    :[check('enxague-automatico','O enxágue é realizado em equipamento automático e com uso de desinfetante?')]),
+ const returnableRinse={simple:true,checks:[
+  check('avaliacao-enxague','Avaliação do enxágue com solução desinfetante')
+ ]};
+ const disposableRinse={allowNA:true,separateInformation:true,exclusiveScopeAnswer:true,checks:[
+  check('sim-descartaveis','Sim',{yesOnly:true,scopeAnswer:true}),
+  check('nao-descartaveis','Não',{noOnly:true,scopeAnswer:true}),
+  ...blownChecks,
+  ...[
+   check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada (validada)?'),
    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
-   ...(disposable?[check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?')]:[]),
+   check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?'),
    check('sanitizantes-embalagens','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens',{
-    yesOnly:true,informationOnly:!disposable,details:'packaging-sanitizers',
-    products:disposable?[
-     ['ozonio','Ozônio'],['outros','Outro']
-    ]:[
-     ['detergente-clorado','Detergente alcalino clorado'],['hipoclorito-com-sodio','Hipoclorito de sódio com Soda Cáustica'],
-     ['hipoclorito','Hipoclorito de sódio'],['ozonio','Ozônio'],['outros','Outro']
-    ]
+    yesOnly:true,details:'packaging-sanitizers',products:[['ozonio','Ozônio'],['outros','Outro']]
    }),
-   check('telemetria-concentracao','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.',{yesOnly:true,informationOnly:!disposable})
-  ].map(criterion=>({...criterion,section:'Enxágue com solução desinfetante'}));
-  return disposable?{allowNA:true,separateInformation:true,exclusiveScopeAnswer:true,checks:[
-   check('sim-descartaveis','Sim',{yesOnly:true,scopeAnswer:true}),
-   check('nao-descartaveis','Não',{noOnly:true,scopeAnswer:true}),
-   ...blownChecks,...rinseChecks
-  ]}:{sectioned:true,checks:rinseChecks};
- }
- const returnableRinse=rinsePanel(false), disposableRinse=rinsePanel(true);
+   check('telemetria-concentracao','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.',{yesOnly:true})
+  ].map(criterion=>({...criterion,section:'Enxágue com solução desinfetante'}))
+ ]};
  const fillingMachine={inline:true,separateInformation:true,questionsInInformation:true,checks:[
   check('registros-desinfeccao-envasadora','Apresentou registros de descontaminação ou desinfecção da envasadora Automática?',{
    noLabel:'Não apresentou registros de descontaminação ou desinfecção da envasadora Automática'}),
@@ -314,6 +306,11 @@ const bpfWaterCheck = (() => {
      }
     }
    }
+   if(entry.index===0&&!state?.['avaliacao-enxague']&&hasAnswer(data[entry.name])&&
+      BPF_PHRASES.some(page=>page.page===7&&
+       page.rows.some(row=>row.code==='4.6.3'&&row.scopes.some(scope=>scope.name===entry.scope.name)))){
+    state={...state,'avaliacao-enxague':{answer:data[entry.name]}};
+   }
    if(state?.['sim-descartaveis']?.answer==='1'&&state?.['nao-descartaveis']?.answer==='0'){
     state['sim-descartaveis'].answer='';
    }
@@ -452,7 +449,6 @@ const bpfWaterCheck = (() => {
   'telemetria-limpeza':[/^Existe /,'Não existe '],
   'telemetria-desinfetante':[/^Existe /,'Não existe '],
   'sanitizantes-desinfeccao':[/ são adequados$/,' não são adequados'],
-  'enxague-automatico':[/ é realizado /,' não é realizado '],
   'higienizacao-envasadora':[/ descontaminada e higienizada /,' não foi descontaminada e/ou higienizada '],
   'concentracao-limpeza':[/ é feito /,' não é feito '],
   'bicos-limpeza':[/ estão desobstruídos e a pressão dos jatos permite /,' estão obstruídos e/ou a pressão dos jatos não permite '],
@@ -1083,7 +1079,7 @@ const bpfWaterCheck = (() => {
   }
   const dependentF2=conductionF2(row,panel.id);
   if(dependentF2)card.dataset.bpfConductionF2='';
-  const hint=element('p',config.inline?'Registre as informações da envasadora por linha.':fillingChecks[row.code]?'Marque uma avaliação por linha e registre as verificações em Outras informações.':config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
+  const hint=element('p',config.inline?'Registre as informações da envasadora por linha.':config.simple&&row.code==='4.6.3'?'Marque Sim ou Não para cada linha avaliada.':fillingChecks[row.code]?'Marque uma avaliação por linha e registre as verificações em Outras informações.':config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
   if(!document.getElementById('bpf-water-css')){
