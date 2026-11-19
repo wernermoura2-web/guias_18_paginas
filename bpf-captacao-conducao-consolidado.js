@@ -657,7 +657,7 @@ const bpfWaterCheck = (() => {
  const receptionEvidence=['Formulário de recepção','Carimbo na nota fiscal','Sistema eletrônico','Ficha de estoque','Outro'];
  const receptionKey=(name,field)=>'BPF_Recepcao_'+name+'_'+field;
 
- function receptionSummary(page,row,panel,data){
+ function receptionRecords(page,row,panel,data){
   const check=receptionChecks[row.code]?.[panel.id];
   if(!check)return [];
   return panel.entries.flatMap(entry=>{
@@ -668,9 +668,19 @@ const bpfWaterCheck = (() => {
    const extra=answer!==check.detailsAnswer?'':panel.id===0
     ?[evidence,evidence==='Outro'?details:''].filter(Boolean).join(' — ')
     :details;
-   return [panel.label+' — '+bpfScopeLabel(page,entry.scope)+' — '+check.caption+': '+bpfAnswerLabel(answer)+(extra?' — '+extra:'')];
+   return [bpfScopeLabel(page,entry.scope)+' — '+check.caption+': '+bpfAnswerLabel(answer)+(extra?' — '+extra:'')];
   });
  }
+
+ function receptionSummary(page,row,panel,data){
+  return receptionRecords(page,row,panel,data).map(record=>panel.label+' — '+record);
+ }
+
+ function receptionAnnex(page,row,panel,data){
+  const checklist=receptionRecords(page,row,panel,data);
+  return checklist.length?[{page,row,panel,heading:'Informações adicionais',checklist}]:[];
+ }
+
 
  function renderReception(card,page,row,panel){
   const check=receptionChecks[row.code]?.[panel.id];
@@ -1319,6 +1329,6 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,renderReception,receptionSummary,preparePhrases,renderReservoirFrequency,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,render};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,render};
 })();
 
