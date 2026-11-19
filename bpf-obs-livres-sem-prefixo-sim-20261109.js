@@ -37,7 +37,7 @@ function independentObservation(row,page){
  }
  if(!extra.length)return;
  const base=previous.trim().replace(/\.$/,'');
- const summary=[base,...extra].filter(Boolean).join('; ').replace(/\.+$/,'')+'.';
+ const summary=(base?'':row.code+' ')+[base,...extra].filter(Boolean).join('; ').replace(/\.+$/,'')+'.';
  values[field]=bpfMergeObservation(String(values[field]||''),row.code,previous,summary);
  values[summaryKey]=summary;
 }
