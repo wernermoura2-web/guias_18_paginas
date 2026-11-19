@@ -54,7 +54,6 @@ const bpfWaterCheck = (() => {
  });
  const prewashChecks=[
   check('rotulo','Faz a remoção do rótulo?'),
-  check('adesivo','Faz a remoção dos resíduos da substância adesiva?'),
   check('sujidade-interna','Faz a remoção das sujidades da superfície interna?'),
   check('sujidade-externa','Faz a remoção das sujidades da superfície externa?')
  ];
@@ -302,7 +301,8 @@ const bpfWaterCheck = (() => {
      const priorChecks=entry.index===0?({'4.6.4':prewashChecks,'4.7.2':[...surfaceChecks,...doorChecks],'4.7.6':fillingChecks['4.7.6']})[row.code]:groupedIndices?fillingChecks[row.code]:null;
      if(priorChecks){
       const names=groupedIndices?groupedIndices.map(index=>bpfPhraseName(entry.scope,index)):bpfF1Checks(row,entry.scope).map(check=>check.name);
-      const old=names.map(name=>data[name]);
+      // Older prewash forms stored the removed adhesive check in the second field.
+      const old=(row.code==='4.6.4'?[names[0],names[2],names[3]]:names).map(name=>data[name]);
       state??={};
       for(const [i,criterion] of priorChecks.entries()){
        if(hasAnswer(old[i])&&!state[criterion.id])state[criterion.id]={answer:old[i]};
@@ -457,7 +457,6 @@ const bpfWaterCheck = (() => {
   escoamento:[/ é suficiente /,' não é suficiente '],
   'telemetria-concentracao':[/^Existe /,'Não existe '],
   rotulo:[/^Faz /,'Não faz '],
-  adesivo:[/^Faz /,'Não faz '],
   'sujidade-interna':[/^Faz /,'Não faz '],
   'sujidade-externa':[/^Faz /,'Não faz '],
   'higienizacao-envasadora':[/ descontaminada e higienizada /,' não foi descontaminada e/ou higienizada '],
