@@ -98,29 +98,20 @@ const bpfWaterCheck = (() => {
   '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
   '4.6.4':{0:returnableInspection(prewashChecks)},
-  '4.6.5':{
-   0:returnableInspection([
-    check('concentracao-limpeza','O enxágue com produto químico para limpeza das embalagens no primeiro estágio da lavadora é feito na concentração adequada (validada)?'),
-    check('bicos-limpeza','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução de limpeza alcance o fundo das garrafas?'),
-    check('produtos-limpeza','Quais são os produtos químicos utilizados para limpeza das embalagens?',{
-     details:'packaging-sanitizers',informationList:true,
-     products:[['detergente-clorado','Detergente alcalino clorado'],['soda-caustica','Soda cáustica'],['outros','Outro']]
-    }),
-    yes('telemetria-limpeza','Existe telemetria em linha da concentração do produto químico utilizado para controlar e monitorar sua reposição?')
-   ]),
-   1:returnableInspection([
-    yes('desinfeccao-primeiro-estagio','O enxágue com desinfetante das embalagens é feito junto com o primeiro estágio de limpeza?'),
-    check('concentracao-desinfetante','O enxágue com desinfetante das embalagens é feito na concentração adequada?'),
-    check('bicos-desinfetante','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
-    check('sanitizantes-desinfeccao','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens são adequados?',{
-     details:'packaging-sanitizers',detailsOnNo:true,
-     products:[['hipoclorito-com-soda','Hipoclorito de sódio com Soda Cáustica'],['hipoclorito','Hipoclorito de sódio'],['ozonio','Ozônio'],['outros','Outro']]
-    }),
-    check('relatorio-operacao-lavadora','Foi apresentado o relatório de avaliação das condições de operação do maquinário automático utilizado para limpeza e desinfecção de embalagens retornáveis?'),
-    check('relatorio-operacao-atualizado','O relatório de avaliação das condições de operação está atualizado com os desinfetantes e as concentrações utilizadas?',{requires:'relatorio-operacao-lavadora'}),
-    yes('telemetria-desinfetante','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição?')
-   ])
-  },
+  '4.6.5':{0:returnableInspection([
+   check('relatorio-operacao-lavadora','Foi apresentado o relatório de avaliação das condições de operação do maquinário automático utilizado para limpeza e desinfecção de embalagens retornáveis?'),
+   check('produtos-lavagem-desinfeccao','Quais são os produtos químicos utilizados para limpeza e desinfecção das embalagens?',{
+    details:'packaging-sanitizers',informationList:true,reportLabel:'Produtos químicos utilizados para limpeza e desinfecção das embalagens',
+    products:[
+     ['detergente-clorado','Detergente alcalino clorado'],['soda-caustica','Soda cáustica'],
+     ['hipoclorito-com-soda','Hipoclorito de sódio com Soda Cáustica'],['hipoclorito','Hipoclorito de sódio'],
+     ['ozonio','Ozônio'],['outros','Outro']
+    ]
+   }),
+   check('reposicao-produtos','A reposição dos produtos químicos é feita manualmente ou através de dosadora?',{
+    answerLabels:{'1':'Manualmente','0':'Dosadora'}
+   })
+  ])},
   '4.1.3':{
    0:{separateInformation:true,checks:[
     check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
@@ -274,13 +265,35 @@ const bpfWaterCheck = (() => {
  const key = entry => 'BPF_FWater_'+entry.name;
  const machineEntries=panel=>panel.entries.filter(entry=>entry.name.endsWith('_EnvasadoraAutomatica'));
  const entriesFor = (row,scope) => row.code==='4.7.8'?bpfF1Checks(row,scope).filter(entry=>entry.name.endsWith('_EnvasadoraAutomatica')):Object.keys(panels[row.code]||{}).map(Number).map(index=>({scope,index,name:bpfPhraseName(scope,index)}));
+ function migrateReturnableWash(entry,state,data){
+  const formerF2=bpfPhraseName(entry.scope,1);
+  const disinfection=JSON.parse(data[key({name:formerF2})]||'null');
+  const answers=[data[entry.name],data[formerF2]];
+  const previous=answers.includes('0')?'0':answers.every(answer=>answer==='1')?'1':'';
+  const current={...state,limpezaDesinfeccaoRetornaveis:true,
+   'sim-lavagem':{answer:previous==='1'?'1':''},
+   'nao-lavagem':{answer:previous==='0'?'0':''}
+  };
+  const report=disinfection?.['relatorio-operacao-lavadora'];
+  if(report)current['relatorio-operacao-lavadora']=report;
+  const recordedProducts=[state?.['produtos-limpeza'],disinfection?.['sanitizantes-desinfeccao']].filter(Boolean);
+  const selected=Object.fromEntries(recordedProducts.flatMap(item=>Object.entries(item.products||{}).filter(([,value])=>value)));
+  if(Object.keys(selected).length){
+   const otherProduct=[...new Set(recordedProducts.filter(item=>item.products?.outros).map(item=>text(item.otherProduct)).filter(Boolean))].join('; ');
+   current['produtos-lavagem-desinfeccao']={answer:'1',products:selected,otherProduct};
+  }
+  return current;
+ }
  const read = (entry,data) => {
   try {
    const name=key(entry);
    let state=JSON.parse(data[name]||'null');
+   if(entry.index===0&&entry.scope.phrases[0]?.revision==='limpezaDesinfeccaoRetornaveis'){
+    return state?.limpezaDesinfeccaoRetornaveis?state:migrateReturnableWash(entry,state,data);
+   }
    if(!state?.['sim-lavagem']&&!state?.['nao-lavagem']){
     const row=BPF_PHRASES.filter(page=>[7,8,9,10].includes(page.page)).flatMap(page=>page.rows)
-     .find(row=>['4.6.4','4.6.5','4.6.6','4.6.8','4.7.2','4.7.4','4.7.5','4.7.6'].includes(row.code)&&
+     .find(row=>['4.6.4','4.6.6','4.6.8','4.7.2','4.7.4','4.7.5','4.7.6'].includes(row.code)&&
       row.scopes.some(scope=>scope.name===entry.scope.name));
     if(row&&panels[row.code][entry.index]){
      let previous=data[entry.name];
@@ -446,18 +459,8 @@ const bpfWaterCheck = (() => {
   adesivo:[/^Faz /,'Não faz '],
   'sujidade-interna':[/^Faz /,'Não faz '],
   'sujidade-externa':[/^Faz /,'Não faz '],
-  'telemetria-limpeza':[/^Existe /,'Não existe '],
-  'telemetria-desinfetante':[/^Existe /,'Não existe '],
-  'sanitizantes-desinfeccao':[/ são adequados$/,' não são adequados'],
   'higienizacao-envasadora':[/ descontaminada e higienizada /,' não foi descontaminada e/ou higienizada '],
-  'concentracao-limpeza':[/ é feito /,' não é feito '],
-  'bicos-limpeza':[/ estão desobstruídos e a pressão dos jatos permite /,' estão obstruídos e/ou a pressão dos jatos não permite '],
-  'produtos-limpeza':[/ são adequados$/,' não são adequados'],
-  'desinfeccao-primeiro-estagio':[/ é feito /,' não é feito '],
-  'concentracao-desinfetante':[/ é feito /,' não é feito '],
-  'bicos-desinfetante':[/ estão desobstruídos e a pressão dos jatos permite /,' estão obstruídos e/ou a pressão dos jatos não permite '],
   'relatorio-operacao-lavadora':[/^Foi apresentado /,'Não foi apresentado '],
-  'relatorio-operacao-atualizado':[/ está atualizado /,' não está atualizado '],
   'dupla-embalagem':[/ são enviados /,' não são enviados '],
   'retirada-envase':[/ é retirada /,' não é retirada '],
   'armazenamento-primaria':[/ são mantidos /,' não são mantidos '],
@@ -484,6 +487,7 @@ const bpfWaterCheck = (() => {
  const isQuestion=criterion=>criterion.informationQuestion||/\?\s*$/.test(criterion.label);
  const hasAnswer=answer=>answer==='1'||answer==='0';
  const statementForAnswer=(criterion,answer)=>{
+  if(criterion.answerLabels)return 'Reposição dos produtos químicos: '+criterion.answerLabels[answer];
   if(answer==='0'&&criterion.noLabel)return criterion.noLabel;
   const statement=(answer==='1'&&criterion.yesLabel)||criterion.label.trim().replace(/\?$/,'');
   if(answer!=='0')return statement;
@@ -520,6 +524,16 @@ const bpfWaterCheck = (() => {
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(page.page===7&&row.code==='4.6.5'){
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     Object.assign(phrases[0],{
+      text:'As embalagens retornadas para um novo ciclo de uso devem ser submetidas à limpeza e desinfecção em maquinário automático.',
+      guidance:'Verifique se a limpeza e a desinfecção são realizadas em maquinário automático. Confira o relatório de avaliação, os produtos químicos utilizados e a forma de reposição.',
+      appcc:'PCC',revision:'limpezaDesinfeccaoRetornaveis'
+     });
+     phrases.splice(1);
+    }
+   }
    if(row.code==='4.3.4'){
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
      phrases[0].text='Inspeção visual do reservatório.';
@@ -589,8 +603,8 @@ const bpfWaterCheck = (() => {
     const index=panel.id;
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
-     const mode=isInformation(config,criterion)?informationHeading(config)+(criterion.informationQuestion?' — Sim ou Não.':'.'):criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
-     const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='relatorio-operacao-lavadora'?'Exibida quando a apresentação do relatório está marcada Sim.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
+     const mode=isInformation(config,criterion)?informationHeading(config)+(criterion.informationQuestion?' — '+(criterion.answerLabels?Object.values(criterion.answerLabels).join(' ou '):'Sim ou Não')+'.':'.'):criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
+     const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      const optionalDetails=criterion.details==='filter'?'A frequência de troca pode ficar em branco.':
       criterion.frequencyOptional?'A periodicidade pode ficar em branco.':'';
      criterion.guidance=[mode,context,config.optional&&!criterion.optional?'A verificação pode ficar em branco.':'',
@@ -1079,6 +1093,7 @@ const bpfWaterCheck = (() => {
   }
   const dependentF2=conductionF2(row,panel.id);
   if(dependentF2)card.dataset.bpfConductionF2='';
+  if(page.page===7&&row.code==='4.6.5')card.append(element('p',row.phrases[0].text));
   const hint=element('p',config.inline?'Registre as informações da envasadora por linha.':config.simple&&row.code==='4.6.3'?'Marque Sim ou Não para cada linha avaliada.':fillingChecks[row.code]?'Marque uma avaliação por linha e registre as verificações em Outras informações.':config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
@@ -1222,13 +1237,13 @@ const bpfWaterCheck = (() => {
       const choices=element('div');
       choices.style.display='flex';
       choices.style.gap='1rem';
-      const yesControl=element('label','Sim');
-      const noControl=element('label','Não');
+      const yesLabel=criterion.answerLabels?.['1']||'Sim';
+      const noLabel=criterion.answerLabels?.['0']||'Não';
+      const yesControl=element('label',yesLabel);
+      const noControl=element('label',noLabel);
       const noInput=element('input');
       noInput.type='checkbox';
       yesControl.className=noControl.className='bpf-water-choice';
-      input.setAttribute('aria-label',label+' — '+caption+' — Sim');
-      noInput.setAttribute('aria-label',label+' — '+caption+' — Não');
       noInput.onchange=()=>{
        item.answer=noInput.checked?'0':'';
        if(criterion.id==='filtro'&&state['registro-filtro'])delete state['registro-filtro'].answer;
@@ -1240,11 +1255,11 @@ const bpfWaterCheck = (() => {
       const prompt=element('div',caption);
       line.append(prompt,choices);
       rows.push(()=>{
-       const wording=hasAnswer(item.answer)?statementForAnswer(criterion,item.answer):caption;
+       const wording=!criterion.answerLabels&&hasAnswer(item.answer)?statementForAnswer(criterion,item.answer):caption;
        prompt.textContent=wording;
        prompt.title=(item.answer==='1'?criterion.yesGuidance:item.answer==='0'?criterion.noGuidance:'')||criterion.guidance||'';
-       input.setAttribute('aria-label',label+' — '+wording+' — Sim');
-       noInput.setAttribute('aria-label',label+' — '+wording+' — Não');
+       input.setAttribute('aria-label',label+' — '+wording+' — '+yesLabel);
+       noInput.setAttribute('aria-label',label+' — '+wording+' — '+noLabel);
        noInput.disabled=state.notApplicable||!active(criterion,state);
        noInput.checked=!noInput.disabled&&item.answer==='0';
       });
