@@ -185,8 +185,7 @@ const bpfWaterCheck = (() => {
    ]),
    1:returnableInspection([
     check('sem-acumulo-enxague','Os garrafões após o enxágue com água mineral natural saem sem acúmulo de água de enxágue no seu interior?'),
-    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?'),
-    check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a água de enxágue?')
+    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?')
    ])
   },
   '4.3.5':{0:{separateInformation:true,checks:[
