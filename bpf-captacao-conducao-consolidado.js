@@ -172,19 +172,21 @@ const bpfWaterCheck = (() => {
   },
   '4.6.6':{
    0:returnableInspection([
-    check('eliminacao-residuos','O enxágue das embalagens retornadas para um novo ciclo de uso garante a eliminação dos resíduos dos produtos químicos utilizados na higienização?'),
-    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?'),
-    check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a água de enxágue?')
-   ]),
-   1:returnableInspection([
     check('teste-arraste','O teste de arraste foi demonstrado?'),
     check('registros-residuos','Há registros dos testes de resíduos?'),
-    check('instrumento-adequado','O instrumento portátil é adequado ao desinfetante utilizado?'),
-    check('enxague-final','O teste após o enxágue final indicou ausência de resíduos detectáveis pelo método utilizado?'),
-    check('criterio-zero','O teste de arraste é adequado ao desinfetante utilizado e adota 0,0 mg/L como critério de aceitação, interpretado conforme o limite de detecção do método?',{
-     yesLabel:'O teste de arraste é adequado ao desinfetante utilizado por adotar 0,0 mg/L como critério de aceitação',
-     noLabel:'O teste de arraste não é adequado ao desinfetante utilizado por não adotar 0,0 mg/L como critério de aceitação'
-    })
+    ...[
+     check('instrumento-adequado','O instrumento portátil é adequado ao desinfetante utilizado?'),
+     check('enxague-final','O teste após o enxágue final indicou ausência de resíduos detectáveis pelo método utilizado?'),
+     check('criterio-zero','O teste de arraste é adequado ao desinfetante utilizado e adota 0,0 mg/L como critério de aceitação, interpretado conforme o limite de detecção do método?',{
+      yesLabel:'O teste de arraste é adequado ao desinfetante utilizado e adota 0,0 mg/L como critério de aceitação, interpretado conforme o limite de detecção do método',
+      noLabel:'O teste de arraste não atende ao critério de adequação ao desinfetante utilizado e de aceitação a 0,0 mg/L, interpretado conforme o limite de detecção do método'
+     })
+    ].map(criterion=>({...criterion,hideWhenAllNo:['teste-arraste','registros-residuos']}))
+   ]),
+   1:returnableInspection([
+    check('sem-acumulo-enxague','Os garrafões após o enxágue com água mineral natural saem sem acúmulo de água de enxágue no seu interior?'),
+    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?'),
+    check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a água de enxágue?')
    ])
   },
   '4.3.5':{0:{separateInformation:true,checks:[
@@ -478,7 +480,7 @@ const bpfWaterCheck = (() => {
   'analise-tampas':[/^É feita /,'Não é feita '],
   'fora-silo':[/ é realizada /,' não é realizada '],
   'fora-envase':[/ é realizada /,' não é realizada '],
-  'eliminacao-residuos':[/ garante /,' não garante '],
+  'sem-acumulo-enxague':[/ saem sem /,' saem com '],
   'teste-arraste':[/ foi demonstrado$/,' não foi demonstrado'],
   'registros-residuos':[/^Há /,'Não há '],
   'instrumento-adequado':[/ é adequado /,' não é adequado '],
@@ -505,7 +507,8 @@ const bpfWaterCheck = (() => {
  }
  const answerLabel=(criterion,answer)=>answer==='0'?(criterion.noLabel||criterion.label):criterion.label;
  const active = (criterion,state) =>
-  (!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1');
+  (!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1')&&
+  !criterion.hideWhenAllNo?.every(id=>state[id]?.answer==='0');
  const answered = (criterion,state) => active(criterion,state)&&
   ((!criterion.noOnly&&state[criterion.id]?.answer==='1')||(!criterion.yesOnly&&state[criterion.id]?.answer==='0'));
  const text = value => typeof value==='string'?value.trim():'';
@@ -524,6 +527,13 @@ const bpfWaterCheck = (() => {
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(page.page===7&&row.code==='4.6.6'){
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     const [rinse,verification]=phrases;
+     // Keep the original field names so saved answers follow their phrases.
+     phrases.splice(0,2,{...verification,fieldSuffix:verification.fieldSuffix??2},{...rinse,fieldSuffix:rinse.fieldSuffix??1});
+    }
+   }
    if(page.page===7&&row.code==='4.6.5'){
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
      Object.assign(phrases[0],{
@@ -604,7 +614,7 @@ const bpfWaterCheck = (() => {
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
      const mode=isInformation(config,criterion)?informationHeading(config)+(criterion.informationQuestion?' — '+(criterion.answerLabels?Object.values(criterion.answerLabels).join(' ou '):'Sim ou Não')+'.':'.'):criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
-     const context=criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
+     const context=criterion.hideWhenAllNo?'Ocultada quando a demonstração do teste de arraste e a existência de registros estão ambas marcadas como Não.':criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      const optionalDetails=criterion.details==='filter'?'A frequência de troca pode ficar em branco.':
       criterion.frequencyOptional?'A periodicidade pode ficar em branco.':'';
      criterion.guidance=[mode,context,config.optional&&!criterion.optional?'A verificação pode ficar em branco.':'',
@@ -1093,7 +1103,7 @@ const bpfWaterCheck = (() => {
   }
   const dependentF2=conductionF2(row,panel.id);
   if(dependentF2)card.dataset.bpfConductionF2='';
-  if(page.page===7&&row.code==='4.6.5')card.append(element('p',row.phrases[0].text));
+  if(page.page===7&&['4.6.5','4.6.6'].includes(row.code))card.append(element('p',row.phrases[panel.id].text));
   const hint=element('p',config.inline?'Registre as informações da envasadora por linha.':config.simple&&row.code==='4.6.3'?'Marque Sim ou Não para cada linha avaliada.':fillingChecks[row.code]?'Marque uma avaliação por linha e registre as verificações em Outras informações.':config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
