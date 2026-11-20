@@ -7,7 +7,7 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261119-observacoes-f-ordenadas');
+q.delete('modo'); q.set('v','20261120-botao-exclusao-reservatorios');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
@@ -53,7 +53,7 @@ async function openGuide(){
     });
    }
   };
-  try{await Promise.race([update(),new Promise(resolve=>{timer=setTimeout(resolve,7000);})]);}
+  try{await Promise.race([update(),new Promise(resolve=>{timer=setTimeout(resolve,20000);})]);}
   catch(_){}
   finally{clearTimeout(timer);}
  }
