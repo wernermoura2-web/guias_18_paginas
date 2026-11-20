@@ -1243,7 +1243,7 @@ const bpfWaterCheck = (() => {
     for(const control of rows)control();
    };
    if(dependentF2){
-    const notice=element('p',label+' — Não se aplica (F1 marcado como Não).');
+    const notice=element('p',label+' — Não se aplica (ausência do POP indicada no F1).');
     answerGrid.prepend(notice);
     rows.push(()=>{notice.hidden=panelEnabled(row,entry,values);});
     card.addEventListener('bpf-f2-refresh',refresh);
