@@ -610,7 +610,11 @@ const bpfWaterCheck = (() => {
   card.append(section);
  }
  const reservoirFilterKey=scope=>'BPF_ReservoirFilterInfo_'+scope.name;
- const filterQuestions=[['manometro','O filtro possui manômetro de pressão?'],['torneira','Possui torneira para coleta de amostra?'],['microbiologia','Faz análise microbiológica do filtro?']];
+ const filterQuestions=[
+  ['manometro','O filtro possui manômetro de pressão?','O filtro possui manômetro de pressão','O filtro não possui manômetro de pressão'],
+  ['torneira','Possui torneira para coleta de amostra?','O filtro possui torneira para coleta de amostra','O filtro não possui torneira para coleta de amostra'],
+  ['microbiologia','Faz análise microbiológica do filtro?','É realizada análise microbiológica do filtro','Não é realizada análise microbiológica do filtro']
+ ];
  const filterMedia=['Areia','Quartzo','Polipropileno','Malhas e mantas filtrantes','Outros'];
  function reservoirFilterRead(scope,data){try{return JSON.parse(data[reservoirFilterKey(scope)]||'{}')||{};}catch{return {};}}
  function renderReservoirFilterInfo(card,page,row,panel){
@@ -622,7 +626,7 @@ const bpfWaterCheck = (() => {
    unit.append(element('summary',bpfScopeLabel(page,scope)));enableHoverUnit(unit);
    const state=reservoirFilterRead(scope,values);state.media??=[];
    const save=()=>{values[reservoirFilterKey(scope)]=JSON.stringify(state);changed();};
-   const ask=(key,caption)=>{const label=element('label',caption);label.style.cssText='display:block;margin:12px 0';const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=state[key]||'';select.onchange=()=>{state[key]=select.value;save();};label.append(select);unit.append(label);};
+   const ask=(key,caption,yes,no)=>{const label=element('label');const wording=element('span',caption);label.append(wording);label.style.cssText='display:block;margin:12px 0';const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=state[key]||'';const refresh=()=>{wording.textContent=select.value==='1'?yes:select.value==='0'?no:caption;};select.onchange=()=>{state[key]=select.value;refresh();save();};refresh();label.append(select);unit.append(label);};
    ask(...filterQuestions[0]);unit.append(element('strong','Qual o elemento filtrante utilizado?'));
    const other=element('label','Especifique o outro elemento filtrante');other.style.cssText='display:block;margin:8px 0';const area=element('textarea');area.rows=2;area.style.cssText='display:block;width:100%;margin-top:5px';area.value=state.other||'';area.oninput=()=>{state.other=area.value;save();};other.append(area);
    const refresh=()=>{other.hidden=!state.media.includes('Outros');other.style.display=other.hidden?'none':'block';};
@@ -634,7 +638,10 @@ const bpfWaterCheck = (() => {
  function reservoirFilterReport(page,panel,data){
   const scopes=[...new Set(panel.entries.map(e=>e.scope))],result=[];
   const group=(caption,answer,selected)=>{if(selected.length)result.push(caption+': '+answer+' ('+selected.map(scope=>bpfScopeLabel(page,scope)).join(', ')+')');};
-  for(const [key,caption] of filterQuestions)for(const value of ['1','0'])group(caption.replace(/\?$/,''),value==='1'?'Sim':'Não',scopes.filter(scope=>reservoirFilterRead(scope,data)[key]===value));
+  for(const [key,caption,yes,no] of filterQuestions)for(const value of ['1','0']){
+   const matching=scopes.filter(scope=>reservoirFilterRead(scope,data)[key]===value);
+   if(matching.length)result.push((value==='1'?yes:no)+' ('+matching.map(scope=>bpfScopeLabel(page,scope)).join(', ')+')');
+  }
   const materials=new Map();for(const scope of scopes){const state=reservoirFilterRead(scope,data);for(const media of state.media||[]){const label=media==='Outros'?'Outros'+(state.other?' — '+state.other.trim():''):media;if(!materials.has(label))materials.set(label,[]);materials.get(label).push(scope);}}
   for(const [label,selected] of materials)group('Elemento filtrante utilizado',label,selected);
   return result;
@@ -699,11 +706,11 @@ const bpfWaterCheck = (() => {
 
  const receptionChecks={
   '4.5.3':{
-   0:{question:'Possui registro comprovando a inspeção no ato do recebimento?',caption:'Registro de inspeção no recebimento',detailsAnswer:'1'},
-   2:{question:'O saneante conferido estava identificado, dentro da validade, regularizado na ANVISA e possui autorização para a finalidade de uso declarada?',caption:'Identificação, validade, regularização e finalidade de uso do saneante',detailsAnswer:'0'}
+   0:{question:'Possui registro comprovando a inspeção no ato do recebimento?',caption:'Registro de inspeção no recebimento',yes:'Possui registro que comprova a inspeção no recebimento',no:'Não possui registro que comprova a inspeção no recebimento',detailsAnswer:'1'},
+   2:{question:'O saneante conferido estava identificado, dentro da validade, regularizado na ANVISA e possui autorização para a finalidade de uso declarada?',caption:'Identificação, validade, regularização e finalidade de uso do saneante',yes:'O saneante conferido atende aos requisitos de identificação, validade, regularização e finalidade de uso',no:'O saneante conferido não atende a um ou mais requisitos de identificação, validade, regularização e finalidade de uso',detailsAnswer:'0'}
   },
   '4.5.4':{
-   0:{question:'Os garrafões recebidos estão na validade (fotografe o fundo de todos os garrafões com fabricantes diferentes)?',caption:'Validade dos garrafões recebidos'}
+   0:{question:'Os garrafões recebidos estão na validade (fotografe o fundo de todos os garrafões com fabricantes diferentes)?',caption:'Validade dos garrafões recebidos',yes:'Os garrafões recebidos estão dentro da validade',no:'Há garrafões recebidos fora da validade'}
   }
  };
  const receptionEvidence=['Formulário de recepção','Carimbo na nota fiscal','Sistema eletrônico','Ficha de estoque','Outro'];
@@ -720,7 +727,7 @@ const bpfWaterCheck = (() => {
    const extra=answer!==check.detailsAnswer?'':panel.id===0
     ?[evidence,evidence==='Outro'?details:''].filter(Boolean).join(' — ')
     :details;
-   return [bpfScopeLabel(page,entry.scope)+' — '+check.caption+': '+bpfAnswerLabel(answer)+(extra?' — '+extra:'')];
+   return [bpfScopeLabel(page,entry.scope)+' — '+(answer==='1'?check.yes:check.no)+(extra?' — '+extra:'')];
   });
  }
 
@@ -743,7 +750,7 @@ const bpfWaterCheck = (() => {
   for(const entry of panel.entries){
    const unit=element('fieldset');
    unit.append(element('legend',bpfScopeLabel(page,entry.scope)));
-   unit.append(element('p',check.question));
+   const question=element('p',check.question);unit.append(question);
    const answerKey=receptionKey(entry.name,'Resposta');
    const evidenceKey=receptionKey(entry.name,'Comprovacao');
    const detailsKey=receptionKey(entry.name,'Detalhes');
@@ -755,6 +762,7 @@ const bpfWaterCheck = (() => {
     'Informe o nome do produto, lote, validade, finalidade de uso, referência da regularização e divergência entre o rótulo encontrado e o documento apresentado.');
    detailLabel.append(area);
    const refresh=()=>{
+    question.textContent=values[answerKey]==='1'?check.yes:values[answerKey]==='0'?check.no:check.question;
     followup.hidden=values[answerKey]!==check.detailsAnswer;
     detailLabel.hidden=panel.id===0&&values[evidenceKey]!=='Outro';
    };
@@ -924,7 +932,7 @@ const bpfWaterCheck = (() => {
     const recorded=units.flatMap(unit=>unit.checks.filter(check=>check.id===criterion.id&&check.answer===answer)
      .map(check=>unit.label+(check.details?' — '+check.details:'')));
     if(recorded.length){
-     const caption=criterion.informationQuestion?statementForAnswer(criterion,answer):criterion.informationList?(criterion.reportLabel||'Produtos químicos utilizados para limpeza das embalagens'):criterion.label;
+     const caption=criterion.informationList?(criterion.reportLabel||'Produtos químicos utilizados para limpeza das embalagens'):isQuestion(criterion)?statementForAnswer(criterion,answer):criterion.label;
      information.push((criterion.section?criterion.section+' · ':'')+caption+' ('+recorded.join(' / ')+')');
     }
    }
@@ -1261,12 +1269,12 @@ const bpfWaterCheck = (() => {
    if(answer==='info'&&row.code==='4.3.2'&&panel.id===0&&typeof bpfReservoirMixPage==='function'&&page.page===bpfReservoirMixPage()){
     const section=element('div');section.style.cssText='padding:12px;background:#e8f3fa;border:1px solid #83a8bf;border-radius:6px;margin:8px 0';
     section.append(element('strong','Mistura das fontes — avaliação geral'));
-    const question=(caption,key)=>{const label=element('label',caption);label.style.cssText='display:block;margin:10px 0';const select=element('select');select.style.cssText='display:block;padding:6px;margin:5px 0;font:inherit';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=values[key]||'';label.append(select);section.append(label);return {label,select};};
-    const first=question('É realizada a mistura das águas de diferentes fontes?','BPF_ReservoirMix_Resposta');
-    const second=question('A mistura das fontes está autorizada pela ANM?','BPF_ReservoirMix_ANM');
-    const refresh=()=>{const visible=first.select.value==='1';second.label.hidden=!visible;second.label.style.display=visible?'block':'none';second.select.disabled=!visible;};refresh();
+    const question=(caption,key,yes,no)=>{const label=element('label');const wording=element('span',caption);label.append(wording);label.style.cssText='display:block;margin:10px 0';const select=element('select');select.style.cssText='display:block;padding:6px;margin:5px 0;font:inherit';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=values[key]||'';label.append(select);section.append(label);return {label,select,update:()=>{wording.textContent=select.value==='1'?yes:select.value==='0'?no:caption;}};};
+    const first=question('É realizada a mistura das águas de diferentes fontes?','BPF_ReservoirMix_Resposta','É realizada a mistura das águas de diferentes fontes','Não é realizada a mistura das águas de diferentes fontes');
+    const second=question('A mistura das fontes está autorizada pela ANM?','BPF_ReservoirMix_ANM','A mistura das fontes está autorizada pela ANM','A mistura das fontes não está autorizada pela ANM');
+    const refresh=()=>{first.update();second.update();const visible=first.select.value==='1';second.label.hidden=!visible;second.label.style.display=visible?'block':'none';second.select.disabled=!visible;};refresh();
     first.select.onchange=()=>{values.BPF_ReservoirMix_Resposta=first.select.value;if(first.select.value!=='1'){values.BPF_ReservoirMix_ANM='';second.select.value='';}refresh();changed();};
-    second.select.onchange=()=>{values.BPF_ReservoirMix_ANM=second.select.value;changed();};
+    second.select.onchange=()=>{values.BPF_ReservoirMix_ANM=second.select.value;refresh();changed();};
     box.append(section);
    }
   }
