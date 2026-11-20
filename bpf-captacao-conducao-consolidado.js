@@ -1361,7 +1361,7 @@ const bpfWaterCheck = (() => {
   answerGrid.className='bpf-answer-grid bpf-water-grid';
   card.append(answerGrid);
   const boxes=new Map();
-  const capsF1=row.code==='4.6.8'&&panel.id===0;
+  const capsF1=row.code==='4.6.8'&&[0,1].includes(panel.id);
   const sections=config.inline?[]:[['1','Sim'],['0','Não']];
   if(config.checks.some(criterion=>isInformation(config,criterion)))sections.push(['info',informationHeading(config)]);
   for(const [answer,heading] of sections){
@@ -1494,7 +1494,7 @@ const bpfWaterCheck = (() => {
      if(guidance)control.title=guidance;
      const input=element('input');
      input.type=capsF1&&!information&&criterion.scopeAnswer?'radio':'checkbox';
-     if(input.type==='radio'){input.name='BPF_CapsF1_'+entry.name;input.value=answer;}
+     if(input.type==='radio'){input.name='BPF_CapsResposta_'+panel.id+'_'+entry.name;input.value=answer;}
      input.setAttribute('aria-label',directChoice||criterion.scopeAnswer?label+' — '+heading:label+' — '+caption+' — '+heading);
      input.onchange=()=>{
       item.answer=input.checked?answer:'';
