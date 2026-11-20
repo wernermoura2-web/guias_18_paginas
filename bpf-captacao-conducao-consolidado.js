@@ -1102,15 +1102,36 @@ const bpfWaterCheck = (() => {
  }
 
 
+
+ function showFillPointerTip(event,summary){
+  let tip=document.getElementById('bpf-fill-pointer-tip');
+  if(!tip){
+   tip=document.createElement('div');tip.id='bpf-fill-pointer-tip';tip.textContent='Clique para preencher';
+   tip.setAttribute('aria-hidden','true');
+   tip.style.cssText='position:fixed;z-index:2147483647;pointer-events:none;white-space:nowrap;padding:6px 10px;border-radius:5px;background:#ffcf59;color:#302000;font:700 13px Arial,sans-serif;border:1px solid #ad740d;box-shadow:0 2px 7px #0003';
+   document.body.append(tip);
+  }
+  tip.bpfOwner=summary;tip.hidden=false;
+  const left=Math.max(4,Math.min(event.clientX+15,window.innerWidth-tip.offsetWidth-4));
+  const top=event.clientY+19+tip.offsetHeight>window.innerHeight?event.clientY-tip.offsetHeight-10:event.clientY+19;
+  tip.style.left=left+'px';tip.style.top=Math.max(4,top)+'px';
+ }
+ function hideFillPointerTip(summary){
+  const tip=document.getElementById('bpf-fill-pointer-tip');
+  if(tip&&tip.bpfOwner===summary){tip.hidden=true;tip.bpfOwner=null;}
+ }
  function enableHoverUnit(section){
   const summary=section.querySelector('summary');
   if(!summary)return;
   let openTimer,closeTimer,preview=false,pinned=section.open;
   const mouse=e=>e.pointerType==='mouse'&&window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   summary.style.cursor='pointer';
-  summary.title='Passe o mouse para abrir; clique para manter aberto.';
+  summary.removeAttribute('title');
+  summary.addEventListener('pointermove',event=>{if(mouse(event)&&!pinned)showFillPointerTip(event,summary);else hideFillPointerTip(summary);});
+  summary.addEventListener('pointerleave',()=>hideFillPointerTip(summary));
   summary.addEventListener('pointerenter',event=>{
    if(!mouse(event))return;
+   if(!pinned)showFillPointerTip(event,summary);
    clearTimeout(closeTimer);clearTimeout(openTimer);
    if(section.open)return;
    openTimer=setTimeout(()=>{if(!section.isConnected||section.hidden||section.open)return;preview=true;section.open=true;},180);
@@ -1122,6 +1143,7 @@ const bpfWaterCheck = (() => {
    closeTimer=setTimeout(()=>{if(preview&&!pinned){preview=false;section.open=false;}},260);
   });
   summary.addEventListener('click',event=>{
+   hideFillPointerTip(summary);
    clearTimeout(openTimer);clearTimeout(closeTimer);
    if(preview&&section.open&&!pinned){event.preventDefault();preview=false;pinned=true;return;}
    pinned=!section.open;preview=false;
