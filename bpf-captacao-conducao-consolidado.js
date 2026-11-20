@@ -79,7 +79,8 @@ const bpfWaterCheck = (() => {
    check('torneira','Lavatório com torneira acionada sem contato manual?',{yesLabel:'O lavatório possui torneira acionada sem contato manual',noLabel:'O lavatório não possui torneira acionada sem contato manual'}),
    check('sabonete','Lavatório com sabonete líquido inodoro?',{yesLabel:'O lavatório dispõe de sabonete líquido inodoro',noLabel:'O lavatório não dispõe de sabonete líquido inodoro'}),
    check('antisseptico','Lavatório com produto antisséptico?',{yesLabel:'O lavatório dispõe de produto antisséptico',noLabel:'O lavatório não dispõe de produto antisséptico'}),
-   check('secagem','Sistema de secagem das mãos acionado sem contato manual?',{yesLabel:'O sistema de secagem das mãos é acionado sem contato manual',noLabel:'O sistema de secagem das mãos não é acionado sem contato manual'})
+   check('secagem','Sistema de secagem das mãos acionado sem contato manual?',{yesLabel:'O sistema de secagem das mãos é acionado sem contato manual',noLabel:'O sistema de secagem das mãos não é acionado sem contato manual'}),
+   check('cartaz-lavagem-maos','Possui cartaz com as orientações para a correta lavagem das mãos?',{yesLabel:'Possui cartaz com as orientações para a correta lavagem das mãos',noLabel:'Não possui cartaz com as orientações para a correta lavagem das mãos'})
   ],
   '4.7.6':[
    check('uniforme-limpo','Utiliza uniformes limpos?',{yesLabel:'Utiliza uniformes limpos',noLabel:'Não utiliza uniformes limpos'}),
@@ -901,7 +902,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
-   if(['4.6.4','4.6.5','4.6.6','4.6.7','4.6.10'].includes(row.code)||row.code==='4.6.3'&&scope.phrases[0]?.allowNA){for(const id of row.code==='4.6.6'?[0,1]:row.code==='4.6.10'?[1]:[0]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}}
+   if(['4.6.4','4.6.5','4.6.6','4.6.7','4.6.10','4.7.5'].includes(row.code)||row.code==='4.6.3'&&scope.phrases[0]?.allowNA){for(const id of row.code==='4.6.6'?[0,1]:['4.6.10','4.7.5'].includes(row.code)?[1]:[0]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}}
    if(row.code==='4.3.3'){const name=reservoirFilterKey(scope);data.fields[name]={name,type:'/Tx',flags:0,label:'4.3.3 F2 — Outras observações dos filtros',options:[],calc:'',phrasePage:page.page};}
    for(const [position,check] of Object.entries(receptionChecks[row.code]||{})){
     const index=Number(position);
@@ -971,9 +972,10 @@ const bpfWaterCheck = (() => {
   }
  }
 
- const sharedLineInfo=(row,panel)=>(row.code==='4.6.10'&&panel.id===1)||(row.code==='4.6.7'&&panel.id===0)||(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5'].includes(row.code));
+ const sharedLineInfo=(row,panel)=>(row.code==='4.7.5'&&panel.id===1)||(row.code==='4.6.10'&&panel.id===1)||(row.code==='4.6.7'&&panel.id===0)||(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5'].includes(row.code));
  const sharedLineKey=(page,row,panel)=>'BPF_LineInfo_'+page.page+'_'+row.code.replace(/\./g,'_')+'_F'+(panel.id+1);
  function sharedLineState(page,row,panel,data){
+  if(panel.id===1&&fillingF2Indices[row.code])panel={...panel,entries:panel.entries.filter(entry=>entry.index===1)};
   const name=sharedLineKey(page,row,panel),raw=data[name];
   const addGate=state=>{if(row.code==='4.6.3')state.bpfAnyRinseYes=panel.entries.some(entry=>data[entry.name]==='1');return state;};
   if(raw){try{return {state:addGate(JSON.parse(raw)||{}),conflicts:[]};}catch(_){}}
@@ -1373,9 +1375,9 @@ const bpfWaterCheck = (() => {
    card.dataset.bpfCapsF2='';
    card.hidden=!panel.entries.some(entry=>panelEnabled(row,entry,values));
   }
-  if(row.code==='4.7.4'&&panel.id===1){
+  if(['4.7.4','4.7.5'].includes(row.code)&&panel.id===1){
    const original=String(row.description||'').replace(/\s+/g,' ').trim();
-   const start=original.indexOf('A sala de envase deve possuir');
+   const start=original.indexOf(row.code==='4.7.4'?'A sala de envase deve possuir':'A antesala da sala de envase deve possuir');
    const phrase=start>=0?original.slice(start):original;
    if(phrase){const previous=card.querySelector('.bpf-group-description');if(previous)previous.textContent=phrase;else{const p=element('p',phrase);p.className='bpf-group-description';card.append(p);}}
   }
