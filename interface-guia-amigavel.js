@@ -214,15 +214,12 @@
     editableGuide.setAttribute('aria-busy','true');
     const status=document.querySelector('#status');
     try{
-      const paths=[editableGuide.href,'./impressao/Guia_Editavel_em_Branco_Matriz.bin'];
-      const [base,update]=await Promise.all(paths.map(async path=>{
-        const response=await fetch(path);
-        if(!response.ok)throw new Error('Arquivo indisponível');
-        return response.arrayBuffer();
-      }));
-      if(base.byteLength!==7945297||String.fromCharCode(...new Uint8Array(base,0,5))!=='%PDF-'||
-         !new TextDecoder().decode(update.slice(-64)).includes('%%EOF'))throw new Error('PDF incompatível');
-      const url=URL.createObjectURL(new Blob([base,update],{type:'application/pdf'}));
+      const response=await fetch(editableGuide.href);
+      if(!response.ok)throw new Error('Arquivo indisponível');
+      const base=await response.arrayBuffer();
+      if(String.fromCharCode(...new Uint8Array(base,0,5))!=='%PDF-'||
+         !new TextDecoder().decode(base.slice(-128)).includes('%%EOF'))throw new Error('PDF incompatível');
+      const url=URL.createObjectURL(new Blob([base],{type:'application/pdf'}));
       const download=document.createElement('a');
       download.href=url;
       download.download=editableGuide.download;
@@ -600,3 +597,4 @@
  script.defer=true;
  document.head.appendChild(script);
 })();
+
