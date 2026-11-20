@@ -194,9 +194,15 @@ const bpfWaterCheck = (() => {
    check('recirculacao','Procedimento adotado para recirculação do sanitizante no tanque',{yesOnly:true,details:'recirculation'}),
    ...controls('do reservatório')
   ]}},
-  '4.3.4':{0:{simple:true,checks:[
-   check('inspecao-visual','Inspeção visual do reservatório')
-  ]}},
+  '4.3.4':{
+   0:{simple:true,checks:[
+    check('inspecao-visual','Inspeção visual do reservatório')
+   ]},
+   1:{simple:true,questionsInInformation:true,checks:[
+    check('revisao-higienizacao','Revisão das operações de higienização e adoção das medidas corretivas necessárias'),
+    check('pop-registro-revisoes','O POP prevê o registro das revisões das operações de higienização?',{informationOnly:true,informationQuestion:true,yesLabel:'O POP prevê o registro das revisões das operações de higienização',noLabel:'O POP não prevê o registro das revisões das operações de higienização'})
+   ]}
+  },
   '4.3.2':{
    0:{separateInformation:true,checks:[
     check('sim-reservatorio','Sim',{yesOnly:true,scopeAnswer:true}),
@@ -1330,7 +1336,7 @@ const bpfWaterCheck = (() => {
     const information=sectionType==='info';
     const answer=information?'1':sectionType;
     const heading=information?informationHeading(config):answer==='1'?'Sim':'Não';
-    const directChoice=config.simple||(config.separateInformation&&!information)||(config.singleNo&&answer==='0');
+    const directChoice=(config.simple&&!information)||(config.separateInformation&&!information)||(config.singleNo&&answer==='0');
     const collapsed=!directChoice;
     const section=element(collapsed?'details':'div');
     section.className='bpf-water-unit'+(directChoice?' bpf-water-unit-direct':'');
