@@ -1184,7 +1184,7 @@ const bpfWaterCheck = (() => {
   const dependentF2=conductionF2(row,panel.id);
   if(dependentF2)card.dataset.bpfConductionF2='';
   if(page.page===7&&['4.6.5','4.6.6'].includes(row.code))card.append(element('p',row.phrases[panel.id].text));
-  const hint=element('p',config.inline?'Registre as informações da envasadora por linha.':config.simple&&row.code==='4.6.3'?'Marque Sim ou Não para cada linha avaliada.':fillingChecks[row.code]?'Marque uma avaliação por linha e registre as verificações em Outras informações.':config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
+  const hint=element('p',row.code==='4.2.8'&&panel.id===1?'Marque Sim ou Não conforme a avaliação da condução. Apenas as perguntas de Outras informações podem ficar em branco quando não aplicáveis.':config.inline?'Registre as informações da envasadora por linha.':config.simple&&row.code==='4.6.3'?'Marque Sim ou Não para cada linha avaliada.':fillingChecks[row.code]?'Marque uma avaliação por linha e registre as verificações em Outras informações.':config.optional?'As verificações deste quadro podem ficar em branco. Marque as opções aplicáveis.':config.sectioned?'Em cada linha avaliada, responda a todas as perguntas com Sim e Não do quadro utilizado.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque uma ou mais verificações por unidade.');
   hint.className='bpf-guidance';
   card.append(hint);
   if(!document.getElementById('bpf-water-css')){
