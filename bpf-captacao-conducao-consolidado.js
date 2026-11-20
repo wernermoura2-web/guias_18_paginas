@@ -150,24 +150,21 @@ const bpfWaterCheck = (() => {
     check('analise-tampas-recebidas','É feita análise microbiológica dos lotes das tampas recebidas?',{yesLabel:'É feita análise microbiológica dos lotes das tampas recebidas',noLabel:'Não é feita análise microbiológica dos lotes das tampas recebidas'}),
     check('dupla-embalagem','Os sacos com as tampas são enviados com embalagens primária e secundária?'),
     check('desinfeccao-envasadora','Faz a desinfecção das tampas no estabelecimento?',{requiredInfo:true}),
-    check('retirada-envase','A embalagem secundária é retirada imediatamente antes do transporte para a sala de envase?',{section:'Tampas transportadas para a tampadora sem auxílio de silo externo'}),
-    check('armazenamento-primaria','Os sacos com apenas a embalagem primária são mantidos fora do piso e dos equipamentos da sala de envase?',{section:'Tampas transportadas para a tampadora sem auxílio de silo externo'}),
-    check('retirada-silo','A embalagem secundária é retirada imediatamente antes do transporte para o silo de transferência?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
-    check('localizacao-silo','O silo está instalado em área adequada?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
-    check('filtro-silo','O soprador do silo possui filtro de ar microbiológico?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
-    check('transporte-silo','O silo utiliza transportador fechado ou protegido?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
-    check('transporte-pneumatico-silo','O silo utiliza transporte pneumático por ar comprimido ou soprado?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático',yesLabel:'O silo utiliza transporte pneumático por ar comprimido ou soprado',noLabel:'O silo não utiliza transporte pneumático por ar comprimido ou soprado'}),
-    check('transporte-taliscas-silo','O silo utiliza transporte por taliscas / anteparos?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático',yesLabel:'O silo utiliza transporte por taliscas / anteparos',noLabel:'O silo não utiliza transporte por taliscas / anteparos'})
+    check('retirada-envase','A embalagem secundária é retirada imediatamente antes do transporte para a sala de envase?',{route:'direto',section:'Tampas transportadas para a tampadora sem auxílio de silo externo'}),
+    check('armazenamento-primaria','Os sacos com apenas a embalagem primária são mantidos fora do piso e dos equipamentos da sala de envase?',{route:'direto',section:'Tampas transportadas para a tampadora sem auxílio de silo externo'}),
+    check('retirada-silo','A embalagem secundária é retirada imediatamente antes do transporte para o silo de transferência?',{route:'silo',section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
+    check('localizacao-silo','O silo está instalado em área adequada?',{route:'silo',section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
+    check('filtro-silo','O soprador do silo possui filtro de ar microbiológico?',{route:'silo',section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
+    check('transporte-silo','O silo utiliza transportador fechado ou protegido?',{route:'silo',section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
+    check('transporte-pneumatico-silo','O silo utiliza transporte pneumático por ar comprimido ou soprado?',{route:'silo',section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático',yesLabel:'O silo utiliza transporte pneumático por ar comprimido ou soprado',noLabel:'O silo não utiliza transporte pneumático por ar comprimido ou soprado'}),
+    check('transporte-taliscas-silo','O silo utiliza transporte por taliscas / anteparos?',{route:'silo',section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático',yesLabel:'O silo utiliza transporte por taliscas / anteparos',noLabel:'O silo não utiliza transporte por taliscas / anteparos'})
    ]),
    1:returnableInspection([
-    check('desinfetante-tampas','As tampas são desinfetadas com desinfetantes adequados?',{
-     details:'packaging-sanitizers',detailsOnNo:true,products:[['ozonio','Ozônio'],['outros','Outro']]
-    }),
     check('ambiente-desinfeccao','O ambiente onde é feita a desinfecção é adequado?'),
-    check('transporte-tampas-envase','As tampas desinfetadas são transportadas para a sala de envase em recipientes higienizados e com tampa?'),
-    check('transporte-tampas-silo','As tampas desinfetadas são transportadas para o silo em recipientes higienizados e com tampa?'),
+    check('transporte-tampas-envase','As tampas desinfetadas são transportadas para a sala de envase em recipientes higienizados e com tampa?',{route:'direto'}),
+    check('transporte-tampas-silo','As tampas desinfetadas são transportadas para o silo em recipientes higienizados e com tampa?',{route:'silo'}),
     check('analise-tampas','É feita a análise microbiológica dos lotes desinfetados de tampas?'),
-    check('fora-silo','A desinfecção é realizada dentro do silo?'),
+    check('fora-silo','A desinfecção é realizada dentro do silo?',{route:'silo'}),
     check('fora-envase','A desinfecção é realizada na sala de envase ou na antessala?')
    ].map(criterion=>({...criterion,section:'Higienização de tampas'})))
   },
@@ -291,6 +288,9 @@ const bpfWaterCheck = (() => {
    current['produtos-lavagem-desinfeccao']={answer:'1',products:selected,otherProduct};
   }
   return current;
+ }
+ function capsTransportRoute(scope,data){
+  try{const state=JSON.parse(data[key({name:bpfPhraseName(scope,0)})]||'null');return ['direto','silo'].includes(state?.route)?state.route:'';}catch(_){return '';}
  }
  const read = (entry,data) => {
   try {
@@ -419,6 +419,7 @@ const bpfWaterCheck = (() => {
     state.integrityPositive=true;
     data[name]=JSON.stringify(state);
    }
+   if(entry.index===1&&state&&BPF_PHRASES.some(page=>page.rows.some(row=>row.code==='4.6.8'&&row.scopes.some(scope=>scope.name===entry.scope.name))))state.route=capsTransportRoute(entry.scope,data);
    return state;
   }catch (_) { return null; }
  };
@@ -1008,11 +1009,12 @@ const bpfWaterCheck = (() => {
   }));
   const mixing=row.code==='4.3.2'&&panel.id===0&&typeof bpfReservoirMixReport==='function'?bpfReservoirMixReport(page,data):[];
   const supplemental=row.code==='4.3.3'&&panel.id===1?reservoirFilterReport(page,panel,data):row.code==='4.3.4'&&panel.id===0?reservoirFrequencyAnnex(page,row,panel,data).flatMap(item=>item.checklist.map(v=>visualFrequency.label+': '+v)):[];
+  const capRoutes=row.code==='4.6.8'&&panel.id===0?[...new Set(entries.map(entry=>capsTransportRoute(entry.scope,data)).filter(Boolean))].map(route=>route==='silo'?'Tampas transportadas com auxílio de silo externo':'Tampas transportadas para a tampadora sem auxílio de silo externo'):[];
   const joint=sharedLineInfo(row,panel)&&entries.length?sharedLineState(page,row,panel,data):null;
   const jointRecords=joint?records(row,entries[0],data,joint.state):[];
-  if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length)return [];
+  if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length&&!capRoutes.length)return [];
   const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
-  const information=[...mixing,...supplemental];
+  const information=[...mixing,...supplemental,...capRoutes];
   for(const criterion of config.checks.filter(check=>isInformation(config,check))){
    for(const answer of ['1','0']){
     const shared=joint&&!joint.conflicts.includes(criterion.id);
@@ -1410,14 +1412,16 @@ const bpfWaterCheck = (() => {
     }
     if(row.code==='4.6.8'&&panel.id===0){
      const followup=card.parentElement?.querySelector('[data-bpf-caps-f2]');
-     if(followup)followup.hidden=!row.scopes.some(scope=>capsDisinfected(scope,values));
+     if(followup){followup.hidden=!row.scopes.some(scope=>capsDisinfected(scope,values));followup.dispatchEvent(new Event('bpf-caps-f2-refresh'));}
     }
     changed();
     recalc();
    };
    const refresh=()=>{
+    if(row.code==='4.6.8'&&panel.id===1)state.route=capsTransportRoute(entry.scope,values);
     for(const control of rows)control();
    };
+   if(row.code==='4.6.8'&&panel.id===1)card.addEventListener('bpf-caps-f2-refresh',refresh);
    if(dependentF2){
     const notice=element('p',label+' — Não se aplica (ausência do POP indicada no F1).');
     answerGrid.prepend(notice);
@@ -1457,10 +1461,16 @@ const bpfWaterCheck = (() => {
     if(general&&joint.conflicts.length)section.append(element('p','Há informações anteriores diferentes entre linhas. Revise as respostas do quadro geral. Os registros anteriores permanecem no arquivo.'));
     box.append(section);
     if(dependentF2)rows.push(()=>{section.hidden=!panelEnabled(row,entry,values);});
-    const groups=new Map();
+    const groups=new Map();let routeInput=null;
     for(const criterion of config.checks){
      if(information!==Boolean(isInformation(config,criterion)))continue;
      if((criterion.yesOnly&&answer==='0')||(criterion.noOnly&&answer==='1'))continue;
+     if(information&&row.code==='4.6.8'&&panel.id===0&&criterion.route&&!routeInput){
+      const choice=element('label','Como as tampas são transportadas para a tampadora?');choice.style.cssText='display:block;margin:12px 0;font-weight:bold';
+      routeInput=element('select');routeInput.style.cssText='display:block;margin:6px 0;padding:6px;font:inherit;width:100%';
+      for(const [v,t] of [['','Selecione'],['direto','Sem auxílio de silo externo'],['silo','Com silo externo']])routeInput.add(new Option(t,v));
+      routeInput.value=state.route||'';routeInput.onchange=()=>{state.route=routeInput.value;save();};choice.append(routeInput);section.append(choice);
+     }
      const item=state[criterion.id]??={};
      const line=element('div');
      line.className='bpf-water-row';
@@ -1469,6 +1479,7 @@ const bpfWaterCheck = (() => {
       group.append(element('legend',criterion.section));
       groups.set(criterion.section,group);
       section.append(group);
+      if(row.code==='4.6.8')rows.push(()=>{group.hidden=!config.checks.some(c=>c.section===criterion.section&&Boolean(isInformation(config,c))===information&&active(c,state));});
      }
      (groups.get(criterion.section)||section).append(line);
      if((criterion.details==='sanitizers'&&!criterion.explicitAnswer||criterion.informationList)&&answer==='1'){
