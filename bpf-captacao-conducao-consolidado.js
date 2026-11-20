@@ -90,7 +90,12 @@ const bpfWaterCheck = (() => {
  };
  const fillingF2Indices={'4.7.4':[4,1,2,3],'4.7.5':[1,4,2,5,3]};
  const panels = {
-  '4.7.4':{1:returnableInspection([])},
+  '4.7.4':{0:{simple:true,questionsInInformation:true,checks:[
+   check('avaliacao-contaminacao-envase','Medidas para minimizar o risco de contaminação na sala de envase'),
+   check('pressao-positiva','A sala de envase dispõe de sistema de pressão positiva?',{informationOnly:true,informationQuestion:true,yesLabel:'A sala de envase dispõe de sistema de pressão positiva',noLabel:'A sala de envase não dispõe de sistema de pressão positiva'}),
+   check('pressao-positiva-funciona','A pressão positiva da sala de envase está funcionando de verdade para barrar a entrada de ar externo pelas aberturas?',{informationOnly:true,informationQuestion:true,requires:'pressao-positiva',yesLabel:'A pressão positiva da sala de envase está funcionando para barrar a entrada de ar externo pelas aberturas',noLabel:'A pressão positiva da sala de envase não está funcionando para barrar a entrada de ar externo pelas aberturas'}),
+   check('filtro-ar-externo','Utiliza filtro para captar o ar externo e possui registro de verificação e troca?',{informationOnly:true,informationQuestion:true,requires:'pressao-positiva',yesLabel:'Utiliza filtro para captar o ar externo e possui registro de verificação e troca',noLabel:'Não utiliza filtro para captar o ar externo e/ou não possui registro de verificação e troca',details:'measure',detailLabel:'Qual o filtro utilizado?',optionalDetails:true})
+  ]},1:returnableInspection([])},
   '4.7.5':{1:returnableInspection(fillingChecks['4.7.5'])},
   '4.7.6':{0:returnableInspection(fillingChecks['4.7.6'])},
   '4.7.2':{0:{simple:true,checks:[check('higiene-conservacao-sala','Higiene e conservação da sala de envase')]},1:returnableInspection([...surfaceChecks,...doorChecks])},
@@ -1297,7 +1302,7 @@ const bpfWaterCheck = (() => {
    case 'recirculation':
     field('Procedimento de recirculação',item.procedure,value=>{item.procedure=value;save();},recirculation);
     break;
-   case 'measure': field('Descreva a medida de controle',item.description,value=>{item.description=value;save();},null,4);break;
+   case 'measure': field(criterion.detailLabel||'Descreva a medida de controle',item.description,value=>{item.description=value;save();},null,4);break;
   }
  }
 
