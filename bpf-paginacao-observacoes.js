@@ -190,7 +190,7 @@ function bpfObservationPageMeasure(rect,size,font,spacing){
   if(!content)return 0;
   return bpfObservationParagraphs(content,spacing).reduce((total,{line,gap,definition})=>{
    const count=Math.max(1,bpfObservationLines(line,font,width,size).length);
-   const heading=spacing==='nc'&&/^NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b/.test(line);
+   const heading=spacing==='nc'&&/^(?:NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b|QUANTITATIVO DE NÃO CONFORMIDADES POR PROCESSO$)/.test(line);
    return total+count+gap+(definition?count/3:0)+(heading ? .85 : 0);
   },0);
  }
@@ -470,7 +470,7 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   const rows=spacing==='final'?bpfFinalConsiderationRows(content):bpfObservationParagraphs(content,spacing);
   for(const {line,gap,definition,title,label} of rows){
    y-=gap*(spacing==='final'?size:leading);
-   if(spacing==='nc'&&/^NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b/.test(line))y-=.85*leading;
+   if(spacing==='nc'&&/^(?:NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b|QUANTITATIVO DE NÃO CONFORMIDADES POR PROCESSO$)/.test(line))y-=.85*leading;
    const lineFont=title?bold:font;
    const wrapped=spacing==='final'?bpfFinalWrappedRows(line,title,label,font,bold,right-x-16,size)
     :bpfObservationLines(line,lineFont,right-x-16,size).map(rest=>({lead:'',rest}));
@@ -575,10 +575,10 @@ function bpfOpenNCView(){
 }
 function bpfNCListVisibility(){
  try{const saved=JSON.parse(values.BPF_NCListVisibility||'null');if(Array.isArray(saved))return saved;}catch(e){}
- return bpfNCViewGroups.map(group=>group[0]);
+ return [];
 }
 const quantKey='BPF_ConclusaoQuantitativoProcessos';
-function quantitativeSelected(){return values[quantKey]==='On';}
+function quantitativeSelected(){return values[quantKey]!=='Off';}
 function processQuantitative(){
  const data=values;
  if(!data||typeof BPF_PHRASES==='undefined'||typeof titles==='undefined'||typeof bpfPhraseName!=='function')return [];
