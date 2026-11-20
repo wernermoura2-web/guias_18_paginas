@@ -89,7 +89,7 @@ const bpfWaterCheck = (() => {
  };
  const fillingF2Indices={'4.7.4':[4,1,2,3],'4.7.5':[1,4,2,5,3]};
  const panels = {
-  '4.7.4':{1:returnableInspection(fillingChecks['4.7.4'])},
+  '4.7.4':{1:returnableInspection([])},
   '4.7.5':{1:returnableInspection(fillingChecks['4.7.5'])},
   '4.7.6':{0:returnableInspection(fillingChecks['4.7.6'])},
   '4.7.2':{0:{simple:true,checks:[check('higiene-conservacao-sala','Higiene e conservação da sala de envase')]},1:returnableInspection([...surfaceChecks,...doorChecks])},
