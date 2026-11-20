@@ -529,7 +529,7 @@ const bpfNCViewGroups=[
 const bpfNCViewSelected=new Set(bpfNCViewGroups.map(group=>group[0]));
 function bpfNCViewRecords(){
  let generated={};
- try{generated=JSON.parse(values.BPF_NCGenerated||'{}')||{};}catch(e){}
+ try{generated=JSON.parse(values.BPF_NCFullGenerated||values.BPF_NCGenerated||'{}')||{};}catch(e){}
  return bpfNCViewGroups.map(([id,title,codes])=>{
   const raw=String(generated[id]||'').replace(/\r\n?/g,'\n');
   const total=Number(raw.match(/Total:\s*(\d+)/i)?.[1]||0);
@@ -573,9 +573,30 @@ function bpfOpenNCView(){
  const close=document.createElement('button');close.type='button';close.textContent='Fechar';close.style.cssText='display:block;margin:18px 0 0 auto;padding:10px 18px;border:1px solid #a9c6d8;border-radius:5px;background:#eef6fa;color:#12324a;cursor:pointer';close.onclick=()=>dialog.close();
  dialog.append(header,instruction,columns,details,close);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);refresh();dialog.showModal();
 }
+function bpfNCListVisibility(){
+ try{const saved=JSON.parse(values.BPF_NCListVisibility||'null');if(Array.isArray(saved))return saved;}catch(e){}
+ return bpfNCViewGroups.map(group=>group[0]);
+}
 function bpfMountNCView(){
- const page=bpfSheets[13];if(!page||page.querySelector('.bpf-nc-view-button'))return;
- const button=document.createElement('button');button.type='button';button.className='bpf-nc-view-button';button.textContent='Filtrar não conformidades';button.style.cssText='position:absolute;right:2%;top:0.6%;z-index:10;padding:5px 9px;border:1px solid #8cb4c9;border-radius:5px;background:#eef6fa;color:#12324a;font-size:clamp(11px,1.65cqw,16px);font-weight:bold;cursor:pointer';
- button.onclick=bpfOpenNCView;page.append(button);
- const style=document.createElement('style');style.textContent='@media print{.bpf-nc-view-button,#bpf-nc-view-dialog{display:none!important}}';document.head.append(style);
+ const page=bpfSheets[13];if(!page)return;
+ let bar=page.querySelector('.bpf-nc-list-controls');
+ if(!bar){
+  bar=document.createElement('div');bar.className='bpf-nc-list-controls';
+  bar.style.cssText='position:absolute;right:2%;top:0.6%;z-index:10;display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:4px 6px;border:1px solid #8cb4c9;border-radius:5px;background:#eef6fa;color:#12324a;font-size:clamp(10px,1.45cqw,14px);font-weight:bold';
+  const title=document.createElement('span');title.textContent='Mostrar listas de NC:';bar.append(title);
+  for(const [id,name] of bpfNCViewGroups){
+   const input=document.createElement('input');input.type='checkbox';input.dataset.ncList=id;input.style.margin='0 3px 0 0';
+   const label=document.createElement('label');label.style.cssText='white-space:nowrap;cursor:pointer';label.append(input,document.createTextNode(name));
+   input.onchange=()=>{
+    values.BPF_NCListVisibility=JSON.stringify([...bar.querySelectorAll('input:checked')].map(el=>el.dataset.ncList));
+    bpfSyncNCLists();changed();sync();
+   };
+   bar.append(label);
+  }
+  const button=document.createElement('button');button.type='button';button.textContent='Visualizar NC';button.style.cssText='padding:3px 6px;border:1px solid #8cb4c9;border-radius:4px;background:white;color:#12324a;font:inherit;cursor:pointer';
+  button.onclick=bpfOpenNCView;bar.append(button);page.append(bar);
+  const style=document.createElement('style');style.textContent='@media print{.bpf-nc-list-controls,#bpf-nc-view-dialog{display:none!important}}';document.head.append(style);
+ }
+ const selected=bpfNCListVisibility();
+ for(const input of bar.querySelectorAll('input[data-nc-list]'))input.checked=selected.includes(input.dataset.ncList);
 }
