@@ -1318,6 +1318,7 @@ const bpfWaterCheck = (() => {
    area.oninput=()=>{values[area.dataset.note]=area.value;changed();};
    box.append(area);
    bpfAttachNoteTools(area,box,page,row.code,panel,()=>answer);
+   if(answer==='0')bpfInstallIndividualNC(area,card,page,row,panel,()=>true,()=>panel.entries.filter(e=>values[e.name]==='0').map(e=>({id:e.name,label:bpfScopeLabel(page,e.scope)})));
    grid.append(box);
   }
   card.append(grid);
