@@ -1101,6 +1101,40 @@ const bpfWaterCheck = (() => {
   }
  }
 
+
+ function enableHoverUnit(section){
+  const summary=section.querySelector('summary');
+  if(!summary)return;
+  let openTimer,closeTimer,preview=false,pinned=section.open;
+  const mouse=e=>e.pointerType==='mouse'&&window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  summary.style.cursor='pointer';
+  summary.title='Passe o mouse para abrir; clique para manter aberto.';
+  summary.addEventListener('pointerenter',event=>{
+   if(!mouse(event))return;
+   clearTimeout(closeTimer);clearTimeout(openTimer);
+   if(section.open)return;
+   openTimer=setTimeout(()=>{if(!section.isConnected||section.hidden||section.open)return;preview=true;section.open=true;},180);
+  });
+  section.addEventListener('pointerenter',event=>{if(mouse(event))clearTimeout(closeTimer);});
+  section.addEventListener('pointerleave',event=>{
+   if(!mouse(event))return;
+   clearTimeout(openTimer);clearTimeout(closeTimer);
+   closeTimer=setTimeout(()=>{if(preview&&!pinned){preview=false;section.open=false;}},260);
+  });
+  summary.addEventListener('click',event=>{
+   clearTimeout(openTimer);clearTimeout(closeTimer);
+   if(preview&&section.open&&!pinned){event.preventDefault();preview=false;pinned=true;return;}
+   pinned=!section.open;preview=false;
+  });
+  section.addEventListener('pointerdown',event=>{
+   if(event.target.closest('summary')===summary)return;
+   if(section.open){pinned=true;preview=false;clearTimeout(closeTimer);}
+  });
+  section.addEventListener('focusin',event=>{
+   if(event.target===summary)return;
+   if(section.open){pinned=true;preview=false;clearTimeout(closeTimer);}
+  });
+ }
  function render(card,page,row,panel){
   const config=get(row,panel.id);
   if(!config||config.inline&&!panel.machineDetails)return false;
@@ -1194,7 +1228,7 @@ const bpfWaterCheck = (() => {
     section.className='bpf-water-unit'+(directChoice?' bpf-water-unit-direct':'');
     section.dataset.waterEntry=entry.name;
     if(information&&collapsed){section.dataset.bpfInfoReview='';section.addEventListener('toggle',()=>{if(section.open)section.dataset.bpfInfoVisited='1';});}
-    if(collapsed)section.append(element('summary',label));
+    if(collapsed){section.append(element('summary',label));enableHoverUnit(section);}
     const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
     legacyLine.hidden=!legacy;
     legacyLines.push(legacyLine);
