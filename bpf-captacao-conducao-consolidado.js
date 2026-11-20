@@ -15,23 +15,22 @@ const bpfWaterCheck = (() => {
   yes('ar-sopro-filtrado','As pré-formas são sopradas com ar comprimido com filtro de ar microbiológico.'),
   yes('analise-ar-comprimido','O ar comprimido é coletado e enviado para análises microbiológicas.'),
   yes('transporte-ar-filtrado','As embalagens são movimentadas com sopradores de ar com filtro de ar microbiológico.')
- ].map(criterion=>({...criterion,section:'Embalagens sopradas no estabelecimento'}));
+ ] .map(criterion=>({...criterion,requires:'embalagens-sopradas',section:'Embalagens sopradas no estabelecimento'}));
  const returnableRinse={simple:true,checks:[
   check('avaliacao-enxague','Avaliação do enxágue com solução desinfetante')
  ]};
  const disposableRinse={allowNA:true,separateInformation:true,exclusiveScopeAnswer:true,checks:[
   check('sim-descartaveis','Sim',{yesOnly:true,scopeAnswer:true}),
   check('nao-descartaveis','Não',{noOnly:true,scopeAnswer:true}),
+  check('embalagens-sopradas','As embalagens são sopradas no estabelecimento?',{informationOnly:true,informationQuestion:true,requiredInfo:true,yesLabel:'As embalagens são sopradas no estabelecimento',noLabel:'As embalagens não são sopradas no estabelecimento'}),
   ...blownChecks,
   ...[
-   check('concentracao','O enxágue com desinfetante das embalagens é feito na concentração adequada (validada)?'),
    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a solução desinfetante alcance o fundo das garrafas?'),
-   check('escoamento','O tempo após o enxágue é suficiente para o escoamento de toda a solução desinfetante?'),
    check('sanitizantes-embalagens','Sanitizantes utilizados para descontaminação ou desinfecção das embalagens',{
     yesOnly:true,details:'packaging-sanitizers',products:[['ozonio','Ozônio'],['outros','Outro']]
    }),
    check('telemetria-concentracao','Existe telemetria em linha da concentração do desinfetante utilizado para controlar e monitorar sua reposição.',{yesOnly:true})
-  ].map(criterion=>({...criterion,section:'Enxágue com solução desinfetante'}))
+  ] .map(criterion=>({...criterion,requiresAnyRinseYes:true,section:'Enxágue com solução desinfetante'}))
  ]};
  const fillingMachine={inline:true,separateInformation:true,questionsInInformation:true,checks:[
   check('registros-desinfeccao-envasadora','Apresentou registros de descontaminação ou desinfecção da envasadora Automática?',{
@@ -513,7 +512,7 @@ const bpfWaterCheck = (() => {
  }
  const answerLabel=(criterion,answer)=>answer==='0'?(criterion.noLabel||criterion.label):criterion.label;
  const active = (criterion,state) =>
-  (!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1')&&
+  (!criterion.requiresAnyRinseYes||state.bpfAnyRinseYes===true)&&(!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1')&&
   !criterion.hideWhenAllNo?.every(id=>state[id]?.answer==='0');
  const answered = (criterion,state) => active(criterion,state)&&
   ((!criterion.noOnly&&state[criterion.id]?.answer==='1')||(!criterion.yesOnly&&state[criterion.id]?.answer==='0'));
@@ -884,7 +883,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
-   if(['4.6.4','4.6.5','4.6.6'].includes(row.code)){for(const id of row.code==='4.6.6'?[0,1]:[0]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}}
+   if(['4.6.4','4.6.5','4.6.6'].includes(row.code)||row.code==='4.6.3'&&scope.phrases[0]?.allowNA){for(const id of row.code==='4.6.6'?[0,1]:[0]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}}
    if(row.code==='4.3.3'){const name=reservoirFilterKey(scope);data.fields[name]={name,type:'/Tx',flags:0,label:'4.3.3 F2 — Outras observações dos filtros',options:[],calc:'',phrasePage:page.page};}
    for(const [position,check] of Object.entries(receptionChecks[row.code]||{})){
     const index=Number(position);
@@ -954,18 +953,19 @@ const bpfWaterCheck = (() => {
   }
  }
 
- const sharedLineInfo=(row,panel)=>(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5'].includes(row.code));
+ const sharedLineInfo=(row,panel)=>(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5'].includes(row.code));
  const sharedLineKey=(page,row,panel)=>'BPF_LineInfo_'+page.page+'_'+row.code.replace(/\./g,'_')+'_F'+(panel.id+1);
  function sharedLineState(page,row,panel,data){
   const name=sharedLineKey(page,row,panel),raw=data[name];
-  if(raw){try{return {state:JSON.parse(raw)||{},conflicts:[]};}catch(_){}}
+  const addGate=state=>{if(row.code==='4.6.3')state.bpfAnyRinseYes=panel.entries.some(entry=>data[entry.name]==='1');return state;};
+  if(raw){try{return {state:addGate(JSON.parse(raw)||{}),conflicts:[]};}catch(_){}}
   const config=get(row,panel.id),state={},conflicts=[];
   for(const c of config.checks.filter(c=>isInformation(config,c))){
-   const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&answered(c,v)).map(v=>v[c.id]);
+   const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&(row.code==='4.6.3'?hasAnswer(v[c.id]?.answer):answered(c,v))).map(v=>v[c.id]);
    const distinct=[...new Set(recorded.map(item=>JSON.stringify(item)))];
    if(distinct.length===1)state[c.id]=JSON.parse(distinct[0]);else if(distinct.length>1)conflicts.push(c.id);
   }
-  return {state,conflicts};
+  return {state:addGate(state),conflicts};
  }
  function records(row,entry,data,override){
   const state=override??read(entry,data);
@@ -1095,6 +1095,7 @@ const bpfWaterCheck = (() => {
  }
 
  function validateMandatory(page,row,panels,content){
+  if(row.code==='4.6.3'){const panel=panels.find(p=>p.id===0);if(panel&&sharedLineInfo(row,panel)&&!hasAnswer(sharedLineState(page,row,panel,values).state['embalagens-sopradas']?.answer)){const control=content.querySelector('[data-bpf-required-info="embalagens-sopradas"]');alert('ATENÇÃO — Resposta obrigatória: informe se as embalagens são sopradas no estabelecimento.');control?.scrollIntoView({block:'center'});control?.focus();return false;}return true;}
   if(row.code!=='4.6.8')return true;
   const panel=panels.find(p=>p.id===0);if(!panel)return true;
   for(const entry of panel.entries){
@@ -1396,6 +1397,7 @@ const bpfWaterCheck = (() => {
    }
   }
   const joint=sharedLineInfo(row,panel)?sharedLineState(page,row,panel,values):null;
+  const naBox=config.allowNA?element('div'):null;if(naBox){naBox.style.cssText='display:flex;flex-direction:column;gap:2px;margin:2px 0;padding:0';answerGrid.prepend(naBox);}
   for(const entry of panel.entries){
    const previous=read(entry,values);
    const existingAnswer=values[entry.name];
@@ -1414,6 +1416,7 @@ const bpfWaterCheck = (() => {
      if(!values[entry.name])values[entry.scope.name]='Off';
     }
     refresh();
+    if(row.code==='4.6.3'&&joint)card.dispatchEvent(new Event('bpf-rinse-yes-refresh'));
     if(config.inline||(row.code==='4.2.9'&&panel.id===0))apply(row,entry.scope,values);
     if(row.code==='4.2.9'&&panel.id===0){
      card.parentElement?.querySelector('[data-bpf-conduction-f2]')?.dispatchEvent(new Event('bpf-f2-refresh'));
@@ -1426,10 +1429,12 @@ const bpfWaterCheck = (() => {
     recalc();
    };
    const refresh=()=>{
+    if(row.code==='4.6.3'&&joint)joint.state.bpfAnyRinseYes=panel.entries.some(e=>values[e.name]==='1');
     if(row.code==='4.6.8'&&panel.id===1)state.route=capsTransportRoute(entry.scope,values);
     for(const control of rows)control();
    };
    if(row.code==='4.6.8'&&panel.id===1)card.addEventListener('bpf-caps-f2-refresh',refresh);
+   if(row.code==='4.6.3'&&joint)card.addEventListener('bpf-rinse-yes-refresh',refresh);
    if(dependentF2){
     const notice=element('p',label+' — Não se aplica (ausência do POP indicada no F1).');
     answerGrid.prepend(notice);
@@ -1444,7 +1449,7 @@ const bpfWaterCheck = (() => {
     input.checked=!!state.notApplicable;
     input.onchange=()=>{state.notApplicable=input.checked;save();};
     control.prepend(input);
-    answerGrid.prepend(control);
+    control.style.cssText='display:flex;align-items:center;gap:6px;margin:2px 0;padding:0';naBox.append(control);
    }
    const entryState=state,entrySave=save;
    for(const [sectionType,box] of boxes){
@@ -1490,7 +1495,7 @@ const bpfWaterCheck = (() => {
       group.append(element('legend',criterion.section));
       groups.set(criterion.section,group);
       section.append(group);
-      if(row.code==='4.6.8')rows.push(()=>{group.hidden=!config.checks.some(c=>c.section===criterion.section&&Boolean(isInformation(config,c))===information&&active(c,state));});
+      if(['4.6.3','4.6.8'].includes(row.code))rows.push(()=>{group.hidden=!config.checks.some(c=>c.section===criterion.section&&Boolean(isInformation(config,c))===information&&active(c,state));});
      }
      (groups.get(criterion.section)||section).append(line);
      if((criterion.details==='sanitizers'&&!criterion.explicitAnswer||criterion.informationList)&&answer==='1'){
