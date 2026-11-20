@@ -728,7 +728,19 @@ const bpfWaterCheck = (() => {
  const receptionEvidence=['Formulário de recepção','Carimbo na nota fiscal','Sistema eletrônico','Ficha de estoque','Outro'];
  const receptionKey=(name,field)=>'BPF_Recepcao_'+name+'_'+field;
 
+ function groupedReception(row,panel){return row.code==='4.5.3'&&panel.id===0;}
+ function receptionGroupedRecords(page,row,panel,data){
+  const check=receptionChecks[row.code][panel.id],groups=new Map();
+  for(const entry of panel.entries){
+   const answer=data[receptionKey(entry.name,'Resposta')];if(!['1','0'].includes(answer))continue;
+   const evidence=answer==='1'?String(data[receptionKey(entry.name,'Comprovacao')]||''):'';
+   const details=evidence==='Outro'?String(data[receptionKey(entry.name,'Detalhes')]||'').trim():'';
+   const key=JSON.stringify([answer,evidence,details]);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(bpfScopeLabel(page,entry.scope));
+  }
+  return [...groups].map(([key,labels])=>{const [answer,evidence,details]=JSON.parse(key);return (answer==='1'?check.yes:check.no)+' ('+labels.join(', ')+')'+(evidence?' — '+evidence:'')+(details?' — '+details:'');});
+ }
  function receptionRecords(page,row,panel,data){
+  if(groupedReception(row,panel))return receptionGroupedRecords(page,row,panel,data);
   const check=receptionChecks[row.code]?.[panel.id];
   if(!check)return [];
   return panel.entries.flatMap(entry=>{
@@ -753,7 +765,32 @@ const bpfWaterCheck = (() => {
  }
 
 
+ function renderGroupedReception(card,page,row,panel){
+  const block=element('fieldset');block.className='bpf-answer-box';block.append(element('legend','Informações adicionais'));
+  const check=receptionChecks[row.code][panel.id],question=element('p',check.question);block.append(question);
+  const read=(entry,key)=>String(values[receptionKey(entry.name,key)]||'');
+  const selected=new Set(panel.entries.filter(e=>['1','0'].includes(read(e,'Resposta'))).map(e=>e.name));
+  const common=(entries,key)=>{const vals=[...new Set(entries.map(e=>read(e,key)))];return vals.length===1?vals[0]:'';};
+  const initial=panel.entries.filter(e=>selected.has(e.name));
+  let answer=common(initial,'Resposta'),evidence=common(initial.filter(e=>read(e,'Resposta')==='1'),'Comprovacao'),details=common(initial.filter(e=>read(e,'Comprovacao')==='Outro'),'Detalhes');
+  const persist=()=>{bpfSyncObservation(row,page);changed();};
+  const write=(entry,key,value)=>{values[receptionKey(entry.name,key)]=value;};
+  const saveCommon=()=>{for(const entry of panel.entries.filter(e=>selected.has(e.name))){if(answer)write(entry,'Resposta',answer);if(answer==='1'){write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}else if(answer==='0'){write(entry,'Comprovacao','');write(entry,'Detalhes','');}}persist();};
+  for(const entry of panel.entries){const label=element('label',bpfScopeLabel(page,entry.scope));label.style.cssText='display:block;margin:9px 0';const input=element('input');input.type='checkbox';input.checked=selected.has(entry.name);input.onchange=()=>{
+   if(input.checked){selected.add(entry.name);if(answer){write(entry,'Resposta',answer);if(answer==='1'){write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}}}
+   else{selected.delete(entry.name);for(const key of ['Resposta','Comprovacao','Detalhes'])write(entry,key,'');}
+   refresh();persist();
+  };label.prepend(input);block.append(label);}
+  const response=element('div');response.style.cssText='margin:12px 0';const radios=new Map();
+  for(const [value,labelText] of [['1','Sim'],['0','Não']]){const label=element('label',labelText);label.style.marginRight='16px';const input=element('input');input.type='radio';input.name='BPF_Recepcao_Conjunta_'+page.page+'_'+row.code;input.value=value;input.checked=answer===value;input.onchange=()=>{answer=value;refresh();saveCommon();};label.prepend(input);response.append(label);radios.set(value,input);}
+  block.append(response);
+  const followup=element('div');const label=element('label','Comprovação');label.style.display='block';const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px';for(const name of ['Selecione',...receptionEvidence])select.add(new Option(name,name==='Selecione'?'':name));select.value=evidence;select.onchange=()=>{evidence=select.value;if(evidence!=='Outro')details=area.value='';refresh();saveCommon();};label.append(select);followup.append(label);
+  const other=element('label','Especifique a outra comprovação');const area=element('textarea');area.rows=2;area.style.cssText='display:block;width:100%;margin-top:6px';area.value=details;area.oninput=()=>{details=area.value;saveCommon();};other.append(area);followup.append(other);block.append(followup);
+  const refresh=()=>{const active=selected.size>0;for(const input of radios.values())input.disabled=!active;const visible=active&&answer==='1';followup.hidden=!visible;followup.style.display=visible?'block':'none';other.hidden=!visible||evidence!=='Outro';other.style.display=other.hidden?'none':'block';area.disabled=other.hidden;question.textContent=answer==='1'?check.yes:answer==='0'?check.no:check.question;};
+  refresh();card.append(block);
+ }
  function renderReception(card,page,row,panel){
+  if(groupedReception(row,panel)){renderGroupedReception(card,page,row,panel);return;}
   const check=receptionChecks[row.code]?.[panel.id];
   if(!check||!panel.entries.length)return;
   const block=element('fieldset');
@@ -777,6 +814,8 @@ const bpfWaterCheck = (() => {
     question.textContent=values[answerKey]==='1'?check.yes:values[answerKey]==='0'?check.no:check.question;
     followup.hidden=values[answerKey]!==check.detailsAnswer;
     detailLabel.hidden=panel.id===0&&values[evidenceKey]!=='Outro';
+    detailLabel.style.display=detailLabel.hidden?'none':'';
+    area.disabled=detailLabel.hidden;
    };
    const save=(key,value)=>{
     values[key]=value;
