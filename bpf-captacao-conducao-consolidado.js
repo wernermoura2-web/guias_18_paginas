@@ -217,7 +217,7 @@ const bpfWaterCheck = (() => {
     check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual',{yesOnly:true,informationOnly:true,confirmationOnly:true})
    ]}
   },
-  '4.2.7':{0:{separateInformation:true,checks:[
+  '4.2.7':{1:{separateInformation:true,checks:[
    check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
    check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução',{yesOnly:true,frequencyOptional:true}),
@@ -357,7 +357,7 @@ const bpfWaterCheck = (() => {
      return {...state,[id]:{answer:previous}};
     }
    }
-   if(entry.index===0&&!state?.['nao-conducao']&&getConductionCheckEntry(entry,'4.2.7')){
+   if(entry.index===1&&!state?.['nao-conducao']&&getConductionCheckEntry(entry,'4.2.7')){
     const previous=state?.['higienizacao-adequada']?.answer??data[entry.name];
     if(previous==='0')return {...state,'nao-conducao':{answer:'0'}};
     if(previous==='1'&&!state)return {'higienizacao-adequada':{answer:'1'}};
@@ -525,6 +525,14 @@ const bpfWaterCheck = (() => {
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(page.page===1&&row.code==='4.2.7'){
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     const [hygiene,records,training]=phrases;
+     if(!training)continue;
+     // Keep field suffixes: old answers, observations and Water data stay linked.
+     phrases.splice(0,3,{...training,fieldSuffix:training.fieldSuffix??3},{...hygiene,fieldSuffix:hygiene.fieldSuffix??1},{...records,fieldSuffix:records.fieldSuffix??2});
+    }
+   }
    if(page.page===7&&row.code==='4.6.6'){
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
      const [rinse,verification]=phrases;
