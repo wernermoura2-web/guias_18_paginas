@@ -342,6 +342,7 @@ function bpfMakeObservationOverflowPage(id,title){
 }
 
 function bpfReconcileObservationPages(finalFont,finalBold){
+ bpfMountNCView();
  if(typeof bpfRefreshFinalConsiderationsSelector==='function')bpfRefreshFinalConsiderationsSelector();
  const full=String(values.obs_gerais_continuacao||'').replace(/\r\n?/g,'\n');
  const rect=D.widgets.find(widget=>widget.name==='obs_gerais_continuacao')?.rect;
@@ -517,4 +518,64 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   const label='Página '+(bpfPageOrder.indexOf(source)+1)+' de '+bpfPageOrder.length;
   page.drawText(label,{x:w-22-font.widthOfTextAtSize(label,8),y:source===14?20:h-784,size:8,font,color:ink});
  }
+}
+
+/* Visualização independente da paginação e dos dados de impressão. */
+const bpfNCViewGroups=[
+ ['criticas','Críticas',['PCC']],
+ ['maiores','Maiores',['PPRO','PC']],
+ ['menores','Menores',['POP','PPR']]
+];
+const bpfNCViewSelected=new Set(bpfNCViewGroups.map(group=>group[0]));
+function bpfNCViewRecords(){
+ let generated={};
+ try{generated=JSON.parse(values.BPF_NCGenerated||'{}')||{};}catch(e){}
+ return bpfNCViewGroups.map(([id,title,codes])=>{
+  const raw=String(generated[id]||'').replace(/\r\n?/g,'\n');
+  const total=Number(raw.match(/Total:\s*(\d+)/i)?.[1]||0);
+  const parts=raw.split(/\n\s*\n/);
+  return {id,title,codes,total,details:parts.slice(2).join('\n\n').trim()||'Nenhuma não conformidade registrada.'};
+ });
+}
+function bpfOpenNCView(){
+ const existing=document.getElementById('bpf-nc-view-dialog');
+ if(existing)return;
+ const dialog=document.createElement('dialog');
+ dialog.id='bpf-nc-view-dialog';
+ dialog.style.cssText='width:min(94vw,1000px);max-width:94vw;max-height:88vh;overflow:auto;padding:22px;border:2px solid #177693;border-radius:12px;background:white;color:#12324a;box-sizing:border-box;font:16px Arial,sans-serif';
+ const header=document.createElement('h2');header.textContent='Não conformidades — visualização por classe';header.style.margin='0 0 10px';
+ const instruction=document.createElement('p');instruction.textContent='Selecione as classes que deseja visualizar. Os totais e as definições permanecem visíveis.';instruction.style.margin='0 0 16px';
+ const columns=document.createElement('div');columns.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px';
+ const details=document.createElement('div');details.style.marginTop='18px';
+ const records=bpfNCViewRecords(), panels=new Map();
+ function refresh(){
+  for(const [id,panel] of panels)panel.hidden=!bpfNCViewSelected.has(id);
+  empty.hidden=bpfNCViewSelected.size!==0;
+ }
+ for(const record of records){
+  const col=document.createElement('section');col.style.cssText='border:1px solid #a9c6d8;border-radius:8px;background:#eef6fa;padding:12px';
+  const label=document.createElement('label');label.style.cssText='display:flex;gap:8px;align-items:center;font-weight:bold;cursor:pointer';
+  const check=document.createElement('input');check.type='checkbox';check.checked=bpfNCViewSelected.has(record.id);
+  check.onchange=()=>{if(check.checked)bpfNCViewSelected.add(record.id);else bpfNCViewSelected.delete(record.id);refresh();};
+  label.append(check,document.createTextNode(record.title+' — Total: '+record.total));
+  col.append(label);
+  for(const code of record.codes){
+   const def=document.createElement('p');def.style.cssText='margin:10px 0 0;font-size:14px;line-height:1.45';
+   def.textContent=code+' — '+String(BPF_NC_DEFINITIONS[code]?.text||'');col.append(def);
+  }
+  columns.append(col);
+  const panel=document.createElement('section');panel.style.cssText='border-top:1px solid #a9c6d8;padding-top:10px;margin-top:12px';
+  const title=document.createElement('h3');title.textContent='Não conformidades '+record.title.toLowerCase()+' — '+record.total;title.style.margin='0 0 8px';
+  const body=document.createElement('div');body.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5';body.textContent=record.details;
+  panel.append(title,body);details.append(panel);panels.set(record.id,panel);
+ }
+ const empty=document.createElement('p');empty.textContent='Nenhuma classe selecionada.';details.append(empty);
+ const close=document.createElement('button');close.type='button';close.textContent='Fechar';close.style.cssText='display:block;margin:18px 0 0 auto;padding:10px 18px;border:1px solid #a9c6d8;border-radius:5px;background:#eef6fa;color:#12324a;cursor:pointer';close.onclick=()=>dialog.close();
+ dialog.append(header,instruction,columns,details,close);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);refresh();dialog.showModal();
+}
+function bpfMountNCView(){
+ const page=bpfSheets[13];if(!page||page.querySelector('.bpf-nc-view-button'))return;
+ const button=document.createElement('button');button.type='button';button.className='bpf-nc-view-button';button.textContent='Filtrar não conformidades';button.style.cssText='position:absolute;right:2%;top:0.6%;z-index:10;padding:5px 9px;border:1px solid #8cb4c9;border-radius:5px;background:#eef6fa;color:#12324a;font-size:clamp(11px,1.65cqw,16px);font-weight:bold;cursor:pointer';
+ button.onclick=bpfOpenNCView;page.append(button);
+ const style=document.createElement('style');style.textContent='@media print{.bpf-nc-view-button,#bpf-nc-view-dialog{display:none!important}}';document.head.append(style);
 }
