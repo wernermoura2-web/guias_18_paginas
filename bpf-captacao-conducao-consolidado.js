@@ -95,6 +95,11 @@ const bpfWaterCheck = (() => {
   '4.7.2':{0:returnableInspection([...surfaceChecks,...doorChecks])},
   '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
+  '4.6.7':{0:{simple:true,questionsInInformation:true,checks:[
+   check('avaliacao-enxague-final','Avaliação do enxágue final'),
+   check('enxague-ozonizado','O enxágue é realizado com água mineral natural ozonizada?',{informationOnly:true,informationQuestion:true,requiredInfo:true,yesLabel:'O enxágue é realizado com água mineral natural ozonizada',noLabel:'O enxágue não é realizado com água mineral natural ozonizada'}),
+   check('residual-ozonizado','Após o enxágue as garrafas plásticas ficam com um volume residual de água ozonizada?',{informationOnly:true,informationQuestion:true,requires:'enxague-ozonizado',yesLabel:'Após o enxágue as garrafas plásticas ficam com um volume residual de água ozonizada',noLabel:'Após o enxágue as garrafas plásticas não ficam com um volume residual de água ozonizada'})
+  ]}},
   '4.6.10':{1:{simple:true,questionsInInformation:true,checks:[
    check('avaliacao-transporte','Avaliação do transporte das embalagens para a sala de envase'),
    check('transporte-manual-ar-filtrado','As embalagens colocadas manualmente, em transportadores aéreos para entrada na sala de envase, são movimentadas com sopradores de ar com filtro de ar microbiológico?',{informationOnly:true,informationQuestion:true,yesLabel:'As embalagens colocadas manualmente em transportadores aéreos para entrada na sala de envase são movimentadas com sopradores de ar com filtro de ar microbiológico',noLabel:'As embalagens colocadas manualmente em transportadores aéreos para entrada na sala de envase não são movimentadas com sopradores de ar com filtro de ar microbiológico'}),
@@ -269,6 +274,7 @@ const bpfWaterCheck = (() => {
  function get(row,index){
   const config=row.code==='4.6.3'&&index===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA)
    ?disposableRinse:panels[row.code]?.[index];
+  if(row.code==='4.6.7'&&index===0&&config)return {...config,allowNA:row.scopes.some(scope=>scope.phrases[0]?.allowNA)};
   return config&&synchronizedItems.has(row.code)?{...config,optional:true}:config;
  }
  const key = entry => 'BPF_FWater_'+entry.name;
@@ -688,7 +694,7 @@ const bpfWaterCheck = (() => {
      refs:[{set text(value){visualFrequency.label=value;},set guidance(value){visualFrequency.guidance=value;}}]};
     entries.push(entry);byKey.set(key,entry);
    }
-   if(!synchronizedItems.has(row.code)&&!['4.3.4','4.6.10'].includes(row.code))continue;
+   if(!synchronizedItems.has(row.code)&&!['4.3.4','4.6.10','4.6.7'].includes(row.code))continue;
    for(const panel of bpfPanels(page,row)){
     const config=get(row,panel.id);
     if(!config)continue;
@@ -888,7 +894,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
-   if(['4.6.4','4.6.5','4.6.6'].includes(row.code)||row.code==='4.6.3'&&scope.phrases[0]?.allowNA){for(const id of row.code==='4.6.6'?[0,1]:[0]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}}
+   if(['4.6.4','4.6.5','4.6.6','4.6.7'].includes(row.code)||row.code==='4.6.3'&&scope.phrases[0]?.allowNA){for(const id of row.code==='4.6.6'?[0,1]:[0]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}}
    if(row.code==='4.3.3'){const name=reservoirFilterKey(scope);data.fields[name]={name,type:'/Tx',flags:0,label:'4.3.3 F2 — Outras observações dos filtros',options:[],calc:'',phrasePage:page.page};}
    for(const [position,check] of Object.entries(receptionChecks[row.code]||{})){
     const index=Number(position);
@@ -958,7 +964,7 @@ const bpfWaterCheck = (() => {
   }
  }
 
- const sharedLineInfo=(row,panel)=>(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5'].includes(row.code));
+ const sharedLineInfo=(row,panel)=>(row.code==='4.6.7'&&panel.id===0)||(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5'].includes(row.code));
  const sharedLineKey=(page,row,panel)=>'BPF_LineInfo_'+page.page+'_'+row.code.replace(/\./g,'_')+'_F'+(panel.id+1);
  function sharedLineState(page,row,panel,data){
   const name=sharedLineKey(page,row,panel),raw=data[name];
@@ -1100,6 +1106,7 @@ const bpfWaterCheck = (() => {
  }
 
  function validateMandatory(page,row,panels,content){
+  if(row.code==='4.6.7'){const panel=panels.find(p=>p.id===0);if(!panel||!panel.entries.length||panel.entries.every(e=>values[e.name]==='2'||read(e,values)?.notApplicable))return true;const state=sharedLineState(page,row,panel,values).state;if(!hasAnswer(state['enxague-ozonizado']?.answer)){const control=content.querySelector('[data-bpf-required-info="enxague-ozonizado"]');alert('ATENÇÃO — Resposta obrigatória: informe se o enxágue é realizado com água mineral natural ozonizada.');control?.scrollIntoView({block:'center'});control?.focus();return false;}return true;}
   if(row.code==='4.6.3'){const panel=panels.find(p=>p.id===0);if(panel&&sharedLineInfo(row,panel)&&!hasAnswer(sharedLineState(page,row,panel,values).state['embalagens-sopradas']?.answer)){const control=content.querySelector('[data-bpf-required-info="embalagens-sopradas"]');alert('ATENÇÃO — Resposta obrigatória: informe se as embalagens são sopradas no estabelecimento.');control?.scrollIntoView({block:'center'});control?.focus();return false;}return true;}
   if(row.code!=='4.6.8')return true;
   const panel=panels.find(p=>p.id===0);if(!panel)return true;
