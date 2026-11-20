@@ -92,7 +92,7 @@ const bpfWaterCheck = (() => {
   '4.7.4':{1:returnableInspection(fillingChecks['4.7.4'])},
   '4.7.5':{1:returnableInspection(fillingChecks['4.7.5'])},
   '4.7.6':{0:returnableInspection(fillingChecks['4.7.6'])},
-  '4.7.2':{1:returnableInspection([...surfaceChecks,...doorChecks])},
+  '4.7.2':{0:{simple:true,checks:[check('higiene-conservacao-sala','Higiene e conservação da sala de envase')]},1:returnableInspection([...surfaceChecks,...doorChecks])},
   '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
   '4.6.7':{0:{simple:true,questionsInInformation:true,checks:[
