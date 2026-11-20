@@ -36,7 +36,7 @@ function bpfIsNCEntry(line){
 }
 
 function bpfIsNCDefinition(line){
- return /^\s*(?:BPF|APPCC|PCC|PPRO|PPR|PC|POP)\s+[—–-]\s+/i.test(line);
+ return /^\s*(?:BPF|APPCC|PCC|PPRO|PPR|PC|POP|4\.\d+)\s+[—–-]\s+/i.test(line);
 }
 
 function bpfIsFinalConsiderationTitle(line){
