@@ -92,7 +92,7 @@ const bpfWaterCheck = (() => {
   '4.7.4':{1:returnableInspection(fillingChecks['4.7.4'])},
   '4.7.5':{1:returnableInspection(fillingChecks['4.7.5'])},
   '4.7.6':{0:returnableInspection(fillingChecks['4.7.6'])},
-  '4.7.2':{0:returnableInspection([...surfaceChecks,...doorChecks])},
+  '4.7.2':{1:returnableInspection([...surfaceChecks,...doorChecks])},
   '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
   '4.6.7':{0:{simple:true,questionsInInformation:true,checks:[
@@ -317,7 +317,7 @@ const bpfWaterCheck = (() => {
     if(row&&panels[row.code][entry.index]){
      let previous=data[entry.name];
      const groupedIndices=entry.index===1?fillingF2Indices[row.code]:null;
-     const priorChecks=entry.index===0?({'4.6.4':prewashChecks,'4.7.2':[...surfaceChecks,...doorChecks],'4.7.6':fillingChecks['4.7.6']})[row.code]:groupedIndices?fillingChecks[row.code]:null;
+     const priorChecks=row.code==='4.7.2'?(entry.index===1?[...surfaceChecks,...doorChecks]:null):entry.index===0?({'4.6.4':prewashChecks,'4.7.6':fillingChecks['4.7.6']})[row.code]:groupedIndices?fillingChecks[row.code]:null;
      if(priorChecks){
       const names=groupedIndices?groupedIndices.map(index=>bpfPhraseName(entry.scope,index)):bpfF1Checks(row,entry.scope).map(check=>check.name);
       // Older prewash forms stored the removed adhesive check in the second field.
@@ -557,6 +557,12 @@ const bpfWaterCheck = (() => {
      if(!training)continue;
      // Keep field suffixes: old answers, observations and Water data stay linked.
      phrases.splice(0,3,{...training,fieldSuffix:training.fieldSuffix??3},{...hygiene,fieldSuffix:hygiene.fieldSuffix??1},{...records,fieldSuffix:records.fieldSuffix??2});
+    }
+   }
+   if([9,10].includes(page.page)&&row.code==='4.7.2'){
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     const [first,second]=phrases;if(!second)continue;
+     phrases.splice(0,2,{...second,fieldSuffix:second.fieldSuffix??2},{...first,fieldSuffix:first.fieldSuffix??1});
     }
    }
    if([7,8].includes(page.page)&&row.code==='4.6.11'){
