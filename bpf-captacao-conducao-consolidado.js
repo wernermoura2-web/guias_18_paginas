@@ -147,15 +147,17 @@ const bpfWaterCheck = (() => {
   '4.6.8':{
    0:returnableInspection([
     check('declaracao','Possui declaração do fabricante de desinfecção do lote de tampas em uso?',{keepLabel:true}),
-    check('analise-tampas-recebidas','É feita a análise microbiológica dos lotes das tampas recebidas com declaração de desinfecção?',{yesOnly:true,confirmationOnly:true}),
+    check('analise-tampas-recebidas','É feita análise microbiológica dos lotes das tampas recebidas?',{yesLabel:'É feita análise microbiológica dos lotes das tampas recebidas',noLabel:'Não é feita análise microbiológica dos lotes das tampas recebidas'}),
     check('dupla-embalagem','Os sacos com as tampas são enviados com embalagens primária e secundária?'),
-    check('desinfeccao-envasadora','Faz a desinfecção das tampas na envasadora?'),
-    check('retirada-envase','A embalagem secundária é retirada imediatamente antes do transporte para a sala de envase?',{section:'Sem Silo'}),
-    check('armazenamento-primaria','Os sacos com apenas a embalagem primária são mantidos fora do piso e dos equipamentos da sala de envase?',{section:'Sem Silo'}),
-    check('retirada-silo','A embalagem secundária é retirada imediatamente antes do transporte para o silo de transferência?',{section:'Com Silo'}),
-    check('localizacao-silo','O silo está instalado em área adequada?',{section:'Com Silo'}),
-    check('filtro-silo','O soprador do silo possui filtro de ar microbiológico?',{section:'Com Silo'}),
-    check('transporte-silo','O silo utiliza transportador fechado ou protegido?',{section:'Com Silo'})
+    check('desinfeccao-envasadora','Faz a desinfecção das tampas no estabelecimento?'),
+    check('retirada-envase','A embalagem secundária é retirada imediatamente antes do transporte para a sala de envase?',{section:'Tampas transportadas para a tampadora sem auxílio de silo externo'}),
+    check('armazenamento-primaria','Os sacos com apenas a embalagem primária são mantidos fora do piso e dos equipamentos da sala de envase?',{section:'Tampas transportadas para a tampadora sem auxílio de silo externo'}),
+    check('retirada-silo','A embalagem secundária é retirada imediatamente antes do transporte para o silo de transferência?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
+    check('localizacao-silo','O silo está instalado em área adequada?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
+    check('filtro-silo','O soprador do silo possui filtro de ar microbiológico?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
+    check('transporte-silo','O silo utiliza transportador fechado ou protegido?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
+    check('transporte-pneumatico-silo','O silo utiliza transporte pneumático por ar comprimido ou soprado?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático',yesLabel:'O silo utiliza transporte pneumático por ar comprimido ou soprado',noLabel:'O silo não utiliza transporte pneumático por ar comprimido ou soprado'}),
+    check('transporte-taliscas-silo','O silo utiliza transporte por taliscas / anteparos?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático',yesLabel:'O silo utiliza transporte por taliscas / anteparos',noLabel:'O silo não utiliza transporte por taliscas / anteparos'})
    ]),
    1:returnableInspection([
     check('desinfetante-tampas','As tampas são desinfetadas com desinfetantes adequados?',{
@@ -1346,14 +1348,16 @@ const bpfWaterCheck = (() => {
   answerGrid.className='bpf-answer-grid bpf-water-grid';
   card.append(answerGrid);
   const boxes=new Map();
+  const capsF1=row.code==='4.6.8'&&panel.id===0;
   const sections=config.inline?[]:[['1','Sim'],['0','Não']];
   if(config.checks.some(criterion=>isInformation(config,criterion)))sections.push(['info',informationHeading(config)]);
   for(const [answer,heading] of sections){
+   if(capsF1&&answer==='0'){boxes.set('0',boxes.get('1'));continue;}
    const box=element('fieldset');
    box.className='bpf-answer-box';
    if(answer==='info')box.dataset.bpfInfoBox='';
    const prompt=config.answerPrompts?.[answer];
-   box.append(element('legend',(config.inline?'':panel.label+' — ')+heading+(prompt?' ('+prompt+')':'')));
+   box.append(element('legend',(config.inline?'':panel.label+' — ')+(capsF1&&answer==='1'?'Higienização de tampas':heading)+(prompt?' ('+prompt+')':'')));
    answerGrid.append(box);
    boxes.set(answer,box);
    if(answer==='info'&&row.code==='4.3.2'&&panel.id===0&&typeof bpfReservoirMixPage==='function'&&page.page===bpfReservoirMixPage()){
@@ -1461,7 +1465,7 @@ const bpfWaterCheck = (() => {
       fields(line,criterion,item,save,rows);
       continue;
      }
-     const caption=directChoice?label:criterion.scopeAnswer?heading+' — '+label:answerLabel(criterion,answer);
+     const caption=capsF1&&!information&&criterion.scopeAnswer?heading:directChoice?label:criterion.scopeAnswer?heading+' — '+label:answerLabel(criterion,answer);
      const control=element('label');
      const captionNode=element('span');
      const displayCaption=value=>{
@@ -1476,7 +1480,8 @@ const bpfWaterCheck = (() => {
      const guidance=(answer==='0'?criterion.noGuidance:criterion.yesGuidance)||criterion.guidance;
      if(guidance)control.title=guidance;
      const input=element('input');
-     input.type='checkbox';
+     input.type=capsF1&&!information&&criterion.scopeAnswer?'radio':'checkbox';
+     if(input.type==='radio'){input.name='BPF_CapsF1_'+entry.name;input.value=answer;}
      input.setAttribute('aria-label',directChoice||criterion.scopeAnswer?label+' — '+heading:label+' — '+caption+' — '+heading);
      input.onchange=()=>{
       item.answer=input.checked?answer:'';
