@@ -577,6 +577,30 @@ function bpfNCListVisibility(){
  try{const saved=JSON.parse(values.BPF_NCListVisibility||'null');if(Array.isArray(saved))return saved;}catch(e){}
  return bpfNCViewGroups.map(group=>group[0]);
 }
+const quantKey='BPF_ConclusaoQuantitativoProcessos';
+function quantitativeSelected(){return values[quantKey]==='On';}
+function processQuantitative(){
+ const data=values;
+ if(!data||typeof BPF_PHRASES==='undefined'||typeof titles==='undefined'||typeof bpfPhraseName!=='function')return [];
+ const groups=new Map();
+ for(const page of BPF_PHRASES){
+  if(typeof bpfReservoirIsLinked==='function'&&bpfReservoirIsLinked(page.page))continue;
+  const name=page.page>=2&&page.page<=5?'4.3 Reservatórios':titles[page.page];
+  if(!name)continue;
+  for(const row of page.rows)for(const scope of row.scopes)scope.phrases.forEach((phrase,i)=>{
+   if(data[bpfPhraseName(scope,i)]!=='0'||!['PCC','PPRO','PC','POP','PPR'].includes(phrase.appcc))return;
+   let group=groups.get(name);if(!group){group=new Map();groups.set(name,group);}
+   group.set(phrase.appcc,(group.get(phrase.appcc)||0)+1);
+  });
+ }
+ return [...groups].map(([name,counts])=>{
+  const total=[...counts.values()].reduce((sum,n)=>sum+n,0);
+  const categories=['PCC','PPRO','PC','POP','PPR'].filter(code=>counts.has(code)).map(code=>counts.get(code)+' '+code).join(', ');
+  return name.replace(/^(\d+(?:\.\d+)*)\s+/,'$1 — ')+': '+total+' '+(total===1?'não conformidade':'não conformidades')+' ('+categories+').';
+ });
+}
+
+
 function bpfMountNCView(){
  const page=bpfSheets[13];if(!page)return;
  let bar=page.querySelector('.bpf-nc-list-controls');
@@ -588,15 +612,21 @@ function bpfMountNCView(){
    const input=document.createElement('input');input.type='checkbox';input.dataset.ncList=id;input.style.margin='0 3px 0 0';
    const label=document.createElement('label');label.style.cssText='white-space:nowrap;cursor:pointer';label.append(input,document.createTextNode(name));
    input.onchange=()=>{
-    values.BPF_NCListVisibility=JSON.stringify([...bar.querySelectorAll('input:checked')].map(el=>el.dataset.ncList));
+    values.BPF_NCListVisibility=JSON.stringify([...bar.querySelectorAll('input[data-nc-list]:checked')].map(el=>el.dataset.ncList));
     bpfSyncNCLists();changed();sync();
    };
    bar.append(label);
   }
   const button=document.createElement('button');button.type='button';button.textContent='Visualizar NC';button.style.cssText='padding:3px 6px;border:1px solid #8cb4c9;border-radius:4px;background:white;color:#12324a;font:inherit;cursor:pointer';
-  button.onclick=bpfOpenNCView;bar.append(button);page.append(bar);
+  button.onclick=bpfOpenNCView;bar.append(button);
+  const quantLabel=document.createElement('label');quantLabel.style.cssText='flex-basis:100%;display:flex;align-items:center;gap:5px;cursor:pointer';
+  const quantInput=document.createElement('input');quantInput.type='checkbox';quantInput.dataset.ncQuantitative='';quantInput.style.margin='0';
+  quantInput.onchange=()=>{values[quantKey]=quantInput.checked?'On':'Off';bpfSyncNCLists();changed();sync();};
+  quantLabel.append(quantInput,document.createTextNode('Incluir quantitativo de NC por processo'));bar.append(quantLabel);
+  page.append(bar);
   const style=document.createElement('style');style.textContent='@media print{.bpf-nc-list-controls,#bpf-nc-view-dialog{display:none!important}}';document.head.append(style);
  }
  const selected=bpfNCListVisibility();
+ bar.querySelector('[data-nc-quantitative]').checked=quantitativeSelected();
  for(const input of bar.querySelectorAll('input[data-nc-list]'))input.checked=selected.includes(input.dataset.ncList);
 }
