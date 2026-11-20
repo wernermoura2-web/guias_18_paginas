@@ -1130,6 +1130,7 @@ const bpfWaterCheck = (() => {
   for(const [answer,heading] of sections){
    const box=element('fieldset');
    box.className='bpf-answer-box';
+   if(answer==='info')box.dataset.bpfInfoBox='';
    const prompt=config.answerPrompts?.[answer];
    box.append(element('legend',(config.inline?'':panel.label+' — ')+heading+(prompt?' ('+prompt+')':'')));
    answerGrid.append(box);
@@ -1192,6 +1193,7 @@ const bpfWaterCheck = (() => {
     const section=element(collapsed?'details':'div');
     section.className='bpf-water-unit'+(directChoice?' bpf-water-unit-direct':'');
     section.dataset.waterEntry=entry.name;
+    if(information&&collapsed){section.dataset.bpfInfoReview='';section.addEventListener('toggle',()=>{if(section.open)section.dataset.bpfInfoVisited='1';});}
     if(collapsed)section.append(element('summary',label));
     const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
     legacyLine.hidden=!legacy;
