@@ -548,6 +548,12 @@ const bpfWaterCheck = (() => {
      phrases.splice(0,3,{...training,fieldSuffix:training.fieldSuffix??3},{...hygiene,fieldSuffix:hygiene.fieldSuffix??1},{...records,fieldSuffix:records.fieldSuffix??2});
     }
    }
+   if([7,8].includes(page.page)&&row.code==='4.6.11'){
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     const [first,second]=phrases;if(!second)continue;
+     phrases.splice(0,2,{...second,fieldSuffix:second.fieldSuffix??2},{...first,fieldSuffix:first.fieldSuffix??1});
+    }
+   }
    if(page.page===7&&row.code==='4.6.6'){
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
      const [rinse,verification]=phrases;
