@@ -1223,7 +1223,7 @@ const bpfWaterCheck = (() => {
     const question=(caption,key)=>{const label=element('label',caption);label.style.cssText='display:block;margin:10px 0';const select=element('select');select.style.cssText='display:block;padding:6px;margin:5px 0;font:inherit';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=values[key]||'';label.append(select);section.append(label);return {label,select};};
     const first=question('É realizada a mistura das águas de diferentes fontes?','BPF_ReservoirMix_Resposta');
     const second=question('A mistura das fontes está autorizada pela ANM?','BPF_ReservoirMix_ANM');
-    const refresh=()=>{second.label.hidden=first.select.value!=='1';};refresh();
+    const refresh=()=>{const visible=first.select.value==='1';second.label.hidden=!visible;second.label.style.display=visible?'block':'none';second.select.disabled=!visible;};refresh();
     first.select.onchange=()=>{values.BPF_ReservoirMix_Resposta=first.select.value;if(first.select.value!=='1'){values.BPF_ReservoirMix_ANM='';second.select.value='';}refresh();changed();};
     second.select.onchange=()=>{values.BPF_ReservoirMix_ANM=second.select.value;changed();};
     box.append(section);
