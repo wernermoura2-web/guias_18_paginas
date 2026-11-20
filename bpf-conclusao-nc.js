@@ -97,6 +97,16 @@ function fitConclusionText(element,pageWidth){
  }
  return size;
 }
+const splitKey='BPF_ConclusaoDivisaoQuadros';
+function conclusionSplit(){
+ const raw=Number(state()?.[splitKey]);
+ return Number.isFinite(raw)&&raw>=.15&&raw<=.85?raw:.48;
+}
+function setConclusionSplit(value){
+ const data=state();if(!data)return;
+ data[splitKey]=String(Math.max(.15,Math.min(.85,value)));
+ update();
+}
 function update(){
  const host=document.querySelector('#pages');
  const data=window.Guia?.data||(typeof GUIDE_DATA==='object'?GUIDE_DATA:null);
@@ -138,6 +148,21 @@ function update(){
    const restore=document.createElement('button');restore.type='button';restore.textContent='Restaurar texto automático';restore.style.cssText=preview.style.cssText;restore.style.marginLeft='0';restore.onclick=()=>{const data=state();if(!data)return;const edits=autoEdits();delete edits[autoMask()];data[autoEditKey]=JSON.stringify(edits);if(typeof changed==='function')changed();update();};summaryLabel.append(preview,restore);box.prepend(summaryLabel);
    page.append(box);
    const automatic=document.createElement('textarea');automatic.spellcheck=false;automatic.placeholder='Digite ou edite a síntese e as frases finais';automatic.oninput=()=>{const data=state();if(!data)return;const edits=autoEdits();edits[autoMask()]=automatic.value;data[autoEditKey]=JSON.stringify(edits);if(typeof changed==='function')changed();};automatic.dataset.bpfConclusionAutomatic='';automatic.setAttribute('aria-label','Textos automáticos das considerações finais');automatic.style.cssText='position:absolute;z-index:2;box-sizing:border-box;padding:1px 3px;resize:none;overflow:hidden;scrollbar-width:none;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #9ab4c6;background:#f5fafc;color:black;font:1.344cqw/1.12 Arial,sans-serif';page.append(automatic);
+   const divider=document.createElement('div');divider.dataset.bpfConclusionDivider='';divider.tabIndex=0;divider.setAttribute('role','separator');divider.setAttribute('aria-orientation','horizontal');divider.setAttribute('aria-label','Redimensionar os dois quadros');divider.setAttribute('aria-valuemin','15');divider.setAttribute('aria-valuemax','85');divider.title='Arraste para cima ou para baixo para redimensionar os quadros';
+   divider.style.cssText='position:absolute;z-index:8;height:7px;transform:translateY(-50%);cursor:ns-resize;touch-action:none;background:#91b4c7;border-radius:3px;display:flex;justify-content:center;align-items:center';
+   const grip=document.createElement('span');grip.style.cssText='width:44px;height:3px;border-radius:2px;background:#315c72;pointer-events:none';divider.append(grip);
+   const move=event=>{
+    const rect=page.getBoundingClientRect(),[,, ,top]=widget.rect,[,height]=widget.size;
+    const yStart=rect.top+(height-top)/height*rect.height;
+    const usable=(widget.rect[3]-widget.rect[1])/height*rect.height;
+    if(usable>0)setConclusionSplit((event.clientY-yStart)/usable);
+   };
+   divider.onpointerdown=event=>{event.preventDefault();divider.setPointerCapture(event.pointerId);move(event);};
+   divider.onpointermove=event=>{if(divider.hasPointerCapture(event.pointerId))move(event);};
+   divider.onpointerup=event=>{if(divider.hasPointerCapture(event.pointerId))divider.releasePointerCapture(event.pointerId);if(typeof changed==='function')changed();};
+   divider.onpointercancel=()=>{if(typeof changed==='function')changed();};
+   divider.onkeydown=event=>{if(!['ArrowUp','ArrowDown','Home','End'].includes(event.key))return;event.preventDefault();setConclusionSplit(event.key==='Home'?.15:event.key==='End'?.85:conclusionSplit()+(event.key==='ArrowUp'?-.025:.025));if(typeof changed==='function')changed();};
+   page.append(divider);
  }
  const checks=selected();
  box.querySelector('[data-bpf-conclusion-summary]').checked=summarySelected();
@@ -151,13 +176,15 @@ function update(){
   const [left,bottom,right,top]=widget.rect,[width,height]=widget.size;
   const fullHeight=100*(top-bottom)/height;
   const visible=true;
-  const reserved=fullHeight*.52;
-  const editHeight=fullHeight-reserved;
+  const gap=page.clientHeight?Math.min(fullHeight*.05,100*7/page.clientHeight):.5;
+  const editHeight=(fullHeight-gap)*conclusionSplit();
+  const reserved=fullHeight-gap-editHeight;
   if(editor.style.height!==editHeight+'%')editor.style.height=editHeight+'%';
   editor.style.setProperty('--bpf-conclusion-full-height',fullHeight+'%');
   if(!editor.classList.contains('bpf-conclusion-editor'))editor.classList.add('bpf-conclusion-editor');
   automatic.hidden=!visible;
-  Object.assign(automatic.style,{left:100*left/width+'%',width:100*(right-left)/width+'%',top:(100*(height-top)/height+editHeight)+'%',height:reserved+'%'});
+  Object.assign(automatic.style,{left:100*left/width+'%',width:100*(right-left)/width+'%',top:(100*(height-top)/height+editHeight+gap)+'%',height:reserved+'%'});
+  const divider=page.querySelector('[data-bpf-conclusion-divider]');if(divider){Object.assign(divider.style,{left:100*left/width+'%',width:100*(right-left)/width+'%',top:(100*(height-top)/height+editHeight+gap/2)+'%'});divider.setAttribute('aria-valuenow',String(Math.round(conclusionSplit()*100)));}
  }
  if(page.classList.contains('active')){
   const common=Math.min(fitConclusionText(editor,page.clientWidth),fitConclusionText(automatic,page.clientWidth));
@@ -173,7 +200,7 @@ function install(){
   if(!queued){queued=true;requestAnimationFrame(()=>{queued=false;update()});}
  }
  const style=document.createElement('style');
- style.textContent='@media print{[data-bpf-conclusao-nc],[data-bpf-conclusion-automatic]{display:none!important}.bpf-conclusion-editor{height:var(--bpf-conclusion-full-height)!important}.page{margin-top:0!important}}';
+ style.textContent='@media print{[data-bpf-conclusao-nc],[data-bpf-conclusion-automatic],[data-bpf-conclusion-divider]{display:none!important}.bpf-conclusion-editor{height:var(--bpf-conclusion-full-height)!important}.page{margin-top:0!important}}';
  document.head.append(style);
  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
  window.addEventListener('resize',schedule);
