@@ -869,9 +869,10 @@ const bpfWaterCheck = (() => {
     (['1','0'].includes(data[entry.name])?[{id:entry.index,answer:data[entry.name],details:''}]:[]):
     records(row,entry,data)
   }));
-  if(!units.some(unit=>unit.checks.length))return [];
+  const mixing=row.code==='4.3.2'&&panel.id===0&&typeof bpfReservoirMixReport==='function'?bpfReservoirMixReport(page,data):[];
+  if(!units.some(unit=>unit.checks.length)&&!mixing.length)return [];
   const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
-  const information=[];
+  const information=[...mixing];
   for(const criterion of config.checks.filter(check=>isInformation(config,check))){
    for(const answer of ['1','0']){
     const recorded=units.flatMap(unit=>unit.checks.filter(check=>check.id===criterion.id&&check.answer===answer)
@@ -1209,6 +1210,17 @@ const bpfWaterCheck = (() => {
    box.append(element('legend',(config.inline?'':panel.label+' — ')+heading+(prompt?' ('+prompt+')':'')));
    answerGrid.append(box);
    boxes.set(answer,box);
+   if(answer==='info'&&row.code==='4.3.2'&&panel.id===0&&typeof bpfReservoirMixPage==='function'&&page.page===bpfReservoirMixPage()){
+    const section=element('div');section.style.cssText='padding:12px;background:#e8f3fa;border:1px solid #83a8bf;border-radius:6px;margin:8px 0';
+    section.append(element('strong','Mistura das fontes — avaliação geral'));
+    const question=(caption,key)=>{const label=element('label',caption);label.style.cssText='display:block;margin:10px 0';const select=element('select');select.style.cssText='display:block;padding:6px;margin:5px 0;font:inherit';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=values[key]||'';label.append(select);section.append(label);return {label,select};};
+    const first=question('É realizada a mistura das águas de diferentes fontes?','BPF_ReservoirMix_Resposta');
+    const second=question('A mistura das fontes está autorizada pela ANM?','BPF_ReservoirMix_ANM');
+    const refresh=()=>{second.label.hidden=first.select.value!=='1';};refresh();
+    first.select.onchange=()=>{values.BPF_ReservoirMix_Resposta=first.select.value;if(first.select.value!=='1'){values.BPF_ReservoirMix_ANM='';second.select.value='';}refresh();changed();};
+    second.select.onchange=()=>{values.BPF_ReservoirMix_ANM=second.select.value;changed();};
+    box.append(section);
+   }
   }
   for(const entry of panel.entries){
    const previous=read(entry,values);
@@ -1409,4 +1421,5 @@ const bpfWaterCheck = (() => {
  }
  return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,render};
 })();
+
 
