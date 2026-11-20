@@ -1259,7 +1259,7 @@ const bpfWaterCheck = (() => {
   section.bpfKeepAnsweredOpen=(legacyAnswer=false)=>{
    if(section.hidden)return;
    const checked=[...section.querySelectorAll('input[type="checkbox"]:checked,input[type="radio"]:checked')].some(input=>!input.disabled&&!input.closest('[hidden]'));
-   const filled=[...section.querySelectorAll('textarea,input[type="text"],input[type="number"]')].some(input=>!input.disabled&&!input.closest('[hidden]')&&String(input.value||'').trim());
+   const filled=[...section.querySelectorAll('textarea,select,input[type="text"],input[type="number"]')].some(input=>!input.disabled&&!input.closest('[hidden]')&&String(input.value||'').trim());
    answered=Boolean(checked||filled||legacyAnswer);
    if(!answered)return;
    clearTimeout(openTimer);clearTimeout(closeTimer);preview=false;pinned=true;section.open=true;hideFillPointerTip(summary);
@@ -1496,7 +1496,7 @@ const bpfWaterCheck = (() => {
       extra.hidden=!enabled||item.answer!==answer||!showDetails;
      });
     }
-    if(collapsed&&!information)rows.push(()=>section.bpfKeepAnsweredOpen(!legacyLine.hidden&&Boolean(legacy)&&existingAnswer===sectionType));
+    if(collapsed)rows.push(()=>section.bpfKeepAnsweredOpen(!information&&!legacyLine.hidden&&Boolean(legacy)&&existingAnswer===sectionType));
    }
    refresh();
   }
