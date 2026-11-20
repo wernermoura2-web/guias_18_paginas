@@ -64,6 +64,30 @@ function processSummary(){
   return name+': '+phrase;
  });
 }
+
+const quantKey='BPF_ConclusaoQuantitativoProcessos';
+function quantitativeSelected(){return state()?.[quantKey]==='On';}
+function processQuantitative(){
+ const data=state();
+ if(!data||typeof BPF_PHRASES==='undefined'||typeof titles==='undefined'||typeof bpfPhraseName!=='function')return [];
+ const groups=new Map();
+ for(const page of BPF_PHRASES){
+  if(typeof bpfReservoirIsLinked==='function'&&bpfReservoirIsLinked(page.page))continue;
+  const name=page.page>=2&&page.page<=5?'4.3 Reservatórios':titles[page.page];
+  if(!name)continue;
+  for(const row of page.rows)for(const scope of row.scopes)scope.phrases.forEach((phrase,i)=>{
+   if(data[bpfPhraseName(scope,i)]!=='0'||!['PCC','PPRO','PC','POP','PPR'].includes(phrase.appcc))return;
+   let group=groups.get(name);if(!group){group=new Map();groups.set(name,group);}
+   group.set(phrase.appcc,(group.get(phrase.appcc)||0)+1);
+  });
+ }
+ return [...groups].map(([name,counts])=>{
+  const total=[...counts.values()].reduce((sum,n)=>sum+n,0);
+  const categories=['PCC','PPRO','PC','POP','PPR'].filter(code=>counts.has(code)).map(code=>counts.get(code)+' '+code).join(', ');
+  return name.replace(/^(\d+(?:\.\d+)*)\s+/,'$1 — ')+': '+total+' '+(total===1?'não conformidade':'não conformidades')+' ('+categories+').';
+ });
+}
+
 function summarySelected(){
  return state()?.[summaryKey]!=='Off';
 }
@@ -79,7 +103,7 @@ function withoutSentences(text){
 }
 function include(text){
  const original=withoutSentences(text), checks=selected();
- return [original,(summarySelected()?processSummary().join('\n'):''),...sentences.filter((_,i)=>checks[i])].filter(Boolean).join('\n\n');
+ return [original,(summarySelected()?processSummary().join('\n'):''),(quantitativeSelected()?processQuantitative().join('\n'):''),...sentences.filter((_,i)=>checks[i])].filter(Boolean).join('\n\n');
 }
 function update(){
  const host=document.querySelector('#pages');
@@ -120,10 +144,24 @@ function update(){
     dialog.append(heading,body,close);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
    };
    summaryLabel.append(preview);box.prepend(summaryLabel);
+   const quantLabel=document.createElement('label');quantLabel.style.cssText='display:flex;align-items:center;gap:5px;margin:3px 0;cursor:pointer';
+   const quantInput=document.createElement('input');quantInput.type='checkbox';quantInput.dataset.bpfConclusionQuantitative='';quantInput.style.margin='0';
+   quantInput.onchange=()=>{const data=state();if(!data)return;data[quantKey]=quantInput.checked?'On':'Off';if(typeof changed==='function')changed();};
+   quantLabel.append(quantInput,document.createTextNode('Incluir quantitativo de NC por processo'));
+   const quantPreview=document.createElement('button');quantPreview.type='button';quantPreview.textContent='Ver quantitativo';quantPreview.style.cssText=preview.style.cssText;
+   quantPreview.onclick=()=>{
+    const dialog=document.createElement('dialog');dialog.style.cssText='width:min(92vw,760px);max-height:85vh;overflow:auto;padding:20px;border:1px solid #177693;border-radius:8px;color:#12324a';
+    const heading=document.createElement('h2');heading.textContent='Quantitativo de não conformidades por processo';
+    const body=document.createElement('div');body.style.cssText='white-space:pre-wrap;line-height:1.5';body.textContent=processQuantitative().join('\n')||'Nenhuma não conformidade registrada.';
+    const close=document.createElement('button');close.type='button';close.textContent='Fechar';close.onclick=()=>dialog.close();
+    dialog.append(heading,body,close);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+   };
+   quantLabel.append(quantPreview);summaryLabel.after(quantLabel);
    page.append(box);
  }
  const checks=selected();
  box.querySelector('[data-bpf-conclusion-summary]').checked=summarySelected();
+ box.querySelector('[data-bpf-conclusion-quantitative]').checked=quantitativeSelected();
  for(const input of box.querySelectorAll('input[data-bpf-conclusion-index]'))input.checked=checks[Number(input.dataset.bpfConclusionIndex)];
  box.hidden=false;
 }
