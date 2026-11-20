@@ -417,7 +417,11 @@ function bpfPrintProcessObservations(pdf,form,font,normalize,black){
   if(!field)continue;
   const source=D.widgets.find(widget=>widget.name===name);
   if(!source)continue;
-  const text=normalize(String(values[name]||'').trimEnd());
+  const body=String(values[name]||'').trimEnd();
+  // A referência fica no início do quadro de observações da avaliação original.
+  const caption=typeof bpfReservoirSharedLabel==='function'&&source.page>=2&&source.page<=5?bpfReservoirSharedLabel(source.page):'';
+  const prefix=caption?'Compartilhamento dos reservatórios: '+caption:'';
+  const text=normalize(prefix&&!body.startsWith(prefix)?[prefix,body].filter(Boolean).join('\n\n'):body);
   const page=pdf.getPage(source.page);
   for(const widget of field.acroField.getWidgets()){
    const {x,y,width,height}=widget.getRectangle();
