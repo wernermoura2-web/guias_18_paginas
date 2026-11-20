@@ -149,7 +149,7 @@ const bpfWaterCheck = (() => {
     check('declaracao','Possui declaração do fabricante de desinfecção do lote de tampas em uso?',{keepLabel:true}),
     check('analise-tampas-recebidas','É feita análise microbiológica dos lotes das tampas recebidas?',{yesLabel:'É feita análise microbiológica dos lotes das tampas recebidas',noLabel:'Não é feita análise microbiológica dos lotes das tampas recebidas'}),
     check('dupla-embalagem','Os sacos com as tampas são enviados com embalagens primária e secundária?'),
-    check('desinfeccao-envasadora','Faz a desinfecção das tampas no estabelecimento?'),
+    check('desinfeccao-envasadora','Faz a desinfecção das tampas no estabelecimento?',{requiredInfo:true}),
     check('retirada-envase','A embalagem secundária é retirada imediatamente antes do transporte para a sala de envase?',{section:'Tampas transportadas para a tampadora sem auxílio de silo externo'}),
     check('armazenamento-primaria','Os sacos com apenas a embalagem primária são mantidos fora do piso e dos equipamentos da sala de envase?',{section:'Tampas transportadas para a tampadora sem auxílio de silo externo'}),
     check('retirada-silo','A embalagem secundária é retirada imediatamente antes do transporte para o silo de transferência?',{section:'Silo externo com um alimentador de tampas por taliscas ou transporte pneumático'}),
@@ -1086,6 +1086,19 @@ const bpfWaterCheck = (() => {
   }
  }
 
+ function validateMandatory(page,row,panels,content){
+  if(row.code!=='4.6.8')return true;
+  const panel=panels.find(p=>p.id===0);if(!panel)return true;
+  for(const entry of panel.entries){
+   const state=read(entry,values);
+   if(hasAnswer(state?.['desinfeccao-envasadora']?.answer))continue;
+   const control=content.querySelector('[data-bpf-required-info="desinfeccao-envasadora"]');
+   const unit=control?.closest('details');if(unit)unit.open=true;
+   alert('ATENÇÃO — Resposta obrigatória: informe se a desinfecção das tampas é realizada no estabelecimento. Selecione Sim ou Não antes de sair do item 4.6.8.');
+   control?.scrollIntoView({block:'center'});control?.focus();return false;
+  }
+  return true;
+ }
  function validate(page,row,panels,content){
   for(const panel of panels){
    const config=get(row,panel.id);
@@ -1503,6 +1516,8 @@ const bpfWaterCheck = (() => {
       for(const [v,t] of [['','Selecione'],['1',criterion.answerLabels?.['1']||'Sim'],['0',criterion.answerLabels?.['0']||'Não']])select.add(new Option(t,v));
       select.onchange=()=>{item.answer=select.value;if(criterion.id==='filtro'&&state['registro-filtro'])delete state['registro-filtro'].answer;save();};
       line.append(prompt,select);
+      const requiredAlert=criterion.requiredInfo?element('p','ATENÇÃO — resposta obrigatória. Selecione Sim ou Não.'):null;
+      if(requiredAlert){requiredAlert.style.cssText='margin:6px 0;padding:8px;background:#fff2cb;border-left:4px solid #c47b13;color:#462f00;font-weight:bold';line.append(requiredAlert);select.dataset.bpfRequiredInfo=criterion.id;select.setAttribute('aria-required','true');}
       rows.push(()=>{
        const wording=!criterion.answerLabels&&hasAnswer(item.answer)?statementForAnswer(criterion,item.answer):caption;
        prompt.textContent=wording;
@@ -1510,6 +1525,7 @@ const bpfWaterCheck = (() => {
        select.setAttribute('aria-label',label+' — '+wording);
        select.disabled=state.notApplicable||!active(criterion,state);
        select.value=hasAnswer(item.answer)?item.answer:'';
+       if(requiredAlert){requiredAlert.hidden=hasAnswer(item.answer);requiredAlert.style.display=requiredAlert.hidden?'none':'block';}
       });
      }else line.append(control);
      const extra=element('div');
@@ -1562,7 +1578,7 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,renderReservoirFilterInfo,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,render,enableHoverUnit};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,renderReservoirFilterInfo,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
 })();
 
 
