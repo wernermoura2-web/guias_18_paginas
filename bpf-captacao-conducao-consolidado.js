@@ -1373,6 +1373,12 @@ const bpfWaterCheck = (() => {
    card.dataset.bpfCapsF2='';
    card.hidden=!panel.entries.some(entry=>panelEnabled(row,entry,values));
   }
+  if(row.code==='4.7.4'&&panel.id===1){
+   const original=String(row.description||'').replace(/\s+/g,' ').trim();
+   const start=original.indexOf('A sala de envase deve possuir');
+   const phrase=start>=0?original.slice(start):original;
+   if(phrase){const previous=card.querySelector('.bpf-group-description');if(previous)previous.textContent=phrase;else{const p=element('p',phrase);p.className='bpf-group-description';card.append(p);}}
+  }
   const dependentF2=conductionF2(row,panel.id);
   if(dependentF2)card.dataset.bpfConductionF2='';
   if(page.page===7&&['4.6.5','4.6.6'].includes(row.code)){const phrase=row.phrases[panel.id]?.text;if(phrase&&![...card.querySelectorAll('p')].some(p=>p.textContent.trim()===phrase.trim()))card.append(element('p',phrase));}
