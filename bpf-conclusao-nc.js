@@ -56,13 +56,14 @@ function processSummary(){
    if(answers.includes('0'))group.topics.add(topics[row.code]||'requisitos avaliados no processo');
   }
  }
- return [...groups.values()].filter(group=>group.assessed).map(group=>{
+ const inadequacoes=[],demais=[];
+ for(const group of groups.values()){
+  if(!group.assessed)continue;
   const list=[...group.topics],name=group.name.replace(/^(\d+(?:\.\d+)*)\s+/,'$1 — ');
-  const phrase=list.length
-   ?'Foram identificadas inadequações nos seguintes aspectos: '+(list.length>1?list.slice(0,-1).join(', ')+' e '+list[list.length-1]:list[0])+'.'
-   :'Nas verificações registradas, não foram assinaladas inadequações.';
-  return name+': '+phrase;
- });
+  if(list.length)inadequacoes.push(name+': '+(list.length>1?list.slice(0,-1).join(', ')+' e '+list[list.length-1]:list[0])+'.');
+  else demais.push(name+': nas verificações registradas, não foram assinaladas inadequações.');
+ }
+ return [...(inadequacoes.length?['Foram identificadas as seguintes inadequações nos processos:',...inadequacoes]:[]),...(demais.length?[inadequacoes.length?'Demais processos avaliados:':'Processos avaliados:',...demais]:[])];
 }
 
 function summarySelected(){
