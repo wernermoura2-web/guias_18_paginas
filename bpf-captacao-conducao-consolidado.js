@@ -741,6 +741,7 @@ const bpfWaterCheck = (() => {
  }
  function receptionRecords(page,row,panel,data){
   if(groupedReception(row,panel))return receptionGroupedRecords(page,row,panel,data);
+  if(sanitizerReception(row,panel))return sanitizerReceptionRecords(page,row,panel,data);
   const check=receptionChecks[row.code]?.[panel.id];
   if(!check)return [];
   return panel.entries.flatMap(entry=>{
@@ -769,28 +770,54 @@ const bpfWaterCheck = (() => {
   const block=element('fieldset');block.className='bpf-answer-box';block.append(element('legend','Informações adicionais'));
   const check=receptionChecks[row.code][panel.id],question=element('p',check.question);block.append(question);
   const read=(entry,key)=>String(values[receptionKey(entry.name,key)]||'');
-  const selected=new Set(panel.entries.filter(e=>['1','0'].includes(read(e,'Resposta'))).map(e=>e.name));
+  const selected=new Set(panel.entries.filter(e=>read(e,'Resposta')==='1').map(e=>e.name));
   const common=(entries,key)=>{const vals=[...new Set(entries.map(e=>read(e,key)))];return vals.length===1?vals[0]:'';};
   const initial=panel.entries.filter(e=>selected.has(e.name));
-  let answer=common(initial,'Resposta'),evidence=common(initial.filter(e=>read(e,'Resposta')==='1'),'Comprovacao'),details=common(initial.filter(e=>read(e,'Comprovacao')==='Outro'),'Detalhes');
+  let evidence=common(initial,'Comprovacao'),details=common(initial.filter(e=>read(e,'Comprovacao')==='Outro'),'Detalhes');
   const persist=()=>{bpfSyncObservation(row,page);changed();};
   const write=(entry,key,value)=>{values[receptionKey(entry.name,key)]=value;};
-  const saveCommon=()=>{for(const entry of panel.entries.filter(e=>selected.has(e.name))){if(answer)write(entry,'Resposta',answer);if(answer==='1'){write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}else if(answer==='0'){write(entry,'Comprovacao','');write(entry,'Detalhes','');}}persist();};
+  const saveCommon=()=>{for(const entry of panel.entries.filter(e=>selected.has(e.name))){write(entry,'Resposta','1');write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}persist();};
   for(const entry of panel.entries){const label=element('label',bpfScopeLabel(page,entry.scope));label.style.cssText='display:block;margin:9px 0';const input=element('input');input.type='checkbox';input.checked=selected.has(entry.name);input.onchange=()=>{
-   if(input.checked){selected.add(entry.name);if(answer){write(entry,'Resposta',answer);if(answer==='1'){write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}}}
-   else{selected.delete(entry.name);for(const key of ['Resposta','Comprovacao','Detalhes'])write(entry,key,'');if(!selected.size){answer='';evidence='';details='';select.value='';area.value='';for(const input of radios.values())input.checked=false;}}
+   if(input.checked){selected.add(entry.name);write(entry,'Resposta','1');write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}
+   else{selected.delete(entry.name);for(const key of ['Resposta','Comprovacao','Detalhes'])write(entry,key,'');if(!selected.size){evidence='';details='';select.value='';area.value='';}}
    refresh();persist();
   };label.prepend(input);block.append(label);}
-  const response=element('div');response.style.cssText='margin:12px 0';const radios=new Map();
-  for(const [value,labelText] of [['1','Sim'],['0','Não']]){const label=element('label',labelText);label.style.marginRight='16px';const input=element('input');input.type='radio';input.name='BPF_Recepcao_Conjunta_'+page.page+'_'+row.code;input.value=value;input.checked=answer===value;input.onchange=()=>{answer=value;refresh();saveCommon();};label.prepend(input);response.append(label);radios.set(value,input);}
-  block.append(response);
   const followup=element('div');const label=element('label','Comprovação');label.style.display='block';const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px';for(const name of ['Selecione',...receptionEvidence])select.add(new Option(name,name==='Selecione'?'':name));select.value=evidence;select.onchange=()=>{evidence=select.value;if(evidence!=='Outro')details=area.value='';refresh();saveCommon();};label.append(select);followup.append(label);
   const other=element('label','Especifique a outra comprovação');const area=element('textarea');area.rows=2;area.style.cssText='display:block;width:100%;margin-top:6px';area.value=details;area.oninput=()=>{details=area.value;saveCommon();};other.append(area);followup.append(other);block.append(followup);
-  const refresh=()=>{const active=selected.size>0;for(const input of radios.values())input.disabled=!active;const visible=active&&answer==='1';followup.hidden=!visible;followup.style.display=visible?'block':'none';other.hidden=!visible||evidence!=='Outro';other.style.display=other.hidden?'none':'block';area.disabled=other.hidden;question.textContent=answer==='1'?check.yes:answer==='0'?check.no:check.question;};
+  const refresh=()=>{const visible=selected.size>0;followup.hidden=!visible;followup.style.display=visible?'block':'none';other.hidden=!visible||evidence!=='Outro';other.style.display=other.hidden?'none':'block';area.disabled=other.hidden;question.textContent=visible?check.yes:check.question;};
   refresh();card.append(block);
+ }
+ const sanitizerReceptionQuestions=[
+  ['Identificacao','O saneante está identificado?','O saneante está identificado','O saneante não está identificado'],
+  ['Validade','O saneante está dentro do prazo de validade?','O saneante está dentro do prazo de validade','O saneante está fora do prazo de validade'],
+  ['Regularizacao','O saneante está regularizado na ANVISA?','O saneante está regularizado na ANVISA','O saneante não está regularizado na ANVISA'],
+  ['Finalidade','A finalidade de uso do saneante corresponde à utilização realizada?','A finalidade de uso do saneante corresponde à utilização realizada','A finalidade de uso do saneante não corresponde à utilização realizada']
+ ];
+ function sanitizerReception(row,panel){return row.code==='4.5.3'&&panel.id===2;}
+ function sanitizerReceptionRecords(page,row,panel,data){
+  return panel.entries.flatMap(entry=>{
+   const result=sanitizerReceptionQuestions.flatMap(([key,question,yes,no])=>{const answer=data[receptionKey(entry.name,key)];return ['1','0'].includes(answer)?[(answer==='1'?yes:no)+' ('+bpfScopeLabel(page,entry.scope)+')']:[];});
+   if(result.length)return result;
+   const legacy=data[receptionKey(entry.name,'Resposta')],check=receptionChecks[row.code][panel.id];
+   return ['1','0'].includes(legacy)?[(legacy==='1'?check.yes:check.no)+' ('+bpfScopeLabel(page,entry.scope)+' — registro anterior)']:[]; 
+  });
+ }
+ function renderSanitizerReception(card,page,row,panel){
+  const block=element('fieldset');block.className='bpf-answer-box';block.append(element('legend','Informações adicionais — Saneantes'));
+  for(const entry of panel.entries)for(const [key,question,yes,no] of sanitizerReceptionQuestions){
+   const field=receptionKey(entry.name,key),label=element('label');label.style.cssText='display:block;margin:12px 0';
+   const prompt=element('span',question);label.append(prompt);
+   const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
+   select.value=values[field]||'';
+   const refresh=()=>{prompt.textContent=select.value==='1'?yes:select.value==='0'?no:question;};
+   select.onchange=()=>{values[field]=select.value;bpfSyncObservation(row,page);changed();refresh();};
+   refresh();label.append(select);block.append(label);
+  }
+  card.append(block);
  }
  function renderReception(card,page,row,panel){
   if(groupedReception(row,panel)){renderGroupedReception(card,page,row,panel);return;}
+  if(sanitizerReception(row,panel)){renderSanitizerReception(card,page,row,panel);return;}
   const check=receptionChecks[row.code]?.[panel.id];
   if(!check||!panel.entries.length)return;
   const block=element('fieldset');
@@ -823,18 +850,7 @@ const bpfWaterCheck = (() => {
     bpfSyncObservation(row,page);
     changed();
    };
-   for(const [answer,label] of [['1','Sim'],['0','Não']]){
-    const choice=element('label',label);
-    choice.style.marginRight='1rem';
-    const input=element('input');
-    input.type='radio';
-    input.name=answerKey;
-    input.value=answer;
-    input.checked=values[answerKey]===answer;
-    input.onchange=()=>save(answerKey,answer);
-    choice.prepend(input);
-    unit.append(choice);
-   }
+   const answerSelect=element('select');answerSelect.style.cssText='display:block;margin:6px 0;padding:5px';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])answerSelect.add(new Option(t,v));answerSelect.value=values[answerKey]||'';answerSelect.onchange=()=>save(answerKey,answerSelect.value);unit.append(answerSelect);
    if(check.detailsAnswer==='1'){
     const label=element('label','Comprovação');
     const select=element('select');
@@ -864,6 +880,7 @@ const bpfWaterCheck = (() => {
     const index=Number(position);
     if(!scope.phrases[index])continue;
     const fields=['Resposta'];
+    if(row.code==='4.5.3'&&index===2)fields.push(...sanitizerReceptionQuestions.map(q=>q[0]));
     if(check.detailsAnswer)fields.push('Detalhes');
     if(check.detailsAnswer==='1')fields.push('Comprovacao');
     for(const field of fields){
@@ -1447,34 +1464,18 @@ const bpfWaterCheck = (() => {
      };
      control.prepend(input);
      if(information&&criterion.informationQuestion){
-      const choices=element('div');
-      choices.style.display='flex';
-      choices.style.gap='1rem';
-      const yesLabel=criterion.answerLabels?.['1']||'Sim';
-      const noLabel=criterion.answerLabels?.['0']||'Não';
-      const yesControl=element('label',yesLabel);
-      const noControl=element('label',noLabel);
-      const noInput=element('input');
-      noInput.type='checkbox';
-      yesControl.className=noControl.className='bpf-water-choice';
-      noInput.onchange=()=>{
-       item.answer=noInput.checked?'0':'';
-       if(criterion.id==='filtro'&&state['registro-filtro'])delete state['registro-filtro'].answer;
-       save();
-      };
-      yesControl.prepend(input);
-      noControl.prepend(noInput);
-      choices.append(yesControl,noControl);
       const prompt=element('div',caption);
-      line.append(prompt,choices);
+      const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px;font:inherit';
+      for(const [v,t] of [['','Selecione'],['1',criterion.answerLabels?.['1']||'Sim'],['0',criterion.answerLabels?.['0']||'Não']])select.add(new Option(t,v));
+      select.onchange=()=>{item.answer=select.value;if(criterion.id==='filtro'&&state['registro-filtro'])delete state['registro-filtro'].answer;save();};
+      line.append(prompt,select);
       rows.push(()=>{
        const wording=!criterion.answerLabels&&hasAnswer(item.answer)?statementForAnswer(criterion,item.answer):caption;
        prompt.textContent=wording;
        prompt.title=(item.answer==='1'?criterion.yesGuidance:item.answer==='0'?criterion.noGuidance:'')||criterion.guidance||'';
-       input.setAttribute('aria-label',label+' — '+wording+' — '+yesLabel);
-       noInput.setAttribute('aria-label',label+' — '+wording+' — '+noLabel);
-       noInput.disabled=state.notApplicable||!active(criterion,state);
-       noInput.checked=!noInput.disabled&&item.answer==='0';
+       select.setAttribute('aria-label',label+' — '+wording);
+       select.disabled=state.notApplicable||!active(criterion,state);
+       select.value=hasAnswer(item.answer)?item.answer:'';
       });
      }else line.append(control);
      const extra=element('div');
