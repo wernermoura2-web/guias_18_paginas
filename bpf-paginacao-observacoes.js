@@ -601,6 +601,27 @@ function processQuantitative(){
 }
 
 
+
+const quantTextKey='BPF_NCQuantitativoTextoEditado';
+function bpfQuantitativeText(){
+ const edited=values[quantTextKey];
+ return typeof edited==='string'&&edited.trim()?edited.trim():processQuantitative().join('\n')||'Nenhuma não conformidade registrada.';
+}
+function bpfEditQuantitative(){
+ const dialog=document.createElement('dialog');dialog.style.cssText='width:min(95vw,850px);max-height:90vh;overflow:auto;padding:20px;border:1px solid #177693;border-radius:8px;color:#12324a';
+ const heading=document.createElement('h2');heading.textContent='Editar quantitativo de NC por processo';
+ const note=document.createElement('p');note.textContent='O texto editado será mantido no relatório. Para voltar à contagem automática, utilize Restaurar automático.';
+ const editor=document.createElement('textarea');editor.value=bpfQuantitativeText();editor.setAttribute('aria-label','Texto do quantitativo');editor.style.cssText='display:block;width:100%;height:42vh;min-height:160px;font:15px/1.4 Arial,sans-serif;padding:8px;box-sizing:border-box';
+ const actions=document.createElement('div');actions.style.cssText='display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap';
+ const button=(label,onclick)=>{const el=document.createElement('button');el.type='button';el.textContent=label;el.onclick=onclick;return el;};
+ const commit=restore=>{
+  if(restore)delete values[quantTextKey];else values[quantTextKey]=editor.value.trim();
+  values[quantKey]='On';bpfSyncNCLists();changed();sync();dialog.close();
+ };
+ actions.append(button('Cancelar',()=>dialog.close()),button('Restaurar automático',()=>commit(true)),button('Salvar texto',()=>commit(false)));
+ dialog.append(heading,note,editor,actions);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();editor.focus();
+}
+
 function bpfMountNCView(){
  const page=bpfSheets[13];if(!page)return;
  let bar=page.querySelector('.bpf-nc-list-controls');
@@ -622,7 +643,8 @@ function bpfMountNCView(){
   const quantLabel=document.createElement('label');quantLabel.style.cssText='flex-basis:100%;display:flex;align-items:center;gap:5px;cursor:pointer';
   const quantInput=document.createElement('input');quantInput.type='checkbox';quantInput.dataset.ncQuantitative='';quantInput.style.margin='0';
   quantInput.onchange=()=>{values[quantKey]=quantInput.checked?'On':'Off';bpfSyncNCLists();changed();sync();};
-  quantLabel.append(quantInput,document.createTextNode('Incluir quantitativo de NC por processo'));bar.append(quantLabel);
+  quantLabel.append(quantInput,document.createTextNode('Incluir quantitativo de NC por processo'));
+  const edit=document.createElement('button');edit.type='button';edit.textContent='Editar quantitativo';edit.style.cssText=button.style.cssText;edit.onclick=bpfEditQuantitative;quantLabel.append(edit);bar.append(quantLabel);
   page.append(bar);
   const style=document.createElement('style');style.textContent='@media print{.bpf-nc-list-controls,#bpf-nc-view-dialog{display:none!important}}';document.head.append(style);
  }
