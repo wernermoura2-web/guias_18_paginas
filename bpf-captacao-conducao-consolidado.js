@@ -910,7 +910,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
-   if(['4.6.4','4.6.5','4.6.6','4.6.7','4.6.10','4.7.4','4.7.5','4.7.6'].includes(row.code)||row.code==='4.6.3'&&scope.phrases[0]?.allowNA){for(const id of ['4.6.6','4.7.5'].includes(row.code)?[0,1]:row.code==='4.6.10'?[1]:[0]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}}
+   if(['4.6.4','4.6.5','4.6.6','4.6.7','4.6.10','4.7.2','4.7.4','4.7.5','4.7.6'].includes(row.code)||row.code==='4.6.3'&&scope.phrases[0]?.allowNA){for(const id of ['4.6.6','4.7.5'].includes(row.code)?[0,1]:['4.6.10','4.7.2'].includes(row.code)?[1]:[0]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}}
    if(row.code==='4.3.3'){const name=reservoirFilterKey(scope);data.fields[name]={name,type:'/Tx',flags:0,label:'4.3.3 F2 — Outras observações dos filtros',options:[],calc:'',phrasePage:page.page};}
    for(const [position,check] of Object.entries(receptionChecks[row.code]||{})){
     const index=Number(position);
@@ -980,7 +980,7 @@ const bpfWaterCheck = (() => {
   }
  }
 
- const sharedLineInfo=(row,panel)=>(row.code==='4.7.4'&&panel.id===0)||(row.code==='4.7.5'&&[0,1].includes(panel.id))||(row.code==='4.6.10'&&panel.id===1)||(row.code==='4.6.7'&&panel.id===0)||(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5','4.7.6'].includes(row.code));
+ const sharedLineInfo=(row,panel)=>(row.code==='4.7.2'&&panel.id===1)||(row.code==='4.7.4'&&panel.id===0)||(row.code==='4.7.5'&&[0,1].includes(panel.id))||(row.code==='4.6.10'&&panel.id===1)||(row.code==='4.6.7'&&panel.id===0)||(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5','4.7.6'].includes(row.code));
  const sharedLineKey=(page,row,panel)=>'BPF_LineInfo_'+page.page+'_'+row.code.replace(/\./g,'_')+'_F'+(panel.id+1);
  function sharedLineState(page,row,panel,data){
   if(panel.id===1&&fillingF2Indices[row.code])panel={...panel,entries:panel.entries.filter(entry=>entry.index===1)};
