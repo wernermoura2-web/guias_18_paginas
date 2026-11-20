@@ -1093,10 +1093,12 @@ const bpfWaterCheck = (() => {
   const panel=panels.find(p=>p.id===0);if(!panel)return true;
   for(const entry of panel.entries){
    const state=read(entry,values);
-   if(hasAnswer(state?.['desinfeccao-envasadora']?.answer))continue;
-   const control=content.querySelector('[data-bpf-required-info="desinfeccao-envasadora"]');
+   const missingDisinfection=!hasAnswer(state?.['desinfeccao-envasadora']?.answer);
+   const missingRoute=!['direto','silo'].includes(state?.route);
+   if(!missingDisinfection&&!missingRoute)continue;
+   const control=content.querySelector(missingDisinfection?'[data-bpf-required-info="desinfeccao-envasadora"]':'[data-bpf-required-info="transporte-tampas"]');
    const unit=control?.closest('details');if(unit)unit.open=true;
-   alert('ATENÇÃO — Resposta obrigatória: informe se a desinfecção das tampas é realizada no estabelecimento. Selecione Sim ou Não antes de sair do item 4.6.8.');
+   alert(missingDisinfection?'ATENÇÃO — Resposta obrigatória: informe se a desinfecção das tampas é realizada no estabelecimento. Selecione Sim ou Não antes de sair do item 4.6.8.':'ATENÇÃO — Resposta obrigatória: informe como as tampas são transportadas para a tampadora (com ou sem silo externo) antes de sair do item 4.6.8.');
    control?.scrollIntoView({block:'center'});control?.focus();return false;
   }
   return true;
@@ -1469,7 +1471,10 @@ const bpfWaterCheck = (() => {
       const choice=element('label','Como as tampas são transportadas para a tampadora?');choice.style.cssText='display:block;margin:12px 0;font-weight:bold';
       routeInput=element('select');routeInput.style.cssText='display:block;margin:6px 0;padding:6px;font:inherit;width:100%';
       for(const [v,t] of [['','Selecione'],['direto','Sem auxílio de silo externo'],['silo','Com silo externo']])routeInput.add(new Option(t,v));
-      routeInput.value=state.route||'';routeInput.onchange=()=>{state.route=routeInput.value;save();};choice.append(routeInput);section.append(choice);
+      routeInput.dataset.bpfRequiredInfo='transporte-tampas';routeInput.setAttribute('aria-required','true');
+      const routeAlert=element('p','ATENÇÃO — resposta obrigatória. Selecione com ou sem silo externo.');routeAlert.style.cssText='margin:6px 0;padding:8px;background:#fff2cb;border-left:4px solid #c47b13;color:#462f00;font-weight:bold';
+      const updateRouteAlert=()=>{routeAlert.hidden=['direto','silo'].includes(state.route);routeAlert.style.display=routeAlert.hidden?'none':'block';};
+      routeInput.value=state.route||'';routeInput.onchange=()=>{state.route=routeInput.value;updateRouteAlert();save();};choice.append(routeInput,routeAlert);section.append(choice);updateRouteAlert();
      }
      const item=state[criterion.id]??={};
      const line=element('div');
