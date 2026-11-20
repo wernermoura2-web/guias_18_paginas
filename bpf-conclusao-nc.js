@@ -11,7 +11,7 @@ const state=()=>window.Guia?.values||(typeof values==='object'?values:null);
 function hasNC(){
  const data=state();
  if(!data||typeof BPF_PHRASES==='undefined')return false;
- return BPF_PHRASES.some(page=>page.rows.some(row=>{
+ return BPF_PHRASES.some(page=>(typeof bpfReservoirIsLinked!=='function'||!bpfReservoirIsLinked(page.page))&&page.rows.some(row=>{
    if(row.scopes.some(scope=>data[scope.name]==='0'||scope.phrases.some((_,i)=>typeof bpfPhraseName==='function'&&data[bpfPhraseName(scope,i)]==='0')))return true;
    if(typeof bpfPanels!=='function')return false;
    return bpfPanels(page,row).some(panel=>
