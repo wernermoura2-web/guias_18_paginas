@@ -187,7 +187,7 @@ const bpfWaterCheck = (() => {
     check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?')
    ])
   },
-  '4.3.5':{0:{separateInformation:true,checks:[
+  '4.3.5':{1:{separateInformation:true,checks:[
    check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
    check('nao-reservatorio','Não',{noOnly:true,scopeAnswer:true}),
     sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório',{yesOnly:true,frequencyOptional:true}),
@@ -400,7 +400,7 @@ const bpfWaterCheck = (() => {
      if(previous==='0'||previous==='1')return {...state,'conexoes-sanitarias':{answer:previous==='0'?'1':'0'}};
     }
    }
-   if(entry.index===0&&!state?.['nao-reservatorio']&&reservoirStructureEntry(entry,'4.3.5')){
+   if(entry.index===1&&!state?.['nao-reservatorio']&&reservoirStructureEntry(entry,'4.3.5')){
     const previous=state?.['higienizacao-adequada']?.answer??data[entry.name];
     if(previous==='0')return {...state,'nao-reservatorio':{answer:'0'}};
     if(previous==='1'&&!state)return {'higienizacao-adequada':{answer:'1'}};
@@ -421,8 +421,7 @@ const bpfWaterCheck = (() => {
   }catch (_) { return null; }
  };
  function reservoirStructureEntry(entry,code='4.3.2'){
-  const row=BPF_PHRASES.find(page=>page.page===2)?.rows.find(row=>row.code===code);
-  return row?.scopes.some(scope=>scope.name===entry.scope.name);
+  return BPF_PHRASES.some(page=>page.page>=2&&page.page<=5&&page.rows.some(row=>row.code===code&&row.scopes.some(scope=>scope.name===entry.scope.name)));
  }
  function getConductionCheckEntry(entry,code='4.2.2'){
   const row=BPF_PHRASES.find(page=>page.page===1)?.rows.find(row=>row.code===code);
@@ -531,6 +530,13 @@ const bpfWaterCheck = (() => {
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(page.page>=2&&page.page<=5&&row.code==='4.3.5'){
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     const [hygiene,records,training]=phrases;
+     if(!training)continue;
+     phrases.splice(0,3,{...training,fieldSuffix:training.fieldSuffix??3},{...hygiene,fieldSuffix:hygiene.fieldSuffix??1},{...records,fieldSuffix:records.fieldSuffix??2});
+    }
+   }
    if(page.page===1&&row.code==='4.2.7'){
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
      const [hygiene,records,training]=phrases;
