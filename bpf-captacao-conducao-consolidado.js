@@ -95,6 +95,11 @@ const bpfWaterCheck = (() => {
   '4.7.2':{0:returnableInspection([...surfaceChecks,...doorChecks])},
   '4.7.8':{0:fillingMachine},
   '4.6.3':{0:returnableRinse},
+  '4.6.10':{1:{simple:true,questionsInInformation:true,checks:[
+   check('avaliacao-transporte','Avaliação do transporte das embalagens para a sala de envase'),
+   check('transporte-manual-ar-filtrado','As embalagens colocadas manualmente, em transportadores aéreos para entrada na sala de envase, são movimentadas com sopradores de ar com filtro de ar microbiológico?',{informationOnly:true,informationQuestion:true,yesLabel:'As embalagens colocadas manualmente em transportadores aéreos para entrada na sala de envase são movimentadas com sopradores de ar com filtro de ar microbiológico',noLabel:'As embalagens colocadas manualmente em transportadores aéreos para entrada na sala de envase não são movimentadas com sopradores de ar com filtro de ar microbiológico'}),
+   check('pia-higiene-maos-transporte','No local existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem?',{informationOnly:true,informationQuestion:true,yesLabel:'No local existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem',noLabel:'No local não existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem'})
+  ]}},
   '4.6.4':{0:returnableInspection(prewashChecks)},
   '4.6.5':{0:returnableInspection([
    check('relatorio-operacao-lavadora','Foi apresentado o relatório de avaliação das condições de operação do maquinário automático utilizado para limpeza e desinfecção de embalagens retornáveis?'),
@@ -683,7 +688,7 @@ const bpfWaterCheck = (() => {
      refs:[{set text(value){visualFrequency.label=value;},set guidance(value){visualFrequency.guidance=value;}}]};
     entries.push(entry);byKey.set(key,entry);
    }
-   if(!synchronizedItems.has(row.code)&&row.code!=='4.3.4')continue;
+   if(!synchronizedItems.has(row.code)&&!['4.3.4','4.6.10'].includes(row.code))continue;
    for(const panel of bpfPanels(page,row)){
     const config=get(row,panel.id);
     if(!config)continue;
