@@ -875,6 +875,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
+   if(['4.6.4','4.6.5'].includes(row.code)){const name=sharedLineKey(page,row,{id:0});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F1 — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}
    if(row.code==='4.3.3'){const name=reservoirFilterKey(scope);data.fields[name]={name,type:'/Tx',flags:0,label:'4.3.3 F2 — Outras observações dos filtros',options:[],calc:'',phrasePage:page.page};}
    for(const [position,check] of Object.entries(receptionChecks[row.code]||{})){
     const index=Number(position);
@@ -944,8 +945,21 @@ const bpfWaterCheck = (() => {
   }
  }
 
- function records(row,entry,data){
-  const state=read(entry,data);
+ const sharedLineInfo=(row,panel)=>panel.id===0&&['4.6.4','4.6.5'].includes(row.code);
+ const sharedLineKey=(page,row,panel)=>'BPF_LineInfo_'+page.page+'_'+row.code.replace(/\./g,'_')+'_F'+(panel.id+1);
+ function sharedLineState(page,row,panel,data){
+  const name=sharedLineKey(page,row,panel),raw=data[name];
+  if(raw){try{return {state:JSON.parse(raw)||{},conflicts:[]};}catch(_){}}
+  const config=get(row,panel.id),state={},conflicts=[];
+  for(const c of config.checks.filter(c=>isInformation(config,c))){
+   const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&answered(c,v)).map(v=>v[c.id]);
+   const distinct=[...new Set(recorded.map(item=>JSON.stringify(item)))];
+   if(distinct.length===1)state[c.id]=JSON.parse(distinct[0]);else if(distinct.length>1)conflicts.push(c.id);
+  }
+  return {state,conflicts};
+ }
+ function records(row,entry,data,override){
+  const state=override??read(entry,data);
   if(!state||!panelEnabled(row,entry,data))return [];
   if(state.notApplicable&&get(row,entry.index).allowNA)return [];
   return get(row,entry.index).checks.filter(c=>answered(c,state)).map(c=>{
@@ -992,11 +1006,19 @@ const bpfWaterCheck = (() => {
   }));
   const mixing=row.code==='4.3.2'&&panel.id===0&&typeof bpfReservoirMixReport==='function'?bpfReservoirMixReport(page,data):[];
   const supplemental=row.code==='4.3.3'&&panel.id===1?reservoirFilterReport(page,panel,data):row.code==='4.3.4'&&panel.id===0?reservoirFrequencyAnnex(page,row,panel,data).flatMap(item=>item.checklist.map(v=>visualFrequency.label+': '+v)):[];
-  if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length)return [];
+  const joint=sharedLineInfo(row,panel)&&entries.length?sharedLineState(page,row,panel,data):null;
+  const jointRecords=joint?records(row,entries[0],data,joint.state):[];
+  if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length)return [];
   const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
   const information=[...mixing,...supplemental];
   for(const criterion of config.checks.filter(check=>isInformation(config,check))){
    for(const answer of ['1','0']){
+    const shared=joint&&!joint.conflicts.includes(criterion.id);
+    if(shared){
+     const match=jointRecords.find(check=>check.id===criterion.id&&check.answer===answer);
+     if(match){const caption=criterion.informationList?(criterion.reportLabel||criterion.label):isQuestion(criterion)?statementForAnswer(criterion,answer):criterion.label;information.push((criterion.section?criterion.section+' · ':'')+caption+(match.details?' — '+match.details:''));}
+     continue;
+    }
     const recorded=units.flatMap(unit=>unit.checks.filter(check=>check.id===criterion.id&&check.answer===answer)
      .map(check=>unit.label+(check.details?' — '+check.details:'')));
     if(recorded.length){
@@ -1346,6 +1368,7 @@ const bpfWaterCheck = (() => {
     box.append(section);
    }
   }
+  const joint=sharedLineInfo(row,panel)?sharedLineState(page,row,panel,values):null;
   for(const entry of panel.entries){
    const previous=read(entry,values);
    const existingAnswer=values[entry.name];
@@ -1394,21 +1417,27 @@ const bpfWaterCheck = (() => {
     control.prepend(input);
     answerGrid.prepend(control);
    }
+   const entryState=state,entrySave=save;
    for(const [sectionType,box] of boxes){
     const information=sectionType==='info';
+    const general=information&&Boolean(joint);
+    if(general&&entry!==panel.entries[0])continue;
+    const state=general?joint.state:entryState;
+    const save=general?()=>{values[sharedLineKey(page,row,panel)]=JSON.stringify(state);refresh();changed();recalc();}:entrySave;
     const answer=information?'1':sectionType;
     const heading=information?informationHeading(config):answer==='1'?'Sim':'Não';
     const directChoice=(config.simple&&!information)||(config.separateInformation&&!information)||(config.singleNo&&answer==='0');
-    const collapsed=!directChoice;
+    const collapsed=!directChoice&&!general;
     const section=element(collapsed?'details':'div');
     section.className='bpf-water-unit'+(directChoice?' bpf-water-unit-direct':'');
     section.dataset.waterEntry=entry.name;
     if(information&&collapsed){section.dataset.bpfInfoReview='';section.addEventListener('toggle',()=>{if(section.open)section.dataset.bpfInfoVisited='1';});}
     if(collapsed){section.append(element('summary',label));enableHoverUnit(section);}
     const legacyLine=element('p',legacy?'Avaliação geral registrada: '+legacy+'.':'');
-    legacyLine.hidden=!legacy;
+    legacyLine.hidden=!legacy||general;
     legacyLines.push(legacyLine);
     section.append(legacyLine);
+    if(general&&joint.conflicts.length)section.append(element('p','Há informações anteriores diferentes entre linhas. Revise as respostas do quadro geral. Os registros anteriores permanecem no arquivo.'));
     box.append(section);
     if(dependentF2)rows.push(()=>{section.hidden=!panelEnabled(row,entry,values);});
     const groups=new Map();
