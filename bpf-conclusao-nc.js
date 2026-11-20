@@ -83,6 +83,15 @@ function automaticText(){
  return [(summarySelected()?processSummary().join('\n'):''),...sentences.filter((_,i)=>checks[i])].filter(Boolean).join('\n\n');
 }
 function include(text){return [withoutSentences(text),automaticText()].filter(Boolean).join('\n\n');}
+function fitConclusionText(element,pageWidth){
+ if(!element||!element.clientWidth||!element.clientHeight)return;
+ const max=8*pageWidth/595.32,min=.35*pageWidth/595.32;
+ let size=max;element.style.fontSize=size+'px';
+ element.style.overflow='hidden';element.style.scrollbarWidth='none';
+ while(size>min&&(element.scrollHeight>element.clientHeight+1||element.scrollWidth>element.clientWidth+1)){
+  size=Math.max(min,size-.25);element.style.fontSize=size+'px';
+ }
+}
 function update(){
  const host=document.querySelector('#pages');
  const data=window.Guia?.data||(typeof GUIDE_DATA==='object'?GUIDE_DATA:null);
@@ -123,7 +132,7 @@ function update(){
    };
    summaryLabel.append(preview);box.prepend(summaryLabel);
    page.append(box);
-   const automatic=document.createElement('div');automatic.dataset.bpfConclusionAutomatic='';automatic.setAttribute('aria-label','Textos automáticos das considerações finais');automatic.style.cssText='position:absolute;z-index:2;box-sizing:border-box;padding:5px 7px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #9ab4c6;background:#f5fafc;color:#153c52;font:clamp(9px,1.36cqw,15px)/1.35 Arial,sans-serif';page.append(automatic);
+   const automatic=document.createElement('div');automatic.dataset.bpfConclusionAutomatic='';automatic.setAttribute('aria-label','Textos automáticos das considerações finais');automatic.style.cssText='position:absolute;z-index:2;box-sizing:border-box;padding:5px 7px;overflow:hidden;scrollbar-width:none;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #9ab4c6;background:#f5fafc;color:#153c52;font:1.344cqw/1.25 Arial,sans-serif';page.append(automatic);
  }
  const checks=selected();
  box.querySelector('[data-bpf-conclusion-summary]').checked=summarySelected();
@@ -146,6 +155,8 @@ function update(){
   Object.assign(automatic.style,{left:100*left/width+'%',width:100*(right-left)/width+'%',top:(100*(height-top)/height+editHeight)+'%',height:reserved+'%'});
  }
  if(page.classList.contains('active')){
+  fitConclusionText(editor,page.clientWidth);
+  fitConclusionText(automatic,page.clientWidth);
   const margin=(box.offsetHeight+12)+'px';
   if(page.style.marginTop!==margin)page.style.marginTop=margin;
  }
