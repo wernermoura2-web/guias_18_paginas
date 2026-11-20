@@ -1125,6 +1125,14 @@ const bpfWaterCheck = (() => {
   if(!summary)return;
   let openTimer,closeTimer,preview=false,pinned=section.open;
   const mouse=e=>e.pointerType==='mouse'&&window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  section.bpfKeepAnsweredOpen=(legacyAnswer=false)=>{
+   if(section.hidden)return;
+   const checked=[...section.querySelectorAll('input[type="checkbox"]:checked,input[type="radio"]:checked')].some(input=>!input.disabled&&!input.closest('[hidden]'));
+   const filled=[...section.querySelectorAll('textarea,input[type="text"],input[type="number"]')].some(input=>!input.disabled&&!input.closest('[hidden]')&&String(input.value||'').trim());
+   if(!checked&&!filled&&!legacyAnswer)return;
+   clearTimeout(openTimer);clearTimeout(closeTimer);preview=false;pinned=true;section.open=true;hideFillPointerTip(summary);
+  };
+
   summary.style.cursor='pointer';
   summary.removeAttribute('title');
   summary.addEventListener('pointermove',event=>{if(mouse(event)&&!pinned)showFillPointerTip(event,summary);else hideFillPointerTip(summary);});
@@ -1358,6 +1366,7 @@ const bpfWaterCheck = (() => {
       extra.hidden=!enabled||item.answer!==answer||!showDetails;
      });
     }
+    if(collapsed)rows.push(()=>section.bpfKeepAnsweredOpen(!information&&Boolean(legacy)&&existingAnswer===sectionType));
    }
    refresh();
   }
