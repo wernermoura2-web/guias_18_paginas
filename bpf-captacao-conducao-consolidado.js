@@ -581,11 +581,16 @@ const bpfWaterCheck = (() => {
  }
  function renderReservoirFrequency(card,page,row,panel){
   const section=element('fieldset');
+  section.dataset.bpfInfoBox='';
   section.append(element('legend',visualFrequency.label));
   for(const scope of new Set(panel.entries.map(entry=>entry.scope))){
    const unit=element('details');
+   unit.dataset.bpfInfoReview='';
+   unit.dataset.bpfInfoEntries=JSON.stringify([...panel.entries.filter(entry=>entry.scope===scope).map(entry=>entry.name),scope.name]);
+   unit.addEventListener('toggle',()=>{if(unit.open)unit.dataset.bpfInfoVisited='1';});
    unit.title=visualFrequency.guidance;
    unit.append(element('summary',bpfScopeLabel(page,scope)));
+   enableHoverUnit(unit);
    const {field,state,details}=visualInspectionState(page,scope,values);
    fields(unit,visualFrequency,details,()=>{
     values[field]=JSON.stringify(state);
@@ -1132,13 +1137,14 @@ const bpfWaterCheck = (() => {
  function enableHoverUnit(section){
   const summary=section.querySelector('summary');
   if(!summary)return;
-  let openTimer,closeTimer,preview=false,pinned=section.open;
+  let openTimer,closeTimer,preview=false,pinned=section.open,answered=false;
   const mouse=e=>e.pointerType==='mouse'&&window.matchMedia('(hover: hover) and (pointer: fine)').matches;
   section.bpfKeepAnsweredOpen=(legacyAnswer=false)=>{
    if(section.hidden)return;
    const checked=[...section.querySelectorAll('input[type="checkbox"]:checked,input[type="radio"]:checked')].some(input=>!input.disabled&&!input.closest('[hidden]'));
    const filled=[...section.querySelectorAll('textarea,input[type="text"],input[type="number"]')].some(input=>!input.disabled&&!input.closest('[hidden]')&&String(input.value||'').trim());
-   if(!checked&&!filled&&!legacyAnswer)return;
+   answered=Boolean(checked||filled||legacyAnswer);
+   if(!answered)return;
    clearTimeout(openTimer);clearTimeout(closeTimer);preview=false;pinned=true;section.open=true;hideFillPointerTip(summary);
   };
 
@@ -1162,6 +1168,7 @@ const bpfWaterCheck = (() => {
   summary.addEventListener('click',event=>{
    hideFillPointerTip(summary);
    clearTimeout(openTimer);clearTimeout(closeTimer);
+   if(answered&&section.open){event.preventDefault();return;}
    if(preview&&section.open&&!pinned){event.preventDefault();preview=false;pinned=true;return;}
    pinned=!section.open;preview=false;
   });
@@ -1388,7 +1395,7 @@ const bpfWaterCheck = (() => {
       extra.hidden=!enabled||item.answer!==answer||!showDetails;
      });
     }
-    if(collapsed)rows.push(()=>section.bpfKeepAnsweredOpen(!information&&Boolean(legacy)&&existingAnswer===sectionType));
+    if(collapsed&&!information)rows.push(()=>section.bpfKeepAnsweredOpen(!legacyLine.hidden&&Boolean(legacy)&&existingAnswer===sectionType));
    }
    refresh();
   }
@@ -1419,7 +1426,7 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,render};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,render,enableHoverUnit};
 })();
 
 
