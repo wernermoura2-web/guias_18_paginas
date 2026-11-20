@@ -40,7 +40,7 @@ function bpfIsNCDefinition(line){
 }
 
 function bpfIsFinalConsiderationTitle(line){
- return /^(?:Considerando o )?Item\s+\d+(?:\.\d+)*\b/.test(line.trim());
+ return /^(?:(?:Considerando o )?Item|Considerando o processo)\s+\d+(?:\.\d+)*\b/.test(line.trim());
 }
 
 function bpfFinalConsiderationRows(text){
@@ -86,7 +86,7 @@ function bpfPaginateFinalConsiderations(text,firstRect,nextRect,font,bold){
  const join=group=>group.join('');
  const fits=(measure,text)=>measure.height(text)<=measure.capacity;
  let measure=first;
- for(const block of text.split(/(?=^(?:Considerando o )?Item\s+\d+(?:\.\d+)*\b)/m).filter(Boolean)){
+ for(const block of text.split(/(?=^(?:(?:Considerando o )?Item|Considerando o processo)\s+\d+(?:\.\d+)*\b)/m).filter(Boolean)){
   const group=groups.at(-1);
   if(fits(measure,join(group)+block)){group.push(block);continue;}
   groups.push([]);
@@ -269,7 +269,7 @@ function bpfRenderFinalConsiderationsText(el,text){
  const fragment=document.createDocumentFragment();
  const generated=Object.entries(bpfFinalRead('BPF_PCCGenerated',{}));
  const fieldText=String(values[bpfFinalConsiderationsField]||'');
- for(const rawBlock of text.split(/(?=^(?:Considerando o )?Item\s+\d+(?:\.\d+)*\b)/m)){
+ for(const rawBlock of text.split(/(?=^(?:(?:Considerando o )?Item|Considerando o processo)\s+\d+(?:\.\d+)*\b)/m)){
   const block=rawBlock.trimEnd();
   if(!block)continue;
   const newline=block.indexOf('\n');
