@@ -778,7 +778,7 @@ const bpfWaterCheck = (() => {
   const saveCommon=()=>{for(const entry of panel.entries.filter(e=>selected.has(e.name))){if(answer)write(entry,'Resposta',answer);if(answer==='1'){write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}else if(answer==='0'){write(entry,'Comprovacao','');write(entry,'Detalhes','');}}persist();};
   for(const entry of panel.entries){const label=element('label',bpfScopeLabel(page,entry.scope));label.style.cssText='display:block;margin:9px 0';const input=element('input');input.type='checkbox';input.checked=selected.has(entry.name);input.onchange=()=>{
    if(input.checked){selected.add(entry.name);if(answer){write(entry,'Resposta',answer);if(answer==='1'){write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}}}
-   else{selected.delete(entry.name);for(const key of ['Resposta','Comprovacao','Detalhes'])write(entry,key,'');}
+   else{selected.delete(entry.name);for(const key of ['Resposta','Comprovacao','Detalhes'])write(entry,key,'');if(!selected.size){answer='';evidence='';details='';select.value='';area.value='';for(const input of radios.values())input.checked=false;}}
    refresh();persist();
   };label.prepend(input);block.append(label);}
   const response=element('div');response.style.cssText='margin:12px 0';const radios=new Map();
