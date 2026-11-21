@@ -32,8 +32,8 @@ function replaceVisible(root){
   const previous=node.nodeValue||'';
   if(!previous.includes('F2')&&!previous.includes('F3'))continue;
   const current=previous
-   .replace(/\bF3\s*[—–-]\s*Os produtos saneantes devem estar regularizados no órgão competente\.?/g,'F3 — '+REPROVACAO)
-   .replace(/\bF2\s*[—–-]\s*Quando as especificações previamente determinadas não forem atendidas, os insumos devem ser reprovados\.?/g,'F2 — '+SANEANTES);
+   .replace(/\bF3\s*[—–-]\s*Os produtos saneantes devem estar regularizados no órgão competente\.?/g,'F2 — '+SANEANTES)
+   .replace(/\bF2\s*[—–-]\s*Quando as especificações previamente determinadas não forem atendidas, os insumos devem ser reprovados\.?/g,'F3 — '+REPROVACAO);
   if(current!==previous)node.nodeValue=current;
  }
 }
