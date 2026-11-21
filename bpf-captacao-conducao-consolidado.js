@@ -689,35 +689,41 @@ const bpfWaterCheck = (() => {
   }
   card.append(box);
  }
- const popAvailabilityKey=scope=>'BPF_F_'+scope.name+'_2';
+ const popAvailabilityKey='BPF_F_4_3_6_POP_DisponivelAtualizado';
+ const popAvailabilityLegacyKey=scope=>'BPF_F_'+scope.name+'_2';
  const popAvailabilityQuestion='O POP referente à higienização do reservatório está disponível e atualizado?';
  const popAvailabilityStatement=answer=>answer==='1'?'O POP referente à higienização do reservatório está disponível e atualizado':'O POP referente à higienização do reservatório não está disponível e/ou não está atualizado';
+ function popAvailabilityAnswer(data,panel){
+  if(data[popAvailabilityKey]==='1'||data[popAvailabilityKey]==='0')return data[popAvailabilityKey];
+  // Uma resposta global explicitamente limpa não deve reutilizar dados anteriores.
+  if(Object.prototype.hasOwnProperty.call(data,popAvailabilityKey))return '';
+  // Compatibilidade: somente aproveitar respostas antigas se TODOS os reservatórios
+  // anteriormente avaliados apresentarem o mesmo resultado.
+  const legacy=panel.entries.map(({scope})=>data[popAvailabilityLegacyKey(scope)]);
+  return legacy.length&&legacy.every(answer=>answer==='1')?'1':
+   legacy.length&&legacy.every(answer=>answer==='0')?'0':'';
+ }
  function renderReservoirPopInfo(card,page,row,panel){
   if(row.code!=='4.3.6'||panel.id!==0)return;
-  const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';box.append(element('legend','F1 — Outras informações'));
-  for(const {scope,name} of panel.entries){
-   const unit=element('details');unit.className='bpf-water-unit';unit.dataset.bpfInfoReview='';unit.dataset.bpfInfoEntries=JSON.stringify([name]);
-   unit.append(element('summary',bpfScopeLabel(page,scope)));enableHoverUnit(unit);
-   unit.addEventListener('toggle',()=>{if(unit.open)unit.dataset.bpfInfoVisited='1';});
-   const key=popAvailabilityKey(scope),label=element('label'),wording=element('span',popAvailabilityQuestion),select=element('select');
-   label.style.cssText='display:block;margin:10px 0';select.style.cssText='display:block;margin:6px 0;padding:5px';
-   for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
-   select.value=['1','0'].includes(values[key])?values[key]:'';
-   const refresh=()=>{const absent=typeof bpfExplicitPopAbsence==='function'&&bpfExplicitPopAbsence(row,scope,values);unit.hidden=absent;select.disabled=absent;wording.textContent=select.value?popAvailabilityStatement(select.value):popAvailabilityQuestion;};
-   select.onchange=()=>{values[key]=select.value;refresh();changed();};
-   card.addEventListener('change',refresh);refresh();label.append(wording,select);unit.append(label);box.append(unit);
-  }
-  card.append(box);
+  const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';
+  box.append(element('legend','F1 — Outras informações'));
+  // A disponibilidade e atualização do POP é uma informação única, independente
+  // dos blocos Reservatório 1–4, sem repetição da pergunta.
+  const label=element('label'),wording=element('span',popAvailabilityQuestion),select=element('select');
+  label.style.cssText='display:block;margin:10px 0';
+  select.style.cssText='display:block;margin:6px 0;padding:5px';
+  for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
+  select.value=popAvailabilityAnswer(values,panel);
+  const refresh=()=>{wording.textContent=select.value?popAvailabilityStatement(select.value):popAvailabilityQuestion;};
+  select.onchange=()=>{values[popAvailabilityKey]=select.value;refresh();changed();};
+  refresh();label.append(wording,select);box.append(label);card.append(box);
  }
  function reservoirPopReport(page,row,panel,data){
   if(row.code!=='4.3.6'||panel.id!==0)return [];
-  const checklist=[];
-  for(const answer of ['1','0']){
-   const selected=panel.entries.filter(({scope})=>data[popAvailabilityKey(scope)]===answer&&!(typeof bpfExplicitPopAbsence==='function'&&bpfExplicitPopAbsence(row,scope,data)));
-   if(selected.length)checklist.push(popAvailabilityStatement(answer)+' ('+selected.map(e=>bpfScopeLabel(page,e.scope)).join(', ')+')');
-  }
+  const checklist=[],answer=popAvailabilityAnswer(data,panel);
+  if(answer)checklist.push(popAvailabilityStatement(answer));
   const former={...panel,storageId:1};
-  for(const answer of ['1','0']){const note=String(data[bpfGroupNoteName(page,row,former,answer)]||'').trim();if(note&&checklist.length)checklist.push('Registro anterior — '+note);}
+  for(const value of ['1','0']){const note=String(data[bpfGroupNoteName(page,row,former,value)]||'').trim();if(note&&checklist.length)checklist.push('Registro anterior — '+note);}
   return checklist.length?[{page,row,panel,heading:'Outras informações',checklist,answer:'',note:'',selected:[]}]:[];
  }
  function reservoirFilterReport(page,panel,data){
@@ -949,7 +955,8 @@ const bpfWaterCheck = (() => {
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
    if(row.code==='4.3.6'){
-    const name=popAvailabilityKey(scope);data.fields[name]={name,type:'/Ch',flags:0,label:'4.3.6 F1 — Disponibilidade e atualização do POP',options:['','1','0','2'],calc:'',phrasePage:page.page};
+    data.fields[popAvailabilityKey]={name:popAvailabilityKey,type:'/Ch',flags:0,label:'4.3.6 F1 — Disponibilidade e atualização do POP (informação geral)',options:['','1','0'],calc:'',phrasePage:page.page};
+    const name=popAvailabilityLegacyKey(scope);data.fields[name]={name,type:'/Ch',flags:0,label:'4.3.6 F1 — Resposta anterior por reservatório (legado)',options:['','1','0','2'],calc:'',phrasePage:page.page};
     const note='BPF_Obs_'+scope.name+'_2';data.fields[note]={name:note,type:'/Tx',flags:4096,label:'4.3.6 F1 — Registro anterior do POP',options:[],calc:'',phrasePage:page.page};
     for(const answer of ['1','0']){const n=bpfGroupNoteName(page,row,{id:0,storageId:1},answer);data.fields[n]={name:n,type:'/Tx',flags:4096,label:'4.3.6 F1 — Registro anterior do POP',options:[],calc:'',phrasePage:page.page};}
    }
