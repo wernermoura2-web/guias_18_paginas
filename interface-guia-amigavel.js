@@ -148,7 +148,7 @@
     const status=document.querySelector('#status');
     button.disabled=true;
     try{
-      const response=await fetch('./impressao/'+fileName+'.b64?v=20261120-frases-legais-v2',{cache:'reload'});
+      const response=await fetch('./impressao/'+fileName+'.b64?v=20261120-frases-legais-v3',{cache:'reload'});
       if(!response.ok)throw new Error('PDF indisponível');
       const bytes=Uint8Array.from(atob((await response.text()).trim()), char=>char.charCodeAt(0));
       if(String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('PDF inválido');
@@ -205,7 +205,7 @@
   );
   const editableGuide=document.createElement('a');
   editableGuide.className='bpf-ui-action bpf-ui-editable-guide';
-  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261120-frases-legais-v2';
+  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261120-frases-legais-v3';
   editableGuide.download='Guia_Editavel_em_Branco.pdf';
   editableGuide.textContent='Guia Editável em Branco (sem as frases)';
   editableGuide.addEventListener('click',async event=>{
