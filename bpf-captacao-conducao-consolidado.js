@@ -546,6 +546,27 @@ const bpfWaterCheck = (() => {
   ?!bpfPopNAForced(row,entry.scope,entry.index,data)
   :row.code!=='4.6.8'||entry.index!==1||capsDisinfected(entry.scope,data);
 
+ // A ordem é fixada no próprio formulário F, sem sobreposição visual
+ // e sem renomear os campos usados por respostas, OBS/NC e anexos.
+ function ensure469FOrder(row){
+  if(row?.code!=='4.6.9')return false;
+  let changed=false;
+  for(const phrases of [row.phrases,...(row.scopes||[]).map(scope=>scope.phrases)]){
+   if(!Array.isArray(phrases)||phrases.length<2)continue;
+   const transport=phrases.find(phrase=>/transporte das embalagens da área de higienização para a sala de envase/i.test(phrase?.text||''));
+   const protection=phrases.find(phrase=>/saída do equipamento de higienização das embalagens/i.test(phrase?.text||''));
+   if(!transport||!protection)continue;
+   // Antigo F2 passa a F1; antigo F1 passa a F2.
+   // Manter os nomes dos campos originais preserva respostas anteriores.
+   transport.fieldSuffix??=2;
+   protection.fieldSuffix??=1;
+   if(phrases[0]!==transport||phrases[1]!==protection){
+    phrases.splice(0,2,transport,protection);
+    changed=true;
+   }
+  }
+  return changed;
+ }
  function preparePhrases(){
   const phrase={
    text:'Quando a envasadora realiza a desinfecção das tampas, deve controlar o processo e proteger os lotes até o envase.',
@@ -570,17 +591,7 @@ const bpfWaterCheck = (() => {
      phrases.splice(0,3,main,{...contents,fieldSuffix:contents.fieldSuffix??3});
     }
    }
-   if(row.code==='4.6.9'){
-    // Nova ordem: F1 transporte imediato (antigo F2), F2 proteção da esteira (antigo F1).
-    // Conservar fieldSuffix preserva nomes de campos, respostas e registros existentes.
-    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
-     const [protecao,transporte]=phrases;
-     if(!transporte)continue;
-     phrases.splice(0,2,
-      {...transporte,fieldSuffix:transporte.fieldSuffix??2},
-      {...protecao,fieldSuffix:protecao.fieldSuffix??1});
-    }
-   }
+   if(row.code==='4.6.9')ensure469FOrder(row);
    if(row.code==='4.3.6'){
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
      if(phrases.length!==3)continue;
@@ -1758,7 +1769,7 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,renderPackagingPopInfo,packagingPopReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,ensure469FOrder,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,renderPackagingPopInfo,packagingPopReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
 })();
 
 
