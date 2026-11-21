@@ -189,6 +189,10 @@ const bpfWaterCheck = (() => {
   },
   '4.6.6':{
    0:returnableInspection([
+    check('sem-acumulo-enxague','Os garrafões após o enxágue com água mineral natural saem sem acúmulo de água de enxágue no seu interior?'),
+    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?')
+   ]),
+   1:returnableInspection([
     check('teste-arraste','O teste de arraste foi demonstrado?'),
     check('registros-residuos','Há registros dos testes de resíduos?'),
     ...[
@@ -199,10 +203,6 @@ const bpfWaterCheck = (() => {
       noLabel:'O teste de arraste não atende ao critério de adequação ao desinfetante utilizado e de aceitação a 0,0 mg/L, interpretado conforme o limite de detecção do método'
      })
     ].map(criterion=>({...criterion,hideWhenAllNo:['teste-arraste','registros-residuos']}))
-   ]),
-   1:returnableInspection([
-    check('sem-acumulo-enxague','Os garrafões após o enxágue com água mineral natural saem sem acúmulo de água de enxágue no seu interior?'),
-    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?')
    ])
   },
   '4.3.5':{1:{separateInformation:true,checks:[
@@ -574,15 +574,6 @@ const bpfWaterCheck = (() => {
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
-   if(page.page===7&&row.code==='4.6.6'){
-    // F1: teste de resíduos (antigo F2). F2: enxágue (antigo F1).
-    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
-     const [rinse,tests]=phrases;
-     if(!tests)continue;
-     phrases.splice(0,2,{...tests,fieldSuffix:tests.fieldSuffix??2},
-      {...rinse,fieldSuffix:rinse.fieldSuffix??1});
-    }
-   }
    if(row.code==='4.6.12'){
     // F2 original passa a informação única do F1; F3 original vira F2.
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
@@ -1139,9 +1130,8 @@ const bpfWaterCheck = (() => {
  }
 
  const sharedLineInfo=(row,panel)=>(row.code==='4.7.2'&&panel.id===1)||(row.code==='4.7.4'&&panel.id===0)||(row.code==='4.7.5'&&[0,1].includes(panel.id))||(row.code==='4.6.10'&&panel.id===1)||(row.code==='4.6.7'&&panel.id===0)||(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5','4.7.6','4.7.8'].includes(row.code));
- // Em 4.6.6, manter os dados gerais associados à pergunta original
- // após a troca dos F, inclusive em arquivos JSON de inspeções anteriores.
- const sharedLineKey=(page,row,panel)=>'BPF_LineInfo_'+page.page+'_'+row.code.replace(/\./g,'_')+'_F'+(row.code==='4.6.6'?2-panel.id:panel.id+1);
+ // As informações continuam associadas aos seus F de origem, sem remapear índices.
+ const sharedLineKey=(page,row,panel)=>'BPF_LineInfo_'+page.page+'_'+row.code.replace(/\./g,'_')+'_F'+(panel.id+1);
  function sharedLineState(page,row,panel,data){
   if(panel.id===1&&fillingF2Indices[row.code])panel={...panel,entries:panel.entries.filter(entry=>entry.index===1)};
   const name=sharedLineKey(page,row,panel),raw=data[name];
