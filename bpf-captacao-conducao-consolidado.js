@@ -567,6 +567,25 @@ const bpfWaterCheck = (() => {
   }
   return changed;
  }
+ // F2 de 4.5.8: inspeção/aceitação/reprovação; F3: destino final.
+ // A associação com respostas antigas permanece nos fieldSuffix originais.
+ function ensure458FOrder(row){
+  if(row?.code!=='4.5.8')return false;
+  let changed=false;
+  for(const phrases of [row.phrases,...(row.scopes||[]).map(s=>s.phrases)]){
+   if(!Array.isArray(phrases)||phrases.length<3)continue;
+   const inspection=phrases.find(p=>/inspeção individual, aceitação e reprovação de embalagens/i.test(p?.text||''));
+   const destination=phrases.find(p=>/destino final das embalagens reprovadas/i.test(p?.text||''));
+   if(!inspection||!destination||inspection===destination)continue;
+   inspection.fieldSuffix??=3;
+   destination.fieldSuffix??=2;
+   if(phrases[1]!==inspection||phrases[2]!==destination){
+    phrases.splice(1,2,inspection,destination);
+    changed=true;
+   }
+  }
+  return changed;
+ }
  function preparePhrases(){
   const phrase={
    text:'Quando a envasadora realiza a desinfecção das tampas, deve controlar o processo e proteger os lotes até o envase.',
@@ -574,6 +593,7 @@ const bpfWaterCheck = (() => {
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(page.page===6&&row.code==='4.5.8')ensure458FOrder(row);
    if(row.code==='4.6.12'){
     // F2 original passa a informação única do F1; F3 original vira F2.
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
@@ -1793,7 +1813,7 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,ensure469FOrder,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,renderPackagingPopInfo,packagingPopReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,ensure469FOrder,ensure458FOrder,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,renderPackagingPopInfo,packagingPopReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
 })();
 
 
