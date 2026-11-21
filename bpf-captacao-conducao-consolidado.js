@@ -553,6 +553,17 @@ const bpfWaterCheck = (() => {
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(row.code==='4.6.9'){
+    // Nova ordem: F1 transporte imediato (antigo F2), F2 proteção da esteira (antigo F1).
+    // Conservar fieldSuffix preserva nomes de campos, respostas e registros existentes.
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     const [protecao,transporte]=phrases;
+     if(!transporte)continue;
+     phrases.splice(0,2,
+      {...transporte,fieldSuffix:transporte.fieldSuffix??2},
+      {...protecao,fieldSuffix:protecao.fieldSuffix??1});
+    }
+   }
    if(row.code==='4.3.6'){
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
      if(phrases.length!==3)continue;
