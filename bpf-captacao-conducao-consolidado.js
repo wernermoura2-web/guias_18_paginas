@@ -553,6 +553,13 @@ const bpfWaterCheck = (() => {
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(row.code==='4.3.6'){
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     if(phrases.length!==3)continue;
+     const [first,availability,contents]=phrases;
+     phrases.splice(0,3,first,{...contents,fieldSuffix:contents.fieldSuffix??3});
+    }
+   }
    if(page.page>=2&&page.page<=5&&row.code==='4.3.5'){
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
      const [hygiene,records,training]=phrases;
@@ -681,6 +688,37 @@ const bpfWaterCheck = (() => {
    unit.append(other);refresh();ask(...filterQuestions[1]);ask(...filterQuestions[2]);box.append(unit);
   }
   card.append(box);
+ }
+ const popAvailabilityKey=scope=>'BPF_F_'+scope.name+'_2';
+ const popAvailabilityQuestion='O POP referente à higienização do reservatório está disponível e atualizado?';
+ const popAvailabilityStatement=answer=>answer==='1'?'O POP referente à higienização do reservatório está disponível e atualizado':'O POP referente à higienização do reservatório não está disponível e/ou não está atualizado';
+ function renderReservoirPopInfo(card,page,row,panel){
+  if(row.code!=='4.3.6'||panel.id!==0)return;
+  const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';box.append(element('legend','F1 — Outras informações'));
+  for(const {scope,name} of panel.entries){
+   const unit=element('details');unit.className='bpf-water-unit';unit.dataset.bpfInfoReview='';unit.dataset.bpfInfoEntries=JSON.stringify([name]);
+   unit.append(element('summary',bpfScopeLabel(page,scope)));enableHoverUnit(unit);
+   unit.addEventListener('toggle',()=>{if(unit.open)unit.dataset.bpfInfoVisited='1';});
+   const key=popAvailabilityKey(scope),label=element('label'),wording=element('span',popAvailabilityQuestion),select=element('select');
+   label.style.cssText='display:block;margin:10px 0';select.style.cssText='display:block;margin:6px 0;padding:5px';
+   for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
+   select.value=['1','0'].includes(values[key])?values[key]:'';
+   const refresh=()=>{const absent=typeof bpfExplicitPopAbsence==='function'&&bpfExplicitPopAbsence(row,scope,values);unit.hidden=absent;select.disabled=absent;wording.textContent=select.value?popAvailabilityStatement(select.value):popAvailabilityQuestion;};
+   select.onchange=()=>{values[key]=select.value;refresh();changed();};
+   card.addEventListener('change',refresh);refresh();label.append(wording,select);unit.append(label);box.append(unit);
+  }
+  card.append(box);
+ }
+ function reservoirPopReport(page,row,panel,data){
+  if(row.code!=='4.3.6'||panel.id!==0)return [];
+  const checklist=[];
+  for(const answer of ['1','0']){
+   const selected=panel.entries.filter(({scope})=>data[popAvailabilityKey(scope)]===answer&&!(typeof bpfExplicitPopAbsence==='function'&&bpfExplicitPopAbsence(row,scope,data)));
+   if(selected.length)checklist.push(popAvailabilityStatement(answer)+' ('+selected.map(e=>bpfScopeLabel(page,e.scope)).join(', ')+')');
+  }
+  const former={...panel,storageId:1};
+  for(const answer of ['1','0']){const note=String(data[bpfGroupNoteName(page,row,former,answer)]||'').trim();if(note&&checklist.length)checklist.push('Registro anterior — '+note);}
+  return checklist.length?[{page,row,panel,heading:'Outras informações',checklist,answer:'',note:'',selected:[]}]:[];
  }
  function reservoirFilterReport(page,panel,data){
   const scopes=[...new Set(panel.entries.map(e=>e.scope))],result=[];
@@ -910,6 +948,11 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
+   if(row.code==='4.3.6'){
+    const name=popAvailabilityKey(scope);data.fields[name]={name,type:'/Ch',flags:0,label:'4.3.6 F1 — Disponibilidade e atualização do POP',options:['','1','0','2'],calc:'',phrasePage:page.page};
+    const note='BPF_Obs_'+scope.name+'_2';data.fields[note]={name:note,type:'/Tx',flags:4096,label:'4.3.6 F1 — Registro anterior do POP',options:[],calc:'',phrasePage:page.page};
+    for(const answer of ['1','0']){const n=bpfGroupNoteName(page,row,{id:0,storageId:1},answer);data.fields[n]={name:n,type:'/Tx',flags:4096,label:'4.3.6 F1 — Registro anterior do POP',options:[],calc:'',phrasePage:page.page};}
+   }
    if(['4.6.4','4.6.5','4.6.6','4.6.7','4.6.10','4.7.2','4.7.4','4.7.5','4.7.6','4.7.8'].includes(row.code)||row.code==='4.6.3'&&scope.phrases[0]?.allowNA){for(const id of ['4.6.6','4.7.5'].includes(row.code)?[0,1]:['4.6.10','4.7.2'].includes(row.code)?[1]:[0]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}}
    if(row.code==='4.3.3'){const name=reservoirFilterKey(scope);data.fields[name]={name,type:'/Tx',flags:0,label:'4.3.3 F2 — Outras observações dos filtros',options:[],calc:'',phrasePage:page.page};}
    for(const [position,check] of Object.entries(receptionChecks[row.code]||{})){
@@ -1640,7 +1683,7 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,renderReservoirFilterInfo,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
 })();
 
 
