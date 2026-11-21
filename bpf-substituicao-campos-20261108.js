@@ -7,7 +7,7 @@ if(typeof BPF_PHRASES==='undefined'||typeof BPF_NC_DEFINITIONS==='undefined')ret
 // F3=saneantes. Converter também este módulo para a nova ordem
 // F2=saneantes e F3=reprovação, inclusive orientações e exemplos de OBS/NC.
 for(const record of data.verificacoes){
- if(record.item==='4.5.3'){
+ if(record.item==='4.5.3'||record.item==='4.5.8'){
   if(record.f==='F2')record.f='F3';
   else if(record.f==='F3')record.f='F2';
  }else if(record.item==='4.6.9'){
