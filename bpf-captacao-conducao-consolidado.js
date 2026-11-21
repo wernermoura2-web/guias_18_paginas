@@ -895,9 +895,9 @@ const bpfWaterCheck = (() => {
  function renderSanitizerReception(card,page,row,panel){
   const block=element('fieldset');block.className='bpf-answer-box';block.append(element('legend','Informações adicionais — Saneantes'));
   for(const entry of panel.entries)for(const [key,question,yes,no] of sanitizerReceptionQuestions){
-   const field=receptionKey(entry.name,key),label=element('label');label.style.cssText='display:block;margin:12px 0';
+   const field=receptionKey(entry.name,key),label=element('label');label.style.cssText='display:block;margin:4px 0 6px;line-height:1.25';
    const prompt=element('span',question);label.append(prompt);
-   const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
+   const select=element('select');select.style.cssText='display:block;margin:2px 0 0;padding:3px 5px';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
    select.value=values[field]||'';
    const refresh=()=>{prompt.textContent=select.value==='1'?yes:select.value==='0'?no:question;};
    select.onchange=()=>{values[field]=select.value;bpfSyncObservation(row,page);changed();refresh();};
