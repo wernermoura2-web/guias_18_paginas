@@ -51,7 +51,7 @@ function layout(ctx,code,width,height){
   :['F1 — '+phrases[0]+' F2 — '+phrases[1]];
  const linesAllowed=code==='4.6.6'?2:code==='4.6.9'?3:4;
  // O bitmap original utiliza Arial regular. Nunca ampliar nem aplicar negrito.
- for(let size=20;size>=18;size-=.25){
+ for(let size=20;size>=14;size-=.25){
   ctx.font=size+'px Arial, Helvetica, sans-serif';
   const lines=blocks.flatMap(block=>wrapParagraph(ctx,block,width));
   const step=size*1.10;
@@ -59,7 +59,7 @@ function layout(ctx,code,width,height){
    return {size,step,lines};
   }
  }
- const size=18;
+ const size=14;
  ctx.font=size+'px Arial, Helvetica, sans-serif';
  return {size,step:size*1.10,lines:blocks.flatMap(block=>wrapParagraph(ctx,block,width))};
 }
