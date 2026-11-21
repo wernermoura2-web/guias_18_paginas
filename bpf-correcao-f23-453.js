@@ -2,7 +2,7 @@
    Aplicada depois de todos os revisores, sem apagar respostas ou observações. */
 (function(){
 'use strict';
-if(window.__bpf453CorrectionV9)return;
+if(window.__bpf453CorrectionV9){window.BPF453Correcao?.executar?.();return;}
 window.__bpf453CorrectionV9=true;
 const SANEANTES='Os produtos saneantes devem estar regularizados no órgão competente.';
 const REPROVACAO='Quando as especificações previamente determinadas não forem atendidas, os insumos devem ser reprovados.';
@@ -48,7 +48,7 @@ function run(root){
  }
  replaceVisible(root||document.body);
  document.documentElement.dataset.bpf453='f2-saneantes-f3-reprovacao-v9';
- window.BPF453Correcao={versao:'20261121-v9',frasesAjustadas:fixed,f2:SANEANTES,f3:REPROVACAO};
+ window.BPF453Correcao={versao:'20261121-v9',frasesAjustadas:fixed,f2:SANEANTES,f3:REPROVACAO,executar:()=>run(document.body)};
 }
 function start(){
  run(document.body);
