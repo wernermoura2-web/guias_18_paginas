@@ -10,11 +10,14 @@ for(const record of data.verificacoes){
  if(record.item==='4.5.3'){
   if(record.f==='F2')record.f='F3';
   else if(record.f==='F3')record.f='F2';
- }else if(record.item==='4.6.9'){
-  // Antigo F1 (proteção da esteira) passa a F2;
-  // antigo F2 (transporte imediato) passa a F1.
+ }else if(record.item==='4.6.9'||record.item==='4.6.6'){
+  // Trocar os números editoriais sem perder a classificação e os exemplos.
   if(record.f==='F1')record.f='F2';
   else if(record.f==='F2')record.f='F1';
+ }else if(record.item==='4.6.12'){
+  // F2 antigo passa a pergunta independente do F1. F3 antigo torna-se F2.
+  if(record.f==='F2')record.f='F99';
+  else if(record.f==='F3')record.f='F2';
  }
 }
 const v=new Map(data.verificacoes.map(x=>[x.item+'/'+x.f,x]));
