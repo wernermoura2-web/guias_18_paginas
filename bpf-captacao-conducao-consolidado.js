@@ -189,10 +189,6 @@ const bpfWaterCheck = (() => {
   },
   '4.6.6':{
    0:returnableInspection([
-    check('sem-acumulo-enxague','Os garrafões após o enxágue com água mineral natural saem sem acúmulo de água de enxágue no seu interior?'),
-    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?')
-   ]),
-   1:returnableInspection([
     check('teste-arraste','O teste de arraste foi demonstrado?'),
     check('registros-residuos','Há registros dos testes de resíduos?'),
     ...[
@@ -203,6 +199,10 @@ const bpfWaterCheck = (() => {
       noLabel:'O teste de arraste não atende ao critério de adequação ao desinfetante utilizado e de aceitação a 0,0 mg/L, interpretado conforme o limite de detecção do método'
      })
     ].map(criterion=>({...criterion,hideWhenAllNo:['teste-arraste','registros-residuos']}))
+   ]),
+   1:returnableInspection([
+    check('sem-acumulo-enxague','Os garrafões após o enxágue com água mineral natural saem sem acúmulo de água de enxágue no seu interior?'),
+    check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?')
    ])
   },
   '4.3.5':{1:{separateInformation:true,checks:[
@@ -553,6 +553,23 @@ const bpfWaterCheck = (() => {
    appcc:'PCC',fieldSuffix:'CQ_DesinfeccaoTampas'
   };
   for(const page of BPF_PHRASES)for(const row of page.rows){
+   if(page.page===7&&row.code==='4.6.6'){
+    // F1: teste de resíduos (antigo F2). F2: enxágue (antigo F1).
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     const [rinse,tests]=phrases;
+     if(!tests)continue;
+     phrases.splice(0,2,{...tests,fieldSuffix:tests.fieldSuffix??2},
+      {...rinse,fieldSuffix:rinse.fieldSuffix??1});
+    }
+   }
+   if(row.code==='4.6.12'){
+    // F2 original passa a informação única do F1; F3 original vira F2.
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     if(phrases.length<3)continue;
+     const [main,availability,contents]=phrases;
+     phrases.splice(0,3,main,{...contents,fieldSuffix:contents.fieldSuffix??3});
+    }
+   }
    if(row.code==='4.6.9'){
     // Nova ordem: F1 transporte imediato (antigo F2), F2 proteção da esteira (antigo F1).
     // Conservar fieldSuffix preserva nomes de campos, respostas e registros existentes.
@@ -703,6 +720,39 @@ const bpfWaterCheck = (() => {
    unit.append(other);refresh();ask(...filterQuestions[1]);ask(...filterQuestions[2]);box.append(unit);
   }
   card.append(box);
+ }
+
+ const packagingPopKey='BPF_F_4_6_12_POP_DisponivelAtualizado';
+ const packagingPopQuestion='Os Procedimentos Operacionais Padronizados referentes às operações de higienização das embalagens estão disponíveis e atualizados?';
+ const packagingPopStatement=a=>a==='1'?'Os POP de higienização das embalagens estão disponíveis e atualizados':'Os POP de higienização das embalagens não estão disponíveis e/ou não estão atualizados';
+ function packagingLegacyKey(scope){
+  const copy={...scope,phrases:scope.phrases.slice()};
+  copy.phrases[1]={...(copy.phrases[1]||{}),fieldSuffix:2};
+  return bpfPhraseName(copy,1);
+ }
+ function packagingPopAnswer(row,data){
+  if(data[packagingPopKey]==='1'||data[packagingPopKey]==='0')return data[packagingPopKey];
+  if(Object.prototype.hasOwnProperty.call(data,packagingPopKey))return '';
+  const legacy=row.scopes.map(scope=>data[packagingLegacyKey(scope)]).filter(a=>a==='1'||a==='0');
+  return legacy.length===row.scopes.length&&legacy.every(a=>a===legacy[0])?legacy[0]:'';
+ }
+ function renderPackagingPopInfo(card,page,row,panel){
+  if(row.code!=='4.6.12'||panel.id!==0)return;
+  const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';
+  box.append(element('legend','F1 — Outras informações'));
+  const label=element('label'),wording=element('span',packagingPopQuestion),select=element('select');
+  label.style.cssText='display:block;margin:9px 0';
+  select.style.cssText='display:block;margin:4px 0;padding:5px';
+  for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
+  select.value=packagingPopAnswer(row,values);
+  const refresh=()=>{wording.textContent=select.value?packagingPopStatement(select.value):packagingPopQuestion;};
+  select.onchange=()=>{values[packagingPopKey]=select.value;refresh();bpfSyncObservation(row,page);changed();};
+  refresh();label.append(wording,select);box.append(label);card.append(box);
+ }
+ function packagingPopReport(page,row,panel,data){
+  if(row.code!=='4.6.12'||panel.id!==0)return [];
+  const answer=packagingPopAnswer(row,data);
+  return !answer?[]:[{page,row,panel,heading:'Outras informações',checklist:[packagingPopStatement(answer)],answer:'',note:'',selected:[]}];
  }
  const popAvailabilityKey='BPF_F_4_3_6_POP_DisponivelAtualizado';
  const popAvailabilityLegacyKey=scope=>'BPF_F_'+scope.name+'_2';
@@ -969,6 +1019,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
+   if(row.code==='4.6.12')data.fields[packagingPopKey]={name:packagingPopKey,type:'/Ch',flags:0,label:'4.6.12 F1 — Disponibilidade e atualização do POP (informação geral)',options:['','1','0'],calc:'',phrasePage:page.page};
    if(row.code==='4.3.6'){
     data.fields[popAvailabilityKey]={name:popAvailabilityKey,type:'/Ch',flags:0,label:'4.3.6 F1 — Disponibilidade e atualização do POP (informação geral)',options:['','1','0'],calc:'',phrasePage:page.page};
     const name=popAvailabilityLegacyKey(scope);data.fields[name]={name,type:'/Ch',flags:0,label:'4.3.6 F1 — Resposta anterior por reservatório (legado)',options:['','1','0','2'],calc:'',phrasePage:page.page};
@@ -1707,7 +1758,7 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,renderPackagingPopInfo,packagingPopReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
 })();
 
 
