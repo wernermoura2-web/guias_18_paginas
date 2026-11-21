@@ -55,7 +55,7 @@ for(const page of BPF_PHRASES){
   const applicable=DATA.verificacoes.filter(r=>r.item===code);
   for(const record of applicable){
    const number=Number(record.f.replace('F',''));
-   const indices=code==='4.6.12'&&number===2?[]:code==='4.6.12'&&number===3?[1]:['4.6.6','4.6.9'].includes(code)&&[1,2].includes(number)?[2-number]:code==='4.5.3'&&number===2?[2]:code==='4.5.3'&&number===3?[1]:group?.[record.f]||(Number.isInteger(number)?[number-1]:[]);
+   const indices=code==='4.6.12'&&number===2?[]:code==='4.6.12'&&number===3?[1]:code==='4.6.9'&&[1,2].includes(number)?[2-number]:code==='4.5.3'&&number===2?[2]:code==='4.5.3'&&number===3?[1]:group?.[record.f]||(Number.isInteger(number)?[number-1]:[]);
    if(code==='4.6.12'&&number===2)continue;
    if(!indices.length){missing.push(code+'/'+record.f);continue}
    for(let k=0;k<indices.length;k++){
@@ -81,7 +81,7 @@ function patchAfterGuideReady(){
  for(const page of BPF_PHRASES)for(const row of page.rows){
   for(const panel of bpfPanels(page,row)){
    const num=panel.id+1;
-   const docF=row.code==='4.6.12'&&num===2?'F3':row.code==='4.6.6'&&num<=2?'F'+(3-num):row.code==='4.6.9'&&num<=2?'F'+(3-num):row.code==='4.5.3'&&num===2?'F3':row.code==='4.5.3'&&num===3?'F2':row.code==='4.10.3'&&num>=4?'F'+(num+1):'F'+num;
+   const docF=row.code==='4.6.12'&&num===2?'F3':row.code==='4.6.9'&&num<=2?'F'+(3-num):row.code==='4.5.3'&&num===2?'F3':row.code==='4.5.3'&&num===3?'F2':row.code==='4.10.3'&&num>=4?'F'+(num+1):'F'+num;
    const record=RECS.get(row.code+'/'+docF);
    if(!record)continue;
    const key=bpfExampleKey(page,row.code,panel);
