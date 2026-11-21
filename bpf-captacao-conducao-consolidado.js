@@ -560,6 +560,17 @@ const bpfWaterCheck = (() => {
      phrases.splice(0,3,first,{...contents,fieldSuffix:contents.fieldSuffix??3});
     }
    }
+   if(page.page===6&&row.code==='4.5.3'){
+    // Inversão F2/F3. Manter os identificadores originais para conservar
+    // respostas, evidências e observações já preenchidas.
+    for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
+     const [inspection,rejection,sanitizers]=phrases;
+     if(!sanitizers)continue;
+     phrases.splice(0,3,inspection,
+      {...sanitizers,fieldSuffix:sanitizers.fieldSuffix??3},
+      {...rejection,fieldSuffix:rejection.fieldSuffix??2});
+    }
+   }
    if(page.page>=2&&page.page<=5&&row.code==='4.3.5'){
     for(const phrases of [row.phrases,...row.scopes.map(scope=>scope.phrases)]){
      const [hygiene,records,training]=phrases;
@@ -798,7 +809,7 @@ const bpfWaterCheck = (() => {
  const receptionChecks={
   '4.5.3':{
    0:{question:'Possui registro comprovando a inspeção no ato do recebimento?',caption:'Registro de inspeção no recebimento',yes:'Possui registro que comprova a inspeção no recebimento',no:'Não possui registro que comprova a inspeção no recebimento',detailsAnswer:'1'},
-   2:{question:'O saneante conferido estava identificado, dentro da validade, regularizado na ANVISA e possui autorização para a finalidade de uso declarada?',caption:'Identificação, validade, regularização e finalidade de uso do saneante',yes:'O saneante conferido atende aos requisitos de identificação, validade, regularização e finalidade de uso',no:'O saneante conferido não atende a um ou mais requisitos de identificação, validade, regularização e finalidade de uso',detailsAnswer:'0'}
+   1:{question:'O saneante conferido estava identificado, dentro da validade, regularizado na ANVISA e possui autorização para a finalidade de uso declarada?',caption:'Identificação, validade, regularização e finalidade de uso do saneante',yes:'O saneante conferido atende aos requisitos de identificação, validade, regularização e finalidade de uso',no:'O saneante conferido não atende a um ou mais requisitos de identificação, validade, regularização e finalidade de uso',detailsAnswer:'0'}
   },
   '4.5.4':{
    0:{question:'Os garrafões recebidos estão na validade (fotografe o fundo de todos os garrafões com fabricantes diferentes)?',caption:'Validade dos garrafões recebidos',yes:'Os garrafões recebidos estão dentro da validade',no:'Há garrafões recebidos fora da validade'}
@@ -872,7 +883,7 @@ const bpfWaterCheck = (() => {
   ['Regularizacao','O saneante está regularizado na ANVISA?','O saneante está regularizado na ANVISA','O saneante não está regularizado na ANVISA'],
   ['Finalidade','A finalidade de uso do saneante corresponde à utilização realizada?','A finalidade de uso do saneante corresponde à utilização realizada','A finalidade de uso do saneante não corresponde à utilização realizada']
  ];
- function sanitizerReception(row,panel){return row.code==='4.5.3'&&panel.id===2;}
+ function sanitizerReception(row,panel){return row.code==='4.5.3'&&panel.id===1;}
  function sanitizerReceptionRecords(page,row,panel,data){
   return panel.entries.flatMap(entry=>{
    const result=sanitizerReceptionQuestions.flatMap(([key,question,yes,no])=>{const answer=data[receptionKey(entry.name,key)];return ['1','0'].includes(answer)?[(answer==='1'?yes:no)+' ('+bpfScopeLabel(page,entry.scope)+')']:[];});
@@ -966,7 +977,7 @@ const bpfWaterCheck = (() => {
     const index=Number(position);
     if(!scope.phrases[index])continue;
     const fields=['Resposta'];
-    if(row.code==='4.5.3'&&index===2)fields.push(...sanitizerReceptionQuestions.map(q=>q[0]));
+    if(row.code==='4.5.3'&&index===1)fields.push(...sanitizerReceptionQuestions.map(q=>q[0]));
     if(check.detailsAnswer)fields.push('Detalhes');
     if(check.detailsAnswer==='1')fields.push('Comprovacao');
     for(const field of fields){
