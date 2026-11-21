@@ -734,8 +734,9 @@ const bpfWaterCheck = (() => {
  }
 
  const packagingPopKey='BPF_F_4_6_12_POP_DisponivelAtualizado';
- const packagingPopQuestion='Os Procedimentos Operacionais Padronizados referentes às operações de higienização das embalagens estão disponíveis e atualizados?';
- const packagingPopStatement=a=>a==='1'?'Os POP de higienização das embalagens estão disponíveis e atualizados':'Os POP de higienização das embalagens não estão disponíveis e/ou não estão atualizados';
+ // Antigo F2: frase única, sem seleção de linha, incorporada ao F1.
+ const packagingPopQuestion='Os Procedimentos Operacionais Padronizados referentes às operações de higienização das embalagens devem estar disponíveis e atualizados.';
+ const packagingPopStatement=a=>a==='1'?'Os Procedimentos Operacionais Padronizados de higienização das embalagens estão disponíveis e atualizados.':'Os Procedimentos Operacionais Padronizados de higienização das embalagens não estão disponíveis ou estão desatualizados.';
  function packagingLegacyKey(scope){
   const copy={...scope,phrases:scope.phrases.slice()};
   copy.phrases[1]={...(copy.phrases[1]||{}),fieldSuffix:2};
@@ -748,17 +749,35 @@ const bpfWaterCheck = (() => {
   return legacy.length===row.scopes.length&&legacy.every(a=>a===legacy[0])?legacy[0]:'';
  }
  function renderPackagingPopInfo(card,page,row,panel){
-  if(row.code!=='4.6.12'||panel.id!==0)return;
-  const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';
+  if(row.code!=='4.6.12'||panel.id!==0)return false;
+  // O F2 original pertence agora ao F1. Um único controle para o item
+  // inteiro, nunca um controle por Linha 1, Linha 2 ou outras linhas.
+  let box=card.querySelector?.('[data-bpf-packaging-pop-global]');
+  if(box){card.append(box);return true;}
+  box=element('fieldset');
+  box.className='bpf-answer-box';
+  box.dataset.bpfInfoBox='';
+  box.dataset.bpfPackagingPopGlobal='1';
   box.append(element('legend','F1 — Outras informações'));
   const label=element('label'),wording=element('span',packagingPopQuestion),select=element('select');
-  label.style.cssText='display:block;margin:9px 0';
-  select.style.cssText='display:block;margin:4px 0;padding:5px';
+  label.style.cssText='display:block;margin:10px 0;line-height:1.3';
+  select.style.cssText='display:block;margin:5px 0 0;padding:5px';
+  select.setAttribute('aria-label','4.6.12 — Disponibilidade e atualização do POP de higienização das embalagens');
   for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
-  select.value=packagingPopAnswer(row,values);
   const refresh=()=>{wording.textContent=select.value?packagingPopStatement(select.value):packagingPopQuestion;};
-  select.onchange=()=>{values[packagingPopKey]=select.value;refresh();bpfSyncObservation(row,page);changed();};
-  refresh();label.append(wording,select);box.append(label);card.append(box);
+  select.value=packagingPopAnswer(row,values);
+  select.onchange=()=>{
+   values[packagingPopKey]=select.value;
+   refresh();
+   bpfSyncObservation(row,page);
+   changed();
+   window.GuiaRecovery?.schedule?.();
+  };
+  refresh();
+  label.append(wording,select);
+  box.append(label);
+  card.append(box);
+  return true;
  }
  function packagingPopReport(page,row,panel,data){
   if(row.code!=='4.6.12'||panel.id!==0)return [];
@@ -1505,6 +1524,9 @@ const bpfWaterCheck = (() => {
   });
  }
  function render(card,page,row,panel){
+  // A antiga frase F2 do 4.6.12 deve surgir mesmo sem verificações
+  // complementares configuradas para o F1.
+  if(row.code==='4.6.12'&&panel.id===0)renderPackagingPopInfo(card,page,row,panel);
   const config=get(row,panel.id);
   if(!config||config.inline&&!panel.machineDetails)return false;
   if(panel.id===1&&fillingF2Indices[row.code])panel={...panel,entries:panel.entries.filter(entry=>entry.index===1)};
