@@ -10,7 +10,7 @@ for(const record of data.verificacoes){
  if(record.item==='4.5.3'){
   if(record.f==='F2')record.f='F3';
   else if(record.f==='F3')record.f='F2';
- }else if(record.item==='4.6.9'||record.item==='4.6.6'){
+ }else if(record.item==='4.6.9'){
   // Trocar os números editoriais sem perder a classificação e os exemplos.
   if(record.f==='F1')record.f='F2';
   else if(record.f==='F2')record.f='F1';
