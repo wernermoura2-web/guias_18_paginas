@@ -1344,7 +1344,7 @@ function bpfInfoPending(dlg){`);
   const entry=panel.entries[0];
   const phrase=entry?.phrase||row.phrases[panel.indices?.[0]??panel.id];`);
   // Corrigir o F2/F3 do 4.5.3 ao final da montagem do guia, inclusive acesso direto.
-  altered=altered.replace(/<\\/body\\s*>/i,'<script src="./bpf-correcao-f23-453.js?v=20261121-f453-v9"></script></body>');
+  altered=altered.replace(/<\/body\s*>/i,'<script src="./bpf-correcao-f23-453.js?v=20261121-f453-v9"></script></body>');
   return new Response(altered,{status:response.status,statusText:response.statusText,headers});
 }
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE.map(path=>new Request(new URL(path,ROOT),{cache:'reload'})))).then(()=>self.skipWaiting())));
