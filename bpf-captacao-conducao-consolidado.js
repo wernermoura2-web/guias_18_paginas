@@ -734,6 +734,9 @@ const bpfWaterCheck = (() => {
  }
 
  const packagingPopKey='BPF_F_4_6_12_POP_DisponivelAtualizado';
+ // Uma resposta por PROCESSO (retornáveis e descartáveis), nunca por linha.
+ // A chave antiga, única para os dois processos, permanece como legado.
+ const packagingPopPageKey=page=>packagingPopKey+'_Pagina_'+page.page;
  // Antigo F2: frase única, sem seleção de linha, incorporada ao F1.
  const packagingPopQuestion='Os Procedimentos Operacionais Padronizados referentes às operações de higienização das embalagens devem estar disponíveis e atualizados.';
  const packagingPopStatement=a=>a==='1'?'Os Procedimentos Operacionais Padronizados de higienização das embalagens estão disponíveis e atualizados.':'Os Procedimentos Operacionais Padronizados de higienização das embalagens não estão disponíveis ou estão desatualizados.';
@@ -742,7 +745,11 @@ const bpfWaterCheck = (() => {
   copy.phrases[1]={...(copy.phrases[1]||{}),fieldSuffix:2};
   return bpfPhraseName(copy,1);
  }
- function packagingPopAnswer(row,data){
+ function packagingPopAnswer(page,row,data){
+  const ownKey=packagingPopPageKey(page);
+  if(data[ownKey]==='1'||data[ownKey]==='0')return data[ownKey];
+  if(Object.prototype.hasOwnProperty.call(data,ownKey))return '';
+  // Compatibilidade com arquivos de inspeção da versão anterior.
   if(data[packagingPopKey]==='1'||data[packagingPopKey]==='0')return data[packagingPopKey];
   if(Object.prototype.hasOwnProperty.call(data,packagingPopKey))return '';
   const legacy=row.scopes.map(scope=>data[packagingLegacyKey(scope)]).filter(a=>a==='1'||a==='0');
@@ -765,9 +772,9 @@ const bpfWaterCheck = (() => {
   select.setAttribute('aria-label','4.6.12 — Disponibilidade e atualização do POP de higienização das embalagens');
   for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
   const refresh=()=>{wording.textContent=select.value?packagingPopStatement(select.value):packagingPopQuestion;};
-  select.value=packagingPopAnswer(row,values);
+  select.value=packagingPopAnswer(page,row,values);
   select.onchange=()=>{
-   values[packagingPopKey]=select.value;
+   values[packagingPopPageKey(page)]=select.value;
    refresh();
    bpfSyncObservation(row,page);
    changed();
@@ -781,7 +788,7 @@ const bpfWaterCheck = (() => {
  }
  function packagingPopReport(page,row,panel,data){
   if(row.code!=='4.6.12'||panel.id!==0)return [];
-  const answer=packagingPopAnswer(row,data);
+  const answer=packagingPopAnswer(page,row,data);
   return !answer?[]:[{page,row,panel,heading:'Outras informações',checklist:[packagingPopStatement(answer)],answer:'',note:'',selected:[]}];
  }
  const popAvailabilityKey='BPF_F_4_3_6_POP_DisponivelAtualizado';
@@ -1049,7 +1056,12 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
-   if(row.code==='4.6.12')data.fields[packagingPopKey]={name:packagingPopKey,type:'/Ch',flags:0,label:'4.6.12 F1 — Disponibilidade e atualização do POP (informação geral)',options:['','1','0'],calc:'',phrasePage:page.page};
+   if(row.code==='4.6.12'){
+    const name=packagingPopPageKey(page);
+    data.fields[name]={name,type:'/Ch',flags:0,label:'4.6.12 F1 — Disponibilidade e atualização do POP (informação única por processo)',options:['','1','0'],calc:'',phrasePage:page.page};
+    // Continuar reconhecendo respostas únicas gravadas nas versões anteriores.
+    data.fields[packagingPopKey]??={name:packagingPopKey,type:'/Ch',flags:0,label:'4.6.12 — Resposta geral anterior do POP',options:['','1','0'],calc:'',phrasePage:page.page};
+   }
    if(row.code==='4.3.6'){
     data.fields[popAvailabilityKey]={name:popAvailabilityKey,type:'/Ch',flags:0,label:'4.3.6 F1 — Disponibilidade e atualização do POP (informação geral)',options:['','1','0'],calc:'',phrasePage:page.page};
     const name=popAvailabilityLegacyKey(scope);data.fields[name]={name,type:'/Ch',flags:0,label:'4.3.6 F1 — Resposta anterior por reservatório (legado)',options:['','1','0','2'],calc:'',phrasePage:page.page};
