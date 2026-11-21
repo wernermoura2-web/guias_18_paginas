@@ -1,53 +1,44 @@
-/* 4.5.8 — inversão solicitada na página F:
-   F2 recebe o conteúdo do antigo F3 (destino final);
-   F3 recebe o conteúdo do antigo F2 (inspeção individual).
-   Preserva os objetos e dados relacionados às frases. */
+/* 4.5.8 — ordem confirmada na página F:
+   F1: POP; F2: inspeção individual após 'sobre:';
+   F3: destino final das embalagens.
+   Ajusta a apresentação dos painéis sem trocar chaves de resposta/observação. */
 (function(){
 'use strict';
-if(window.__bpf458F2F3V25)return;
-window.__bpf458F2F3V25=true;
-const text=p=>String(p?.text||p?.texto||p?.label||'');
-const isDestino=p=>/destino final das embalagens|embalagens reprovadas e outras informações/i.test(text(p));
-const isInspecao=p=>/inspeção individual|inspecao individual|aceitação e reprovação|aceitacao e reprovacao/i.test(text(p));
-let changes=0;
-function fixPhrases(phrases){
- if(!Array.isArray(phrases)||phrases.length<3)return;
- const a=phrases.findIndex((p,i)=>i>0&&isDestino(p));
- const b=phrases.findIndex((p,i)=>i>0&&isInspecao(p));
- if(a<0||b<0||a===b)return;
- if(a!==1||b!==2){
-  const destino=phrases[a],inspecao=phrases[b];
-  phrases[1]=destino;phrases[2]=inspecao;
-  changes++;
+if(window.__bpf458F2F3V26)return;
+window.__bpf458F2F3V26=true;
+const normal=t=>String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const phraseText=p=>normal(p?.text||p?.texto||p?.phrase?.text||p?.phrase?.texto||'');
+const panelText=(p,row)=>{
+ const texts=[p?.label,p?.text,p?.texto];
+ for(const e of p?.entries||[]){
+  texts.push(e?.text,e?.texto,e?.phrase?.text,e?.phrase?.texto);
+  if(e?.scope?.phrases&&Number.isInteger(e.index))texts.push(e.scope.phrases[e.index]?.text,e.scope.phrases[e.index]?.texto);
  }
-}
-function fixData(){
- try{
-  if(typeof BPF_PHRASES==='undefined'||!Array.isArray(BPF_PHRASES))return;
-  for(const page of BPF_PHRASES)for(const row of page.rows||[]){
-   if(row.code!=='4.5.8')continue;
-   fixPhrases(row.phrases);
-   for(const scope of row.scopes||[])fixPhrases(scope.phrases);
-  }
- }catch(e){console.warn('4.5.8: falha na inversão',e);}
- document.documentElement.dataset.bpf458='f2-destino-f3-inspecao-v25';
- window.BPF458Correcao={versao:'20261121-v25',alteracoes:changes,executar:fixData};
-}
-function patchPanels(){
- const original=window.bpfPanels;
- if(typeof original!=='function'||original.__bpf458v25)return;
- const replacement=function(){
-  const panels=original.apply(this,arguments),row=arguments[1];
+ for(const i of p?.indices||[])for(const scope of row?.scopes||[])texts.push(scope.phrases?.[i]?.text,scope.phrases?.[i]?.texto);
+ return normal(texts.filter(Boolean).join(' '));
+};
+const isInspection=t=>/inspecao individual|aceitacao e reprovacao/.test(t);
+const isDestination=t=>/destino final das embalagens/.test(t);
+let wrapped=false,corrected=0,lastCheck='';
+function install(){
+ const fn=window.bpfPanels;
+ if(typeof fn!=='function'||fn.__bpf458v26)return false;
+ const replacement=function(page,row){
+  const panels=fn.apply(this,arguments);
   if(row?.code!=='4.5.8'||!Array.isArray(panels)||panels.length<3)return panels;
-  const destino=panels.find((p,i)=>i>0&&isDestino(p));
-  const inspecao=panels.find((p,i)=>i>0&&isInspecao(p));
-  if(!destino||!inspecao||destino===inspecao)return panels;
-  const other=panels.filter((p,i)=>i!==0&&p!==destino&&p!==inspecao);
-  return [panels[0],{...destino,label:'F2'+String(destino.label||'').replace(/^F[0-9]+/,'')},{...inspecao,label:'F3'+String(inspecao.label||'').replace(/^F[0-9]+/,'')},...other];
+  const inspect=panels.find((p,i)=>i>0&&isInspection(panelText(p,row)));
+  const destiny=panels.find((p,i)=>i>0&&isDestination(panelText(p,row)));
+  if(!inspect||!destiny||inspect===destiny){lastCheck='4.5.8: não localizados ambos os painéis';return panels;}
+  const others=panels.filter((p,i)=>i>0&&p!==inspect&&p!==destiny);
+  const relabel=(p,n)=>({...p,label:'F'+n+String(p.label||'').replace(/^F\d+/,'')});
+  corrected++;
+  lastCheck='F2 inspeção; F3 destino final';
+  return [panels[0],relabel(inspect,2),relabel(destiny,3),...others];
  };
- replacement.__bpf458v25=true;window.bpfPanels=replacement;
+ replacement.__bpf458v26=true;
+ window.bpfPanels=replacement;wrapped=true;return true;
 }
-function execute(){fixData();patchPanels();}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',execute,{once:true});
-else execute();
+function run(){install();window.BPF458Correcao={versao:'20261121-v26',get ativo(){return wrapped},get correcoes(){return corrected},get diagnostico(){return lastCheck},executar:run};document.documentElement.dataset.bpf458='f2-inspecao-f3-destino-v26';}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run,{once:true});else run();
+window.addEventListener('load',run,{once:true});
 })();
