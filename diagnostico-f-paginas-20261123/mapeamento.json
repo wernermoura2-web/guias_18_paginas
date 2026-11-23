@@ -1,0 +1,332 @@
+{
+  "impressao/Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf": {
+    "pages_total": 18,
+    "pages": [
+      {
+        "pdf_index": 3,
+        "page_one_based": 4,
+        "dimensions_pt": [
+          595.0,
+          841.0
+        ],
+        "text_sample": "         Higienização dos Reservatórios da captação:____________________________________________\n\n\n                  ITENS          RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO\n                                                                                                            RESULTADO\n            CÓD. DO EQUIP.\n\n           CAPACIDADE (m3)\n\n                    4.3.24.3.2| PPR    ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO                CAPTAÇÂO\n    DA     4.3.3  | 4.3.3PPRO e PPR  ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ N",
+        "tokens_found": [],
+        "images": 2,
+        "annotations": 0,
+        "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_04.png.b64"
+      },
+      {
+        "pdf_index": 4,
+        "page_one_based": 5,
+        "dimensions_pt": [
+          595.0,
+          841.0
+        ],
+        "text_sample": "         Higienização dos Reservatórios da captação:____________________________________________\n\n\n                  ITENS          RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO\n                                                                                                            RESULTADO\n            CÓD. DO EQUIP.\n\n           CAPACIDADE (m3)\n\n                    4.3.24.3.2| PPR    ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO                CAPTAÇÂO\n    DA     4.3.3  | 4.3.3PPRO e PPR  ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ N",
+        "tokens_found": [],
+        "images": 2,
+        "annotations": 0,
+        "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_05.png.b64"
+      },
+      {
+        "pdf_index": 5,
+        "page_one_based": 6,
+        "dimensions_pt": [
+          595.0,
+          841.0
+        ],
+        "text_sample": "         Higienização dos Reservatórios da captação:____________________________________________\n\n\n                  ITENS          RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO\n                                                                                                            RESULTADO\n            CÓD. DO EQUIP.\n\n           CAPACIDADE (m3)\n\n                    4.3.24.3.2| PPR    ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO                CAPTAÇÂO\n    DA     4.3.3  | 4.3.3PPRO e PPR  ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ N",
+        "tokens_found": [],
+        "images": 2,
+        "annotations": 0,
+        "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_06.png.b64"
+      },
+      {
+        "pdf_index": 6,
+        "page_one_based": 7,
+        "dimensions_pt": [
+          595.0,
+          841.0
+        ],
+        "text_sample": "        Recepção de embalagens / insumos\n\n\n                              GARRAFÕES         EMBALAGENS\n                  ITENS                                                  RÓTULOS           SANEANTES          RESULTADO\n                               RETORNÁVEIS         DESCARTÁVEIS\n\n                     4.5.24.5.2| PPR       SIM /  NÃO /  NA    NÃO APLICÁVEL      NÃO APLICÁVEL      NÃO APLICÁVEL       SIM /  NÃO /  NA\n\n                    4.5.3  | PC4.5.3e PPRO e PPR    NÃO APLICÁVEL   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO          ARMAZENAMENTO E  INSUMOS           ",
+        "tokens_found": [
+          "4.5.2",
+          "4.5.3"
+        ],
+        "images": 4,
+        "annotations": 0,
+        "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_07.png.b64"
+      },
+      {
+        "pdf_index": 7,
+        "page_one_based": 8,
+        "dimensions_pt": [
+          545.0,
+          841.0
+        ],
+        "text_sample": "          Higienização de embalagens retornáveis e tampas pré-envase\n\n\n                             LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO   HIGIENIZAÇÃO DE\n                   ITENS                                                                                        RESULTADO\n                            DE RETORNÁVEIS 1    DE RETORNÁVEIS 2    DE RETORNÁVEIS 3        TAMPAS\n\n                     4.6.34.6.3| PCC   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO     NÃO APLICÁVEL   ⃝ SIM / ⃝ NÃO                EMBALAGENS\n     DAS            4.6.44.6.4| POP   ⃝ SIM / ⃝ N",
+        "tokens_found": [
+          "4.6.3",
+          "4.6.6",
+          "4.6.9",
+          "4.6.12"
+        ],
+        "images": 5,
+        "annotations": 0,
+        "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_08.png.b64"
+      },
+      {
+        "pdf_index": 8,
+        "page_one_based": 9,
+        "dimensions_pt": [
+          545.0,
+          841.0
+        ],
+        "text_sample": "          Higienização de embalagens descartáveis e tampas pré-envase\n\n\n                             LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO   HIGIENIZAÇÃO DE\n                   ITENS                                                                                        RESULTADO\n                           DE DESCARTÁVEIS 1    DE DESCARTÁVEIS 2    DE DESCARTÁVEIS 3        TAMPAS\n\n                     4.6.34.6.3| PCC       SIM /  NÃO /  NA   SIM /  NÃO /  NA   SIM /  NÃO /  NA    NÃO APLICÁVEL      SIM /  NÃO /  NA                EMBALAGENS\n     DAS             4.6.4  ",
+        "tokens_found": [
+          "4.6.3",
+          "4.6.6",
+          "4.6.9",
+          "4.6.12"
+        ],
+        "images": 5,
+        "annotations": 0,
+        "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_09.png.b64"
+      },
+      {
+        "pdf_index": 9,
+        "page_one_based": 10,
+        "dimensions_pt": [
+          543.0,
+          841.0
+        ],
+        "text_sample": "          Higienização do envase retornáveis\n\n\n                  ITENS             LINHA 1              LINHA 2              LINHA 3              LINHA 4\n\n\n\n            APRESENTAÇÃO(ÕES)\n                                                                                                                          RESULTADO\n\n\n\n               MARCA(S)\n\n\n                4.7.1  | 4.7.1PPRO e PPR  ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO              FECHAMENTO\n E        4.7.2  | 4.7.2PPR e POP  ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝",
+        "tokens_found": [],
+        "images": 3,
+        "annotations": 0,
+        "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_10.png.b64"
+      }
+    ],
+    "pdf_keywords": "bpf-frases-f-paridade-html-20261123-v27; bpf-frases-f-paridade-html-20261123-v28"
+  },
+  "impressao/Guia_Editavel_em_Branco.pdf": {
+    "pages_total": 20,
+    "pages": [
+      {
+        "pdf_index": 3,
+        "page_one_based": 4,
+        "dimensions_pt": [
+          595.32,
+          841.92
+        ],
+        "text_sample": "         Higienização dos Reservatórios da captação:____________________________________________0                                LIMPAR RES 2\n\n\n                  ITENS          RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO\n                                                                                                            RESULTADO\n            CÓD. DO EQUIP.\n           CAPACIDADE (m3)                                                      0\n\n                    4.3.24.3.2| PPR    ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO      ",
+        "tokens_found": [],
+        "images": 2,
+        "annotations": 72,
+        "preview_key": "Editavel_em_Branco_04.png.b64"
+      },
+      {
+        "pdf_index": 4,
+        "page_one_based": 5,
+        "dimensions_pt": [
+          595.32,
+          841.92
+        ],
+        "text_sample": "         Higienização dos Reservatórios da captação:____________________________________________0\n\n\n                  ITENS          RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO\n                                                                                                            RESULTADO\n            CÓD. DO EQUIP.\n           CAPACIDADE (m3)                                                      0\n\n                    4.3.24.3.2| PPR    ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO                CAPTAÇÂO\n    DA     4.3.3  | 4.3.3",
+        "tokens_found": [],
+        "images": 2,
+        "annotations": 71,
+        "preview_key": "Editavel_em_Branco_05.png.b64"
+      },
+      {
+        "pdf_index": 5,
+        "page_one_based": 6,
+        "dimensions_pt": [
+          595.32,
+          841.92
+        ],
+        "text_sample": "         Higienização dos Reservatórios da captação:____________________________________________0\n\n\n                  ITENS          RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO\n                                                                                                            RESULTADO\n            CÓD. DO EQUIP.\n           CAPACIDADE (m3)                                                      0\n\n                    4.3.24.3.2| PPR    ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO                CAPTAÇÂO\n    DA     4.3.3  | 4.3.3",
+        "tokens_found": [],
+        "images": 2,
+        "annotations": 71,
+        "preview_key": "Editavel_em_Branco_06.png.b64"
+      },
+      {
+        "pdf_index": 6,
+        "page_one_based": 7,
+        "dimensions_pt": [
+          595.32,
+          841.92
+        ],
+        "text_sample": "        Recepção de embalagens / insumos                                                          LIMPAR REC EMB INS\n\n\n                              GARRAFÕES         EMBALAGENS\n                  ITENS                                                  RÓTULOS           SANEANTES          RESULTADO\n                               RETORNÁVEIS         DESCARTÁVEIS\n\n                     4.5.24.5.2| PPR       SIM /  NÃO /  NA    NÃO APLICÁVEL      NÃO APLICÁVEL      NÃO APLICÁVEL       SIM /  NÃO /  NA\n\n                    4.5.3  | PC4.5.3e PPRO e PPR    NÃO APLICÁVEL   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO ",
+        "tokens_found": [
+          "4.5.2",
+          "4.5.3"
+        ],
+        "images": 4,
+        "annotations": 52,
+        "preview_key": "Editavel_em_Branco_07.png.b64"
+      },
+      {
+        "pdf_index": 7,
+        "page_one_based": 8,
+        "dimensions_pt": [
+          595.32,
+          918.01
+        ],
+        "text_sample": "          Higienização de embalagens retornáveis e tampas pré-envase                          LIMPAR EMB RET\n\n\n                             LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO   HIGIENIZAÇÃO DE\n                   ITENS                                                                                        RESULTADO\n                            DE RETORNÁVEIS 1    DE RETORNÁVEIS 2    DE RETORNÁVEIS 3        TAMPAS\n\n                     4.6.34.6.3| PCC   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO     NÃO APLICÁVEL   ⃝ SIM / ⃝ NÃO                EMBALAGENS\n     DAS ",
+        "tokens_found": [
+          "4.6.3",
+          "4.6.6",
+          "4.6.9",
+          "4.6.12"
+        ],
+        "images": 6,
+        "annotations": 92,
+        "preview_key": "Editavel_em_Branco_08.png.b64"
+      },
+      {
+        "pdf_index": 8,
+        "page_one_based": 9,
+        "dimensions_pt": [
+          595.32,
+          918.01
+        ],
+        "text_sample": "          Higienização de embalagens descartáveis e tampas pré-envase                          LIMPAR HIG DESC\n\n\n                             LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO   HIGIENIZAÇÃO DE\n                   ITENS                                                                                        RESULTADO\n                           DE DESCARTÁVEIS 1    DE DESCARTÁVEIS 2    DE DESCARTÁVEIS 3        TAMPAS\n\n                     4.6.34.6.3| PCC       SIM /  NÃO /  NA   SIM /  NÃO /  NA   SIM /  NÃO /  NA    NÃO APLICÁVEL      SIM /  NÃO /  NA              ",
+        "tokens_found": [
+          "4.6.3",
+          "4.6.6",
+          "4.6.9",
+          "4.6.12"
+        ],
+        "images": 6,
+        "annotations": 75,
+        "preview_key": "Editavel_em_Branco_09.png.b64"
+      },
+      {
+        "pdf_index": 9,
+        "page_one_based": 10,
+        "dimensions_pt": [
+          595.32,
+          922.74
+        ],
+        "text_sample": "          Higienização do envase retornáveis                                               LIMPAR ENV RET\n\n\n                  ITENS             LINHA 1              LINHA 2              LINHA 3              LINHA 4\n\n\n\n            APRESENTAÇÃO(ÕES)\n                                                                                                                          RESULTADO\n\n\n\n               MARCA(S)\n\n\n                4.7.1  | 4.7.1PPRO e PPR  ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO              FECHAMENTO\n E        4.7.2  | 4.7.2PPR e POP  ⃝ SIM / ⃝ NÃ",
+        "tokens_found": [],
+        "images": 4,
+        "annotations": 81,
+        "preview_key": "Editavel_em_Branco_10.png.b64"
+      }
+    ],
+    "pdf_keywords": "bpf-frases-f-paridade-html-20261123-v27; bpf-frases-f-paridade-html-20261123-v28"
+  },
+  "impressao/Guia_Editavel_Simplificado.pdf": {
+    "pages_total": 20,
+    "pages": [
+      {
+        "pdf_index": 3,
+        "page_one_based": 4,
+        "dimensions_pt": [
+          595.32,
+          841.92
+        ],
+        "text_sample": "         Higienização dos Reservatórios da captação:____________________________________________0                                LIMPAR RES 2\n\n\n                  ITENS          RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO\n                                                                                                            RESULTADO\n            CÓD. DO EQUIP.\n           CAPACIDADE (m3)                                                      0\n\n                    4.3.24.3.2| PPR    ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO      ",
+        "tokens_found": [],
+        "images": 2,
+        "annotations": 72,
+        "preview_key": "Editavel_Simplificado_04.png.b64"
+      },
+      {
+        "pdf_index": 4,
+        "page_one_based": 5,
+        "dimensions_pt": [
+          595.32,
+          841.92
+        ],
+        "text_sample": "         Higienização dos Reservatórios da captação:____________________________________________0\n\n\n                  ITENS          RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO\n                                                                                                            RESULTADO\n            CÓD. DO EQUIP.\n           CAPACIDADE (m3)                                                      0\n\n                    4.3.24.3.2| PPR    ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO                CAPTAÇÂO\n    DA     4.3.3  | 4.3.3",
+        "tokens_found": [],
+        "images": 2,
+        "annotations": 71,
+        "preview_key": "Editavel_Simplificado_05.png.b64"
+      },
+      {
+        "pdf_index": 5,
+        "page_one_based": 6,
+        "dimensions_pt": [
+          595.32,
+          841.92
+        ],
+        "text_sample": "         Higienização dos Reservatórios da captação:____________________________________________0\n\n\n                  ITENS          RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO        RESERVATÓRIO\n                                                                                                            RESULTADO\n            CÓD. DO EQUIP.\n           CAPACIDADE (m3)                                                      0\n\n                    4.3.24.3.2| PPR    ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO                CAPTAÇÂO\n    DA     4.3.3  | 4.3.3",
+        "tokens_found": [],
+        "images": 2,
+        "annotations": 71,
+        "preview_key": "Editavel_Simplificado_06.png.b64"
+      },
+      {
+        "pdf_index": 6,
+        "page_one_based": 7,
+        "dimensions_pt": [
+          595.32,
+          841.92
+        ],
+        "text_sample": "        Recepção de embalagens / insumos                                                          LIMPAR REC EMB INS\n\n\n                              GARRAFÕES         EMBALAGENS\n                  ITENS                                                  RÓTULOS           SANEANTES          RESULTADO\n                               RETORNÁVEIS         DESCARTÁVEIS\n\n                     4.5.24.5.2| PPR       SIM /  NÃO /  NA    NÃO APLICÁVEL      NÃO APLICÁVEL      NÃO APLICÁVEL       SIM /  NÃO /  NA\n\n                    4.5.3  | PC4.5.3e PPRO e PPR    NÃO APLICÁVEL   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO ",
+        "tokens_found": [
+          "4.5.2",
+          "4.5.3"
+        ],
+        "images": 4,
+        "annotations": 52,
+        "preview_key": "Editavel_Simplificado_07.png.b64"
+      },
+      {
+        "pdf_index": 7,
+        "page_one_based": 8,
+        "dimensions_pt": [
+          595.32,
+          918.01
+        ],
+        "text_sample": "          Higienização de embalagens retornáveis e tampas pré-envase                          LIMPAR EMB RET\n\n\n                             LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO   HIGIENIZAÇÃO DE\n                   ITENS                                                                                        RESULTADO\n                            DE RETORNÁVEIS 1    DE RETORNÁVEIS 2    DE RETORNÁVEIS 3        TAMPAS\n\n                     4.6.34.6.3| PCC   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO     NÃO APLICÁVEL   ⃝ SIM / ⃝ NÃO                EMBALAGENS\n     DAS ",
+        "tokens_found": [
+          "4.6.3",
+          "4.6.6",
+          "4.6.9",
+          "4.6.12"
+        ],
+        "images": 6,
+        "annotations": 92,
+        "preview_key": "Editavel_Simplificado_08.png.b64"
+      },
+      {
+        "pdf_index": 8,
+        "page_one_based": 9,
+        "dimensions_pt": [
+          595.32,
+          918.01
+        ],
+        "text_sample": "          Higienização de embalagens descartáveis e tampas pré-envase                          LIMPAR HIG DESC\n\n\n                             LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO LINHA DE HIGIENIZAÇÃO   HIGIENIZAÇÃO DE\n                   ITENS                                                                                        RESULTADO\n                           DE DESCARTÁVEIS 1    DE DESCARTÁVEIS 2    DE DESCARTÁVEIS 3        TAMPAS\n\n                     4.6.34.6.3| PCC       SIM /  NÃO /  NA   SIM /  NÃO /  NA   SIM /  NÃO /  NA    NÃO APLICÁVEL      SIM /  NÃO /  NA              ",
+        "tokens_found": [
+          "4.6.3",
+          "4.6.6",
+          "4.6.9",
+          "4.6.12"
+        ],
+        "images": 6,
+        "annotations": 75,
+        "preview_key": "Editavel_Simplificado_09.png.b64"
+      },
+      {
+        "pdf_index": 9,
+        "page_one_based": 10,
+        "dimensions_pt": [
+          595.32,
+          922.74
+        ],
+        "text_sample": "          Higienização do envase retornáveis                                               LIMPAR ENV RET\n\n\n                  ITENS             LINHA 1              LINHA 2              LINHA 3              LINHA 4\n\n\n\n            APRESENTAÇÃO(ÕES)\n                                                                                                                          RESULTADO\n\n\n\n               MARCA(S)\n\n\n                4.7.1  | 4.7.1PPRO e PPR  ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO   ⃝ SIM / ⃝ NÃO              FECHAMENTO\n E        4.7.2  | 4.7.2PPR e POP  ⃝ SIM / ⃝ NÃ",
+        "tokens_found": [],
+        "images": 4,
+        "annotations": 81,
+        "preview_key": "Editavel_Simplificado_10.png.b64"
+      }
+    ],
+    "pdf_keywords": "bpf-frases-f-paridade-html-20261123-v27; bpf-frases-f-paridade-html-20261123-v28"
+  }
+}
