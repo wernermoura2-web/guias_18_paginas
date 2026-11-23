@@ -11,8 +11,9 @@ const configurations={
  7:{width:1226,height:675,top:41.21219,band:30.63681,prerequisite:'bpfImagemF21'},
  8:{width:1226,height:675,top:41.21219,band:30.63681,prerequisite:'bpfImagemF21'}
 };
-const splitRows=new Set(['4.6.6','4.6.9','4.6.12']);
-const state={version:'20261123-v29',pages:[],rows:[],errors:[]};
+// Referência visual: primeira página (Captação), marcadores azul-escuro
+// em negrito e texto preto regular, em parágrafo corrido.
+const state={version:'20261123-v31-captacao',pages:[],rows:[],errors:[]};
 window.BPFFrasesPadraoCompletoV28=state;
 const busy=new WeakSet();
 const normalize=t=>String(t||'').replace(/\s+/g,' ').trim();
@@ -38,35 +39,26 @@ function phrases(page,code){
  if(!row||!Array.isArray(row.phrases)||!row.phrases.length)return null;
  return row.phrases.map(item=>normalize(item.text||item.texto)).filter(Boolean);
 }
-function wrap(ctx,text,maxWidth){
- const output=[],words=normalize(text).split(' ');let line='';
- for(const word of words){
-  const proposed=line?line+' '+word:word;
-  if(ctx.measureText(proposed).width<=maxWidth){line=proposed;continue;}
-  if(line){output.push(line);line='';}
-  if(ctx.measureText(word).width<=maxWidth){line=word;continue;}
-  let chunk='';
-  for(const c of word){
-   if(chunk&&ctx.measureText(chunk+c).width>maxWidth){output.push(chunk);chunk='';}
-   chunk+=c;
+function font(ctx,size,marker){ctx.font=(marker?'700 ':'400 ')+size+'px Arial, Helvetica, "Liberation Sans", sans-serif';}
+function fit(ctx,legal,width,height){
+ const tokens=legal.flatMap((text,i)=>[{text:'F'+(i+1)+' —',marker:true},...normalize(text).split(' ').map(text=>({text,marker:false}))]);
+ for(let size=21;size>=10;size-=.25){
+  font(ctx,size,false);const space=ctx.measureText(' ').width,step=size*1.10;
+  const lines=[];let line=[],used=0,valid=true;
+  for(let i=0;i<tokens.length;i++){
+   const token=tokens[i];
+   font(ctx,size,token.marker);const w=ctx.measureText(token.text).width;
+   if(w>width){valid=false;break;}
+   // Não deixar um marcador isolado no fim da linha.
+   let keep=w;
+   if(token.marker&&tokens[i+1]){font(ctx,size,false);keep+=space+ctx.measureText(tokens[i+1].text).width;}
+   if(line.length&&used+space+keep>width){lines.push(line);line=[];used=0;}
+   const x=used+(line.length?space:0);line.push({...token,x});used=x+w;
   }
-  line=chunk;
+  if(line.length)lines.push(line);
+  if(valid&&lines.length*step<=height-2)return {lines,size,step};
  }
- if(line)output.push(line);
- return output;
-}
-function fit(ctx,segments,width,height,separated){
- for(let size=13.5;size>=10.0;size-=.25){
-  ctx.font=size+'px Arial, Helvetica, sans-serif';
-  const parts=segments.map(t=>wrap(ctx,t,width)),step=size*1.1;
-  const weights=separated?parts.map(lines=>Math.max(1,lines.length)):null;
-  const sum=separated?weights.reduce((a,b)=>a+b,0):0;
-  const acceptable=separated
-   ?parts.every((lines,i)=>lines.length*step<=height*weights[i]/sum-2.2)
-   :parts.reduce((n,lines)=>n+lines.length,0)*step<=height-3;
-  if(acceptable)return {parts,size,step,weights,sum};
- }
- return null; // No recortar textos; conservar a frase original se nao couber.
+ return null;
 }
 function rectFor(g,row,conf){
  const bandTop=g.height*conf.top/100,bandH=g.height*conf.band/100;
@@ -80,47 +72,17 @@ function paint(ctx,row,conf,g,index){
  const a=Math.ceil(top)+1,b=Math.floor(bottom)-1;
  const left=66,right=conf.width-3,width=right-left-9,height=b-a;
  if(height<8)throw Error('Altura invalida em '+row.code);
- const split=splitRows.has(row.code)&&legal.length>1;
- const segments=legal.map((str,i)=>'F'+(i+1)+' — '+str);
- let result=fit(ctx,segments,width,height,split);
- // Item 4.6.8: as duas verificacoes cabem em linhas independentes sem
- // a margem vertical excessiva que reduzia desnecessariamente a fonte.
- // Nao estreitar letras, comprimir palavras nem ultrapassar a celula.
- if(row.code==='4.6.8'&&legal.length===2&&!split){
-  for(let fontSize=13.0;fontSize>=11.0;fontSize-=.25){
-   ctx.font=fontSize+'px Arial, Helvetica, sans-serif';
-   const parts=segments.map(text=>wrap(ctx,text,width));
-   if(parts.every(lines=>lines.length===1)&&fontSize*2<=height-1.2){
-    result={parts,size:fontSize,step:fontSize,weights:null,sum:0};
-    break;
-   }
-  }
- }
+ const result=fit(ctx,legal,width,height);
  if(!result)throw Error('A frase do item '+row.code+' excede a area original');
  ctx.fillStyle='#fff';
  ctx.fillRect(left,a,right-left,height);
- ctx.fillStyle='#101010';
  ctx.textBaseline='top';
- ctx.font=result.size+'px Arial, Helvetica, sans-serif';
- if(!split){
-  const lines=result.parts.flat(),contentH=lines.length*result.step;
-  const firstY=a+Math.max(0,(height-contentH)/2);
-  lines.forEach((line,i)=>ctx.fillText(line,left+3,firstY+i*result.step));
- }else{
-  let boundary=a;
-  for(let i=0;i<result.parts.length;i++){
-   const segmentH=height*result.weights[i]/result.sum;
-   if(i>0){
-    ctx.fillStyle='#4a5861';
-    ctx.fillRect(left,Math.round(boundary)-.5,right-left,.8);
-    ctx.fillStyle='#101010';
-   }
-   const rows=result.parts[i],contentH=rows.length*result.step;
-   const y=boundary+Math.max(0,(segmentH-contentH)/2);
-   rows.forEach((line,k)=>ctx.fillText(line,left+3,y+k*result.step));
-   boundary+=segmentH;
-  }
- }
+ const firstY=a+Math.max(0,(height-result.lines.length*result.step)/2);
+ result.lines.forEach((line,i)=>line.forEach(token=>{
+  font(ctx,result.size,token.marker);
+  ctx.fillStyle=token.marker?'#073b61':'#101010';
+  ctx.fillText(token.text,left+1+token.x,firstY+i*result.step);
+ }));
  state.rows.push({page:index+1,item:row.code,frases:legal.length,fonte:result.size});
 }
 async function paintPage(img,index){
