@@ -12,7 +12,7 @@ const configurations={
  8:{width:1226,height:675,top:41.21219,band:30.63681,prerequisite:'bpfImagemF21'}
 };
 const splitRows=new Set(['4.6.6','4.6.9','4.6.12']);
-const state={version:'20261123-v28',pages:[],rows:[],errors:[]};
+const state={version:'20261123-v29',pages:[],rows:[],errors:[]};
 window.BPFFrasesPadraoCompletoV28=state;
 const busy=new WeakSet();
 const normalize=t=>String(t||'').replace(/\s+/g,' ').trim();
@@ -31,7 +31,10 @@ function phrases(page,code){
   const source=window.BPFImagemFrasesOriginal?.frasesLegais?.[code];
   if(Array.isArray(source)&&source.length)return source.map(normalize);
  }
- const row=getModel(page)?.rows?.find(r=>r.code===code);
+ const original=getModel(page)?.rows?.find(r=>r.code===code);
+ // A tabela de descartáveis mantém texto informativo nos itens NA 4.6.4-4.6.6.
+ // Se a frase não existir no modelo dessa página, buscar a mesma redação na página de retornáveis.
+ const row=original?.phrases?.length?original:(page===8?getModel(7)?.rows?.find(r=>r.code===code):null);
  if(!row||!Array.isArray(row.phrases)||!row.phrases.length)return null;
  return row.phrases.map(item=>normalize(item.text||item.texto)).filter(Boolean);
 }
@@ -78,7 +81,7 @@ function paint(ctx,row,conf,g,index){
  const left=66,right=conf.width-3,width=right-left-9,height=b-a;
  if(height<8)throw Error('Altura invalida em '+row.code);
  const split=splitRows.has(row.code)&&legal.length>1;
- const segments=legal.map((str,i)=>split?str:'F'+(i+1)+' — '+str);
+ const segments=legal.map((str,i)=>'F'+(i+1)+' — '+str);
  const result=fit(ctx,segments,width,height,split);
  if(!result)throw Error('A frase do item '+row.code+' excede a area original');
  ctx.fillStyle='#fff';
@@ -126,7 +129,10 @@ async function paintPage(img,index){
   const ctx=canvas.getContext('2d');
   if(!ctx)throw Error('Canvas indisponivel');
   ctx.drawImage(source,0,0);
-  const rows=g.rows.filter(row=>row.active);
+  // A página de descartáveis também exibe frases impressas para três itens NA.
+  // Elas estavam preservadas no bitmap original com fonte maior e desalinhada.
+  const inactiveVisible=index===8?new Set(['4.6.4','4.6.5','4.6.6']):new Set();
+  const rows=g.rows.filter(row=>row.active||inactiveVisible.has(row.code));
   if(!rows.length)throw Error('Sem linhas legais ativas');
   for(const row of rows){
    try{paint(ctx,row,conf,g,index)}
