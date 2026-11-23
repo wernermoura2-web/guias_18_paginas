@@ -75,7 +75,7 @@ def capture():
         overlays=[]
         for entry in entries:
             raw=base64.b64decode(entry.pop('data'))
-            assert raw[:8]==b'\\x89PNG\\r\\n\\x1a\\n', 'Camada legal nao e PNG'
+            assert raw.startswith(bytes.fromhex('89504e470d0a1a0a')), 'Camada legal nao e PNG'
             overlays.append((entry,raw))
             print('Camada HTML capturada: pagina',entry['page']+1,'bytes',len(raw))
         return overlays
