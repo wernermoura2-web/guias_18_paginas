@@ -82,7 +82,20 @@ function paint(ctx,row,conf,g,index){
  if(height<8)throw Error('Altura invalida em '+row.code);
  const split=splitRows.has(row.code)&&legal.length>1;
  const segments=legal.map((str,i)=>'F'+(i+1)+' — '+str);
- const result=fit(ctx,segments,width,height,split);
+ let result=fit(ctx,segments,width,height,split);
+ // Item 4.6.8: as duas verificacoes cabem em linhas independentes sem
+ // a margem vertical excessiva que reduzia desnecessariamente a fonte.
+ // Nao estreitar letras, comprimir palavras nem ultrapassar a celula.
+ if(row.code==='4.6.8'&&legal.length===2&&!split){
+  for(let fontSize=13.0;fontSize>=11.0;fontSize-=.25){
+   ctx.font=fontSize+'px Arial, Helvetica, sans-serif';
+   const parts=segments.map(text=>wrap(ctx,text,width));
+   if(parts.every(lines=>lines.length===1)&&fontSize*2<=height-1.2){
+    result={parts,size:fontSize,step:fontSize,weights:null,sum:0};
+    break;
+   }
+  }
+ }
  if(!result)throw Error('A frase do item '+row.code+' excede a area original');
  ctx.fillStyle='#fff';
  ctx.fillRect(left,a,right-left,height);
