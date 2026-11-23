@@ -23,6 +23,7 @@ const CHANGES={
 };
 const cache=new Map(),busy=new Set(),status={version:'v21',painted:[],errors:[]};
 window.BPFImagemFrasesOriginal=status;
+status.frasesLegais=CHANGES;
 function rowCoordinates(geometry,row){
  const top=geometry.height*LAYER_TOP_PERCENT/100;
  const height=geometry.height*LAYER_HEIGHT_PERCENT/100;
