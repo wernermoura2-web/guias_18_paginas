@@ -35,10 +35,10 @@ function redraw(ctx,g,code){
  const y1=Math.ceil(rect.top)+1,y2=Math.floor(rect.bottom)-1;
  if(y2<=y1)return null;
  let fit=null;
- // Arial normal, tamanho do original (até 20 px), nunca negrito ou compressão.
- for(let size=20;size>=13;size-=.25){
+ // Arial regular preto, base de 14 px, igual aos outros F do Guia, sem negrito ou compressão.
+ for(let size=14;size>=11;size-=.25){
   ctx.font=size+'px Arial, Helvetica, sans-serif';
-  const lines=wrap(ctx,LEGAL[code],right-left-5),step=size*1.10;
+  const lines=LEGAL[code].split(/(?=F[123]\s*—)/).map(s=>s.trim()).filter(Boolean).flatMap(part=>wrap(ctx,part,right-left-5)),step=size*1.10;
   if(lines.length*step<=y2-y1-2){
    fit={size,lines,step};break;
   }
