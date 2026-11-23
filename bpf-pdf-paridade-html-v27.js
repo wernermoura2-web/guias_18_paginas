@@ -30,7 +30,7 @@ function readSource(index){
 async function synchronize(pdf){
  const pages=pdf.getPages();
  if(pages.length<19)return;
- const hasGuide=pdf.getForm().getFieldMaybe('BPF_State');
+ const hasGuide=pdf.__bpfPrintReport===true || !!pdf.getForm().getFieldMaybe('BPF_State');
  if(!hasGuide)return;
  if(pdf.__bpfParidadeF28)return;
  const sources=indices.map(index=>({index,...readSource(index)}));
