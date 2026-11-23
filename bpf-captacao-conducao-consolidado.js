@@ -281,10 +281,31 @@ const bpfWaterCheck = (() => {
   'Outro'
  ];
  const tests = [['telemetria','Telemetria'],['indicador','Teste com indicador'],['outros','Outros']];
+ // Os 17 F solicitados: resposta por unidade, informações uma vez por F.
+ const compactWaterPanels={
+  '4.1.3':[0,2], '4.2.2':[0,1], '4.2.7':[1], '4.2.8':[0,1],
+  '4.2.9':[0,1], '4.3.2':[0,1,2], '4.3.3':[0,1],
+  '4.3.4':[0,1], '4.3.5':[1]
+ };
+ const compactWater=(row,index)=>compactWaterPanels[row.code]?.includes(index);
+ const compactAnswerId='bpf-resposta-geral';
+ const compactConfigCache=new WeakMap();
  function get(row,index){
+  if(row.code==='4.3.3'&&compactWater(row,index))return {compactWater:true,compositeReservoir:true,optional:true,checks:[]};
   const config=row.code==='4.6.3'&&index===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA)
    ?disposableRinse:panels[row.code]?.[index];
   if(row.code==='4.6.7'&&index===0&&config)return {...config,allowNA:row.scopes.some(scope=>scope.phrases[0]?.allowNA)};
+  if(config&&compactWater(row,index)){
+   if(compactConfigCache.has(config))return compactConfigCache.get(config);
+   const original=synchronizedItems.has(row.code)?{...config,optional:true}:config;
+   const info=config.checks.filter(c=>!c.scopeAnswer).map(c=>({ ...c, informationOnly:true,
+    informationQuestion:!c.yesOnly&&!c.noOnly&&!c.informationList&&!c.confirmationOnly,
+    ...(row.code==='4.3.4'&&index===0&&c.id==='inspecao-visual'?{details:'inspection-frequency',optionalDetails:true}: {})
+   }));
+   const compact={...original,compactWater:true,original,optional:true,simple:true,separateInformation:true,
+    informationHeading:'Outras informações',answerPrompts:null,checks:[check(compactAnswerId,'Avaliação geral',{scopeAnswer:true}),...info]};
+   compactConfigCache.set(config,compact);return compact;
+  }
   return config&&synchronizedItems.has(row.code)?{...config,optional:true}:config;
  }
  const key = entry => 'BPF_FWater_'+entry.name;
@@ -680,7 +701,7 @@ const bpfWaterCheck = (() => {
  const synchronizedItems=new Set(['4.1.3','4.2.2','4.2.7','4.2.8','4.2.9','4.3.2','4.3.5','4.6.3','4.6.4','4.6.5','4.6.6','4.6.8','4.7.2','4.7.4','4.7.5','4.7.6','4.7.8']);
  const visualFrequency={
   label:'Frequência da inspeção visual interna',
-  guidance:'Selecione a frequência por reservatório ou deixe em branco.',
+  guidance:'Selecione a frequência geral ou deixe em branco.',
   details:'inspection-frequency'
  };
  function visualInspectionState(page,scope,data){
@@ -725,6 +746,70 @@ const bpfWaterCheck = (() => {
  ];
  const filterMedia=['Areia','Quartzo','Polipropileno','Malhas e mantas filtrantes','Outros'];
  function reservoirFilterRead(scope,data){try{return JSON.parse(data[reservoirFilterKey(scope)]||'{}')||{};}catch{return {};}}
+ // 4.3.3 possui diversos índices internos por F. A escolha geral é por
+ // reservatório; os antigos requisitos continuam disponíveis como informação.
+ function compactReservoirState(page,row,panel,data){
+  const field=sharedLineKey(page,row,panel);
+  if(data[field])try{return JSON.parse(data[field]);}catch(_){}
+  const state={checks:{},filters:{},legacy:{},decisions:{}};
+  for(const e of panel.entries)if(hasAnswer(data[e.name]))state.legacy[e.name]=data[e.name];
+  for(const i of new Set(panel.entries.map(e=>e.index))){
+   const seen=[...new Set(panel.entries.filter(e=>e.index===i).map(e=>data[e.name]).filter(hasAnswer))];
+   if(seen.length===1)state.checks[i]=seen[0];
+  }
+  if(panel.id===1){
+   const old=[...new Set(panel.entries.map(e=>e.scope))].map(scope=>reservoirFilterRead(scope,data));
+   for(const [id] of filterQuestions){const seen=[...new Set(old.map(x=>x[id]).filter(hasAnswer))];if(seen.length===1)state.filters[id]=seen[0];}
+   const media=[...new Set(old.map(x=>JSON.stringify(x.media||[])).filter(x=>x!=='[]'))];if(media.length===1)state.filters.media=JSON.parse(media[0]);
+   const other=[...new Set(old.map(x=>x.other).filter(Boolean))];if(other.length===1)state.filters.other=other[0];
+  }
+  return state;
+ }
+ function compactReservoirDecision(entries,data){
+  const answers=entries.map(e=>data[e.name]);
+  return answers.includes('0')?'0':answers.includes('1')?'1':'';
+ }
+ function renderCompactReservoir(card,page,row,panel){
+  const state=compactReservoirState(page,row,panel,values),field=sharedLineKey(page,row,panel);
+  state.checks??={};state.filters??={};state.decisions??={};
+  const scopes=[...new Set(panel.entries.map(e=>e.scope))];
+  const save=()=>{values[field]=JSON.stringify(state);changed();recalc();};
+  const grid=element('div');grid.className='bpf-answer-grid bpf-water-grid';grid.style.gridTemplateColumns='minmax(0,1fr)';const controls=[];
+  for(const [value,heading] of [['1','Sim'],['0','Não']]){
+   const box=element('fieldset');box.className='bpf-answer-box';box.append(element('legend',panel.label+' — '+heading));
+   for(const scope of scopes){
+    const entries=panel.entries.filter(e=>e.scope===scope),label=element('label',bpfScopeLabel(page,scope)),input=element('input');
+    label.className='bpf-answer-item';input.type='checkbox';input.dataset.bpfCompactAnswer=value;input.checked=compactReservoirDecision(entries,values)===value;
+    controls.push(()=>{input.checked=compactReservoirDecision(entries,values)===value;});
+    input.onchange=()=>{const selected=input.checked?value:'';state.decisions[scope.name]=selected;for(const e of entries)values[e.name]=selected;for(const update of controls)update();save();};label.prepend(input);box.append(label);
+   }
+   grid.append(box);
+  }
+  const info=element('fieldset');info.className='bpf-answer-box';info.dataset.bpfInfoBox='';info.append(element('legend',panel.label+' — Outras informações'));
+  const ask=(caption,target,id)=>{const label=element('label',caption),select=element('select');label.style.cssText='display:block;margin:10px 0';select.style.cssText='display:block;margin:5px 0;padding:5px;font:inherit';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=target[id]||'';select.onchange=()=>{target[id]=select.value;save();};label.append(select);info.append(label);};
+  for(const i of new Set(panel.entries.map(e=>e.index))){const e=panel.entries.find(e=>e.index===i);ask(bpfUnifiedOption(row,e),state.checks,i);}
+  if(panel.id===1){
+   for(const [id,caption] of filterQuestions)ask(caption,state.filters,id);
+   info.append(element('strong','Qual o elemento filtrante utilizado?'));state.filters.media??=[];
+   const other=element('label','Especifique o outro elemento filtrante'),area=element('textarea');area.rows=2;area.value=state.filters.other||'';other.append(area);area.oninput=()=>{state.filters.other=area.value;save();};
+   const refresh=()=>{other.hidden=!state.filters.media.includes('Outros');};
+   for(const media of filterMedia){const label=element('label',media),input=element('input');label.className='bpf-water-choice';input.type='checkbox';input.checked=state.filters.media.includes(media);input.onchange=()=>{state.filters.media=input.checked?[...new Set([...state.filters.media,media])]:state.filters.media.filter(x=>x!==media);refresh();save();};label.prepend(input);info.append(label);}
+   info.append(other);refresh();
+  }
+  grid.append(info);card.append(grid);
+  const notes=element('div');notes.className='bpf-answer-grid bpf-water-grid';notes.style.gridTemplateColumns='minmax(0,1fr)';
+  for(const [answer,heading] of [['1','OBS — observação'],['0','NC — não conformidade']]){const box=element('fieldset');box.className='bpf-answer-box';box.append(element('legend',heading));const area=element('textarea');area.rows=4;area.dataset.note=bpfGroupNoteName(page,row,panel,answer);area.value=values[area.dataset.note]||'';area.oninput=()=>{values[area.dataset.note]=area.value;changed();};box.append(area);bpfAttachNoteTools(area,box,page,row.code,panel,()=>answer);bpfInstallIndividualNC(area,card,page,row,panel,()=>answer,()=>scopes.filter(s=>compactReservoirDecision(panel.entries.filter(e=>e.scope===s),values)===answer).map(s=>({id:panel.entries.find(e=>e.scope===s).name,label:bpfScopeLabel(page,s)})));notes.append(box);}
+  card.append(notes);return true;
+ }
+ function compactReservoirReport(page,row,panel,data){
+  const state=compactReservoirState(page,row,panel,data),scopes=[...new Set(panel.entries.map(e=>e.scope))];
+  const report=[];
+  for(const answer of ['1','0']){const selected=scopes.filter(s=>compactReservoirDecision(panel.entries.filter(e=>e.scope===s),data)===answer);if(!selected.length)continue;const note=text(data[bpfGroupNoteName(page,row,panel,answer)]);report.push({page,row,panel,answer,checklist:selected.map(s=>bpfScopeLabel(page,s)),note,selected:panel.entries.filter(e=>selected.includes(e.scope))});}
+  const info=[];
+  for(const i of new Set(panel.entries.map(e=>e.index))){const e=panel.entries.find(e=>e.index===i),a=state.checks?.[i];if(hasAnswer(a))info.push(bpfUnifiedOption(row,e)+': '+(a==='1'?'Sim':'Não'));else for(const value of ['1','0']){const old=panel.entries.filter(x=>x.index===i&&state.legacy?.[x.name]===value);if(old.length)info.push(bpfUnifiedOption(row,e)+': '+(value==='1'?'Sim':'Não')+' ('+old.map(x=>bpfScopeLabel(page,x.scope)).join(', ')+')');}}
+  if(panel.id===1){const filters=state.filters||{};for(const [id,caption,yes,no] of filterQuestions){if(hasAnswer(filters[id]))info.push(filters[id]==='1'?yes:no);}if(filters.media?.length)info.push('Elemento filtrante utilizado: '+filters.media.map(m=>m==='Outros'&&filters.other?filters.other:m).join(', '));if(!Object.keys(filters).some(k=>k!=='media'||filters.media.length))info.push(...reservoirFilterReport(page,panel,data));}
+  if(info.length)report.push({page,row,panel,heading:'Outras informações',checklist:info,note:'',selected:[]});return report;
+ }
  function renderReservoirFilterInfo(card,page,row,panel){
   if(row.code!=='4.3.3'||panel.id!==1)return;
   const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';box.append(element('legend','F2 — Outras observações'));
@@ -874,6 +959,7 @@ const bpfWaterCheck = (() => {
     const index=panel.id;
     for(const criterion of config.checks){
      const key=[page.page,row.code,'F'+(index+1),'check',criterion.id].join(':');
+     if(criterion.id===compactAnswerId)continue;
      const mode=isInformation(config,criterion)?informationHeading(config)+(criterion.informationQuestion?' — '+(criterion.answerLabels?Object.values(criterion.answerLabels).join(' ou '):'Sim ou Não')+'.':'.'):criterion.yesOnly?'Marcação somente em Sim.':criterion.noOnly?'Marcação somente em Não.':criterion.optional?'Sim ou Não. Pode ficar em branco.':'Responda Sim ou Não quando aplicável.';
      const context=criterion.hideWhenAllNo?'Ocultada quando a demonstração do teste de arraste e a existência de registros estão ambas marcadas como Não.':criterion.route==='silo'?'Com silo.':criterion.route==='direto'?'Sem silo.':criterion.requires==='filtro'?'Exibida quando a presença do filtro está marcada Sim.':criterion.section||'';
      const optionalDetails=criterion.details==='filter'?'A frequência de troca pode ficar em branco.':
@@ -1067,6 +1153,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
+   for(const id of compactWaterPanels[row.code]||[]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}
    if(row.code==='4.6.12'){
     const name=packagingPopPageKey(page);
     data.fields[name]={name,type:'/Ch',flags:0,label:'4.6.12 F1 — Disponibilidade e atualização do POP (informação única por processo)',options:['','1','0'],calc:'',phrasePage:page.page};
@@ -1110,6 +1197,10 @@ const bpfWaterCheck = (() => {
  }
 
  function result(panel,state){
+  if(panel.compactWater){
+   if(Object.prototype.hasOwnProperty.call(state,compactAnswerId))return hasAnswer(state[compactAnswerId]?.answer)?state[compactAnswerId].answer:'';
+   return panel.original?result(panel.original,state):'';
+  }
   if(panel.allowNA&&state.notApplicable)return '2';
   const selected=panel.checks.filter(c=>!isInformation(panel,c)&&answered(c,state));
   if(!selected.length||requiredChecks(panel,selected,state).some(c=>!answered(c,state)))return '';
@@ -1149,14 +1240,22 @@ const bpfWaterCheck = (() => {
   }
  }
 
- const sharedLineInfo=(row,panel)=>(row.code==='4.7.2'&&panel.id===1)||(row.code==='4.7.4'&&panel.id===0)||(row.code==='4.7.5'&&[0,1].includes(panel.id))||(row.code==='4.6.10'&&panel.id===1)||(row.code==='4.6.7'&&panel.id===0)||(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5','4.7.6','4.7.8'].includes(row.code));
+ const sharedLineInfo=(row,panel)=>compactWater(row,panel.id)||(row.code==='4.7.2'&&panel.id===1)||(row.code==='4.7.4'&&panel.id===0)||(row.code==='4.7.5'&&[0,1].includes(panel.id))||(row.code==='4.6.10'&&panel.id===1)||(row.code==='4.6.7'&&panel.id===0)||(row.code==='4.6.3'&&panel.id===0&&row.scopes.some(scope=>scope.phrases[0]?.allowNA))||(row.code==='4.6.6'&&[0,1].includes(panel.id))||(panel.id===0&&['4.6.4','4.6.5','4.7.6','4.7.8'].includes(row.code));
  // As informações continuam associadas aos seus F de origem, sem remapear índices.
  const sharedLineKey=(page,row,panel)=>'BPF_LineInfo_'+page.page+'_'+row.code.replace(/\./g,'_')+'_F'+(panel.id+1);
  function sharedLineState(page,row,panel,data){
   if(panel.id===1&&fillingF2Indices[row.code])panel={...panel,entries:panel.entries.filter(entry=>entry.index===1)};
   const name=sharedLineKey(page,row,panel),raw=data[name];
   const addGate=state=>{if(row.code==='4.6.3')state.bpfAnyRinseYes=panel.entries.some(entry=>data[entry.name]==='1');return state;};
-  if(raw){try{return {state:addGate(JSON.parse(raw)||{}),conflicts:[]};}catch(_){}}
+  if(raw){try{
+   const state=addGate(JSON.parse(raw)||{}),conflicts=[];
+   if(compactWater(row,panel.id))for(const c of get(row,panel.id).checks.filter(c=>isInformation(get(row,panel.id),c))){
+    if(answered(c,state))continue;
+    const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&answered(c,v)).map(v=>JSON.stringify(v[c.id]));
+    if(new Set(recorded).size>1)conflicts.push(c.id);
+   }
+   return {state,conflicts};
+  }catch(_){}}
   const config=get(row,panel.id),state={},conflicts=[];
   for(const c of config.checks.filter(c=>isInformation(config,c))){
    const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&(row.code==='4.6.3'?hasAnswer(v[c.id]?.answer):answered(c,v))).map(v=>v[c.id]);
@@ -1166,7 +1265,9 @@ const bpfWaterCheck = (() => {
   return {state:addGate(state),conflicts};
  }
  function records(row,entry,data,override){
-  const state=override??read(entry,data);
+  const config=get(row,entry.index);
+  let state=override??read(entry,data);
+  if(!override&&config?.compactWater&&!config.compositeReservoir&&hasAnswer(data[entry.name])&&!state?.[compactAnswerId])state={...state,[compactAnswerId]:{answer:data[entry.name]}};
   if(!state||!panelEnabled(row,entry,data))return [];
   if(state.notApplicable&&get(row,entry.index).allowNA)return [];
   return get(row,entry.index).checks.filter(c=>answered(c,state)).map(c=>{
@@ -1193,6 +1294,7 @@ const bpfWaterCheck = (() => {
      ].filter(Boolean).join(', ');
      break;
     case 'filter': details=text(item.frequency)&&'Frequência de troca: '+text(item.frequency);break;
+    case 'inspection-frequency': details=text(item.frequency)&&'Frequência: '+text(item.frequency);break;
     case 'recirculation': details=text(item.procedure);break;
     case 'measure': details=text(item.description);break;
    }
@@ -1201,6 +1303,7 @@ const bpfWaterCheck = (() => {
  }
 
  function report(page,row,panel,data){
+  if(row.code==='4.3.3'&&compactWater(row,panel.id))return compactReservoirReport(page,row,panel,data);
   const reservoir=row.code==='4.3.3';
   const config=reservoir?{informationHeading:panel.id===1?'Outras observações':'Outras informações',checks:panel.entries.filter(entry=>entry.scope===panel.entries[0]?.scope)
    .map(entry=>({id:entry.index,label:bpfUnifiedOption(row,entry)}))}:get(row,panel.id);
@@ -1212,13 +1315,14 @@ const bpfWaterCheck = (() => {
     records(row,entry,data)
   }));
   const mixing=row.code==='4.3.2'&&panel.id===0&&typeof bpfReservoirMixReport==='function'?bpfReservoirMixReport(page,data):[];
-  const supplemental=row.code==='4.3.3'&&panel.id===1?reservoirFilterReport(page,panel,data):row.code==='4.3.4'&&panel.id===0?reservoirFrequencyAnnex(page,row,panel,data).flatMap(item=>item.checklist.map(v=>visualFrequency.label+': '+v)):[];
+  const supplemental=row.code==='4.3.3'&&panel.id===1?reservoirFilterReport(page,panel,data):row.code==='4.3.4'&&panel.id===0&&!compactWater(row,panel.id)?reservoirFrequencyAnnex(page,row,panel,data).flatMap(item=>item.checklist.map(v=>visualFrequency.label+': '+v)):[];
   const capRoutes=row.code==='4.6.8'&&panel.id===0?[...new Set(entries.map(entry=>capsTransportRoute(entry.scope,data)).filter(Boolean))].map(route=>route==='silo'?'Tampas transportadas com auxílio de silo externo':'Tampas transportadas para a tampadora sem auxílio de silo externo'):[];
   const joint=sharedLineInfo(row,panel)&&entries.length?sharedLineState(page,row,panel,data):null;
   const jointRecords=joint?records(row,entries[0],data,joint.state):[];
   if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length&&!capRoutes.length)return [];
   const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
   const information=[...mixing,...supplemental,...capRoutes];
+  if(row.code==='4.3.4'&&panel.id===0&&joint?.state?.['inspecao-visual']?.frequency&&!hasAnswer(joint.state['inspecao-visual'].answer))information.push(visualFrequency.label+': '+joint.state['inspecao-visual'].frequency);
   for(const criterion of config.checks.filter(check=>isInformation(config,check))){
    for(const answer of ['1','0']){
     const shared=joint&&!joint.conflicts.includes(criterion.id);
@@ -1450,7 +1554,7 @@ const bpfWaterCheck = (() => {
     const saved=item.frequency||'';
     const custom=!!saved&&!periods.includes(saved);
     let other;
-    field(criterion.label,custom?'Outros':saved,value=>{
+    field(criterion.id==='inspecao-visual'?visualFrequency.label:criterion.label,custom?'Outros':saved,value=>{
      other.hidden=value!=='Outros';
      item.frequency=value==='Outros'?other.querySelector('textarea').value:value;
      save();
@@ -1546,6 +1650,7 @@ const bpfWaterCheck = (() => {
   });
  }
  function render(card,page,row,panel){
+  if(row.code==='4.3.3'&&compactWater(row,panel.id))return renderCompactReservoir(card,page,row,panel);
   // A antiga frase F2 do 4.6.12 deve surgir mesmo sem verificações
   // complementares configuradas para o F1.
   if(row.code==='4.6.12'&&panel.id===0)renderPackagingPopInfo(card,page,row,panel);
@@ -1611,6 +1716,7 @@ const bpfWaterCheck = (() => {
    const existingAnswer=values[entry.name];
    const state=previous||(config.simple&&['1','0'].includes(existingAnswer)
     ? {[config.checks[0].id]:{answer:existingAnswer}} : null)||(row.code==='4.2.2'&&panel.id===1?{integrityPositive:true}:{});
+   if(config.compactWater&&hasAnswer(existingAnswer)&&!state[compactAnswerId])state[compactAnswerId]={answer:existingAnswer};
    const label=bpfScopeLabel(page,entry.scope);
    if(config.allowNA&&existingAnswer==='2'&&!previous)state.notApplicable=true;
    const legacy=previous||config.simple?'':bpfAnswerLabel(existingAnswer);
@@ -1665,7 +1771,7 @@ const bpfWaterCheck = (() => {
     const general=information&&Boolean(joint);
     if(general&&entry!==panel.entries[0])continue;
     const state=general?joint.state:entryState;
-    const save=general?()=>{values[sharedLineKey(page,row,panel)]=JSON.stringify(state);refresh();changed();recalc();}:entrySave;
+    const save=general?()=>{values[sharedLineKey(page,row,panel)]=JSON.stringify(state);refresh();changed();recalc();if(row.code==='4.2.9'&&panel.id===0)card.parentElement?.querySelector('[data-bpf-conduction-f2]')?.dispatchEvent(new Event('bpf-f2-refresh'));}:entrySave;
     const answer=information?'1':sectionType;
     const heading=information?informationHeading(config):answer==='1'?'Sim':'Não';
     const directChoice=(config.simple&&!information)||(config.separateInformation&&!information)||(config.singleNo&&answer==='0');
@@ -1679,9 +1785,9 @@ const bpfWaterCheck = (() => {
     legacyLine.hidden=!legacy||general;
     legacyLines.push(legacyLine);
     section.append(legacyLine);
-    if(general&&joint.conflicts.length)section.append(element('p','Há informações anteriores diferentes entre linhas. Revise as respostas do quadro geral. Os registros anteriores permanecem no arquivo.'));
+    if(general&&joint.conflicts.length)section.append(element('p','Há informações anteriores diferentes entre '+(config.compactWater?'unidades':'linhas')+'. Revise as respostas do quadro geral. Os registros anteriores permanecem no arquivo.'));
     box.append(section);
-    if(dependentF2)rows.push(()=>{section.hidden=!panelEnabled(row,entry,values);});
+    if(dependentF2)rows.push(()=>{section.hidden=general? !panel.entries.some(e=>panelEnabled(row,e,values)):!panelEnabled(row,entry,values);});
     const groups=new Map();let routeInput=null;
     for(const criterion of config.checks){
      if(information!==Boolean(isInformation(config,criterion)))continue;
@@ -1729,6 +1835,7 @@ const bpfWaterCheck = (() => {
      if(guidance)control.title=guidance;
      const input=element('input');
      input.type=capsF1&&!information&&criterion.scopeAnswer?'radio':'checkbox';
+     if(config.compactWater&&!information)input.dataset.bpfCompactAnswer=answer;
      if(input.type==='radio'){input.name='BPF_CapsResposta_'+panel.id+'_'+entry.name;input.value=answer;}
      input.setAttribute('aria-label',directChoice||criterion.scopeAnswer?label+' — '+heading:label+' — '+caption+' — '+heading);
      input.onchange=()=>{
@@ -1778,7 +1885,7 @@ const bpfWaterCheck = (() => {
        displayCaption(wording);
        input.setAttribute('aria-label',label+' — '+wording+' — '+heading);
       }
-      extra.hidden=!enabled||item.answer!==answer||!showDetails;
+      extra.hidden=!enabled||(!information||criterion.details!=='inspection-frequency')&&item.answer!==answer||!showDetails;
      });
     }
     if(collapsed)rows.push(()=>section.bpfKeepAnsweredOpen(!information&&!legacyLine.hidden&&Boolean(legacy)&&existingAnswer===sectionType));
@@ -1804,7 +1911,7 @@ const bpfWaterCheck = (() => {
    grid.append(box);
   }
   card.append(grid);
-  if(row.code==='4.3.4'&&panel.id===0)renderReservoirFrequency(card,page,row,panel);
+  if(row.code==='4.3.4'&&panel.id===0&&!config.compactWater)renderReservoirFrequency(card,page,row,panel);
   return true;
  }
  function renderMachine(card,page,row,panel){
