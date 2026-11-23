@@ -53,7 +53,7 @@
           "4.5.2",
           "4.5.3"
         ],
-        "images": 4,
+        "images": 5,
         "annotations": 0,
         "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_07.png.b64"
       },
@@ -71,7 +71,7 @@
           "4.6.9",
           "4.6.12"
         ],
-        "images": 5,
+        "images": 6,
         "annotations": 0,
         "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_08.png.b64"
       },
@@ -89,7 +89,7 @@
           "4.6.9",
           "4.6.12"
         ],
-        "images": 5,
+        "images": 6,
         "annotations": 0,
         "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_09.png.b64"
       },
@@ -107,7 +107,7 @@
         "preview_key": "BPF_APPCC_Em_Branco_18_Paginas_10.png.b64"
       }
     ],
-    "pdf_keywords": "bpf-frases-f-paridade-html-20261123-v27; bpf-frases-f-paridade-html-20261123-v28"
+    "pdf_keywords": "bpf-frases-f-paridade-html-20261123-v27; bpf-frases-f-paridade-html-20261123-v28; bpf-frases-f-paridade-html-20261123-v29"
   },
   "impressao/Guia_Editavel_em_Branco.pdf": {
     "pages_total": 20,
@@ -163,7 +163,7 @@
           "4.5.2",
           "4.5.3"
         ],
-        "images": 4,
+        "images": 5,
         "annotations": 52,
         "preview_key": "Editavel_em_Branco_07.png.b64"
       },
@@ -181,7 +181,7 @@
           "4.6.9",
           "4.6.12"
         ],
-        "images": 6,
+        "images": 7,
         "annotations": 92,
         "preview_key": "Editavel_em_Branco_08.png.b64"
       },
@@ -199,7 +199,7 @@
           "4.6.9",
           "4.6.12"
         ],
-        "images": 6,
+        "images": 7,
         "annotations": 75,
         "preview_key": "Editavel_em_Branco_09.png.b64"
       },
@@ -217,7 +217,7 @@
         "preview_key": "Editavel_em_Branco_10.png.b64"
       }
     ],
-    "pdf_keywords": "bpf-frases-f-paridade-html-20261123-v27; bpf-frases-f-paridade-html-20261123-v28"
+    "pdf_keywords": "bpf-frases-f-paridade-html-20261123-v27; bpf-frases-f-paridade-html-20261123-v28; bpf-frases-f-paridade-html-20261123-v29"
   },
   "impressao/Guia_Editavel_Simplificado.pdf": {
     "pages_total": 20,
@@ -273,7 +273,7 @@
           "4.5.2",
           "4.5.3"
         ],
-        "images": 4,
+        "images": 5,
         "annotations": 52,
         "preview_key": "Editavel_Simplificado_07.png.b64"
       },
@@ -291,7 +291,7 @@
           "4.6.9",
           "4.6.12"
         ],
-        "images": 6,
+        "images": 7,
         "annotations": 92,
         "preview_key": "Editavel_Simplificado_08.png.b64"
       },
@@ -309,7 +309,7 @@
           "4.6.9",
           "4.6.12"
         ],
-        "images": 6,
+        "images": 7,
         "annotations": 75,
         "preview_key": "Editavel_Simplificado_09.png.b64"
       },
@@ -327,6 +327,6 @@
         "preview_key": "Editavel_Simplificado_10.png.b64"
       }
     ],
-    "pdf_keywords": "bpf-frases-f-paridade-html-20261123-v27; bpf-frases-f-paridade-html-20261123-v28"
+    "pdf_keywords": "bpf-frases-f-paridade-html-20261123-v27; bpf-frases-f-paridade-html-20261123-v28; bpf-frases-f-paridade-html-20261123-v29"
   }
 }
