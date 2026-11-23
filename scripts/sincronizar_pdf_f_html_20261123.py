@@ -18,7 +18,7 @@ import fitz
 from playwright.sync_api import sync_playwright
 
 ROOT=Path(__file__).resolve().parents[1]
-REVISION='bpf-frases-f-paridade-html-20261123-v28'
+REVISION='bpf-frases-f-paridade-html-20261123-v29'
 TARGETS=(
   'impressao/Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf',
   'impressao/Guia_Editavel_em_Branco.pdf',
@@ -65,7 +65,7 @@ def capture():
             }""")
             assert not diagnostics['errors'],('Erros na tipografia',diagnostics['errors'])
             assert sorted(set(diagnostics['pages']))==[7,8,9],diagnostics['pages']
-            assert len(diagnostics['rows'])>=22,('Frases desenhadas',len(diagnostics['rows']))
+            assert len(diagnostics['rows'])>=25,('Frases desenhadas',len(diagnostics['rows']))
             print('Padronizacao completa:',len(diagnostics['rows']),'itens F verificados')
             entries=page.evaluate("""() => {
                 const d=document.querySelector('#formulario').contentDocument;
