@@ -25,6 +25,12 @@ for name in pdfs:
    # Padroniza páginas pequenas para inspeção visual via arquivo base64.
    key=Path(name).stem.replace('Guia_','')+'_'+str(i+1).zfill(2)
    (out/(key+'.png.b64')).write_text(base64.b64encode(pix.tobytes('png')).decode('ascii'))
+   if i in (6,7,8):
+    if i==6: clip=fitz.Rect(40,287,553,448)
+    else: clip=fitz.Rect(38,355 if page.rect.width<550 else 372,
+                         page.rect.width-10,615 if page.rect.width>550 else 567)
+    crop=page.get_pixmap(matrix=fitz.Matrix(1.8,1.8),clip=clip,alpha=False)
+    (out/(key+'.crop.png.b64')).write_text(base64.b64encode(crop.tobytes('png')).decode('ascii'))
    pages.append({
     'pdf_index':i,'page_one_based':i+1,
     'dimensions_pt':[round(page.rect.width,2),round(page.rect.height,2)],
