@@ -1,4 +1,4 @@
-/* Restitui texto Arial regular preto ao mesmo bitmap e geometria original, sem alterar a area de Observacoes Gerais.
+/* Padroniza F1, F2 e F3 em Arial regular preto, com tamanho-base igual, dentro da imagem e geometria original, sem alterar Observacoes Gerais.
    Sem recortar algarismos, sem elementos sobrepostos e sem mudar a geometria.
    Alinhado a foto aprovada: 4.6.6 F1/F2; 4.6.9 F1/F2; 4.6.12 F1/F2. */
 (function(){
@@ -46,20 +46,18 @@ function wrapParagraph(ctx,text,width){
 function layout(ctx,code,width,height){
  const phrases=CHANGES[code];
  // F2 comecara na linha seguinte apenas em 4.6.9, como na imagem aprovada.
- const blocks=code==='4.6.9'
-  ?['F1 — '+phrases[0],'F2 — '+phrases[1]]
-  :['F1 — '+phrases[0]+' F2 — '+phrases[1]];
- const linesAllowed=code==='4.6.6'?2:code==='4.6.9'?3:4;
+ const blocks=phrases.map((phrase,index)=>'F'+(index+1)+' — '+phrase);
+ // O mesmo padrao tipografico para F1, F2 e F3, com quebra de linha entre frases.
  // O bitmap original utiliza Arial regular. Nunca ampliar nem aplicar negrito.
- for(let size=20;size>=14;size-=.25){
+ for(let size=14;size>=11;size-=.25){
   ctx.font=size+'px Arial, Helvetica, sans-serif';
   const lines=blocks.flatMap(block=>wrapParagraph(ctx,block,width));
   const step=size*1.10;
-  if(lines.length<=linesAllowed&&lines.length*step<=height-2.5){
+  if(lines.length*step<=height-2.5){
    return {size,step,lines};
   }
  }
- const size=14;
+ const size=11;
  ctx.font=size+'px Arial, Helvetica, sans-serif';
  return {size,step:size*1.10,lines:blocks.flatMap(block=>wrapParagraph(ctx,block,width))};
 }
