@@ -14,6 +14,7 @@ const LEGAL={
 };
 const result={version:'20261121-recepcao-v22',rows:[],errors:[]},busy=new WeakSet();
 window.BPFRecepcaoFrasesV22=result;
+result.frasesLegais=LEGAL;
 function coords(g,row){
  const y0=g.height*LAYER.top/100,h=g.height*LAYER.height/100;
  return {top:(row.top-y0)*HEIGHT/h,bottom:(row.bottom-y0)*HEIGHT/h};
