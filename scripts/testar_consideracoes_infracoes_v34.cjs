@@ -6,7 +6,7 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
  for(const file of ['equipe.html','individual.html']){
   const html=await (await worker.attach(new Response(fs.readFileSync(file,'utf8')),new URL('https://example.test/guias/'+file))).text();
   assert(html.includes('bpf-conclusao-nc.js?v=20261123-v34-consideracoes-infracoes'));
-  assert(html.includes('bpf-paginacao-observacoes.js?v=20261123-v34-consideracoes-infracoes'));
+  assert(/bpf-paginacao-observacoes\.js\?v=20261123-v(?:34-consideracoes-infracoes|35-perigos-matriz)/.test(html));
   const scope={name:'Teste',col:1,phrases:['PCC','PPRO','PC','POP','PPR'].map(appcc=>({appcc,text:'Requisito '+appcc}))},row={code:'4.1.3',scopes:[scope]};
   const field='CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1',values={'OBS 1':'Observação manual',[field]:'Medida manual',BPF_PCCDestination:'18',BPF_NCConsiderandosVisibility:JSON.stringify(['PCC','PPRO','PC','POP','PPR']),BPF_FinalConsideracoesClasses:'["PCC"]'};
   scope.phrases.forEach((_,i)=>values['Teste_'+i]='0');
@@ -22,6 +22,9 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
   assert(!observation.includes('Considerando o Item'));
   assert(observation.indexOf('PPRO —')<observation.indexOf('F2 (PPRO)')&&observation.indexOf('F2 (PPRO)')<observation.indexOf('PC —'));
   ctx.bpfSyncPCCFinal();assert.equal(values['OBS 1'],observation);values.BPF_NCConsiderandosVisibility='["PC"]';ctx.bpfSyncNCLists();assert(values['OBS 1'].includes('F3 (PC)'));assert(!values['OBS 1'].includes('F2 (PPRO)'));assert(values['OBS 1'].includes('PPRO —'));
+  assert(values[field].startsWith('Considerando o perigo de'));
+  const grouped=vm.runInContext(`(()=>{const g=new Map();bpfAgruparPerigo(g,'Contaminação microbiológica nas embalagens.',{code:'4.6.3'},'Linha 1','Higienização');bpfAgruparPerigo(g,'Contaminação microbiológica nas embalagens.',{code:'4.6.3'},'Linha 2','Higienização');bpfAgruparPerigo(g,'Contaminação microbiológica decorrente de outra falha.',{code:'4.6.5'},'Linha 3','Higienização');bpfAgruparPerigo(g,'Contaminação química da água.',{code:'4.6.6'},'Linha 1','Higienização');return bpfPerigosConsolidados(g);})()`,ctx);
+  assert.equal(Object.keys(grouped).length,2);const micro=grouped['perigo:contaminação microbiológica'];assert(micro.includes('Linha 1, Linha 2')&&micro.includes('4.6.5'));assert.equal((micro.match(/Considerando o perigo de/g)||[]).length,1);
   console.log(file,'OK: migração, classificação, opção mostrar/ocultar, perigo e sincronização');
  }
  const values={BPF_ConclusaoSinteseProcessos:'On',BPF_ConclusaoInfracoes:JSON.stringify([{inciso:'IV',fact:'o descumprimento da IN nº 161/2022',item:'4.10.3'},{inciso:'XXXI',fact:'o descumprimento do Termo de Intimação'}])};
@@ -29,4 +32,11 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
  vm.runInNewContext(fs.readFileSync('bpf-conclusao-nc.js','utf8'),{window,document});
  const conclusion=window.bpfConclusaoNC.include('Texto manual');assert(conclusion.includes('Texto manual'));assert(conclusion.includes('artigo 10, inciso IV'));assert(conclusion.includes('artigo 10, inciso XXXI'));assert(!conclusion.includes('Foram identificadas as seguintes inadequações'));
  console.log('Conclusão OK: infrações selecionadas, citações e texto manual preservados');
+ const pagination=fs.readFileSync('bpf-paginacao-observacoes.js','utf8');
+ const pg={};vm.createContext(pg);vm.runInContext(extract(pagination,'const bpfFinalConsiderationsSize=','let bpfFinalConsiderationsFlow=')+'\n'+extract(pagination,'function bpfObservationLines(','function bpfObservationParagraphs(')+'\n'+extract(pagination,'function bpfObservationBreak(','function bpfPaginateObservation('),pg);
+ const font={widthOfTextAtSize:(s,n)=>s.length*n*.5};const first=[44,30,551,110],next=[44,30,551,780];
+ const long='Considerando o perigo de teste, '+('descrição de referência e medidas registradas. '.repeat(230));
+ const parts=pg.bpfPaginateFinalConsiderations(long,first,next,font,font);assert(parts.length>1);assert(parts[0].startsWith('Considerando'));assert.equal(parts.join(''),long);
+ const measure=pg.bpfFinalConsiderationMeasure(first,font,font);assert(measure.height(parts[0])<=measure.capacity);assert(measure.height(parts[0])>=measure.capacity-24);
+ console.log('Matriz OK: primeira página preenchida, continuação sequencial e conteúdo íntegro');
 })().catch(e=>{console.error(e);process.exitCode=1;});

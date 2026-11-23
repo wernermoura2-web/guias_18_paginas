@@ -89,11 +89,22 @@ function bpfPaginateFinalConsiderations(text,firstRect,nextRect,font,bold){
  for(const block of text.split(/(?=^(?:Considerando o )?Item\s+\d+(?:\.\d+)*\b)/m).filter(Boolean)){
   const group=groups.at(-1);
   if(fits(measure,join(group)+block)){group.push(block);continue;}
-  groups.push([]);
-  measure=next;
   let rest=block;
   const title=block.split('\n')[0];
   const repeat=bpfIsFinalConsiderationTitle(title)&&next.height(title)<next.capacity/2?title+' — continuação\n':'';
+  // Aproveitar a capacidade restante da própria matriz antes de criar uma
+  // página de continuação, inclusive se o primeiro parágrafo for muito longo.
+  const existing=join(group);
+  const firstWord=rest.match(/^\s*\S+/)?.[0]||'';
+  if(firstWord&&fits(measure,existing+firstWord)){
+   const cut=bpfObservationBreak(rest,part=>fits(measure,existing+part));
+   if(cut>0&&fits(measure,existing+rest.slice(0,cut))){
+    group.push(rest.slice(0,cut));
+    rest=(repeat&&cut>title.length?repeat:'')+rest.slice(cut);
+   }
+  }
+  groups.push([]);
+  measure=next;
   // Se um único item exceder uma A4 inteira, repetir seu título ao continuar.
   while(!fits(next,rest)){
    const cut=bpfObservationBreak(rest,part=>fits(next,part));
@@ -103,21 +114,8 @@ function bpfPaginateFinalConsiderations(text,firstRect,nextRect,font,bold){
   }
   groups.at(-1).push(rest);
  }
- const last=groups.length-1;
- if(last>0&&next.height(join(groups[last]))<next.capacity/4){
-  const prior=groups[last-1],tail=groups[last];
-  const priorMeasure=last===1?first:next;
-  if(fits(priorMeasure,join(prior)+join(tail))){
-   prior.push(...tail);
-   groups.pop();
-  }else{
-   while(prior.length>1&&next.height(join(tail))<next.capacity/4){
-    const block=prior.at(-1);
-    if(!fits(next,block+join(tail)))break;
-    tail.unshift(prior.pop());
-   }
-  }
- }
+ // Não rebalancear o texto para uma página posterior: o início e o máximo
+ // de conteúdo que couber permanecem na matriz.
  return groups.map(join);
 }
 
