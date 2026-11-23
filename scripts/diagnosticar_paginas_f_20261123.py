@@ -17,6 +17,7 @@ pdfs=[
 report={}
 for name in pdfs:
  with fitz.open(root/name) as pdf:
+  assert 'bpf-frases-f-paridade-html-20261123-v29' in (pdf.metadata.get('keywords') or ''), 'PDF ainda não está na revisão v29: '+name
   pages=[]
   for i in range(3,min(10,len(pdf))):
    page=pdf[i]
