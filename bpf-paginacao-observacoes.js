@@ -42,12 +42,15 @@ function bpfIsNCDefinition(line){
 function bpfIsFinalConsiderationTitle(line){
  return /^(?:Considerando o )?Item\s+\d+(?:\.\d+)*\b/.test(line.trim());
 }
+function bpfConsiderationLabel(line){
+ return line.match(/^(?:Considerando\b|(?:Perigo controlado|Constatação|Evidência objetiva(?: registrada)?|Requisito (?:legal )?avaliado|Dispositivo legal não cumprido|Conclusão da verificação)(?=\s*[·:]))/i)?.[0]||'';
+}
 
 function bpfFinalConsiderationRows(text){
  return text.trimEnd().split('\n').flatMap((line,index,lines)=>{
   const title=bpfIsFinalConsiderationTitle(line);
   if(!line.trim()&&bpfIsFinalConsiderationTitle(lines[index+1]||''))return [];
-  const label=line.match(/^(?:Perigo controlado|Constatação|Evidência objetiva(?: registrada)?|Requisito (?:legal )?avaliado|Dispositivo legal não cumprido|Conclusão da verificação)(?=\s*[·:])/i)?.[0]||'';
+  const label=title?'':bpfConsiderationLabel(line);
   return [{line,title,label,gap:title?bpfFinalConsiderationsTitleGap:0}];
  });
 }
@@ -123,6 +126,8 @@ function bpfObservationParagraphs(text,spacing){
  const rows=[];
  for(const line of text.split('\n')){
   const definition=spacing==='nc'&&bpfIsNCDefinition(line);
+  const title=spacing==='nc'&&bpfIsFinalConsiderationTitle(line);
+  const label=spacing==='nc'&&!title?bpfConsiderationLabel(line):'';
   const ncEntry=spacing==='nc'&&bpfIsNCEntry(line);
   const cqStart=spacing==='cq'&&/^\s*CONTINUAÇÃO DAS OBSERVAÇÕES\s+[—–-]\s+CONTROLE DA QUALIDADE\s*$/i.test(line);
   const cqEnd=spacing==='cq'&&/^\s*FIM DAS OBSERVAÇÕES DO CONTROLE DA QUALIDADE\s*$/i.test(line);
@@ -136,11 +141,12 @@ function bpfObservationParagraphs(text,spacing){
   let gap=0;
   if(definition)gap=before?.definition?1/3:1;
   else if(before?.definition&&line.trim())gap=1;
+  else if(title)gap=.65;
   else if(cqStart||before?.cqEnd&&line.trim())gap=1;
   else if(cqItem||before?.cqItem&&line.trim())gap=1/3;
   else if(ncEntry&&before&&bpfIsNCEntry(before.line))gap=1/4;
   if(gap)rows.length=previous+1;
-  rows.push({line,gap,definition,cqItem,cqEnd});
+  rows.push({line,gap,definition,cqItem,cqEnd,title,label});
  }
  let last=rows.length-1;
  while(last>=0&&!rows[last].line.trim())last--;
@@ -167,11 +173,12 @@ function bpfAppendNCObservationText(fragment,text,spacing='nc'){
   return true;
  }
  const rows=bpfObservationParagraphs(text,spacing);
- const formatted=rows.some(row=>row.gap||row.definition);
+ const formatted=rows.some(row=>row.gap||row.definition||row.title||row.label);
  if(!formatted){fragment.append(document.createTextNode(text));return false;}
- for(const {line,gap,definition} of rows){
+ for(const {line,gap,definition,title,label} of rows){
   const paragraph=document.createElement('div');
-  paragraph.textContent=line;
+  if(label){const strong=document.createElement('strong');strong.textContent=label;paragraph.append(strong,document.createTextNode(line.slice(label.length)));}else paragraph.textContent=line;
+  if(title)paragraph.style.fontWeight='bold';
   if(!line.trim())paragraph.style.height='1.3em';
   if(gap)paragraph.style.paddingTop=(gap*1.3)+'em';
   if(definition)paragraph.style.lineHeight=String(1.3*4/3);
@@ -180,14 +187,14 @@ function bpfAppendNCObservationText(fragment,text,spacing='nc'){
  return true;
 }
 
-function bpfObservationPageMeasure(rect,size,font,spacing){
+function bpfObservationPageMeasure(rect,size,font,spacing,bold=font){
  const [left,bottom,right,top]=rect;
  const width=right-left-16,capacity=Math.max(1,(top-bottom-16)/(size*1.35)-bpfPdfObservationBlankLines);
  function height(text){
   const content=text.trimEnd();
   if(!content)return 0;
-  return bpfObservationParagraphs(content,spacing).reduce((total,{line,gap,definition})=>{
-   const count=Math.max(1,bpfObservationLines(line,font,width,size).length);
+  return bpfObservationParagraphs(content,spacing).reduce((total,{line,gap,definition,title,label})=>{
+   const count=Math.max(1,bpfFinalWrappedRows(line,title,label,font,bold,width,size).length);
    const heading=spacing==='nc'&&/^(?:NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b|QUANTITATIVO DE NÃO CONFORMIDADES POR PROCESSO$)/.test(line);
    return total+count+gap+(definition?count/3:0)+(heading ? .85 : 0);
   },0);
@@ -210,11 +217,11 @@ function bpfObservationBreak(text,accept){
  return cut;
 }
 
-function bpfPaginateObservation(text,firstRect,nextRect,size,font,spacing){
+function bpfPaginateObservation(text,firstRect,nextRect,size,font,spacing,bold=font){
  const parts=[];
  let remaining=text;
- const first=bpfObservationPageMeasure(firstRect,size,font,spacing);
- const next=bpfObservationPageMeasure(nextRect,size,font,spacing);
+ const first=bpfObservationPageMeasure(firstRect,size,font,spacing,bold);
+ const next=bpfObservationPageMeasure(nextRect,size,font,spacing,bold);
  do{
   const {height,capacity}=parts.length?next:first;
   if(parts.length&&!remaining.trim()){parts[parts.length-1]+=remaining;break;}
@@ -249,10 +256,14 @@ function bpfObservationScreenFont(size,bold=false){
  return {widthOfTextAtSize(text){return ctx?ctx.measureText(text).width:text.length*size*.6;}};
 }
 
-function bpfRunNCObservationFlow(full){
+function bpfRunNCObservationFlow(full,pdfFont=null,pdfBold=null){
  full=String(full||'').replace(/\r\n?/g,'\n');
- if(full!==bpfNCObservationCache.full){
-  bpfNCObservationCache={full,parts:bpfPaginateObservation(full,bpfNCFirstRect,bpfNCPageRect,BPF_NC_FONT_SIZE,bpfObservationScreenFont(BPF_NC_FONT_SIZE),'nc')};
+ if(full!==bpfNCObservationCache.full||pdfFont!==(bpfNCObservationCache.font||null)){
+  const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
+  const measure=f=>({widthOfTextAtSize:(t,s)=>f.widthOfTextAtSize(normalize(t),s)});
+  const normal=pdfFont?measure(pdfFont):bpfObservationScreenFont(BPF_NC_FONT_SIZE);
+  const bold=pdfBold?measure(pdfBold):bpfObservationScreenFont(BPF_NC_FONT_SIZE,true);
+  bpfNCObservationCache={full,font:pdfFont,parts:bpfPaginateObservation(full,bpfNCFirstRect,bpfNCPageRect,BPF_NC_FONT_SIZE,normal,'nc',bold)};
  }
  const [first='',second='',...extra]=bpfNCObservationCache.parts;
  values['OBS 1']=first;
@@ -448,6 +459,7 @@ function bpfPrintProcessObservations(pdf,form,font,normalize,black){
 
 async function bpfPDFWithObservationOverflows(pdf,form,font){
  const bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
+ bpfRunNCObservationFlow(bpfGeneralFullText(),font,bold);
  bpfReconcileObservationPages(font,bold);
  const finalPage=pdf.getPage(17);
  const finalField=form.getFieldMaybe(bpfFinalConsiderationsField);
@@ -470,8 +482,7 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
    y-=gap*(spacing==='final'?size:leading);
    if(spacing==='nc'&&/^(?:NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b|QUANTITATIVO DE NÃO CONFORMIDADES POR PROCESSO$)/.test(line))y-=.85*leading;
    const lineFont=title?bold:font;
-   const wrapped=spacing==='final'?bpfFinalWrappedRows(line,title,label,font,bold,right-x-16,size)
-    :bpfObservationLines(line,lineFont,right-x-16,size).map(rest=>({lead:'',rest}));
+   const wrapped=bpfFinalWrappedRows(line,title,label,font,bold,right-x-16,size);
    for(const {lead,rest} of wrapped){
     if(definition)y-=leading/3;
     const start=x+7;
@@ -516,6 +527,27 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   const label='Página '+(bpfPageOrder.indexOf(source)+1)+' de '+bpfPageOrder.length;
   page.drawText(label,{x:w-22-font.widthOfTextAtSize(label,8),y:source===14?20:h-784,size:8,font,color:ink});
  }
+}
+
+// O relatório de inspeção é estático; o campo de conclusão continua
+// editável no HTML, mas no PDF a palavra inicial pode ter fonte distinta.
+async function bpfPrintConclusionFormatted(pdf,form,font,sourcePages,cfg){
+ const field=form.getFieldMaybe(cfg.field);if(!field)return;
+ const widget=field.acroField.getWidgets()[0],meta=D.widgets.find(w=>w.name===cfg.field);
+ if(!widget||!meta||!sourcePages?.[meta.page])return;
+ const page=sourcePages[meta.page],{x,y,width,height}=widget.getRectangle();
+ const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
+ const text=normalize(cfg.include(values[cfg.field]));
+ const bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
+ const wrap=size=>text.split('\n').flatMap(line=>bpfFinalWrappedRows(line,false,bpfConsiderationLabel(line),font,bold,width-12,size));
+ let size=8;while(size>.35&&wrap(size).length*size*1.3>height-12)size=Math.max(.35,size-.25);
+ const black=PDFLib.rgb(0,0,0);
+ for(const [i,{lead,rest}] of wrap(size).entries()){
+  const baseline=y+height-6-size-i*size*1.3;
+  if(lead)page.drawText(lead,{x:x+6,y:baseline,size,font:bold,color:black});
+  if(rest)page.drawText(rest,{x:x+6+(lead?bold.widthOfTextAtSize(lead,size):0),y:baseline,size,font,color:black});
+ }
+ form.removeField(field);
 }
 
 /* Visualização independente da paginação e dos dados de impressão. */

@@ -208,12 +208,16 @@ function update(){
    const restore=document.createElement('button');restore.type='button';restore.textContent='Restaurar texto automático';restore.style.cssText=preview.style.cssText;restore.onclick=()=>{const data=state();if(!data)return;const edits=autoEdits();delete edits[autoMask()];data[autoEditKey]=JSON.stringify(edits);if(typeof changed==='function')changed();update();};infractionBar.append(preview,restore);box.prepend(infractionBar);
    page.append(box);
    const automatic=document.createElement('textarea');automatic.spellcheck=false;automatic.placeholder='Digite ou edite as considerações finais';automatic.oninput=()=>saveCombinedConclusion(automatic);automatic.dataset.bpfConclusionAutomatic='';automatic.setAttribute('aria-label','Considerações finais / avaliação do risco');automatic.style.cssText='position:absolute;z-index:2;box-sizing:border-box;padding:1px 3px;resize:none;overflow:hidden;scrollbar-width:none;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #9ab4c6;background:#f5fafc;color:black;font:1.344cqw/1.12 Arial,sans-serif';page.append(automatic);
+   const formatted=document.createElement('div');formatted.dataset.bpfConclusionFormatted='';formatted.tabIndex=0;formatted.setAttribute('role','button');formatted.setAttribute('aria-label','Editar considerações finais');formatted.style.cssText=automatic.style.cssText+';z-index:3;cursor:text';
+   const edit=()=>{formatted.hidden=true;automatic.style.visibility='visible';automatic.focus();};formatted.onclick=edit;formatted.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();edit();}};
+   automatic.onfocus=()=>{formatted.hidden=true;automatic.style.visibility='visible';};automatic.onblur=()=>{update();};page.append(formatted);
  }
  const checks=selected();
  box.querySelector('[data-bpf-conclusion-infractions]').textContent='Inserir infrações sanitárias ('+savedInfractions().length+')';
  for(const input of box.querySelectorAll('input[data-bpf-conclusion-index]'))input.checked=checks[Number(input.dataset.bpfConclusionIndex)];
  box.hidden=false;
  const automatic=page.querySelector('[data-bpf-conclusion-automatic]');
+ const formatted=page.querySelector('[data-bpf-conclusion-formatted]');
  const editor=page.querySelector('textarea[data-field="'+CSS.escape(field)+'"]');
  const manual=withoutSentences(state()?.[field]),auto=automaticText(),body=include(manual);
  if(automatic&&automatic.bpfModel!==body){
@@ -223,9 +227,16 @@ function update(){
   const [left,bottom,right,top]=widget.rect,[width,height]=widget.size;
   editor.style.display='none';
   Object.assign(automatic.style,{left:100*left/width+'%',width:100*(right-left)/width+'%',top:100*(height-top)/height+'%',height:100*(top-bottom)/height+'%'});
+  if(formatted)Object.assign(formatted.style,{left:automatic.style.left,width:automatic.style.width,top:automatic.style.top,height:automatic.style.height});
  }
  if(page.classList.contains('active')){
   fitConclusionText(automatic,page.clientWidth);
+  if(formatted){
+   const editing=document.activeElement===automatic;formatted.hidden=editing;automatic.style.visibility=editing?'visible':'hidden';
+   if(formatted.bpfText!==body){const fragment=document.createDocumentFragment();body.split('\n').forEach((line,i)=>{if(i)fragment.append(document.createTextNode('\n'));const prefix=line.match(/^Considerando\b/i)?.[0];if(prefix){const strong=document.createElement('strong');strong.textContent=prefix;fragment.append(strong,document.createTextNode(line.slice(prefix.length)));}else fragment.append(document.createTextNode(line));});formatted.replaceChildren(fragment);formatted.dataset.empty=body?'0':'1';formatted.bpfText=body;}
+   let size=parseFloat(automatic.style.fontSize)||8*page.clientWidth/595.32;formatted.style.fontSize=size+'px';
+   while(!editing&&size>.35*page.clientWidth/595.32&&formatted.scrollHeight>formatted.clientHeight+1){size=Math.max(.35*page.clientWidth/595.32,size-.25);formatted.style.fontSize=size+'px';}
+  }
   const margin=(box.offsetHeight+12)+'px';
   if(page.style.marginTop!==margin)page.style.marginTop=margin;
  }
@@ -237,7 +248,7 @@ function install(){
   if(!queued){queued=true;requestAnimationFrame(()=>{queued=false;update()});}
  }
  const style=document.createElement('style');
- style.textContent='@media print{[data-bpf-conclusao-nc]{display:none!important}[data-bpf-conclusion-automatic]{display:block!important}.page{margin-top:0!important}}';
+ style.textContent='@media screen{[data-bpf-conclusion-formatted][data-empty="1"]::before{content:"Toque para editar as considerações finais";color:#607d8b}}@media print{[data-bpf-conclusao-nc],[data-bpf-conclusion-automatic]{display:none!important}[data-bpf-conclusion-formatted]{display:block!important;visibility:visible!important}.page{margin-top:0!important}}';
  document.head.append(style);
  new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
  window.addEventListener('resize',schedule);

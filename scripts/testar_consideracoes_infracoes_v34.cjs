@@ -5,8 +5,9 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
 (async()=>{
  for(const file of ['equipe.html','individual.html']){
   const html=await (await worker.attach(new Response(fs.readFileSync(file,'utf8')),new URL('https://example.test/guias/'+file))).text();
-  assert(html.includes('bpf-conclusao-nc.js?v=20261123-v34-consideracoes-infracoes'));
-  assert(/bpf-paginacao-observacoes\.js\?v=20261123-v(?:34-consideracoes-infracoes|35-perigos-matriz)/.test(html));
+  assert(/bpf-conclusao-nc\.js\?v=20261123-v(?:34-consideracoes-infracoes|36-formatacao-consideracoes)/.test(html));
+  assert(/bpf-paginacao-observacoes\.js\?v=20261123-v(?:34-consideracoes-infracoes|35-perigos-matriz|36-formatacao-consideracoes)/.test(html));
+  assert(html.includes('await bpfPrintConclusionFormatted(pdf,form,observationFont,bpfSourcePages,window.bpfConclusaoNC)'));
   const scope={name:'Teste',col:1,phrases:['PCC','PPRO','PC','POP','PPR'].map(appcc=>({appcc,text:'Requisito '+appcc}))},row={code:'4.1.3',scopes:[scope]};
   const field='CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1',values={'OBS 1':'Observação manual',[field]:'Medida manual',BPF_PCCDestination:'18',BPF_NCConsiderandosVisibility:JSON.stringify(['PCC','PPRO','PC','POP','PPR']),BPF_FinalConsideracoesClasses:'["PCC"]'};
   scope.phrases.forEach((_,i)=>values['Teste_'+i]='0');
@@ -39,4 +40,10 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
  const parts=pg.bpfPaginateFinalConsiderations(long,first,next,font,font);assert(parts.length>1);assert(parts[0].startsWith('Considerando'));assert.equal(parts.join(''),long);
  const measure=pg.bpfFinalConsiderationMeasure(first,font,font);assert(measure.height(parts[0])<=measure.capacity);assert(measure.height(parts[0])>=measure.capacity-24);
  console.log('Matriz OK: primeira página preenchida, continuação sequencial e conteúdo íntegro');
+ vm.runInContext(extract(pagination,'function bpfObservationParagraphs(','function bpfObservationBreak('),pg);
+ const nc=pg.bpfObservationParagraphs('Item 4.1.3 · F1 (PCC) — Captação\nConstatação · Exemplo.\nConsiderando o perigo de teste.','nc');
+ assert.equal(nc[0].title,true);assert.equal(nc[1].label,'Constatação');assert.equal(nc[2].label,'Considerando');
+ const formatted=pg.bpfFinalConsiderationRows('Considerando o perigo de teste.');assert.equal(formatted[0].label,'Considerando');assert.equal(formatted[0].title,false);
+ const bold={widthOfTextAtSize:(s,n)=>s.length*n*.65};const wrapped=pg.bpfFinalWrappedRows(formatted[0].line,false,formatted[0].label,font,bold,100,8);assert.equal(wrapped[0].lead,'Considerando');
+ console.log('Formatação OK: títulos detalhados e prefixos em negrito, corpo em fonte normal');
 })().catch(e=>{console.error(e);process.exitCode=1;});
