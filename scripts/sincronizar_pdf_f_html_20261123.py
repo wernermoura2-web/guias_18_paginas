@@ -18,7 +18,7 @@ import fitz
 from playwright.sync_api import sync_playwright
 
 ROOT=Path(__file__).resolve().parents[1]
-REVISION='bpf-frases-f-paridade-html-20261123-v29'
+REVISION='bpf-frases-f-paridade-html-20261123-v30'
 TARGETS=(
   'impressao/Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf',
   'impressao/Guia_Editavel_em_Branco.pdf',
