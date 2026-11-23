@@ -99,9 +99,13 @@ def patch_pdf(data:bytes,overlays,reference:str):
         for spec,raw in overlays:
             page=pdf[spec['page']]
             width,height=page.rect.width,page.rect.height
-            assert abs(width-spec['expectedWidth'])<2 and abs(height-spec['expectedHeight'])<2,(
-                reference,'geometria diferente do HTML',spec['page']+1,
-                (width,height),(spec['expectedWidth'],spec['expectedHeight']))
+            sx=width/spec['expectedWidth']
+            sy=height/spec['expectedHeight']
+            # Os guias em branco usam a pagina longa 4.6 em escala A4:
+            # 595 x 918 pt -> aproximadamente 545 x 841 pt. A escala e uniforme.
+            assert .7<sx<1.2 and abs(sx-sy)<.004,(
+                reference,'geometria/escala incompativel com o HTML',spec['page']+1,
+                (width,height),(spec['expectedWidth'],spec['expectedHeight']),sx,sy)
             rect=fitz.Rect(width*spec['left'],height*spec['top'],
                  width*(spec['left']+spec['width']),height*(spec['top']+spec['height']))
             assert rect.is_valid and not rect.is_empty
