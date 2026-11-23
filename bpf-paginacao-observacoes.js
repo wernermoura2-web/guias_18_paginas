@@ -577,6 +577,11 @@ function bpfNCListVisibility(){
  try{const saved=JSON.parse(values.BPF_NCListVisibility||'null');if(Array.isArray(saved))return saved;}catch(e){}
  return [];
 }
+const bpfNCConsiderandosClasses=['PCC','PPRO','PC','POP','PPR'];
+function bpfNCConsiderandosVisibility(){
+ try{const saved=JSON.parse(values.BPF_NCConsiderandosVisibility||'null');if(Array.isArray(saved))return bpfNCConsiderandosClasses.filter(code=>saved.includes(code));}catch(e){}
+ return [];
+}
 const quantKey='BPF_ConclusaoQuantitativoProcessos';
 function quantitativeSelected(){return values[quantKey]!=='Off';}
 function processQuantitative(){
@@ -640,6 +645,14 @@ function bpfMountNCView(){
   }
   const button=document.createElement('button');button.type='button';button.textContent='Visualizar NC';button.style.cssText='padding:3px 6px;border:1px solid #8cb4c9;border-radius:4px;background:white;color:#12324a;font:inherit;cursor:pointer';
   button.onclick=bpfOpenNCView;bar.append(button);
+  const reasons=document.createElement('div');reasons.style.cssText='flex-basis:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap';
+  const reasonTitle=document.createElement('span');reasonTitle.textContent='Mostrar considerações detalhadas:';reasons.append(reasonTitle);
+  for(const code of bpfNCConsiderandosClasses){
+   const input=document.createElement('input');input.type='checkbox';input.dataset.ncConsiderando=code;input.style.margin='0 3px 0 0';
+   const label=document.createElement('label');label.style.cssText='white-space:nowrap;cursor:pointer';label.append(input,document.createTextNode(code));
+   input.onchange=()=>{values.BPF_NCConsiderandosVisibility=JSON.stringify([...reasons.querySelectorAll('[data-nc-considerando]:checked')].map(el=>el.dataset.ncConsiderando));bpfSyncNCLists();changed();sync();};reasons.append(label);
+  }
+  bar.append(reasons);
   const quantLabel=document.createElement('label');quantLabel.style.cssText='flex-basis:100%;display:flex;align-items:center;gap:5px;cursor:pointer';
   const quantInput=document.createElement('input');quantInput.type='checkbox';quantInput.dataset.ncQuantitative='';quantInput.style.margin='0';
   quantInput.onchange=()=>{values[quantKey]=quantInput.checked?'On':'Off';bpfSyncNCLists();changed();sync();};
@@ -651,4 +664,6 @@ function bpfMountNCView(){
  const selected=bpfNCListVisibility();
  bar.querySelector('[data-nc-quantitative]').checked=quantitativeSelected();
  for(const input of bar.querySelectorAll('input[data-nc-list]'))input.checked=selected.includes(input.dataset.ncList);
+ const considerations=bpfNCConsiderandosVisibility();
+ for(const input of bar.querySelectorAll('input[data-nc-considerando]'))input.checked=considerations.includes(input.dataset.ncConsiderando);
 }

@@ -7,6 +7,61 @@ const sentences=[
  'A Vigilância Sanitária Municipal adotará as medidas sanitárias cabíveis.'
 ];
 const selectionKey='BPF_ConclusaoFrasesSelecionadas';
+const infractionsKey='BPF_ConclusaoInfracoes';
+// Exemplos de enquadramento, não imputações automáticas. Fonte: art. 10 da
+// Lei Federal 6.437/1977 (texto consolidado, Presidência da República).
+const infractions=[
+ ['I','Funcionamento irregular do estabelecimento','o funcionamento do estabelecimento sem licenciamento sanitário exigível'],
+ ['IV','Uso de insumo ou saneante vencido','a utilização de produto com prazo de validade expirado, em desacordo com a legislação sanitária aplicável'],
+ ['IV','Descumprimento das Boas Práticas — RDC nº 173/2006','o descumprimento dos requisitos de Boas Práticas da RDC nº 173/2006 constatado na inspeção'],
+ ['IV','Presença de vetores e pragas urbanas','a presença de vetores ou pragas urbanas nas áreas de produção, em desacordo com os requisitos de controle integrado de pragas aplicáveis'],
+ ['IV','Descumprimento dos padrões microbiológicos — IN Anvisa nº 161/2022','o descumprimento dos padrões microbiológicos aplicáveis previstos na IN Anvisa nº 161/2022, em conjunto com a RDC nº 724/2022, conforme resultado analítico identificado'],
+ ['IV','Produção, armazenamento ou uso irregular','a produção ou o armazenamento de produtos em desacordo com a legislação sanitária aplicável'],
+ ['X','Obstrução da fiscalização','o impedimento ou a dificuldade imposta à ação da fiscalização sanitária'],
+ ['XV','Rotulagem irregular','a rotulagem de alimentos ou bebidas em desacordo com as normas sanitárias aplicáveis'],
+ ['XVI','Alteração de processo sem autorização exigível','a alteração do processo de fabricação sujeito a controle sanitário sem a autorização exigível'],
+ ['XVII','Reaproveitamento indevido de embalagens','o reaproveitamento de embalagens de saneantes para acondicionar alimentos ou bebidas'],
+ ['XVIII','Produto vencido exposto à venda ou entregue ao consumo','a exposição à venda ou entrega ao consumo de produto com prazo de validade expirado'],
+ ['XVIII','Alteração indevida de validade','a aposição de nova data de validade após o vencimento do produto'],
+ ['XIX','Falta de assistência de responsável técnico habilitado','a industrialização de produtos de interesse sanitário sem assistência de responsável técnico legalmente habilitado'],
+ ['XXVIII','Fraude, falsificação ou adulteração','a fraude, falsificação ou adulteração de produto de interesse sanitário'],
+ ['XXIX','Descumprimento de outra norma sanitária','o descumprimento de norma legal ou regulamentar de proteção à saúde, devidamente identificada'],
+ ['XXIX','Descumprimento da Portaria SUVISA nº 4.325/2025','o descumprimento de exigência sanitária prevista na Portaria SUVISA nº 4.325/2025, conforme o dispositivo e o fato especificados'],
+ ['XXXI','Descumprimento de Termo de Interdição','o descumprimento do Termo de Interdição expedido pela autoridade sanitária competente'],
+ ['XXXI','Descumprimento de Termo de Intimação','o descumprimento da determinação sanitária constante do Termo de Intimação'],
+ ['XXXI','Descumprimento de ato da autoridade sanitária','o descumprimento de determinação formal da autoridade sanitária competente']
+];
+function savedInfractions(){try{const a=JSON.parse(state()?.[infractionsKey]||'[]');return Array.isArray(a)?a.filter(x=>x&&typeof x.fact==='string'&&infractions.some(p=>p[0]===x.inciso)):[];}catch(e){return [];}}
+function infractionSentence(record){
+ const fact=record.fact.trim().replace(/[.;]+$/,'');
+ const item=String(record.item||'').trim(),basis=String(record.basis||'').trim();
+ const references=[item?'item '+item+' do Guia de Avaliação de Risco':'',basis].filter(Boolean);
+ return 'Considerando '+fact+(references.length?' ('+references.join('; ')+')':'')+', o que caracteriza a infração sanitária prevista no artigo 10, inciso '+record.inciso+', da Lei Federal nº 6.437/1977.';
+}
+function openInfractions(){
+ const dialog=document.createElement('dialog');dialog.style.cssText='width:min(94vw,780px);max-height:88vh;overflow:auto;padding:18px;border:1px solid #177693;border-radius:8px;color:#12324a;box-sizing:border-box;font:15px/1.4 Arial,sans-serif';
+ const heading=document.createElement('h2');heading.textContent='Infrações sanitárias — Lei Federal nº 6.437/1977';
+ const instruction=document.createElement('p');instruction.textContent='Marque as infrações constatadas, descreva os fatos e confira o enquadramento. A interdição é medida sanitária, não uma infração por si só; o seu descumprimento pode se enquadrar no inciso XXXI. Para uso de insumo vencido, avalie o inciso IV; para exposição à venda ou entrega ao consumo de produto vencido, o XVIII. Nenhuma infração é incluída automaticamente.';
+ const source=document.createElement('a');source.href='https://www.planalto.gov.br/ccivil_03/leis/l6437.htm';source.target='_blank';source.rel='noopener noreferrer';source.textContent='Consultar texto oficial da lei';
+ const label=(caption,control)=>{const el=document.createElement('label');el.style.cssText='display:block;margin:10px 0';control.style.cssText='display:block;width:100%;box-sizing:border-box;padding:6px;margin-top:4px;font:inherit';el.append(document.createTextNode(caption),control);return el;};
+ const list=document.createElement('div');const chosen=new Map();
+ for(const r of savedInfractions()){const index=typeof r.preset==='string'?infractions.findIndex(p=>p[1]===r.preset):Number.isInteger(r.preset)?r.preset:infractions.findIndex(p=>p[0]===r.inciso);if(infractions[index])chosen.set(index,{...r,preset:infractions[index][1]});}
+ const button=(caption,click)=>{const el=document.createElement('button');el.type='button';el.textContent=caption;el.style.cssText='padding:6px 10px;margin:4px;border:1px solid #a9c6d8;border-radius:5px;background:#eef6fa;color:#12324a;font:inherit;cursor:pointer';el.onclick=click;return el;};
+ for(const [i,p] of infractions.entries()){
+  const row=document.createElement('fieldset');row.style.cssText='margin:8px 0;padding:10px;border:1px solid #b8ccd7;border-radius:5px';
+  const check=document.createElement('input');check.type='checkbox';check.checked=chosen.has(i);const caption=document.createElement('label');caption.style.cssText='display:flex;gap:8px;align-items:flex-start;font-weight:bold';caption.append(check,document.createTextNode(p[1]+' — inciso '+p[0]));row.append(caption);
+  const details=document.createElement('div');details.hidden=!check.checked;
+  const fact=document.createElement('textarea');fact.rows=3;fact.value=chosen.get(i)?.fact||p[2];
+  const item=document.createElement('input');item.placeholder='Ex.: 4.5.3';item.value=chosen.get(i)?.item||'';
+  const basis=document.createElement('input');basis.placeholder='Norma, dispositivo ou número do termo';basis.value=chosen.get(i)?.basis||'';
+  const preview=document.createElement('p');preview.style.cssText='white-space:pre-wrap;padding:8px;background:#eef6fa;border:1px solid #b8ccd7';
+  const refresh=()=>{const r={preset:p[1],inciso:p[0],fact:fact.value.trim(),item:item.value.trim(),basis:basis.value.trim()};if(check.checked)chosen.set(i,r);else chosen.delete(i);details.hidden=!check.checked;preview.textContent=r.fact?infractionSentence(r):'Descreva o fato constatado.';};
+  check.onchange=refresh;for(const el of [fact,item,basis])el.oninput=refresh;
+  details.append(label('Fato constatado (edite o exemplo)',fact),label('Item do guia, quando aplicável',item),label('Norma, dispositivo ou número do termo',basis),preview);row.append(details);list.append(row);refresh();
+ }
+ const commit=button('Salvar e incluir no relatório',()=>{const data=state();if(!data)return;const records=[...chosen.values()];if(records.some(r=>!r.fact)){alert('Descreva todos os fatos selecionados.');return;}data[infractionsKey]=JSON.stringify(records);data[summaryKey]='Off';if(typeof changed==='function')changed();if(typeof sync==='function')sync();update();dialog.close();});
+ dialog.append(heading,instruction,source,list,button('Cancelar',()=>dialog.close()),commit);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+}
 const state=()=>window.Guia?.values||(typeof values==='object'?values:null);
 function hasNC(){
  const data=state();
@@ -67,7 +122,7 @@ function processSummary(){
 }
 
 function summarySelected(){
- return state()?.[summaryKey]!=='Off';
+ return false;
 }
 
 function selected(){
@@ -79,13 +134,13 @@ function withoutSentences(text){
  return String(text||'').split(/\r?\n/).filter(line=>!sentences.includes(line.trim())).join('\n').trimEnd();
 }
 const autoEditKey='BPF_ConclusaoTextosEditados';
-function autoMask(){return [summarySelected(),...selected()].map(x=>x?'1':'0').join('');}
+function autoMask(){return 'v34:'+selected().map(x=>x?'1':'0').join('')+':'+JSON.stringify(savedInfractions());}
 function autoEdits(){try{return JSON.parse(state()?.[autoEditKey]||'{}')||{};}catch(e){return {};}}
 function automaticText(){
  const edits=autoEdits(),mask=autoMask();
  if(typeof edits[mask]==='string')return edits[mask];
  const checks=selected();
- return [(summarySelected()?processSummary().join('\n'):''),...sentences.filter((_,i)=>checks[i])].filter(Boolean).join('\n\n');
+ return [...savedInfractions().map(infractionSentence),...sentences.filter((_,i)=>checks[i])].filter(Boolean).join('\n\n');
 }
 function include(text){return [withoutSentences(text),automaticText()].filter(Boolean).join('\n\n');}
 function fitConclusionText(element,pageWidth){
@@ -148,24 +203,14 @@ function update(){
     };
     label.append(input,document.createTextNode(sentence));box.append(label);
    });
-   const summaryLabel=document.createElement('label');summaryLabel.style.cssText='display:flex;align-items:center;gap:5px;margin:3px 0;cursor:pointer';
-   const summaryInput=document.createElement('input');summaryInput.type='checkbox';summaryInput.dataset.bpfConclusionSummary='';summaryInput.style.margin='0';
-   summaryInput.onchange=()=>{const data=state();if(!data)return;data[summaryKey]=summaryInput.checked?'On':'Off';if(typeof changed==='function')changed();};
-   summaryLabel.append(summaryInput,document.createTextNode('Incluir síntese por processo'));
-   const preview=document.createElement('button');preview.type='button';preview.textContent='Ver síntese';preview.style.cssText='margin-left:auto;padding:2px 6px;border:1px solid #a9c6d8;border-radius:4px;background:white;color:#12324a;cursor:pointer;font:inherit';
-   preview.onclick=()=>{
-    const dialog=document.createElement('dialog');dialog.style.cssText='width:min(92vw,760px);max-height:85vh;overflow:auto;padding:20px;border:1px solid #177693;border-radius:8px;color:#12324a';
-    const heading=document.createElement('h2');heading.textContent='Síntese geral dos processos';
-    const body=document.createElement('div');body.style.cssText='white-space:pre-wrap;line-height:1.5';body.textContent=processSummary().join('\n\n')||'Nenhum processo avaliado.';
-    const close=document.createElement('button');close.type='button';close.textContent='Fechar';close.onclick=()=>dialog.close();
-    dialog.append(heading,body,close);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
-   };
-   const restore=document.createElement('button');restore.type='button';restore.textContent='Restaurar texto automático';restore.style.cssText=preview.style.cssText;restore.style.marginLeft='0';restore.onclick=()=>{const data=state();if(!data)return;const edits=autoEdits();delete edits[autoMask()];data[autoEditKey]=JSON.stringify(edits);if(typeof changed==='function')changed();update();};summaryLabel.append(preview,restore);box.prepend(summaryLabel);
+   const infractionBar=document.createElement('div');infractionBar.style.cssText='display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin:3px 0';
+   const preview=document.createElement('button');preview.type='button';preview.dataset.bpfConclusionInfractions='';preview.style.cssText='padding:2px 6px;border:1px solid #a9c6d8;border-radius:4px;background:white;color:#12324a;cursor:pointer;font:inherit';preview.onclick=openInfractions;
+   const restore=document.createElement('button');restore.type='button';restore.textContent='Restaurar texto automático';restore.style.cssText=preview.style.cssText;restore.onclick=()=>{const data=state();if(!data)return;const edits=autoEdits();delete edits[autoMask()];data[autoEditKey]=JSON.stringify(edits);if(typeof changed==='function')changed();update();};infractionBar.append(preview,restore);box.prepend(infractionBar);
    page.append(box);
    const automatic=document.createElement('textarea');automatic.spellcheck=false;automatic.placeholder='Digite ou edite as considerações finais';automatic.oninput=()=>saveCombinedConclusion(automatic);automatic.dataset.bpfConclusionAutomatic='';automatic.setAttribute('aria-label','Considerações finais / avaliação do risco');automatic.style.cssText='position:absolute;z-index:2;box-sizing:border-box;padding:1px 3px;resize:none;overflow:hidden;scrollbar-width:none;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #9ab4c6;background:#f5fafc;color:black;font:1.344cqw/1.12 Arial,sans-serif';page.append(automatic);
  }
  const checks=selected();
- box.querySelector('[data-bpf-conclusion-summary]').checked=summarySelected();
+ box.querySelector('[data-bpf-conclusion-infractions]').textContent='Inserir infrações sanitárias ('+savedInfractions().length+')';
  for(const input of box.querySelectorAll('input[data-bpf-conclusion-index]'))input.checked=checks[Number(input.dataset.bpfConclusionIndex)];
  box.hidden=false;
  const automatic=page.querySelector('[data-bpf-conclusion-automatic]');
@@ -185,7 +230,7 @@ function update(){
   if(page.style.marginTop!==margin)page.style.marginTop=margin;
  }
 }
-window.bpfConclusaoNC={hasNC,include,field};
+window.bpfConclusaoNC={hasNC,include,field,infractionSentence,savedInfractions};
 function install(){
  let queued=false;
  function schedule(){

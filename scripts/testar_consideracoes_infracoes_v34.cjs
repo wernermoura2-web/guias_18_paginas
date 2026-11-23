@@ -1,0 +1,32 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const worker={self:{location:{href:'https://example.test/guias/sw-guia18.js'},addEventListener(){}},URL,Response,Headers};
+vm.createContext(worker);vm.runInContext(fs.readFileSync('sw-guia18.js','utf8')+'\nthis.attach=attachFriendlyMenu;',worker);
+const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>=0&&j>i,a);return s.slice(i,j);};
+(async()=>{
+ for(const file of ['equipe.html','individual.html']){
+  const html=await (await worker.attach(new Response(fs.readFileSync(file,'utf8')),new URL('https://example.test/guias/'+file))).text();
+  assert(html.includes('bpf-conclusao-nc.js?v=20261123-v34-consideracoes-infracoes'));
+  assert(html.includes('bpf-paginacao-observacoes.js?v=20261123-v34-consideracoes-infracoes'));
+  const scope={name:'Teste',col:1,phrases:['PCC','PPRO','PC','POP','PPR'].map(appcc=>({appcc,text:'Requisito '+appcc}))},row={code:'4.1.3',scopes:[scope]};
+  const field='CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1',values={'OBS 1':'Observação manual',[field]:'Medida manual',BPF_PCCDestination:'18',BPF_NCConsiderandosVisibility:JSON.stringify(['PCC','PPRO','PC','POP','PPR']),BPF_FinalConsideracoesClasses:'["PCC"]'};
+  scope.phrases.forEach((_,i)=>values['Teste_'+i]='0');
+  const ctx={values,BPF_PHRASES:[{page:0,rows:[row]}],titles:['Captação'],bpfPhraseName:(s,i)=>s.name+'_'+i,bpfNoteName:(s,i)=>'note_'+i,bpfScopeLabel:()=> 'Captação 1',bpfPanels:()=>[],bpfGroupedF2:()=>null,bpfReservoirIsLinked:()=>false,bpfGeneralFullText:()=>values['OBS 1'],bpfGeneralFlow:t=>values['OBS 1']=t,bpfNCListVisibility:()=>[],quantitativeSelected:()=>false};
+  vm.createContext(ctx);
+  const pagination=fs.readFileSync('bpf-paginacao-observacoes.js','utf8');
+  const sections=[extract(html,'var PCCFinal=(function(){','const BPF_FINAL_CLASSES='),extract(html,'const BPF_FINAL_CLASSES=','const BPF_NC_CONTINUATION='),extract(html,'const BPF_NC_DEFINITIONS=','</script>'),extract(pagination,'const bpfNCConsiderandosClasses=','const quantKey=')];
+  vm.runInContext(sections.join('\n'),ctx);
+  const legacy='Considerando o Item 4.1.3 — antigo\nTexto anterior';values[field]+='\n\n'+legacy;values.BPF_PCCGenerated=JSON.stringify({'0_Teste_0':legacy});
+  ctx.bpfSyncPCCFinal();const observation=values['OBS 1'];
+  assert(observation.includes('Observação manual'));assert(values[field].includes('Medida manual'));assert(!values[field].includes(legacy));assert(values[field].includes('Considerando o perigo de contaminação'));
+  for(const c of ['PCC','PPRO','PC','POP','PPR'])assert(observation.includes('Item 4.1.3 · F'+(scope.phrases.findIndex(p=>p.appcc===c)+1)+' ('+c+')'));
+  assert(!observation.includes('Considerando o Item'));
+  assert(observation.indexOf('PPRO —')<observation.indexOf('F2 (PPRO)')&&observation.indexOf('F2 (PPRO)')<observation.indexOf('PC —'));
+  ctx.bpfSyncPCCFinal();assert.equal(values['OBS 1'],observation);values.BPF_NCConsiderandosVisibility='["PC"]';ctx.bpfSyncNCLists();assert(values['OBS 1'].includes('F3 (PC)'));assert(!values['OBS 1'].includes('F2 (PPRO)'));assert(values['OBS 1'].includes('PPRO —'));
+  console.log(file,'OK: migração, classificação, opção mostrar/ocultar, perigo e sincronização');
+ }
+ const values={BPF_ConclusaoSinteseProcessos:'On',BPF_ConclusaoInfracoes:JSON.stringify([{inciso:'IV',fact:'o descumprimento da IN nº 161/2022',item:'4.10.3'},{inciso:'XXXI',fact:'o descumprimento do Termo de Intimação'}])};
+ const window={Guia:{values}},document={readyState:'loading',addEventListener(){}};
+ vm.runInNewContext(fs.readFileSync('bpf-conclusao-nc.js','utf8'),{window,document});
+ const conclusion=window.bpfConclusaoNC.include('Texto manual');assert(conclusion.includes('Texto manual'));assert(conclusion.includes('artigo 10, inciso IV'));assert(conclusion.includes('artigo 10, inciso XXXI'));assert(!conclusion.includes('Foram identificadas as seguintes inadequações'));
+ console.log('Conclusão OK: infrações selecionadas, citações e texto manual preservados');
+})().catch(e=>{console.error(e);process.exitCode=1;});
