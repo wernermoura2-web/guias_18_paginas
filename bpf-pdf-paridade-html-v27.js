@@ -29,13 +29,17 @@ function readSource(index){
 }
 async function synchronize(pdf){
  const pages=pdf.getPages();
- if(pages.length<19)return;
+ if(pages.length<9)return;
  const hasGuide=pdf.__bpfPrintReport===true || !!pdf.getForm().getFieldMaybe('BPF_State');
  if(!hasGuide)return;
  if(pdf.__bpfParidadeF28)return;
+ const order=(typeof bpfPageOrder!=='undefined'&&Array.isArray(bpfPageOrder))?bpfPageOrder:null;
  const sources=indices.map(index=>({index,...readSource(index)}));
  for(const source of sources){
-  const sheet=pages[source.index];
+  const targetIndex=order?order.indexOf(source.index):source.index;
+  // Paginas omitidas no relatorio nao recebem camadas sobre outras paginas.
+  if(targetIndex<0)continue;
+  const sheet=pages[targetIndex];
   if(!sheet)throw Error('Pagina ausente no PDF: '+(source.index+1));
   const w=sheet.getWidth(),h=sheet.getHeight();
   const image=await pdf.embedPng(source.src);
@@ -43,7 +47,7 @@ async function synchronize(pdf){
   if(box.y<0||box.x<0||box.x+box.width>w+.2||box.y+box.height>h+.2)
    throw Error('Posicao da camada F fora da pagina '+(source.index+1));
   sheet.drawImage(image,box);
-  status.aplicadas.push({pagina:source.index+1,largura:Math.round(box.width),altura:Math.round(box.height)});
+  status.aplicadas.push({pagina:source.index+1,paginaNoPDF:targetIndex+1,largura:Math.round(box.width),altura:Math.round(box.height)});
  }
  pdf.__bpfParidadeF28=true;
 }
