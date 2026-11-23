@@ -6,7 +6,7 @@
 if(window.__bpfPdfHtmlParidadeV27)return;
 window.__bpfPdfHtmlParidadeV27=true;
 const indices=[6,7,8];
-const status={version:'20261123-v28',aplicadas:[],erro:null};
+const status={version:'20261123-v32-observacoes',aplicadas:[],erro:null};
 window.BPFPdfHtmlParidade=status;
 function readSource(index){
  const img=document.querySelector('#pages > .page[data-page="'+index+'"] img.bpf-legal-f-screen');
@@ -25,7 +25,27 @@ function readSource(index){
   if(!Number.isFinite(n)||n<0||n>100)throw Error('Medida invalida: '+key);
   return n/100;
  };
- return {src:source,left:measure('left'),top:measure('top'),width:measure('width'),height:measure('height')};
+ const left=measure('left'),top=measure('top'),width=measure('width'),height=measure('height');
+ // A imagem original inclui uma faixa branca abaixo do cabeçalho de OBS.
+ // No HTML ela fica atrás do textarea; no PDF, save() é chamado depois de
+ // desenhar as observações. Recortar essa faixa evita ocultar as primeiras linhas.
+ const geometry=window.bpfLegalFGeometry?.[index];
+ const obsTop=geometry?.obs?.top/geometry?.height;
+ const lastRow=geometry?.rows?.at(-1)?.bottom/geometry?.height;
+ if(!Number.isFinite(obsTop)||!Number.isFinite(lastRow)||obsTop<=lastRow||obsTop<=top||obsTop>=top+height)
+  throw Error('Limite das observacoes invalido na pagina '+(index+1));
+ const iw=img.naturalWidth,ih=img.naturalHeight;
+ if(!iw||!ih||!img.complete)throw Error('Imagem das frases F ainda nao carregada.');
+ // Arredondar para baixo: nenhum pixel da camada deve entrar na área do texto.
+ const cropHeight=Math.floor((obsTop-top)*ih/height);
+ if(cropHeight<1||cropHeight>=ih||top+height*cropHeight/ih<=lastRow)
+  throw Error('Recorte das frases F invalido na pagina '+(index+1));
+ const canvas=document.createElement('canvas');
+ canvas.width=iw;canvas.height=cropHeight;
+ const ctx=canvas.getContext('2d');
+ if(!ctx)throw Error('Nao foi possivel recortar a camada F.');
+ ctx.drawImage(img,0,0,iw,cropHeight,0,0,iw,cropHeight);
+ return {src:canvas.toDataURL('image/png'),left,top,width,height:height*cropHeight/ih,obsTop};
 }
 async function synchronize(pdf){
  const pages=pdf.getPages();
@@ -46,6 +66,8 @@ async function synchronize(pdf){
   const box={x:w*source.left,y:h*(1-source.top-source.height),width:w*source.width,height:h*source.height};
   if(box.y<0||box.x<0||box.x+box.width>w+.2||box.y+box.height>h+.2)
    throw Error('Posicao da camada F fora da pagina '+(source.index+1));
+  if(source.top+source.height>source.obsTop+1e-9)
+   throw Error('Camada F invadindo observacoes na pagina '+(source.index+1));
   sheet.drawImage(image,box);
   status.aplicadas.push({pagina:source.index+1,paginaNoPDF:targetIndex+1,largura:Math.round(box.width),altura:Math.round(box.height)});
  }
