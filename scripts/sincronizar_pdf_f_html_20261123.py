@@ -18,7 +18,7 @@ import fitz
 from playwright.sync_api import sync_playwright
 
 ROOT=Path(__file__).resolve().parents[1]
-REVISION='bpf-frases-f-paridade-html-20261123-v27'
+REVISION='bpf-frases-f-paridade-html-20261123-v28'
 TARGETS=(
   'impressao/Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf',
   'impressao/Guia_Editavel_em_Branco.pdf',
@@ -45,7 +45,7 @@ def capture():
                     return [6,7,8].every(i=>{
                        const img=d.querySelector('#pages > .page[data-page="'+i+'"] img.bpf-legal-f-screen');
                        if(!img||!img.complete||!img.src.startsWith('data:image/png;base64,'))return false;
-                       return i===6?img.dataset.bpfRecepcaoF22==='1':img.dataset.bpfImagemF21==='1';
+                       return img.dataset.bpfFPadraoV28==='1';
                     });
                 }""")
             page.wait_for_function("""() => {
@@ -54,10 +54,19 @@ def capture():
                 return [6,7,8].every(i=>{
                     const img=d.querySelector('#pages > .page[data-page="'+i+'"] img.bpf-legal-f-screen');
                     return !!img&&img.complete&&img.src.startsWith('data:image/png;base64,')
-                      &&(i===6?img.dataset.bpfRecepcaoF22==='1':img.dataset.bpfImagemF21==='1');
+                      &&img.dataset.bpfFPadraoV28==='1';
                 });
             }""",timeout=80000)
             assert ready(), 'Camadas F incompletas'
+            diagnostics=page.evaluate("""() => {
+                const d=document.querySelector('#formulario').contentDocument;
+                const diag=d.defaultView.BPFFrasesPadraoCompletoV28;
+                return {pages:diag?.pages||[],rows:diag?.rows||[],errors:diag?.errors||[]};
+            }""")
+            assert not diagnostics['errors'],('Erros na tipografia',diagnostics['errors'])
+            assert sorted(set(diagnostics['pages']))==[7,8,9],diagnostics['pages']
+            assert len(diagnostics['rows'])>=22,('Frases desenhadas',len(diagnostics['rows']))
+            print('Padronizacao completa:',len(diagnostics['rows']),'itens F verificados')
             entries=page.evaluate("""() => {
                 const d=document.querySelector('#formulario').contentDocument;
                 return [6,7,8].map(i=>{
