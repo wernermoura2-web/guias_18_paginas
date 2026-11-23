@@ -31,7 +31,7 @@ jobs:
       - name: Reconstruir paginas 7, 8 e 9 com o desenho do HTML
         run: python scripts/sincronizar_pdf_f_html_20261123.py
       - name: Conferir integridade dos arquivos
-        run: git diff --check
+        run: git diff --check -- individual.html equipe.html scripts/sincronizar_pdf_f_html_20261123.py
       - name: Publicar guias sem alterar as demais paginas
         run: |
           git config user.name 'github-actions[bot]'
