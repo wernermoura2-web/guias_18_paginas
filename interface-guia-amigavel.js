@@ -148,19 +148,17 @@
     const status=document.querySelector('#status');
     button.disabled=true;
     try{
-      const response=await fetch('./impressao/'+fileName+'.b64?v=20261121-f-consolidado-v13',{cache:'reload'});
+      // O Guia em Branco já está sincronizado com as páginas do HTML.
+      // Não usar o antigo .pdf.b64, nem repintar parcialmente as células F.
+      const isBlankGuide=fileName==='Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf';
+      const source='./impressao/'+fileName+(isBlankGuide?'':'.b64')+'?v=20261123-f-padrao-v28';
+      const response=await fetch(source,{cache:'reload'});
       if(!response.ok)throw new Error('PDF indisponível');
-      const bytes=Uint8Array.from(atob((await response.text()).trim()), char=>char.charCodeAt(0));
+      const bytes=isBlankGuide
+        ?new Uint8Array(await response.arrayBuffer())
+        :Uint8Array.from(atob((await response.text()).trim()),char=>char.charCodeAt(0));
       if(String.fromCharCode(...bytes.subarray(0,5))!=='%PDF-')throw new Error('PDF inválido');
-      let pdfBytes=bytes;
-      // O guia em branco usa a mesma matriz de frases do HTML. Recriar
-      // as quatro células alteradas antes de oferecer o PDF ao inspetor.
-      if(fileName==='Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'){
-        if(!window.PDFLib||!window.bpfPrintCorrectedPhrases)throw new Error('Corretor das frases F indisponível.');
-        const pdf=await PDFLib.PDFDocument.load(bytes);
-        await window.bpfPrintCorrectedPhrases(pdf,pdf.getPages().slice());
-        pdfBytes=await pdf.save();
-      }
+      const pdfBytes=bytes;
       const url=URL.createObjectURL(new Blob([pdfBytes],{type:'application/pdf'}));
       const link=document.createElement('a');
       link.href=url;
@@ -214,7 +212,7 @@
   );
   const editableGuide=document.createElement('a');
   editableGuide.className='bpf-ui-action bpf-ui-editable-guide';
-  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261121-f-consolidado-v13';
+  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261123-f-padrao-v28';
   editableGuide.download='Guia_Editavel_em_Branco.pdf';
   editableGuide.textContent='Guia Editável em Branco (sem as frases)';
   editableGuide.addEventListener('click',async event=>{
