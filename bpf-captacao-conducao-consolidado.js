@@ -208,8 +208,8 @@ const bpfWaterCheck = (() => {
    check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
    check('nao-reservatorio','Não',{noOnly:true,scopeAnswer:true}),
     sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina do reservatório',{yesOnly:true,frequencyOptional:true}),
-   check('recirculacao','Procedimento adotado para recirculação do sanitizante no tanque',{yesOnly:true,details:'recirculation'}),
-   ...controls('do reservatório')
+   check('recirculacao','Adota procedimento para recirculação do sanitizante no tanque?',{details:'recirculation',yesLabel:'Adota procedimento para recirculação do sanitizante no tanque',noLabel:'Não adota procedimento para recirculação do sanitizante no tanque'}),
+   ...controls('do reservatório',true)
   ]}},
   '4.3.4':{
    0:{simple:true,checks:[
@@ -252,6 +252,7 @@ const bpfWaterCheck = (() => {
     check('inspecao-visual','Realiza e registra a inspeção visual interna das tubulações?',{yesLabel:'Realiza e registra a inspeção visual interna das tubulações',noLabel:'Não realiza e não registra a inspeção visual interna das tubulações'})
    ]},
    1:{singleNo:true,checks:[
+    check('revisao-higienizacao','Realiza a revisão das operações de higienização e adota as medidas corretivas necessárias?',{informationOnly:true,informationQuestion:true,yesLabel:'Realiza a revisão das operações de higienização e adota as medidas corretivas necessárias',noLabel:'Não realiza a revisão das operações de higienização e/ou não adota as medidas corretivas necessárias'}),
     check('reparo','Possui registro de reparo das tubulações e conexões?',{noLabel:'Não possui registro de reparo das tubulações e conexões'}),
     check('passivacao','Possui registros de passivação e/ou desincrustação?',{noLabel:'Não possui registros de passivação e/ou desincrustação'}),
     check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),

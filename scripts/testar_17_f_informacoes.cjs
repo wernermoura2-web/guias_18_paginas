@@ -82,6 +82,17 @@ for(const [code,ids] of Object.entries(target)){
     select.value='';select.onchange();assert(select.parentElement.textContent.includes(caption+'?'));
    }
   }
+  if(id===1&&['4.2.8','4.3.4','4.3.5'].includes(code)){
+   const questions=code==='4.3.5'?['Adota procedimento para recirculação do sanitizante no tanque','Existe telemetria em linha']:['Realiza a revisão das operações de higienização e adota as medidas corretivas necessárias'];
+   for(const question of questions){
+    const select=walk(info[0]).find(n=>n.tagName==='SELECT'&&n.parentElement.children[0]?.textContent.includes(question));
+    assert(select,code+' '+question);
+    select.value='';select.onchange();assert(select.parentElement.children[0].textContent.endsWith('?'));
+    select.value='1';select.onchange();assert(!select.parentElement.children[0].textContent.endsWith('?'));
+    select.value='0';select.onchange();assert(select.parentElement.children[0].textContent.startsWith('Não '));
+    assert(JSON.stringify(water.report(page,row,panel,values)).includes(select.parentElement.children[0].textContent));
+   }
+  }
   if(id===1||id===2){
    for(const select of walk(info[0]).filter(n=>n.tagName==='SELECT'&&n.children.some(o=>o.value==='1'&&o.textContent==='Sim')&&n.children.some(o=>o.value==='0'&&o.textContent==='Não'))){
     const previous=select.value;select.value='';select.onchange();
