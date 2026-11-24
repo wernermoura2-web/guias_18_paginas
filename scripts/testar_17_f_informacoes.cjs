@@ -40,6 +40,21 @@ for(const [code,ids] of Object.entries(target)){
    select.value='0';select.onchange();assert(line.textContent.includes('Não existe telemetria em linha'));assert(detail.hidden,'tipos fechados com Não');
    assert.equal(values[panel.entries[0].name],'0','telemetria informativa não altera a avaliação');
   }
+  if(code==='4.2.2'&&id===0){
+   const selects=walk(info[0]).filter(n=>n.tagName==='SELECT'&&n.children.some(o=>o.value==='1')&&n.children.some(o=>o.value==='0'));
+   assert.equal(selects.length,2,'certificado e declaração reunidos; nota fiscal separada');
+   const [cert,nf]=selects;
+   cert.value='';cert.onchange();assert(cert.parentElement.textContent.includes('Foi apresentado certificado / declaração de grau alimentício?'));
+   nf.value='';nf.onchange();assert(nf.parentElement.textContent.includes('Foi apresentada a nota fiscal com as especificações do material?'));
+   cert.value='0';cert.onchange();assert(cert.parentElement.textContent.includes('Não foi apresentado certificado / declaração de grau alimentício'));
+   nf.value='1';nf.onchange();assert(nf.parentElement.textContent.includes('Foi apresentada a nota fiscal com as especificações do material'));
+   const key='BPF_LineInfo_'+page.page+'_4_2_2_F1';
+   values[key]=JSON.stringify({certificado:{answer:'0'},declaracao:{answer:'1'},'nota-fiscal':{answer:'0'}});
+   const rebuilt=new Node('fieldset');water.render(rebuilt,page,row,panel);
+   const migrated=walk(rebuilt).filter(n=>n.tagName==='SELECT'&&n.children.some(o=>o.value==='1')&&n.children.some(o=>o.value==='0'));
+   assert.equal(migrated[0].value,'1','declaração apresentada conserva resposta positiva');
+   assert.equal(migrated[1].value,'0','nota fiscal conserva resposta anterior');
+  }
   if(code!=='4.3.3'){water.apply(row,row.scopes[0],values);assert.equal(values[panel.entries[0].name],'0','recalcular mantém a escolha');}
   const report=water.report(page,row,panel,values);assert(report.some(r=>r.answer==='0'),code+' F'+(id+1)+' relatório NC');
   console.log(code,'F'+(id+1),'OK',radios.length,'seletores e uma seção comum');

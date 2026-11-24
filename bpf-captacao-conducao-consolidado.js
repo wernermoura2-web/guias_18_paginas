@@ -149,9 +149,8 @@ const bpfWaterCheck = (() => {
    0:{separateInformation:true,informationHeading:'Outras observações',checks:[
     check('sim-conducao','Sim',{yesOnly:true,scopeAnswer:true}),
     check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
-    yes('certificado','Certificado de grau alimentício'),
-    yes('declaracao','Declaração de grau alimentício'),
-    yes('nota-fiscal','Nota Fiscal do material')
+    check('certificado-declaracao','Foi apresentado certificado / declaração de grau alimentício?',{keepLabel:true,informationQuestion:true,yesLabel:'Foi apresentado certificado / declaração de grau alimentício',noLabel:'Não foi apresentado certificado / declaração de grau alimentício'}),
+    check('nota-fiscal','Foi apresentada a nota fiscal com as especificações do material?',{keepLabel:true,informationQuestion:true})
    ]},
    1:{all:true,checks:[
     check('vazamento','Tubulação e/ou conexões sem vazamento',{noLabel:"Tubulação e/ou conexões com vazamento"}),
@@ -333,10 +332,18 @@ const bpfWaterCheck = (() => {
  function capsTransportRoute(scope,data){
   try{const state=JSON.parse(data[key({name:bpfPhraseName(scope,0)})]||'null');return ['direto','silo'].includes(state?.route)?state.route:'';}catch(_){return '';}
  }
+ function mergeConductionDocuments(state){
+  if(!state||Object.hasOwn(state,'certificado-declaracao'))return state;
+  const a=state.certificado?.answer,b=state.declaracao?.answer;
+  if(a==='1'||b==='1')state['certificado-declaracao']={answer:'1'};
+  else if(a==='0'&&b==='0')state['certificado-declaracao']={answer:'0'};
+  return state;
+ }
  const read = (entry,data) => {
   try {
    const name=key(entry);
    let state=JSON.parse(data[name]||'null');
+   if(entry.index===0&&getConductionCheckEntry(entry))state=mergeConductionDocuments(state);
    if(entry.index===0&&entry.scope.phrases[0]?.revision==='limpezaDesinfeccaoRetornaveis'){
     return state?.limpezaDesinfeccaoRetornaveis?state:migrateReturnableWash(entry,state,data);
    }
@@ -475,7 +482,7 @@ const bpfWaterCheck = (() => {
  const isInformation=(panel,criterion)=>criterion.informationOnly||(panel.separateInformation&&!criterion.scopeAnswer);
  const informationQuestions=new Set([
   'filtro','registro-filtro','pop-registros','telemetria','residuo','microbiologia','atp','fluorescente',
-  'certificado','declaracao','nota-fiscal','pop-com-historico','escotilha-teto',
+  'certificado','declaracao','certificado-declaracao','nota-fiscal','pop-com-historico','escotilha-teto',
   'uso-imediato','ar-sopro-filtrado','analise-ar-comprimido','transporte-ar-filtrado',
   'concentracao','bicos-pressao','escoamento','telemetria-concentracao'
  ]);
@@ -1249,6 +1256,7 @@ const bpfWaterCheck = (() => {
   const addGate=state=>{if(row.code==='4.6.3')state.bpfAnyRinseYes=panel.entries.some(entry=>data[entry.name]==='1');return state;};
   if(raw){try{
    const state=addGate(JSON.parse(raw)||{}),conflicts=[];
+   if(row.code==='4.2.2'&&panel.id===0)mergeConductionDocuments(state);
    if(compactWater(row,panel.id))for(const c of get(row,panel.id).checks.filter(c=>isInformation(get(row,panel.id),c))){
     if(answered(c,state))continue;
     const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&answered(c,v)).map(v=>JSON.stringify(v[c.id]));
