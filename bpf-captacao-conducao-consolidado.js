@@ -224,9 +224,8 @@ const bpfWaterCheck = (() => {
    0:{separateInformation:true,checks:[
     check('sim-reservatorio','Sim',{yesOnly:true,scopeAnswer:true}),
     check('nao-reservatorio','Não',{noOnly:true,scopeAnswer:true}),
-    yes('certificado','Certificado de grau alimentício'),
-    yes('declaracao','Declaração de grau alimentício'),
-    yes('nota-fiscal','Nota Fiscal do material')
+    check('certificado-declaracao','Foi apresentado certificado / declaração de grau alimentício?',{keepLabel:true,informationQuestion:true,yesLabel:'Foi apresentado certificado / declaração de grau alimentício',noLabel:'Não foi apresentado certificado / declaração de grau alimentício'}),
+    check('nota-fiscal','Foi apresentada a nota fiscal com as especificações do material?',{keepLabel:true,informationQuestion:true})
    ]},
    1:{all:true,checks:[
     check('integro','Reservatório sem avarias e/ou liso e íntegro',{noLabel:'Reservatório com avarias e/ou sem superfície lisa e íntegra'}),
@@ -237,7 +236,7 @@ const bpfWaterCheck = (() => {
    2:{all:true,checks:[
     check('sem-vazamento','Reservatório e/ou conexões sem vazamento',{noLabel:'Reservatório e/ou conexões com vazamento'}),
     check('escotilha-parede','Reservatório com escotilha na parede para acesso interno',{noLabel:'Reservatório sem escotilha na parede para acesso interno'}),
-    check('escotilha-teto','Reservatório com escotilha de vidro no teto para inspeção visual',{yesOnly:true,informationOnly:true,confirmationOnly:true})
+    check('escotilha-teto','O reservatório possui escotilha de vidro no teto para inspeção visual?',{informationOnly:true,informationQuestion:true,keepLabel:true,yesLabel:'Reservatório com escotilha de vidro no teto para inspeção visual',noLabel:'Reservatório sem escotilha de vidro no teto para inspeção visual'})
    ]}
   },
   '4.2.7':{1:{separateInformation:true,checks:[
@@ -343,7 +342,7 @@ const bpfWaterCheck = (() => {
   try {
    const name=key(entry);
    let state=JSON.parse(data[name]||'null');
-   if(entry.index===0&&getConductionCheckEntry(entry))state=mergeConductionDocuments(state);
+   if(entry.index===0&&(getConductionCheckEntry(entry)||reservoirStructureEntry(entry)))state=mergeConductionDocuments(state);
    if(entry.index===0&&entry.scope.phrases[0]?.revision==='limpezaDesinfeccaoRetornaveis'){
     return state?.limpezaDesinfeccaoRetornaveis?state:migrateReturnableWash(entry,state,data);
    }
@@ -1259,7 +1258,7 @@ const bpfWaterCheck = (() => {
   const addGate=state=>{if(row.code==='4.6.3')state.bpfAnyRinseYes=panel.entries.some(entry=>data[entry.name]==='1');return state;};
   if(raw){try{
    const state=addGate(JSON.parse(raw)||{}),conflicts=[];
-   if(row.code==='4.2.2'&&panel.id===0)mergeConductionDocuments(state);
+   if(['4.2.2','4.3.2'].includes(row.code)&&panel.id===0)mergeConductionDocuments(state);
    if(compactWater(row,panel.id))for(const c of get(row,panel.id).checks.filter(c=>isInformation(get(row,panel.id),c))){
     if(answered(c,state))continue;
     const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&answered(c,v)).map(v=>JSON.stringify(v[c.id]));
