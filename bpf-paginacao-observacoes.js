@@ -634,6 +634,33 @@ function bpfNCConsiderandosVisibility(){
  try{const saved=JSON.parse(values.BPF_NCConsiderandosVisibility||'null');if(Array.isArray(saved))return bpfNCConsiderandosClasses.filter(code=>saved.includes(code));}catch(e){}
  return [];
 }
+function bpfOpenNCCondensation(){
+ const groups=bpfNCDetalhesCatalogo(),settings=bpfFinalRead('BPF_NCDetalhesFormato',{}),edits=bpfFinalRead('BPF_NCDetalhesEdicoes',{}),hidden=new Set(bpfFinalRead('BPF_NCDetalhesOcultos',[]));
+ const dialog=document.createElement('dialog');dialog.style.cssText='width:min(94vw,780px);max-height:88vh;overflow:auto;padding:16px;box-sizing:border-box;border:1px solid #177693;border-radius:8px;background:white;color:#12324a;font:15px/1.4 Arial,sans-serif';
+ const heading=document.createElement('h2');heading.textContent='Condensar descrições de não conformidades';
+ const help=document.createElement('p');help.textContent='Escolha quais itens deseja condensar. As unidades e evidências distintas serão mantidas. Edite a descrição se necessário; o texto revisado será preservado. Apague o texto inteiro para retirá-lo e use Recolocar para restaurar a sugestão.';
+ const button=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:7px 10px;margin:4px;border:1px solid #a9c6d8;border-radius:5px;background:#eef6fa;color:#12324a;font:inherit';b.onclick=fn;return b;};
+ dialog.append(heading,help);
+ const renderers=[];
+ for(const group of groups){
+  const box=document.createElement('fieldset');box.style.cssText='margin:10px 0;padding:10px;border:1px solid #b8ccd7;border-radius:5px';
+  const legend=document.createElement('legend');legend.textContent='Item '+group.code+' · F'+(group.index+1)+' ('+group.category+')';box.append(legend);
+  const groupId='grupo:'+group.key,check=document.createElement('input');check.type='checkbox';check.checked=!!settings[group.key];check.disabled=group.entries.length<2;
+  const label=document.createElement('label');label.append(check,document.createTextNode(' Condensar '+group.entries.length+' constatação(ões)'));box.append(label);
+  const body=document.createElement('div');box.append(body);let pending=[];
+  const capture=()=>{for(const {id,area,base} of pending){const value=area.value.trim();if(value===base)continue;if(!value){hidden.add(id);delete edits[id];}else{hidden.delete(id);edits[id]=value;}}};
+  const render=()=>{
+   body.replaceChildren();pending=[];
+   const grouped=!!settings[group.key]&&group.entries.length>1;
+   const records=grouped||typeof edits[groupId]==='string'? [{id:groupId,text:bpfNCCondensar(group,group.entries.map(e=>({...e,text:edits[e.id]||e.text})))}]:group.entries;
+   for(const record of records){const area=document.createElement('textarea');area.rows=5;area.style.cssText='display:block;width:100%;box-sizing:border-box;margin:6px 0;padding:6px;font:inherit';area.setAttribute('aria-label','Descrição da não conformidade');const base=hidden.has(record.id)?'':edits[record.id]||record.text;area.value=base;pending.push({id:record.id,area,base});body.append(area,button('Recolocar sugestão',()=>{hidden.delete(record.id);delete edits[record.id];area.value=record.text;pending.find(p=>p.id===record.id).base=record.text;}));}
+  };
+  check.onchange=()=>{capture();settings[group.key]=check.checked;render();};renderers.push(capture);render();dialog.append(box);
+ }
+ if(!groups.length){const p=document.createElement('p');p.textContent='Nenhuma não conformidade registrada.';dialog.append(p);}
+ const actions=document.createElement('div');actions.style.cssText='position:sticky;bottom:0;background:white;padding:6px 0';
+ actions.append(button('Salvar',()=>{renderers.forEach(fn=>fn());values.BPF_NCDetalhesFormato=JSON.stringify(settings);values.BPF_NCDetalhesEdicoes=JSON.stringify(edits);values.BPF_NCDetalhesOcultos=JSON.stringify([...hidden]);bpfSyncNCLists();changed();sync();dialog.close();}),button('Cancelar',()=>dialog.close()));dialog.append(actions);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+}
 const quantKey='BPF_ConclusaoQuantitativoProcessos';
 function quantitativeSelected(){return values[quantKey]!=='Off';}
 function processQuantitative(){
@@ -705,6 +732,7 @@ function bpfMountNCView(){
    input.onchange=()=>{values.BPF_NCConsiderandosVisibility=JSON.stringify([...reasons.querySelectorAll('[data-nc-considerando]:checked')].map(el=>el.dataset.ncConsiderando));bpfSyncNCLists();changed();sync();};reasons.append(label);
   }
   bar.append(reasons);
+  const condense=document.createElement('button');condense.type='button';condense.textContent='Condensar / editar descrições';condense.style.cssText=button.style.cssText;condense.onclick=bpfOpenNCCondensation;reasons.append(condense);
   const quantLabel=document.createElement('label');quantLabel.style.cssText='flex-basis:100%;display:flex;align-items:center;gap:5px;cursor:pointer';
   const quantInput=document.createElement('input');quantInput.type='checkbox';quantInput.dataset.ncQuantitative='';quantInput.style.margin='0';
   quantInput.onchange=()=>{values[quantKey]=quantInput.checked?'On':'Off';bpfSyncNCLists();changed();sync();};

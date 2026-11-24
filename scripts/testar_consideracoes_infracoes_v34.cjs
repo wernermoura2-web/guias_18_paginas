@@ -6,7 +6,7 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
  for(const file of ['equipe.html','individual.html']){
   const html=await (await worker.attach(new Response(fs.readFileSync(file,'utf8')),new URL('https://example.test/guias/'+file))).text();
   assert(/bpf-conclusao-nc\.js\?v=20261123-v(?:34-consideracoes-infracoes|36-formatacao-consideracoes)/.test(html));
-  assert(html.includes('bpf-paginacao-observacoes.js?v=20261124-v40-espacamento-considerandos'));
+  assert(html.includes('bpf-paginacao-observacoes.js?v=20261124-v41-condensar-nc'));
   assert(html.includes('await bpfPrintConclusionFormatted(pdf,form,observationFont,bpfSourcePages,window.bpfConclusaoNC)'));
   const scope={name:'Teste',col:1,phrases:['PCC','PPRO','PC','POP','PPR'].map(appcc=>({appcc,text:'Requisito '+appcc}))},row={code:'4.1.3',scopes:[scope]};
   const field='CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1',values={'OBS 1':'Observação manual',[field]:'Medida manual',BPF_PCCDestination:'18',BPF_NCConsiderandosVisibility:JSON.stringify(['PCC','PPRO','PC','POP','PPR']),BPF_FinalConsideracoesClasses:'["PCC"]'};
@@ -65,6 +65,11 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
   values.BPF_FinalConsideracoesProcessosOcultos='[]';ctx.bpfSyncPCCFinal();assert(JSON.parse(values.BPF_PCCGenerated)[id]);
   values.BPF_FinalConsideracoesClasses='[]';ctx.bpfSyncPCCFinal();assert(!JSON.parse(values.BPF_PCCGenerated)[id]);assert(JSON.parse(values.BPF_FinalConsideracoesCatalogo)[id]);
   assert(html.includes('Mostrar por processo')&&html.includes('BPF_FinalConsideracoesProcessosOcultos'));
+  const groups=ctx.bpfNCDetalhesCatalogo();const g={...groups[0],entries:[{id:'a',unit:'Captação 1',process:'4.1 Captação',text:'Item A\nConstatação · Problema comum.\nEvidência objetiva registrada · Registro A.\nRequisito legal avaliado · Requisito comum.'},{id:'b',unit:'Captação 2',process:'4.1 Captação',text:'Item B\nConstatação · Problema comum.\nEvidência objetiva registrada · Registro B.\nRequisito legal avaliado · Requisito comum.'},{id:'c',unit:'Captação 3',process:'4.1 Captação',text:'Item C\nConstatação · Problema comum.\nEvidência objetiva registrada · Registro B.\nRequisito legal avaliado · Requisito comum.'}]};
+  assert.equal(ctx.bpfNCDetalhesFormato(g,{}, {}, []).length,3);
+  const condensed=ctx.bpfNCDetalhesFormato(g,{[g.key]:true},{},[]);assert.equal(condensed.length,1);assert(condensed[0].text.includes('Captação 1, Captação 2, Captação 3'));assert.equal(condensed[0].text.split('Problema comum.').length,2);assert.equal(condensed[0].text.split('Registro B.').length,2);assert(condensed[0].text.includes('Registro A.'));
+  const gid='grupo:'+g.key;assert.equal(ctx.bpfNCDetalhesFormato(g,{}, {[gid]:'Texto revisado'},[])[0].text,'Texto revisado');assert.equal(ctx.bpfNCDetalhesFormato(g,{[g.key]:true},{},[gid]).length,0);assert.equal(ctx.bpfNCDetalhesFormato(g,{[g.key]:true},{},[]).length,1);
+  assert(pagination.includes('Condensar / editar descrições')&&pagination.includes('Recolocar sugestão'));
   const admin=vm.runInContext(`(()=>{const g=new Map();bpfAgruparPerigo(g,false,{code:'4.5.3'},{text:'Os produtos saneantes devem estar regularizados no órgão competente.'});return bpfPerigosConsolidados(g);})()`,ctx);
   assert(admin['perigo:recepcao-regularidade'].includes('regularização dos saneantes'));
   console.log(file,'OK: migração, classificação, opção mostrar/ocultar, perigo e sincronização');
