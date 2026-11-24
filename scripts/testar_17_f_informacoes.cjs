@@ -106,6 +106,17 @@ for(const [code,ids] of Object.entries(target)){
    assert(!info[0].textContent.includes('Possui POP referente às operações de higienização da canalização'));
    assert.equal(walk(info[0]).filter(n=>n.tagName==='SELECT').length,1);
   }
+  if(code==='4.3.4'&&id===0){
+   const selects=walk(info[0]).filter(n=>n.tagName==='SELECT');
+   assert.equal(selects.length,1,'apenas frequência, sem pergunta repetida');
+   assert(info[0].textContent.includes('Frequência da inspeção visual interna'));
+   assert(selects[0].disabled,'Não bloqueia frequência');
+   first.checked=true;first.onchange();assert(!selects[0].disabled);
+   selects[0].value='Mensal';selects[0].dispatchEvent({type:'change'});
+   assert(JSON.stringify(water.report(page,row,panel,values)).includes('Frequência da inspeção visual interna: Mensal'));
+   no.checked=true;no.onchange();assert(selects[0].disabled);
+   assert(!JSON.stringify(water.report(page,row,panel,values)).includes('Frequência da inspeção visual interna: Mensal'));
+  }
   if(code!=='4.3.3'){water.apply(row,row.scopes[0],values);assert.equal(values[panel.entries[0].name],'0','recalcular mantém a escolha');}
   const report=water.report(page,row,panel,values);assert(report.some(r=>r.answer==='0'),code+' F'+(id+1)+' relatório NC');
   console.log(code,'F'+(id+1),'OK',radios.length,'seletores e uma seção comum');

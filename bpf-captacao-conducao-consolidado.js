@@ -714,6 +714,10 @@ const bpfWaterCheck = (() => {
   guidance:'Selecione a frequência geral ou deixe em branco.',
   details:'inspection-frequency'
  };
+ const visualFrequencyEnabled=(panel,data)=>{
+  const answers=panel.entries.map(e=>data[e.name]);
+  return !answers.includes('0')||answers.includes('1');
+ };
  function visualInspectionState(page,scope,data){
   const row=page.rows.find(item=>item.code==='4.3.4');
   const related=row?.scopes.find(item=>item.col===scope.col);
@@ -1340,13 +1344,16 @@ const bpfWaterCheck = (() => {
   const joint=sharedLineInfo(row,panel)&&entries.length?sharedLineState(page,row,panel,data):null;
   const infoEnabled=conductionPopInfoEnabled(row,panel,data);
   const jointEntry=conductionF2(row,panel.id)?entries.find(e=>panelEnabled(row,e,data)):entries[0];
+  const frequencyOnly=row.code==='4.3.4'&&panel.id===0&&Boolean(joint);
+  const frequency=frequencyOnly&&visualFrequencyEnabled(panel,data)?joint.state['inspecao-visual']?.frequency:'';
   const jointRecords=joint&&jointEntry&&infoEnabled?records(row,jointEntry,data,joint.state):[];
-  if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length&&!capRoutes.length)return [];
+  if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length&&!capRoutes.length&&!frequency)return [];
   const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
   const information=[...mixing,...supplemental,...capRoutes];
-  if(row.code==='4.3.4'&&panel.id===0&&joint?.state?.['inspecao-visual']?.frequency&&!hasAnswer(joint.state['inspecao-visual'].answer))information.push(visualFrequency.label+': '+joint.state['inspecao-visual'].frequency);
+  if(frequency)information.push(visualFrequency.label+': '+frequency);
   for(const criterion of config.checks.filter(check=>isInformation(config,check))){
    if(!infoEnabled)continue;
+   if(frequencyOnly&&criterion.id==='inspecao-visual')continue;
    for(const answer of ['1','0']){
     const shared=joint&&!joint.conflicts.includes(criterion.id);
     if(shared){
@@ -1754,6 +1761,7 @@ const bpfWaterCheck = (() => {
      if(!values[entry.name])values[entry.scope.name]='Off';
     }
     refresh();
+    if(row.code==='4.3.4'&&panel.id===0)card.dispatchEvent(new Event('bpf-visual-refresh'));
     if(row.code==='4.6.3'&&joint)card.dispatchEvent(new Event('bpf-rinse-yes-refresh'));
     if(config.inline||(row.code==='4.2.9'&&panel.id===0))apply(row,entry.scope,values);
     if(row.code==='4.2.9'&&panel.id===0){
@@ -1851,6 +1859,16 @@ const bpfWaterCheck = (() => {
       if(['4.6.3','4.6.8'].includes(row.code))rows.push(()=>{group.hidden=!config.checks.some(c=>c.section===criterion.section&&Boolean(isInformation(config,c))===information&&active(c,state));});
      }
      (groups.get(criterion.section)||section).append(line);
+     if(information&&row.code==='4.3.4'&&panel.id===0&&criterion.id==='inspecao-visual'){
+      fields(line,criterion,item,save,rows);
+      const refreshFrequency=()=>{
+       const enabled=visualFrequencyEnabled(panel,values);
+       line.querySelectorAll('input,select,textarea').forEach(input=>{input.disabled=!enabled;});
+       section.style.opacity=enabled?'1':'.55';
+      };
+      rows.push(refreshFrequency);card.addEventListener('bpf-visual-refresh',refreshFrequency);
+      continue;
+     }
      if((criterion.details==='sanitizers'&&!criterion.explicitAnswer||criterion.informationList)&&answer==='1'){
       const title=element('strong',criterion.label);
       title.className='bpf-water-caption';
