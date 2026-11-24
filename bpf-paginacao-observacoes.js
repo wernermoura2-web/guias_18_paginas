@@ -640,8 +640,11 @@ function bpfNCCondensationEligible(groups,category=''){
 function bpfNCCondensationSet(groups,settings,checked,category=''){
  for(const group of bpfNCCondensationEligible(groups,category))settings[group.key]=checked;
 }
+function bpfNCCondensationVisible(groups,selected=bpfNCConsiderandosVisibility()){
+ return groups.filter(group=>selected.includes(group.category));
+}
 function bpfOpenNCCondensation(){
- const groups=bpfNCDetalhesCatalogo(),settings=bpfFinalRead('BPF_NCDetalhesFormato',{}),edits=bpfFinalRead('BPF_NCDetalhesEdicoes',{}),hidden=new Set(bpfFinalRead('BPF_NCDetalhesOcultos',[]));
+ const selected=bpfNCConsiderandosVisibility(),groups=bpfNCCondensationVisible(bpfNCDetalhesCatalogo(),selected),settings=bpfFinalRead('BPF_NCDetalhesFormato',{}),edits=bpfFinalRead('BPF_NCDetalhesEdicoes',{}),hidden=new Set(bpfFinalRead('BPF_NCDetalhesOcultos',[]));
  const dialog=document.createElement('dialog');dialog.style.cssText='width:min(94vw,780px);max-height:88vh;overflow:auto;padding:16px;box-sizing:border-box;border:1px solid #177693;border-radius:8px;background:white;color:#12324a;font:15px/1.4 Arial,sans-serif';
  const heading=document.createElement('h2');heading.textContent='Condensar descrições de não conformidades';
  const help=document.createElement('p');help.textContent='Escolha quais itens deseja condensar. As unidades e evidências distintas serão mantidas. Edite a descrição se necessário; o texto revisado será preservado. Apague o texto inteiro para retirá-lo e use Recolocar para restaurar a sugestão.';
@@ -651,7 +654,7 @@ function bpfOpenNCCondensation(){
  const bulk=document.createElement('fieldset');bulk.style.cssText='margin:8px 0;padding:10px;border:1px solid #b8ccd7;border-radius:5px';
  const bulkLegend=document.createElement('legend');bulkLegend.textContent='Condensar por classificação';bulkLegend.style.fontWeight='bold';bulk.append(bulkLegend);
  const refreshBulk=()=>{for(const {input,category} of bulkControls){const eligible=bpfNCCondensationEligible(groups,category),count=eligible.filter(g=>settings[g.key]).length;input.disabled=!eligible.length;input.checked=eligible.length>0&&count===eligible.length;input.indeterminate=count>0&&count<eligible.length;}};
- for(const category of ['',...bpfNCConsiderandosClasses]){
+ for(const category of ['',...selected]){
   const label=document.createElement('label');label.style.cssText='display:inline-flex;align-items:center;gap:4px;margin:5px 12px 5px 0;font-weight:bold';
   const input=document.createElement('input');input.type='checkbox';input.setAttribute('aria-label',category?'Condensar '+category:'Condensar todos os itens');label.append(input,document.createTextNode(category||'Todos os itens'));bulk.append(label);bulkControls.push({input,category});
   input.onchange=()=>{renderers.forEach(r=>r.capture());bpfNCCondensationSet(groups,settings,input.checked,category);renderers.forEach(r=>r.refresh());refreshBulk();};
@@ -685,7 +688,7 @@ function bpfOpenNCCondensation(){
   check.onchange=()=>{capture();settings[group.key]=check.checked;render();refreshBulk();};renderers.push({capture,refresh});section.items.push({mount});section.details.append(box);
  }
  refreshBulk();
- if(!groups.length){const p=document.createElement('p');p.textContent='Nenhuma não conformidade registrada.';dialog.append(p);}
+ if(!groups.length){const p=document.createElement('p');p.textContent=selected.length?'Nenhuma não conformidade nas classificações selecionadas.':'Marque uma classificação em Mostrar considerações detalhadas para editar suas descrições.';dialog.append(p);}
  const actions=document.createElement('div');actions.style.cssText='position:sticky;bottom:0;background:white;padding:6px 0';
  actions.append(button('Salvar',()=>{renderers.forEach(r=>r.capture());values.BPF_NCDetalhesFormato=JSON.stringify(settings);values.BPF_NCDetalhesEdicoes=JSON.stringify(edits);values.BPF_NCDetalhesOcultos=JSON.stringify([...hidden]);bpfSyncNCLists();changed();sync();dialog.close();}),button('Cancelar',()=>dialog.close()));dialog.append(actions);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
 }

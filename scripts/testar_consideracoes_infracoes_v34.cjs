@@ -6,7 +6,7 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
  for(const file of ['equipe.html','individual.html']){
   const html=await (await worker.attach(new Response(fs.readFileSync(file,'utf8')),new URL('https://example.test/guias/'+file))).text();
   assert(/bpf-conclusao-nc\.js\?v=20261123-v(?:34-consideracoes-infracoes|36-formatacao-consideracoes)/.test(html));
-  assert(html.includes('bpf-paginacao-observacoes.js?v=20261124-v42-condensar-classificacao'));
+  assert(html.includes('bpf-paginacao-observacoes.js?v=20261124-v43-filtro-edicao-nc'));
   assert(html.includes('await bpfPrintConclusionFormatted(pdf,form,observationFont,bpfSourcePages,window.bpfConclusaoNC)'));
   const scope={name:'Teste',col:1,phrases:['PCC','PPRO','PC','POP','PPR'].map(appcc=>({appcc,text:'Requisito '+appcc}))},row={code:'4.1.3',scopes:[scope]};
   const field='CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1',values={'OBS 1':'Observação manual',[field]:'Medida manual',BPF_PCCDestination:'18',BPF_NCConsiderandosVisibility:JSON.stringify(['PCC','PPRO','PC','POP','PPR']),BPF_FinalConsideracoesClasses:'["PCC"]'};
@@ -75,6 +75,9 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
   ctx.bpfNCCondensationSet(bulkGroups,bulkSettings,true);assert.equal(bulkSettings.b,true);assert.equal(bulkSettings.d,true);
   ctx.bpfNCCondensationSet(bulkGroups,bulkSettings,false,'PPRO');assert.equal(bulkSettings.b,false);assert.equal(bulkSettings.a,true);
   ctx.bpfNCCondensationSet(bulkGroups,bulkSettings,false);assert.equal(bulkSettings.a,false);assert.equal(bulkSettings.d,false);
+  const pccOnly=ctx.bpfNCCondensationVisible(bulkGroups,['PCC']);assert.equal(pccOnly.length,2);assert(pccOnly.every(g=>g.category==='PCC'));
+  bulkSettings.b=true;ctx.bpfNCCondensationSet(pccOnly,bulkSettings,true);assert.equal(bulkSettings.b,true);assert.equal(bulkSettings.d,false);
+  assert.equal(ctx.bpfNCCondensationVisible(bulkGroups,[]).length,0);
   assert(pagination.includes("createElement('details')")&&pagination.includes('Condensar por classificação'));
   const admin=vm.runInContext(`(()=>{const g=new Map();bpfAgruparPerigo(g,false,{code:'4.5.3'},{text:'Os produtos saneantes devem estar regularizados no órgão competente.'});return bpfPerigosConsolidados(g);})()`,ctx);
   assert(admin['perigo:recepcao-regularidade'].includes('regularização dos saneantes'));
