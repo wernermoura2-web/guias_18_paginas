@@ -6,7 +6,7 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
  for(const file of ['equipe.html','individual.html']){
   const html=await (await worker.attach(new Response(fs.readFileSync(file,'utf8')),new URL('https://example.test/guias/'+file))).text();
   assert(/bpf-conclusao-nc\.js\?v=20261123-v(?:34-consideracoes-infracoes|36-formatacao-consideracoes)/.test(html));
-  assert(html.includes('bpf-paginacao-observacoes.js?v=20261124-v43-filtro-edicao-nc'));
+  assert(html.includes('bpf-paginacao-observacoes.js?v=20261124-v44-totais-nc-condensadas'));
   assert(html.includes('await bpfPrintConclusionFormatted(pdf,form,observationFont,bpfSourcePages,window.bpfConclusaoNC)'));
   const scope={name:'Teste',col:1,phrases:['PCC','PPRO','PC','POP','PPR'].map(appcc=>({appcc,text:'Requisito '+appcc}))},row={code:'4.1.3',scopes:[scope]};
   const field='CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1',values={'OBS 1':'Observação manual',[field]:'Medida manual',BPF_PCCDestination:'18',BPF_NCConsiderandosVisibility:JSON.stringify(['PCC','PPRO','PC','POP','PPR']),BPF_FinalConsideracoesClasses:'["PCC"]'};
@@ -69,6 +69,10 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
   assert.equal(ctx.bpfNCDetalhesFormato(g,{}, {}, []).length,3);
   const condensed=ctx.bpfNCDetalhesFormato(g,{[g.key]:true},{},[]);assert.equal(condensed.length,1);assert(condensed[0].text.includes('Captação 1, Captação 2, Captação 3'));assert.equal(condensed[0].text.split('Problema comum.').length,2);assert.equal(condensed[0].text.split('Registro B.').length,2);assert(condensed[0].text.includes('Registro A.'));
   const gid='grupo:'+g.key;assert.equal(ctx.bpfNCDetalhesFormato(g,{}, {[gid]:'Texto revisado'},[])[0].text,'Texto revisado');assert.equal(ctx.bpfNCDetalhesFormato(g,{[g.key]:true},{},[gid]).length,0);assert.equal(ctx.bpfNCDetalhesFormato(g,{[g.key]:true},{},[]).length,1);
+  const six=[3,3,3,3,2,2].map((n,i)=>({...g,key:'pcc-'+i,category:'PCC',entries:Array.from({length:n},(_,j)=>({...g.entries[j%g.entries.length],id:'pcc-'+i+'-'+j}))}));
+  const beforeFormat=values.BPF_NCDetalhesFormato;values.BPF_NCDetalhesFormato='{}';assert.equal(ctx.bpfNCDetalhesTotais(six).PCC,16);
+  values.BPF_NCDetalhesFormato=JSON.stringify(Object.fromEntries(six.map(x=>[x.key,true])));assert.equal(ctx.bpfNCDetalhesTotais(six).PCC,6);
+  values.BPF_NCDetalhesFormato=JSON.stringify({[six[0].key]:true});assert.equal(ctx.bpfNCDetalhesTotais(six).PCC,14);if(beforeFormat===undefined)delete values.BPF_NCDetalhesFormato;else values.BPF_NCDetalhesFormato=beforeFormat;
   assert(pagination.includes('Condensar / editar descrições')&&pagination.includes('Recolocar sugestão'));
   const bulkGroups=[{key:'a',category:'PCC',entries:[1,2]},{key:'b',category:'PPRO',entries:[1,2]},{key:'c',category:'PCC',entries:[1]},{key:'d',category:'POP',entries:[1,2]}],bulkSettings={};
   ctx.bpfNCCondensationSet(bulkGroups,bulkSettings,true,'PCC');assert.equal(bulkSettings.a,true);assert.equal(bulkSettings.b,undefined);assert.equal(bulkSettings.c,undefined);
