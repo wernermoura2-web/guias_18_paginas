@@ -634,6 +634,12 @@ function bpfNCConsiderandosVisibility(){
  try{const saved=JSON.parse(values.BPF_NCConsiderandosVisibility||'null');if(Array.isArray(saved))return bpfNCConsiderandosClasses.filter(code=>saved.includes(code));}catch(e){}
  return [];
 }
+function bpfNCCondensationEligible(groups,category=''){
+ return groups.filter(group=>group.entries.length>1&&(!category||group.category===category));
+}
+function bpfNCCondensationSet(groups,settings,checked,category=''){
+ for(const group of bpfNCCondensationEligible(groups,category))settings[group.key]=checked;
+}
 function bpfOpenNCCondensation(){
  const groups=bpfNCDetalhesCatalogo(),settings=bpfFinalRead('BPF_NCDetalhesFormato',{}),edits=bpfFinalRead('BPF_NCDetalhesEdicoes',{}),hidden=new Set(bpfFinalRead('BPF_NCDetalhesOcultos',[]));
  const dialog=document.createElement('dialog');dialog.style.cssText='width:min(94vw,780px);max-height:88vh;overflow:auto;padding:16px;box-sizing:border-box;border:1px solid #177693;border-radius:8px;background:white;color:#12324a;font:15px/1.4 Arial,sans-serif';
@@ -641,8 +647,26 @@ function bpfOpenNCCondensation(){
  const help=document.createElement('p');help.textContent='Escolha quais itens deseja condensar. As unidades e evidências distintas serão mantidas. Edite a descrição se necessário; o texto revisado será preservado. Apague o texto inteiro para retirá-lo e use Recolocar para restaurar a sugestão.';
  const button=(label,fn)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='padding:7px 10px;margin:4px;border:1px solid #a9c6d8;border-radius:5px;background:#eef6fa;color:#12324a;font:inherit';b.onclick=fn;return b;};
  dialog.append(heading,help);
- const renderers=[];
+ const renderers=[],bulkControls=[],processSections=new Map();
+ const bulk=document.createElement('fieldset');bulk.style.cssText='margin:8px 0;padding:10px;border:1px solid #b8ccd7;border-radius:5px';
+ const bulkLegend=document.createElement('legend');bulkLegend.textContent='Condensar por classificação';bulkLegend.style.fontWeight='bold';bulk.append(bulkLegend);
+ const refreshBulk=()=>{for(const {input,category} of bulkControls){const eligible=bpfNCCondensationEligible(groups,category),count=eligible.filter(g=>settings[g.key]).length;input.disabled=!eligible.length;input.checked=eligible.length>0&&count===eligible.length;input.indeterminate=count>0&&count<eligible.length;}};
+ for(const category of ['',...bpfNCConsiderandosClasses]){
+  const label=document.createElement('label');label.style.cssText='display:inline-flex;align-items:center;gap:4px;margin:5px 12px 5px 0;font-weight:bold';
+  const input=document.createElement('input');input.type='checkbox';input.setAttribute('aria-label',category?'Condensar '+category:'Condensar todos os itens');label.append(input,document.createTextNode(category||'Todos os itens'));bulk.append(label);bulkControls.push({input,category});
+  input.onchange=()=>{renderers.forEach(r=>r.capture());bpfNCCondensationSet(groups,settings,input.checked,category);renderers.forEach(r=>r.refresh());refreshBulk();};
+ }
+ dialog.append(bulk);
+ const processNames={'4.1':'Captação','4.2':'Condução','4.3':'Reservatórios','4.5':'Recepção de insumos','4.6':'Higienização de embalagens e tampas','4.7':'Envase','4.10':'Controle de qualidade','4.11':'Responsabilidade e capacitação'};
  for(const group of groups){
+  const processCode=group.code.split('.').slice(0,2).join('.');
+  let section=processSections.get(processCode);
+  if(!section){
+   const details=document.createElement('details');details.style.cssText='margin:8px 0;border:1px solid #b8ccd7;border-radius:5px;background:#f5f9fb';
+   const summary=document.createElement('summary');summary.style.cssText='padding:10px;cursor:pointer;font-weight:bold';const count=groups.filter(g=>g.code.split('.').slice(0,2).join('.')===processCode).length;summary.textContent=processCode+' — '+(processNames[processCode]||group.entries[0]?.process||'Processo')+' ('+count+' '+(count===1?'item':'itens')+')';details.append(summary);
+   section={details,items:[]};processSections.set(processCode,section);dialog.append(details);
+   details.addEventListener('toggle',()=>{if(details.open)for(const item of section.items)item.mount();});
+  }
   const box=document.createElement('fieldset');box.style.cssText='margin:10px 0;padding:10px;border:1px solid #b8ccd7;border-radius:5px';
   const legend=document.createElement('legend');legend.textContent='Item '+group.code+' · F'+(group.index+1)+' ('+group.category+')';box.append(legend);
   const groupId='grupo:'+group.key,check=document.createElement('input');check.type='checkbox';check.checked=!!settings[group.key];check.disabled=group.entries.length<2;
@@ -655,11 +679,15 @@ function bpfOpenNCCondensation(){
    const records=grouped||typeof edits[groupId]==='string'? [{id:groupId,text:bpfNCCondensar(group,group.entries.map(e=>({...e,text:edits[e.id]||e.text})))}]:group.entries;
    for(const record of records){const area=document.createElement('textarea');area.rows=5;area.style.cssText='display:block;width:100%;box-sizing:border-box;margin:6px 0;padding:6px;font:inherit';area.setAttribute('aria-label','Descrição da não conformidade');const base=hidden.has(record.id)?'':edits[record.id]||record.text;area.value=base;pending.push({id:record.id,area,base});body.append(area,button('Recolocar sugestão',()=>{hidden.delete(record.id);delete edits[record.id];area.value=record.text;pending.find(p=>p.id===record.id).base=record.text;}));}
   };
-  check.onchange=()=>{capture();settings[group.key]=check.checked;render();};renderers.push(capture);render();dialog.append(box);
+  let mounted=false;
+  const mount=()=>{if(mounted)return;mounted=true;check.checked=!!settings[group.key];render();};
+  const refresh=()=>{check.checked=!!settings[group.key];if(mounted)render();};
+  check.onchange=()=>{capture();settings[group.key]=check.checked;render();refreshBulk();};renderers.push({capture,refresh});section.items.push({mount});section.details.append(box);
  }
+ refreshBulk();
  if(!groups.length){const p=document.createElement('p');p.textContent='Nenhuma não conformidade registrada.';dialog.append(p);}
  const actions=document.createElement('div');actions.style.cssText='position:sticky;bottom:0;background:white;padding:6px 0';
- actions.append(button('Salvar',()=>{renderers.forEach(fn=>fn());values.BPF_NCDetalhesFormato=JSON.stringify(settings);values.BPF_NCDetalhesEdicoes=JSON.stringify(edits);values.BPF_NCDetalhesOcultos=JSON.stringify([...hidden]);bpfSyncNCLists();changed();sync();dialog.close();}),button('Cancelar',()=>dialog.close()));dialog.append(actions);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+ actions.append(button('Salvar',()=>{renderers.forEach(r=>r.capture());values.BPF_NCDetalhesFormato=JSON.stringify(settings);values.BPF_NCDetalhesEdicoes=JSON.stringify(edits);values.BPF_NCDetalhesOcultos=JSON.stringify([...hidden]);bpfSyncNCLists();changed();sync();dialog.close();}),button('Cancelar',()=>dialog.close()));dialog.append(actions);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
 }
 const quantKey='BPF_ConclusaoQuantitativoProcessos';
 function quantitativeSelected(){return values[quantKey]!=='Off';}
