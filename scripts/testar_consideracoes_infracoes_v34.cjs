@@ -6,7 +6,7 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
  for(const file of ['equipe.html','individual.html']){
   const html=await (await worker.attach(new Response(fs.readFileSync(file,'utf8')),new URL('https://example.test/guias/'+file))).text();
   assert(/bpf-conclusao-nc\.js\?v=20261123-v(?:34-consideracoes-infracoes|36-formatacao-consideracoes)/.test(html));
-  assert(html.includes('bpf-paginacao-observacoes.js?v=20261124-v38-edicao-direta'));
+  assert(html.includes('bpf-paginacao-observacoes.js?v=20261124-v40-espacamento-considerandos'));
   assert(html.includes('await bpfPrintConclusionFormatted(pdf,form,observationFont,bpfSourcePages,window.bpfConclusaoNC)'));
   const scope={name:'Teste',col:1,phrases:['PCC','PPRO','PC','POP','PPR'].map(appcc=>({appcc,text:'Requisito '+appcc}))},row={code:'4.1.3',scopes:[scope]};
   const field='CONSIDERAÇÕES FINAIS  AVALIAÇÃO DE RISCORow1',values={'OBS 1':'Observação manual',[field]:'Medida manual',BPF_PCCDestination:'18',BPF_NCConsiderandosVisibility:JSON.stringify(['PCC','PPRO','PC','POP','PPR']),BPF_FinalConsideracoesClasses:'["PCC"]'};
@@ -80,6 +80,7 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
  const long='Considerando o perigo de teste, '+('descrição de referência e medidas registradas. '.repeat(230));
  const parts=pg.bpfPaginateFinalConsiderations(long,first,next,font,font);assert(parts.length>1);assert(parts[0].startsWith('Considerando'));assert.equal(parts.join(''),long);
  const measure=pg.bpfFinalConsiderationMeasure(first,font,font);assert(measure.height(parts[0])<=measure.capacity);assert(measure.height(parts[0])>=measure.capacity-24);
+ const single=measure.height('Considerando um exemplo.');const double=measure.height('Considerando um exemplo.\n\nConsiderando outro exemplo.');assert.equal(double-single*2,single/2,'intervalo entre parágrafos reduzido em 50%');
  console.log('Matriz OK: primeira página preenchida, continuação sequencial e conteúdo íntegro');
  vm.runInContext(extract(pagination,'function bpfObservationParagraphs(','function bpfObservationBreak('),pg);
  const nc=pg.bpfObservationParagraphs('Item 4.1.3 · F1 (PCC) — Captação\nConstatação · Exemplo.\nConsiderando o perigo de teste.','nc');

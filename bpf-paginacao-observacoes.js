@@ -7,6 +7,7 @@ const bpfFinalConsiderationsTitle='CONSIDERAÇÕES FINAIS / AVALIAÇÃO DE RISCO
 const bpfFinalConsiderationsSize=8;
 const bpfFinalConsiderationsLeading=1.5;
 const bpfFinalConsiderationsTitleGap=1;
+const bpfFinalConsiderationsParagraphGap=0.5;
 let bpfFinalConsiderationsFlow={full:null,parts:[],font:null};
 const bpfPdfObservationBlankLines=1;
 let bpfCQObservationFlow={full:null,parts:['']};
@@ -51,7 +52,7 @@ function bpfFinalConsiderationRows(text){
   const title=bpfIsFinalConsiderationTitle(line);
   if(!line.trim()&&bpfIsFinalConsiderationTitle(lines[index+1]||''))return [];
   const label=title?'':bpfConsiderationLabel(line);
-  return [{line,title,label,gap:title?bpfFinalConsiderationsTitleGap:0}];
+  return [{line,title,label,gap:title?bpfFinalConsiderationsTitleGap:0,scale:line.trim()?1:bpfFinalConsiderationsParagraphGap}];
  });
 }
 
@@ -75,8 +76,8 @@ function bpfFinalConsiderationMeasure(rect,font,bold){
   capacity:top-bottom-16-leading,
   height(text){
    if(!text.trim())return 0;
-   return bpfFinalConsiderationRows(text).reduce((height,{line,title,label,gap})=>
-    height+gap*size+Math.max(1,bpfFinalWrappedRows(line,title,label,font,bold,width,size).length)*leading,0);
+   return bpfFinalConsiderationRows(text).reduce((height,{line,title,label,gap,scale})=>
+    height+gap*size+Math.max(1,bpfFinalWrappedRows(line,title,label,font,bold,width,size).length)*leading*scale,0);
   }
  };
 }
@@ -157,7 +158,7 @@ function bpfObservationParagraphs(text,spacing){
 
 function bpfAppendNCObservationText(fragment,text,spacing='nc'){
  if(spacing==='final'){
-  for(const {line,title,label,gap} of bpfFinalConsiderationRows(text)){
+  for(const {line,title,label,gap,scale} of bpfFinalConsiderationRows(text)){
    const paragraph=document.createElement('div');
    if(label){
     const strong=document.createElement('strong');
@@ -165,6 +166,7 @@ function bpfAppendNCObservationText(fragment,text,spacing='nc'){
     paragraph.append(strong,document.createTextNode(line.slice(label.length)));
    }else paragraph.textContent=line||'\u00a0';
    paragraph.style.lineHeight=String(bpfFinalConsiderationsLeading);
+   if(!line.trim())paragraph.style.height=(bpfFinalConsiderationsLeading*scale)+'em';
    if(title){paragraph.style.fontWeight='bold';paragraph.style.paddingTop=gap+'em';}
    fragment.append(paragraph);
   }
@@ -312,7 +314,13 @@ function bpfRenderFinalConsiderationsText(el,text,offset=0){
  el.style.lineHeight=String(bpfFinalConsiderationsLeading);el.style.cursor='text';
  const fragment=document.createDocumentFragment();
  const generated=bpfFinalRead('BPF_PCCGenerated',{}),full=String(values[bpfFinalConsiderationsField]||'');
- for(const segment of bpfFinalInlineSegments(full,generated,offset,text.length)){
+ const segments=bpfFinalInlineSegments(full,generated,offset,text.length).flatMap(segment=>{
+  let at=0;return segment.text.split(/(\n[ \t]*\n)/).flatMap(part=>{const begin=at;at+=part.length;if(!part&&segment.text)return[];return [{...segment,text:part,start:segment.start+begin,end:segment.start+at,relative:segment.relative+begin}];});
+ });
+ for(const segment of segments){
+  if(/^\n[ \t]*\n$/.test(segment.text)){
+   const gap=document.createElement('span');gap.style.cssText='display:block;height:'+(bpfFinalConsiderationsLeading*bpfFinalConsiderationsParagraphGap)+'em';gap.setAttribute('aria-hidden','true');fragment.append(gap);continue;
+  }
   // Separadores permanecem visíveis, sem criar campos de edição vazios.
   if(!segment.id&&segment.text&&!segment.text.trim()){fragment.append(document.createTextNode(segment.text));continue;}
   const editor=document.createElement('span');editor.className='bpf-final-inline-edit';
@@ -492,7 +500,7 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
   const [x,,right,top]=rect,leading=size*(spacing==='final'?bpfFinalConsiderationsLeading:1.35);
   let y=top-7-size;
   const rows=spacing==='final'?bpfFinalConsiderationRows(content):bpfObservationParagraphs(content,spacing);
-  for(const {line,gap,definition,title,label} of rows){
+  for(const {line,gap,definition,title,label,scale=1} of rows){
    y-=gap*(spacing==='final'?size:leading);
    if(spacing==='nc'&&/^(?:NÃO CONFORMIDADES (?:CRÍTICAS|MAIORES|MENORES)\b|QUANTITATIVO DE NÃO CONFORMIDADES POR PROCESSO$)/.test(line))y-=.85*leading;
    const lineFont=title?bold:font;
@@ -502,9 +510,9 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
     const start=x+7;
     if(lead)page.drawText(lead,{x:start,y,size,font:bold,color:black});
     page.drawText(rest,{x:start+(lead?bold.widthOfTextAtSize(lead,size):0),y,size,font:lineFont,color:black});
-    y-=leading;
+    y-=leading*scale;
    }
-   if(!wrapped.length)y-=leading;
+   if(!wrapped.length)y-=leading*scale;
   }
  };
  let offset=0;
