@@ -55,7 +55,16 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
   values.BPF_FinalConsideracoesOcultas='[]';ctx.bpfSyncPCCFinal();assert.equal(values[field].split(suggestions[id]).length,2);assert(!values[field].includes(edited));
   full=values[field];const manual=ctx.bpfFinalInlineSegments(full,JSON.parse(values.BPF_PCCGenerated),full.indexOf('Medida manual'),'Medida manual'.length)[0];assert.equal(manual.id,null);assert(ctx.bpfCommitFinalInlineEdit(manual,'Medida manual revisada'));ctx.bpfSyncPCCFinal();assert(values[field].includes('Medida manual revisada'));
   assert(html.includes("['BPF_FinalConsideracoesClasses','BPF_FinalConsideracoesEdicoes','BPF_FinalConsideracoesOcultas','BPF_FinalConsideracoesTextos','BPF_FinalConsideracoesSugestoes'"));
-  assert(html.includes("if((bpfFinalRead('BPF_FinalConsideracoesSugestoes',{})['risco:processos']||'')!==bpfResumoRiscoProcessos())bpfSyncPCCFinal();"));
+  assert(html.includes("!==bpfResumoRiscoProcessos()||bpfStripLegacyFinalParagraphs"));
+  const oldWater=vm.runInContext(`(()=>{const prefix='Contaminação da água';return 'Considerando o perigo de contaminação da água '+['4.1.3','4.2.7','4.3.5','4.6.8','4.7.8'].map((code,i)=>BPF_PCC_HAZARDS[code].slice(prefix.length).trim().replace(/\\.$/,'')+' (Item '+code+' — '+code.split('.').slice(0,2).join('.')+' Processo: Unidade '+i+')').join('; ')+'.';})()`,ctx);
+  const oldChemical=vm.runInContext(`'Considerando o perigo de '+BPF_PCC_HAZARDS['4.6.6'].slice(0,-1).replace(/^C/,'c')+' (Item 4.6.6 — 4.6 Higienização de retornáveis: Linha 1, Linha 2).'`,ctx);
+  assert(ctx.bpfLegacyFinalParagraph(oldWater));assert(ctx.bpfLegacyFinalParagraph(oldChemical));
+  const genuine=oldChemical.replace('por resíduos','por eventual presença de resíduos');assert(!ctx.bpfLegacyFinalParagraph(genuine));
+  values[field]+='\n\n'+oldWater+'\n\n'+oldChemical+'\n\n'+genuine;ctx.bpfSyncPCCFinal();assert(!values[field].includes(oldWater));assert(!values[field].includes(oldChemical));assert(values[field].includes(genuine));assert(values[field].includes('Medida manual revisada'));
+  values.BPF_FinalConsideracoesProcessosOcultos='["captacao"]';ctx.bpfSyncPCCFinal();assert(!JSON.parse(values.BPF_PCCGenerated)[id]);assert(JSON.parse(values.BPF_FinalConsideracoesCatalogo)[id]);
+  values.BPF_FinalConsideracoesProcessosOcultos='[]';ctx.bpfSyncPCCFinal();assert(JSON.parse(values.BPF_PCCGenerated)[id]);
+  values.BPF_FinalConsideracoesClasses='[]';ctx.bpfSyncPCCFinal();assert(!JSON.parse(values.BPF_PCCGenerated)[id]);assert(JSON.parse(values.BPF_FinalConsideracoesCatalogo)[id]);
+  assert(html.includes('Mostrar por processo')&&html.includes('BPF_FinalConsideracoesProcessosOcultos'));
   const admin=vm.runInContext(`(()=>{const g=new Map();bpfAgruparPerigo(g,false,{code:'4.5.3'},{text:'Os produtos saneantes devem estar regularizados no órgão competente.'});return bpfPerigosConsolidados(g);})()`,ctx);
   assert(admin['perigo:recepcao-regularidade'].includes('regularização dos saneantes'));
   console.log(file,'OK: migração, classificação, opção mostrar/ocultar, perigo e sincronização');
