@@ -900,6 +900,10 @@ const bpfWaterCheck = (() => {
  const popAvailabilityLegacyKey=scope=>'BPF_F_'+scope.name+'_2';
  const popAvailabilityQuestion='O POP referente à higienização do reservatório está disponível e atualizado?';
  const popAvailabilityStatement=answer=>answer==='1'?'O POP referente à higienização do reservatório está disponível e atualizado':'O POP referente à higienização do reservatório não está disponível e/ou não está atualizado';
+ const reservoirPopInfoEnabled=(panel,data)=>{
+  const answers=panel.entries.map(e=>data[bpfPhraseName(e.scope,0)]);
+  return !answers.includes('0')||answers.includes('1');
+ };
  function popAvailabilityAnswer(data,panel){
   if(data[popAvailabilityKey]==='1'||data[popAvailabilityKey]==='0')return data[popAvailabilityKey];
   // Uma resposta global explicitamente limpa não deve reutilizar dados anteriores.
@@ -920,13 +924,18 @@ const bpfWaterCheck = (() => {
   label.style.cssText='display:block;margin:10px 0';
   select.style.cssText='display:block;margin:6px 0;padding:5px';
   for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
-  select.value=popAvailabilityAnswer(values,panel);
-  const refresh=()=>{wording.textContent=select.value?popAvailabilityStatement(select.value):popAvailabilityQuestion;};
+  const refresh=()=>{
+   const enabled=reservoirPopInfoEnabled(panel,values);
+   select.disabled=!enabled;select.value=enabled?popAvailabilityAnswer(values,panel):'';
+   box.style.opacity=enabled?'1':'.55';
+   wording.textContent=select.value?popAvailabilityStatement(select.value):popAvailabilityQuestion;
+  };
   select.onchange=()=>{values[popAvailabilityKey]=select.value;refresh();changed();};
+  card.addEventListener('change',refresh);
   refresh();label.append(wording,select);box.append(label);card.append(box);
  }
  function reservoirPopReport(page,row,panel,data){
-  if(row.code!=='4.3.6'||panel.id!==0)return [];
+  if(row.code!=='4.3.6'||panel.id!==0||!reservoirPopInfoEnabled(panel,data))return [];
   const checklist=[],answer=popAvailabilityAnswer(data,panel);
   if(answer)checklist.push(popAvailabilityStatement(answer));
   const former={...panel,storageId:1};

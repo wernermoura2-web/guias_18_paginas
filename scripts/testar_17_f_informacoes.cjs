@@ -113,6 +113,21 @@ values[flag]='';ctx.bpfApplyPopF2NA(row,scope,values);card.dispatchEvent({type:'
 assert.equal(values[f2],'1');assert(controls[0].checked&&!controls[0].disabled);assert(!na[0].checked);
 console.log('4.2.9 POP: NA automático, bloqueio por unidade e restauração OK');
 ctx.document.createTextNode=t=>t;
+const reservoirPage=model.find(p=>p.rows.some(r=>r.code==='4.3.6'));
+const reservoirRow=reservoirPage.rows.find(r=>r.code==='4.3.6');
+const reservoirPanel={id:0,label:'F1',entries:reservoirRow.scopes.map(s=>({scope:s,index:0,name:phraseName(s,0),phrase:s.phrases[0]}))};
+const reservoirCard=new Node('fieldset');
+for(const e of reservoirPanel.entries)values[e.name]='';
+values.BPF_F_4_3_6_POP_DisponivelAtualizado='1';
+water.renderReservoirPopInfo(reservoirCard,reservoirPage,reservoirRow,reservoirPanel);
+const reservoirSelect=walk(reservoirCard).find(n=>n.tagName==='SELECT');
+assert(!reservoirSelect.disabled&&reservoirSelect.value==='1');
+values[reservoirPanel.entries[0].name]='0';reservoirCard.dispatchEvent({type:'change'});
+assert(reservoirSelect.disabled&&reservoirSelect.value==='');
+assert.equal(water.reservoirPopReport(reservoirPage,reservoirRow,reservoirPanel,values).length,0);
+values[reservoirPanel.entries[0].name]='1';reservoirCard.dispatchEvent({type:'change'});
+assert(!reservoirSelect.disabled&&reservoirSelect.value==='1');
+console.log('4.3.6: outras informações desabilitadas no Não e reativadas no Sim');
 ctx.confirm=()=>false;
 // O quadro comum deixa de ser aplicável quando só há unidades sem POP avaliadas.
 for(const s of row.scopes){values[phraseName(s,0)]='';values[ctx.bpfPopAbsenceFlag(s)]='';}
