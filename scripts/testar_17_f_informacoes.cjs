@@ -82,6 +82,15 @@ for(const [code,ids] of Object.entries(target)){
     select.value='';select.onchange();assert(select.parentElement.textContent.includes(caption+'?'));
    }
   }
+  if(id===1||id===2){
+   for(const select of walk(info[0]).filter(n=>n.tagName==='SELECT'&&n.children.some(o=>o.value==='1'&&o.textContent==='Sim')&&n.children.some(o=>o.value==='0'&&o.textContent==='Não'))){
+    const previous=select.value;select.value='';select.onchange();
+    assert(select.parentElement.children[0].textContent.endsWith('?'),code+' F2 pergunta com interrogação');
+    select.value='1';select.onchange();assert(!select.parentElement.children[0].textContent.endsWith('?'));
+    select.value='0';select.onchange();assert(!select.parentElement.children[0].textContent.endsWith('?'));
+    select.value=previous;select.onchange();
+   }
+  }
   if(code==='4.2.9'&&id===0){
    assert(!info[0].textContent.includes('Possui POP referente às operações de higienização da canalização'));
    assert.equal(walk(info[0]).filter(n=>n.tagName==='SELECT').length,1);

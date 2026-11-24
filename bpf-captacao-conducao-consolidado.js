@@ -216,7 +216,7 @@ const bpfWaterCheck = (() => {
     check('inspecao-visual','Inspeção visual do reservatório')
    ]},
    1:{simple:true,questionsInInformation:true,checks:[
-    check('revisao-higienizacao','Revisão das operações de higienização e adoção das medidas corretivas necessárias'),
+    check('revisao-higienizacao','Realiza a revisão das operações de higienização e adota as medidas corretivas necessárias?',{yesLabel:'Realiza a revisão das operações de higienização e adota as medidas corretivas necessárias',noLabel:'Não realiza a revisão das operações de higienização e/ou não adota as medidas corretivas necessárias'}),
     check('pop-registro-revisoes','O POP prevê o registro das revisões das operações de higienização?',{informationOnly:true,informationQuestion:true,yesLabel:'O POP prevê o registro das revisões das operações de higienização',noLabel:'O POP não prevê o registro das revisões das operações de higienização'})
    ]}
   },
@@ -795,10 +795,10 @@ const bpfWaterCheck = (() => {
    grid.append(box);
   }
   const info=element('fieldset');info.className='bpf-answer-box';info.dataset.bpfInfoBox='';info.append(element('legend',panel.label+' — Outras informações'));
-  const ask=(caption,target,id)=>{const label=element('label',caption),select=element('select');label.style.cssText='display:block;margin:10px 0';select.style.cssText='display:block;margin:5px 0;padding:5px;font:inherit';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=target[id]||'';select.onchange=()=>{target[id]=select.value;save();};label.append(select);info.append(label);};
+  const ask=(caption,target,id,yes,no)=>{const label=element('label'),wording=element('span'),select=element('select');label.style.cssText='display:block;margin:10px 0';select.style.cssText='display:block;margin:5px 0;padding:5px;font:inherit';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=target[id]||'';const base=caption.trim().replace(/[.?]+$/,'');const refresh=()=>{wording.textContent=select.value==='1'?(yes||base):select.value==='0'?(no||'Não — '+base):base+'?';};select.onchange=()=>{target[id]=select.value;refresh();save();};refresh();label.append(wording,select);info.append(label);};
   for(const i of new Set(panel.entries.map(e=>e.index))){const e=panel.entries.find(e=>e.index===i);ask(bpfUnifiedOption(row,e),state.checks,i);}
   if(panel.id===1){
-   for(const [id,caption] of filterQuestions)ask(caption,state.filters,id);
+   for(const [id,caption,yes,no] of filterQuestions)ask(caption,state.filters,id,yes,no);
    info.append(element('strong','Qual o elemento filtrante utilizado?'));state.filters.media??=[];
    const other=element('label','Especifique o outro elemento filtrante'),area=element('textarea');area.rows=2;area.value=state.filters.other||'';other.append(area);area.oninput=()=>{state.filters.other=area.value;save();};
    const refresh=()=>{other.hidden=!state.filters.media.includes('Outros');};
@@ -1891,7 +1891,8 @@ const bpfWaterCheck = (() => {
      };
      control.prepend(input);
      if(information&&criterion.informationQuestion){
-      const prompt=element('div',caption);
+      const question=criterion.answerLabels?caption:caption.trim().replace(/[.?]+$/,'')+'?';
+      const prompt=element('div',question);
       const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px;font:inherit';
       for(const [v,t] of [['','Selecione'],['1',criterion.answerLabels?.['1']||'Sim'],['0',criterion.answerLabels?.['0']||'Não']])select.add(new Option(t,v));
       select.onchange=()=>{item.answer=select.value;if(criterion.id==='filtro'&&state['registro-filtro'])delete state['registro-filtro'].answer;save();};
@@ -1899,7 +1900,7 @@ const bpfWaterCheck = (() => {
       const requiredAlert=criterion.requiredInfo?element('p','ATENÇÃO — resposta obrigatória. Selecione Sim ou Não.'):null;
       if(requiredAlert){requiredAlert.style.cssText='margin:6px 0;padding:8px;background:#fff2cb;border-left:4px solid #c47b13;color:#462f00;font-weight:bold';line.append(requiredAlert);select.dataset.bpfRequiredInfo=criterion.id;select.setAttribute('aria-required','true');}
       rows.push(()=>{
-       const wording=!criterion.answerLabels&&hasAnswer(item.answer)?statementForAnswer(criterion,item.answer):caption;
+       const wording=!criterion.answerLabels&&hasAnswer(item.answer)?statementForAnswer(criterion,item.answer):question;
        prompt.textContent=wording;
        prompt.title=(item.answer==='1'?criterion.yesGuidance:item.answer==='0'?criterion.noGuidance:'')||criterion.guidance||'';
        select.setAttribute('aria-label',label+' — '+wording);
