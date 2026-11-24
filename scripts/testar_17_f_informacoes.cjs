@@ -33,6 +33,13 @@ for(const [code,ids] of Object.entries(target)){
   assert.equal(first.checked,false,'Sim e Não exclusivos');
   const sharedSelect=walk(info[0]).find(n=>n.tagName==='SELECT'&&n.children.some(o=>o.value==='1')&&n.children.some(o=>o.value==='0'));
   if(sharedSelect){sharedSelect.value='1';sharedSelect.onchange();assert.equal(values[panel.entries[0].name],'0','informação geral não altera a avaliação da unidade');assert(values['BPF_LineInfo_'+page.page+'_'+code.replace(/\./g,'_')+'_F'+(id+1)],'informação registrada uma única vez');}
+  if(code==='4.1.3'&&id===0){
+   const select=walk(info[0]).find(n=>n.tagName==='SELECT'&&n.parentElement?.textContent.includes('Existe telemetria em linha?'));assert(select,'telemetria deve ter seletor Sim/Não');
+   const line=select.parentElement,detail=walk(line).find(n=>n.className==='bpf-water-detail');assert(detail&&detail.hidden,'tipos fechados sem resposta');
+   select.value='1';select.onchange();assert(line.textContent.includes('Existe telemetria em linha'));assert(!detail.hidden,'tipos abertos com Sim');
+   select.value='0';select.onchange();assert(line.textContent.includes('Não existe telemetria em linha'));assert(detail.hidden,'tipos fechados com Não');
+   assert.equal(values[panel.entries[0].name],'0','telemetria informativa não altera a avaliação');
+  }
   if(code!=='4.3.3'){water.apply(row,row.scopes[0],values);assert.equal(values[panel.entries[0].name],'0','recalcular mantém a escolha');}
   const report=water.report(page,row,panel,values);assert(report.some(r=>r.answer==='0'),code+' F'+(id+1)+' relatório NC');
   console.log(code,'F'+(id+1),'OK',radios.length,'seletores e uma seção comum');

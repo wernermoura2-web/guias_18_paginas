@@ -3,8 +3,8 @@ const bpfWaterCheck = (() => {
  const check = (id, label, options = {}) => ({id, label, ...options});
  const sanitizers = (label, options) => check('saneantes', label, {details:'sanitizers', ...options});
  const yes = (id, label, details) => check(id, label, {yesOnly:true, details});
- const controls = disinfection => [
-  check('telemetria','Existe telemetria em linha',{yesOnly:true,confirmationOnly:true,details:'telemetry'}),
+ const controls = (disinfection, telemetryQuestion=false) => [
+  check('telemetria','Existe telemetria em linha',{...(telemetryQuestion?{yesLabel:'Existe telemetria em linha',noLabel:'Não existe telemetria em linha'}:{yesOnly:true,confirmationOnly:true}),details:'telemetry'}),
   yes('residuo','Após a desinfecção '+disinfection+', testa a ausência de resíduo de saneante na água após o enxágue','residue'),
   yes('microbiologia','Após a desinfecção '+disinfection+', testa a ausência de contaminação microbiológica'),
   yes('atp','Após a desinfecção '+disinfection+', faz teste de bioluminescência de ATP'),
@@ -136,7 +136,7 @@ const bpfWaterCheck = (() => {
     check('filtro','Possui filtro de ar microbiológico no poço (surgência apenas em drenos)',{details:'filter',yesOnly:true}),
     check('registro-filtro','Possui registro de troca do filtro de ar microbiológico',{requires:'filtro',yesOnly:true}),
     yes('pop-registros','O POP e os registros de limpeza e higienização estão disponíveis na casa de proteção'),
-    ...controls('do poço ou surgência'),
+    ...controls('do poço ou surgência',true),
     check('nao-captacao','Não',{noOnly:true,scopeAnswer:true})
    ]},
    2:{all:true,answerPrompts:{'1':'informe os registros de limpeza apresentados','0':'informe os registros de limpeza não apresentados'},checks:[
