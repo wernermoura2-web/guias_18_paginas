@@ -694,19 +694,13 @@ function bpfOpenNCCondensation(){
 }
 const quantKey='BPF_ConclusaoQuantitativoProcessos';
 function quantitativeSelected(){return values[quantKey]!=='Off';}
-function processQuantitative(){
- const data=values;
- if(!data||typeof BPF_PHRASES==='undefined'||typeof titles==='undefined'||typeof bpfPhraseName!=='function')return [];
+function processQuantitative(records){
+ if(typeof bpfNCRegistrosRelatorio!=='function')return [];
  const groups=new Map();
- for(const page of BPF_PHRASES){
-  if(typeof bpfReservoirIsLinked==='function'&&bpfReservoirIsLinked(page.page))continue;
-  const name=page.page>=2&&page.page<=5?'4.3 Reservatórios':titles[page.page];
-  if(!name)continue;
-  for(const row of page.rows)for(const scope of row.scopes)scope.phrases.forEach((phrase,i)=>{
-   if(data[bpfPhraseName(scope,i)]!=='0'||!['PCC','PPRO','PC','POP','PPR'].includes(phrase.appcc))return;
-   let group=groups.get(name);if(!group){group=new Map();groups.set(name,group);}
-   group.set(phrase.appcc,(group.get(phrase.appcc)||0)+1);
-  });
+ for(const record of records??bpfNCRegistrosVisiveis(bpfNCRegistrosRelatorio())){
+  const name=record.process||'Processo não identificado';
+  let group=groups.get(name);if(!group){group=new Map();groups.set(name,group);}
+  group.set(record.category,(group.get(record.category)||0)+1);
  }
  return [...groups].map(([name,counts])=>{
   const total=[...counts.values()].reduce((sum,n)=>sum+n,0);
@@ -718,9 +712,9 @@ function processQuantitative(){
 
 
 const quantTextKey='BPF_NCQuantitativoTextoEditado';
-function bpfQuantitativeText(){
+function bpfQuantitativeText(records){
  const edited=values[quantTextKey];
- return typeof edited==='string'&&edited.trim()?edited.trim():processQuantitative().join('\n')||'Nenhuma não conformidade registrada.';
+ return typeof edited==='string'&&edited.trim()?edited.trim():processQuantitative(records).join('\n')||'Nenhuma não conformidade registrada.';
 }
 function bpfEditQuantitative(){
  const dialog=document.createElement('dialog');dialog.style.cssText='width:min(95vw,850px);max-height:90vh;overflow:auto;padding:20px;border:1px solid #177693;border-radius:8px;color:#12324a';
