@@ -250,11 +250,11 @@ const bpfWaterCheck = (() => {
    0:{all:true,checks:[
     check('pop-desmonte','POP contempla o desmonte e a frequência',{noLabel:'O POP não contempla o desmonte e a frequência'}),
     check('registros-desmonte','Registros do desmonte e troca de componentes (o-ring)',{optional:true,noLabel:'Não possui registros de desmonte e troca de componentes (o-ring)'}),
-    check('inspecao-visual','Realiza e registra inspeção visual interna das tubulações',{yesOnly:true})
+    check('inspecao-visual','Realiza e registra a inspeção visual interna das tubulações?',{yesLabel:'Realiza e registra a inspeção visual interna das tubulações',noLabel:'Não realiza e não registra a inspeção visual interna das tubulações'})
    ]},
    1:{singleNo:true,checks:[
-    yes('reparo','Possui registro de reparo das tubulações e conexões'),
-    yes('passivacao','Possui registros de passivação e/ou desincrustação'),
+    check('reparo','Possui registro de reparo das tubulações e conexões?',{noLabel:'Não possui registro de reparo das tubulações e conexões'}),
+    check('passivacao','Possui registros de passivação e/ou desincrustação?',{noLabel:'Não possui registros de passivação e/ou desincrustação'}),
     check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
     check('pop-com-historico','O POP contempla histórico de revisão de operações de higienização?',{informationOnly:true})
    ]}

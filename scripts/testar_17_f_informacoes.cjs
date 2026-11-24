@@ -55,6 +55,25 @@ for(const [code,ids] of Object.entries(target)){
    assert.equal(migrated[0].value,'1','declaração apresentada conserva resposta positiva');
    assert.equal(migrated[1].value,'0','nota fiscal conserva resposta anterior');
   }
+  if(code==='4.2.8'&&id===0){
+   const select=walk(info[0]).find(n=>n.tagName==='SELECT'&&n.parentElement.textContent.includes('Realiza e registra a inspeção visual interna das tubulações?'));
+   assert(select,'inspeção visual com seletor Sim/Não');
+   select.value='1';select.onchange();assert(select.parentElement.textContent.includes('Realiza e registra a inspeção visual interna das tubulações'));
+   select.value='0';select.onchange();assert(select.parentElement.textContent.includes('Não realiza e não registra a inspeção visual interna das tubulações'));
+   assert(JSON.stringify(water.report(page,row,panel,values)).includes('Não realiza e não registra a inspeção visual interna das tubulações'));
+   select.value='';select.onchange();assert(select.parentElement.textContent.includes('Realiza e registra a inspeção visual interna das tubulações?'));
+  }
+  if(code==='4.2.8'&&id===1){
+   for(const caption of ['Possui registro de reparo das tubulações e conexões','Possui registros de passivação e/ou desincrustação']){
+    const select=walk(info[0]).find(n=>n.tagName==='SELECT'&&n.parentElement.textContent.includes(caption));
+    assert(select,caption+' — seletor Sim/Não');
+    select.value='';select.onchange();assert(select.parentElement.textContent.includes(caption+'?'));
+    select.value='1';select.onchange();assert(select.parentElement.textContent.includes(caption));
+    select.value='0';select.onchange();const negative='Não '+caption.charAt(0).toLowerCase()+caption.slice(1);
+    assert(select.parentElement.textContent.includes(negative));assert(JSON.stringify(water.report(page,row,panel,values)).includes(negative));
+    select.value='';select.onchange();assert(select.parentElement.textContent.includes(caption+'?'));
+   }
+  }
   if(code!=='4.3.3'){water.apply(row,row.scopes[0],values);assert.equal(values[panel.entries[0].name],'0','recalcular mantém a escolha');}
   const report=water.report(page,row,panel,values);assert(report.some(r=>r.answer==='0'),code+' F'+(id+1)+' relatório NC');
   console.log(code,'F'+(id+1),'OK',radios.length,'seletores e uma seção comum');
