@@ -267,7 +267,7 @@ const bpfWaterCheck = (() => {
    1:{separateInformation:true,informationHeading:'Outras observações',checks:[
     check('sim-conducao','Sim',{yesOnly:true,scopeAnswer:true}),
     check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
-    sanitizers('Sanitizantes utilizados para descontaminação ou desinfecção de rotina da condução',{yesOnly:true,frequencyOptional:true})
+    sanitizers('Sanitizantes descritos no POP utilizados para descontaminação ou desinfecção de rotina da condução',{yesOnly:true,frequencyOptional:true})
    ]}
   }
  };
@@ -297,7 +297,7 @@ const bpfWaterCheck = (() => {
   if(config&&compactWater(row,index)){
    if(compactConfigCache.has(config))return compactConfigCache.get(config);
    const original=synchronizedItems.has(row.code)?{...config,optional:true}:config;
-   const info=config.checks.filter(c=>!c.scopeAnswer).map(c=>({ ...c, informationOnly:true,
+   const info=config.checks.filter(c=>!c.scopeAnswer&&!(row.code==='4.2.9'&&index===0&&c.id==='pop-canalizacao')).map(c=>({ ...c, informationOnly:true,
     informationQuestion:!c.yesOnly&&!c.noOnly&&!c.informationList&&!c.confirmationOnly,
     ...(row.code==='4.3.4'&&index===0&&c.id==='inspecao-visual'?{details:'inspection-frequency',optionalDetails:true}: {})
    }));
@@ -570,6 +570,9 @@ const bpfWaterCheck = (() => {
  const capsDisinfected=(scope,data)=>read({scope,index:0,name:bpfPhraseName(scope,0)},data)
   ?.['desinfeccao-envasadora']?.answer==='1';
  const conductionF2=(row,index)=>row.code==='4.2.9'&&index===1;
+ const conductionPopInfoEnabled=(row,panel,data)=>!conductionF2(row,panel.id)||
+  !panel.entries.some(e=>bpfPopNAForced(row,e.scope,e.index,data))||
+  panel.entries.some(e=>!bpfPopNAForced(row,e.scope,e.index,data)&&hasAnswer(data[bpfPhraseName(e.scope,0)]));
  const panelEnabled=(row,entry,data)=>conductionF2(row,entry.index)
   ?!bpfPopNAForced(row,entry.scope,entry.index,data)
   :row.code!=='4.6.8'||entry.index!==1||capsDisinfected(entry.scope,data);
@@ -1326,12 +1329,15 @@ const bpfWaterCheck = (() => {
   const supplemental=row.code==='4.3.3'&&panel.id===1?reservoirFilterReport(page,panel,data):row.code==='4.3.4'&&panel.id===0&&!compactWater(row,panel.id)?reservoirFrequencyAnnex(page,row,panel,data).flatMap(item=>item.checklist.map(v=>visualFrequency.label+': '+v)):[];
   const capRoutes=row.code==='4.6.8'&&panel.id===0?[...new Set(entries.map(entry=>capsTransportRoute(entry.scope,data)).filter(Boolean))].map(route=>route==='silo'?'Tampas transportadas com auxílio de silo externo':'Tampas transportadas para a tampadora sem auxílio de silo externo'):[];
   const joint=sharedLineInfo(row,panel)&&entries.length?sharedLineState(page,row,panel,data):null;
-  const jointRecords=joint?records(row,entries[0],data,joint.state):[];
+  const infoEnabled=conductionPopInfoEnabled(row,panel,data);
+  const jointEntry=conductionF2(row,panel.id)?entries.find(e=>panelEnabled(row,e,data)):entries[0];
+  const jointRecords=joint&&jointEntry&&infoEnabled?records(row,jointEntry,data,joint.state):[];
   if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length&&!capRoutes.length)return [];
   const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
   const information=[...mixing,...supplemental,...capRoutes];
   if(row.code==='4.3.4'&&panel.id===0&&joint?.state?.['inspecao-visual']?.frequency&&!hasAnswer(joint.state['inspecao-visual'].answer))information.push(visualFrequency.label+': '+joint.state['inspecao-visual'].frequency);
   for(const criterion of config.checks.filter(check=>isInformation(config,check))){
+   if(!infoEnabled)continue;
    for(const answer of ['1','0']){
     const shared=joint&&!joint.conflicts.includes(criterion.id);
     if(shared){
@@ -1800,7 +1806,18 @@ const bpfWaterCheck = (() => {
     section.append(legacyLine);
     if(general&&joint.conflicts.length)section.append(element('p','Há informações anteriores diferentes entre '+(config.compactWater?'unidades':'linhas')+'. Revise as respostas do quadro geral. Os registros anteriores permanecem no arquivo.'));
     box.append(section);
-    if(dependentF2&&general)rows.push(()=>{section.hidden=!panel.entries.some(e=>panelEnabled(row,e,values));});
+    if(dependentF2&&general)rows.push(()=>{
+     const enabled=conductionPopInfoEnabled(row,panel,values);
+     if(!enabled&&state.saneantes){
+      const item=state.saneantes;
+      if(item.answer||Object.values(item.products||{}).some(p=>p.selected)){
+       item.answer='';for(const p of Object.values(item.products||{}))p.selected=false;
+       values[sharedLineKey(page,row,panel)]=JSON.stringify(state);changed();
+      }
+     }
+     section.querySelectorAll('input,select,textarea').forEach(input=>{input.disabled=!enabled;});
+     section.style.opacity=enabled?'1':'.55';
+    });
     const groups=new Map();let routeInput=null;
     for(const criterion of config.checks){
      if(information!==Boolean(isInformation(config,criterion)))continue;

@@ -8,6 +8,7 @@ class Node{
  replaceChildren(...nodes){this.children=[];this.append(...nodes);}
  setAttribute(){} addEventListener(type,fn){(this.listeners??={})[type]??=[];this.listeners[type].push(fn);} dispatchEvent(event){for(const fn of this.listeners?.[event.type]||[])fn(event);} add(n){this.append(n);}
  querySelector(s){return walk(this).find(n=>n.tagName===s.toUpperCase())||null;}
+ querySelectorAll(s){return walk(this).filter(n=>s.split(',').some(tag=>n.tagName===tag.toUpperCase()));}
  set textContent(t){this.caption=t;this.children=[];} get textContent(){return (this.caption||'')+this.children.map(n=>typeof n==='string'?n:n.textContent).join('');}
 }
 const walk=n=>[n,...n.children.filter(x=>x&&typeof x==='object').flatMap(walk)];
@@ -74,6 +75,10 @@ for(const [code,ids] of Object.entries(target)){
     select.value='';select.onchange();assert(select.parentElement.textContent.includes(caption+'?'));
    }
   }
+  if(code==='4.2.9'&&id===0){
+   assert(!info[0].textContent.includes('Possui POP referente às operações de higienização da canalização'));
+   assert.equal(walk(info[0]).filter(n=>n.tagName==='SELECT').length,1);
+  }
   if(code!=='4.3.3'){water.apply(row,row.scopes[0],values);assert.equal(values[panel.entries[0].name],'0','recalcular mantém a escolha');}
   const report=water.report(page,row,panel,values);assert(report.some(r=>r.answer==='0'),code+' F'+(id+1)+' relatório NC');
   console.log(code,'F'+(id+1),'OK',radios.length,'seletores e uma seção comum');
@@ -102,7 +107,19 @@ assert.equal(values[f2],'1');assert(controls[0].checked&&!controls[0].disabled);
 console.log('4.2.9 POP: NA automático, bloqueio por unidade e restauração OK');
 ctx.document.createTextNode=t=>t;
 ctx.confirm=()=>false;
-Node.prototype.querySelectorAll=()=>[];
+// O quadro comum deixa de ser aplicável quando só há unidades sem POP avaliadas.
+for(const s of row.scopes){values[phraseName(s,0)]='';values[ctx.bpfPopAbsenceFlag(s)]='';}
+values[f1]='0';values[flag]='1';ctx.bpfApplyPopF2NA(row,scope,values);
+const infoKey='BPF_LineInfo_1_4_2_9_F2';
+values[infoKey]=JSON.stringify({saneantes:{answer:'1',products:{outros:{selected:true,name:'Exemplo'}}}});
+const noPopCard=new Node('fieldset');water.render(noPopCard,page,row,panels[1]);
+const noPopInfo=walk(noPopCard).find(n=>Object.hasOwn(n.dataset,'bpfInfoBox'));
+assert(noPopInfo.textContent.includes('Sanitizantes descritos no POP'));
+assert(walk(noPopInfo).filter(n=>n.tagName==='INPUT').every(n=>n.disabled&&!n.checked));
+assert.equal(JSON.parse(values[infoKey]).saneantes.answer,'');
+assert(!JSON.stringify(water.report(page,row,panels[1],values)).includes('Sanitizantes descritos no POP'));
+values[phraseName(other,0)]='1';noPopCard.dispatchEvent({type:'bpf-f2-refresh'});
+assert(walk(noPopInfo).filter(n=>n.tagName==='INPUT').every(n=>!n.disabled));
 (async()=>{
  for(const p of model)for(const r of p.rows.filter(r=>['4.2.9','4.3.6','4.5.8','4.6.12'].includes(r.code))){
   const s=r.scopes[0],name=phraseName(s,0),k=ctx.bpfPopAbsenceFlag(s),box=new Node('fieldset');
