@@ -1695,6 +1695,7 @@ const bpfWaterCheck = (() => {
   const boxes=new Map();
   const capsF1=row.code==='4.6.8'&&[0,1].includes(panel.id);
   const sections=config.inline?[]:[['1','Sim'],['0','Não']];
+  if(dependentF2)sections.push(['2','Não se aplica']);
   if(config.checks.some(criterion=>isInformation(config,criterion)))sections.push(['info',informationHeading(config)]);
   for(const [answer,heading] of sections){
    if(capsF1&&answer==='0'){boxes.set('0',boxes.get('1'));continue;}
@@ -1758,9 +1759,6 @@ const bpfWaterCheck = (() => {
    if(row.code==='4.6.8'&&panel.id===1)card.addEventListener('bpf-caps-f2-refresh',refresh);
    if(row.code==='4.6.3'&&joint)card.addEventListener('bpf-rinse-yes-refresh',refresh);
    if(dependentF2){
-    const notice=element('p',label+' — Não se aplica (ausência do POP indicada no F1).');
-    answerGrid.prepend(notice);
-    rows.push(()=>{notice.hidden=panelEnabled(row,entry,values);});
     card.addEventListener('bpf-f2-refresh',refresh);
    }
    if(config.allowNA){
@@ -1775,6 +1773,13 @@ const bpfWaterCheck = (() => {
    }
    const entryState=state,entrySave=save;
    for(const [sectionType,box] of boxes){
+    if(dependentF2&&sectionType==='2'){
+     const control=element('label',label);control.className='bpf-water-choice';
+     const input=element('input');input.type='checkbox';input.disabled=true;input.dataset.bpfPopNA='';
+     control.prepend(input);box.append(control);
+     rows.push(()=>{input.checked=!panelEnabled(row,entry,values);});
+     continue;
+    }
     const information=sectionType==='info';
     const general=information&&Boolean(joint);
     if(general&&entry!==panel.entries[0])continue;
@@ -1795,7 +1800,7 @@ const bpfWaterCheck = (() => {
     section.append(legacyLine);
     if(general&&joint.conflicts.length)section.append(element('p','Há informações anteriores diferentes entre '+(config.compactWater?'unidades':'linhas')+'. Revise as respostas do quadro geral. Os registros anteriores permanecem no arquivo.'));
     box.append(section);
-    if(dependentF2)rows.push(()=>{section.hidden=general? !panel.entries.some(e=>panelEnabled(row,e,values)):!panelEnabled(row,entry,values);});
+    if(dependentF2&&general)rows.push(()=>{section.hidden=!panel.entries.some(e=>panelEnabled(row,e,values));});
     const groups=new Map();let routeInput=null;
     for(const criterion of config.checks){
      if(information!==Boolean(isInformation(config,criterion)))continue;
@@ -1885,8 +1890,9 @@ const bpfWaterCheck = (() => {
      line.append(extra);
      rows.push(()=>{
       const enabled=!state.notApplicable&&active(criterion,state);
-      input.checked=enabled&&item.answer===answer;
-      input.disabled=!enabled;
+      const forced=dependentF2&&!information&&!panelEnabled(row,entry,values);
+      input.checked=!forced&&enabled&&(dependentF2&&!information?values[entry.name]===answer:item.answer===answer);
+      input.disabled=forced||!enabled;
       line.hidden=!enabled;
       if(!information&&isQuestion(criterion)&&!directChoice){
        const wording=enabled&&hasAnswer(item.answer)?statementForAnswer(criterion,answer):caption;
@@ -1895,6 +1901,10 @@ const bpfWaterCheck = (() => {
       }
       extra.hidden=!enabled||(!information||criterion.details!=='inspection-frequency')&&item.answer!==answer||!showDetails;
      });
+    }
+    if(row.code==='4.2.9'&&panel.id===0&&sectionType==='0'&&typeof bpfMountPopAbsence==='function'){
+     const update=bpfMountPopAbsence(section,entry,row,page,card,()=>card.parentElement?.querySelector('[data-bpf-conduction-f2]')?.dispatchEvent(new Event('bpf-f2-refresh')));
+     rows.push(update);
     }
     if(collapsed)rows.push(()=>section.bpfKeepAnsweredOpen(!information&&!legacyLine.hidden&&Boolean(legacy)&&existingAnswer===sectionType));
    }

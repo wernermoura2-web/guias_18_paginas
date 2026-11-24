@@ -6,7 +6,7 @@ class Node{
  append(...nodes){for(const n of nodes){if(n&&typeof n==='object')n.parentElement=this;this.children.push(n);}}
  prepend(...nodes){for(const n of nodes)if(n&&typeof n==='object')n.parentElement=this;this.children.unshift(...nodes);}
  replaceChildren(...nodes){this.children=[];this.append(...nodes);}
- setAttribute(){} addEventListener(){} dispatchEvent(){} add(n){this.append(n);}
+ setAttribute(){} addEventListener(type,fn){(this.listeners??={})[type]??=[];this.listeners[type].push(fn);} dispatchEvent(event){for(const fn of this.listeners?.[event.type]||[])fn(event);} add(n){this.append(n);}
  querySelector(s){return walk(this).find(n=>n.tagName===s.toUpperCase())||null;}
  set textContent(t){this.caption=t;this.children=[];} get textContent(){return (this.caption||'')+this.children.map(n=>typeof n==='string'?n:n.textContent).join('');}
 }
@@ -80,3 +80,41 @@ for(const [code,ids] of Object.entries(target)){
  }
 }
 assert.equal(count,17);
+// Exercitar a regra real de confirmação e restauração por unidade.
+const sw=fs.readFileSync('sw-guia18.js','utf8');
+const popRule=sw.match(/const popRule=`<script>([\s\S]*?)<\/script>`;/)[1];
+vm.runInContext(popRule,ctx);
+const page=model.find(p=>p.page===1),row=page.rows.find(r=>r.code==='4.2.9');
+const panels=[0,1].map(id=>({id,label:'F'+(id+1),entries:row.scopes.map(s=>({scope:s,index:id,name:phraseName(s,id),phrase:s.phrases[id]}))}));
+const scope=row.scopes[0],other=row.scopes[1],f1=phraseName(scope,0),f2=phraseName(scope,1),flag=ctx.bpfPopAbsenceFlag(scope);
+values[f1]='0';values[f2]='1';values[phraseName(other,1)]='1';values[flag]='';
+assert(!ctx.bpfPopNAForced(row,scope,1,values),'Não no F1 não significa ausência confirmada');
+values[flag]='1';ctx.bpfApplyPopF2NA(row,scope,values);
+assert.equal(values[f2],'2');assert.equal(values[phraseName(other,1)],'1');
+const card=new Node('fieldset');water.render(card,page,row,panels[1]);
+const controls=walk(card).filter(n=>n.tagName==='INPUT'&&n.dataset.bpfCompactAnswer);
+const na=walk(card).filter(n=>n.tagName==='INPUT'&&Object.hasOwn(n.dataset,'bpfPopNA'));
+assert.equal(na.length,row.scopes.length);assert(na[0].checked&&na[0].disabled);assert(!na[1].checked);
+for(const input of [controls[0],controls[row.scopes.length]])assert(input.disabled&&!input.checked);
+assert(!controls[1].disabled);
+values[flag]='';ctx.bpfApplyPopF2NA(row,scope,values);card.dispatchEvent({type:'bpf-f2-refresh'});
+assert.equal(values[f2],'1');assert(controls[0].checked&&!controls[0].disabled);assert(!na[0].checked);
+console.log('4.2.9 POP: NA automático, bloqueio por unidade e restauração OK');
+ctx.document.createTextNode=t=>t;
+ctx.confirm=()=>false;
+Node.prototype.querySelectorAll=()=>[];
+(async()=>{
+ for(const p of model)for(const r of p.rows.filter(r=>['4.2.9','4.3.6','4.5.8','4.6.12'].includes(r.code))){
+  const s=r.scopes[0],name=phraseName(s,0),k=ctx.bpfPopAbsenceFlag(s),box=new Node('fieldset');
+  values[name]='';values[k]='';
+  const update=ctx.bpfMountPopAbsence(box,{scope:s},r,p,box);
+  const check=walk(box).find(n=>n.dataset.popAbsence===k);
+  assert(check.parentElement.hidden);
+  values[name]='0';update();assert(!check.parentElement.hidden&&!check.disabled);assert(!box.children[1].hidden);
+  check.checked=true;await check.onchange();assert(!check.checked);assert.equal(values[k],'');
+  ctx.confirm=()=>true;check.checked=true;await check.onchange();assert.equal(values[k],'1');
+  for(const index of s.phrases.keys())if(ctx.bpfIsPopDependent(r,index))assert.equal(values[phraseName(s,index)],'2');
+  ctx.confirm=()=>false;
+ }
+ console.log('POP: alerta visível, Cancelar e Confirmar testados nos quatro itens');
+})().catch(e=>{console.error(e);process.exitCode=1;});
