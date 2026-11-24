@@ -93,8 +93,6 @@ function bpfPaginateFinalConsiderations(text,firstRect,nextRect,font,bold){
   const group=groups.at(-1);
   if(fits(measure,join(group)+block)){group.push(block);continue;}
   let rest=block;
-  const title=block.split('\n')[0];
-  const repeat=bpfIsFinalConsiderationTitle(title)&&next.height(title)<next.capacity/2?title+' — continuação\n':'';
   // Aproveitar a capacidade restante da própria matriz antes de criar uma
   // página de continuação, inclusive se o primeiro parágrafo for muito longo.
   const existing=join(group);
@@ -103,17 +101,17 @@ function bpfPaginateFinalConsiderations(text,firstRect,nextRect,font,bold){
    const cut=bpfObservationBreak(rest,part=>fits(measure,existing+part));
    if(cut>0&&fits(measure,existing+rest.slice(0,cut))){
     group.push(rest.slice(0,cut));
-    rest=(repeat&&cut>title.length?repeat:'')+rest.slice(cut);
+    rest=rest.slice(cut);
    }
   }
   groups.push([]);
   measure=next;
-  // Se um único item exceder uma A4 inteira, repetir seu título ao continuar.
+  // Continuar o texto sem duplicar cabeçalhos: os offsets devem permanecer fiéis ao original.
   while(!fits(next,rest)){
    const cut=bpfObservationBreak(rest,part=>fits(next,part));
    groups.at(-1).push(rest.slice(0,cut));
    groups.push([]);
-   rest=repeat+rest.slice(cut);
+   rest=rest.slice(cut);
   }
   groups.at(-1).push(rest);
  }
@@ -272,45 +270,61 @@ function bpfRunNCObservationFlow(full,pdfFont=null,pdfBold=null){
  if(values.BPF_ObsGeneralFlow!==serialized)values.BPF_ObsGeneralFlow=serialized;
 }
 
-function bpfRenderFinalConsiderationsText(el,text){
- if(el.bpfRenderedObservation===text)return;
- el.bpfRenderedObservation=text;
- const fragment=document.createDocumentFragment();
- const generated=Object.entries(bpfFinalRead('BPF_PCCGenerated',{}));
- const fieldText=String(values[bpfFinalConsiderationsField]||'');
- for(const rawBlock of text.split(/(?=^(?:Considerando o )?Item\s+\d+(?:\.\d+)*\b)/m)){
-  const block=rawBlock.trimEnd();
-  if(!block)continue;
-  const newline=block.indexOf('\n');
-  const hasTitle=bpfIsFinalConsiderationTitle(block.split('\n',1)[0]);
-  const heading=hasTitle?block.split('\n',1)[0]:'';
-  const body=hasTitle?(newline<0?'':block.slice(newline+1)):block;
-  if(heading)bpfAppendNCObservationText(fragment,heading,'final');
-  const record=generated.find(([,item])=>item.split('\n',1)[0]===heading.replace(/ — continuação$/,''));
-  const original=record?record[1].split('\n').slice(1).join('\n'):fieldText;
-  const start=body?original.indexOf(body):0;
-  const editor=document.createElement('div');
-  bpfAppendNCObservationText(editor,body,'final');
-  if(start>=0){
-   editor.className='bpf-final-inline-edit';
-   editor.contentEditable='plaintext-only';
-   editor.setAttribute('role','textbox');
-   editor.setAttribute('aria-multiline','true');
-   editor.setAttribute('aria-label',heading||'Considerações finais');
-   editor.onblur=()=>{
-    const edited=editor.innerText.replace(/\r\n?/g,'\n').trimEnd();
-    const revised=original.slice(0,start)+edited+original.slice(start+body.length);
-    if(edited===body)return;
-    if(record){
-     const edits=bpfFinalRead('BPF_FinalConsideracoesEdicoes',{});
-     edits[record[0]]=revised;
-     values.BPF_FinalConsideracoesEdicoes=JSON.stringify(edits);
-    }else values[bpfFinalConsiderationsField]=revised;
-    bpfSyncPCCFinal();changed();
-    el.bpfRenderedObservation=null;
-    sync();
-   };
+// Mapear cada trecho à sua frase gerada, inclusive quando a paginação a divide.
+function bpfFinalInlineSegments(full,generated,offset,length){
+ const end=offset+length,ranges=[];let cursor=0;
+ for(const [id,original] of Object.entries(generated)){
+  if(typeof original!=='string'||!original)continue;
+  const start=full.indexOf(original,cursor);if(start<0)continue;
+  if(start>cursor)ranges.push({start:cursor,end:start,id:null});
+  ranges.push({start,end:start+original.length,id,original});cursor=start+original.length;
+ }
+ if(cursor<full.length)ranges.push({start:cursor,end:full.length,id:null});
+ if(!full.length)return [{start:0,end:0,id:null,text:'',relative:0}];
+ return ranges.flatMap(range=>{
+  const start=Math.max(offset,range.start),stop=Math.min(end,range.end);
+  return stop>start?[{...range,start,end:stop,relative:start-range.start,text:full.slice(start,stop)}]:[];
+ });
+}
+
+function bpfCommitFinalInlineEdit(segment,edited){
+ if(edited===segment.text)return false;
+ if(segment.id){
+  const suggestions=bpfFinalRead('BPF_FinalConsideracoesSugestoes',{}),edits=bpfFinalRead('BPF_FinalConsideracoesTextos',{}),base=suggestions[segment.id]??edits[segment.id]?.base;
+  const generated=bpfFinalRead('BPF_PCCGenerated',{}),original=generated[segment.id];
+  if(typeof base==='string'&&original===segment.original){
+   const text=(original.slice(0,segment.relative)+edited+original.slice(segment.relative+segment.text.length)).trim();
+   if(!text){const hidden=new Set(bpfFinalRead('BPF_FinalConsideracoesOcultas',[]));hidden.add(segment.id);values.BPF_FinalConsideracoesOcultas=JSON.stringify([...hidden]);delete edits[segment.id];}
+   else edits[segment.id]={base,text};
+   values.BPF_FinalConsideracoesTextos=JSON.stringify(edits);return true;
   }
+  return false;
+ }
+ const full=String(values[bpfFinalConsiderationsField]||'');
+ if(full.slice(segment.start,segment.end)!==segment.text)return false;
+ values[bpfFinalConsiderationsField]=full.slice(0,segment.start)+edited+full.slice(segment.end);return true;
+}
+
+function bpfRenderFinalConsiderationsText(el,text,offset=0){
+ if(el.bpfRenderedObservation===text&&el.bpfRenderedOffset===offset)return;
+ if(el.contains(document.activeElement)&&document.activeElement?.isContentEditable)return;
+ el.bpfRenderedObservation=text;el.bpfRenderedOffset=offset;
+ el.style.lineHeight=String(bpfFinalConsiderationsLeading);el.style.cursor='text';
+ const fragment=document.createDocumentFragment();
+ const generated=bpfFinalRead('BPF_PCCGenerated',{}),full=String(values[bpfFinalConsiderationsField]||'');
+ for(const segment of bpfFinalInlineSegments(full,generated,offset,text.length)){
+  // Separadores permanecem visíveis, sem criar campos de edição vazios.
+  if(!segment.id&&segment.text&&!segment.text.trim()){fragment.append(document.createTextNode(segment.text));continue;}
+  const editor=document.createElement('span');editor.className='bpf-final-inline-edit';
+  editor.contentEditable='plaintext-only';editor.setAttribute('role','textbox');editor.setAttribute('aria-multiline','true');editor.setAttribute('aria-label','Editar consideração diretamente no guia');
+  if(!segment.text){editor.style.display='block';editor.style.minHeight='2em';}
+  const lines=segment.text.split('\n');
+  lines.forEach((line,i)=>{if(i)editor.append(document.createTextNode('\n'));const label=bpfIsFinalConsiderationTitle(line)?line:bpfConsiderationLabel(line);if(label){const strong=document.createElement('strong');strong.textContent=label;editor.append(strong,document.createTextNode(line.slice(label.length)));}else editor.append(document.createTextNode(line));});
+  editor.onblur=()=>{
+   const edited=editor.innerText.replace(/\r\n?/g,'\n');
+   if(!bpfCommitFinalInlineEdit(segment,edited))return;
+   bpfSyncPCCFinal();changed();el.bpfRenderedObservation=null;sync();
+  };
   fragment.append(editor);
  }
  el.replaceChildren(fragment);
@@ -329,7 +343,7 @@ function bpfRenderFinalConsiderationsField(el){
  el.style.fontSize=fontSize;
  bpfRenderFinalConsiderationsText(el,bpfFinalConsiderationsFlow.parts[0]||'');
  el.removeAttribute('aria-hidden');
- el.onclick=()=>{if(!bpfFinalConsiderationsFlow.full)el.parentElement.querySelector('.bpf-final-edit-area')?.focus();};
+ el.onclick=()=>{if(!bpfFinalConsiderationsFlow.full)el.querySelector('.bpf-final-inline-edit')?.focus();};
 }
 
 function bpfObservationPageId(kind,offset){
@@ -375,7 +389,7 @@ function bpfReconcileObservationPages(finalFont,finalBold){
  for(const {anchor,kind,title,parts} of groups){
   for(const [offset,text] of parts.entries()){
    const id=kind==='nc'&&offset===0?bpfNCPageIndex:bpfObservationPageId(kind,offset);
-   next.set(id,{anchor,title,text,spacing:kind});
+   next.set(id,{anchor,title,text,spacing:kind,offset:kind==='final'?bpfFinalConsiderationsFlow.parts.slice(0,offset+1).reduce((n,part)=>n+part.length,0):0});
   }
  }
  let changed=false;
@@ -393,7 +407,7 @@ function bpfReconcileObservationPages(finalFont,finalBold){
   changed=true;
  }
  const previous=new Map();
- for(const [id,{anchor,title,text,spacing}] of next){
+ for(const [id,{anchor,title,text,spacing,offset}] of next){
   const page=bpfSheets[id]??=bpfMakeObservationOverflowPage(id,title);
   const predecessor=previous.get(anchor)??anchor;
   if(!bpfPageOrder.includes(id)){
@@ -406,8 +420,8 @@ function bpfReconcileObservationPages(finalFont,finalBold){
   previous.set(anchor,id);
   const body=page.querySelector('.bpf-overflow-observation');
   if(body&&spacing==='final')body.style.fontSize=(bpfFinalConsiderationsSize/595.32*100)+'cqw';
-  if(body&&body.bpfRenderedObservation!==text){
-   if(spacing==='final')bpfRenderFinalConsiderationsText(body,text);
+  if(body&&(body.bpfRenderedObservation!==text||spacing==='final'&&body.bpfRenderedOffset!==offset)){
+   if(spacing==='final')bpfRenderFinalConsiderationsText(body,text,offset);
    else bpfRenderNCObservation(body,text,spacing);
    body.removeAttribute('aria-hidden');
   }
