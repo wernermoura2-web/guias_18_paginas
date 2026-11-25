@@ -26,6 +26,12 @@ vm.runInContext(fs.readFileSync(path.join(root,'sw-guia18.js'),'utf8'),ctx);
     assert.equal(photo.display,'grid');assert(photo.gap<=16,'espaço entre seleção e botão da foto');
     console.log(mode,code,'mobile 375px OK');
    }
+   for(const size of [{width:768,height:1024},{width:800,height:1280},{width:1024,height:768}]){
+    await page.setViewportSize(size);
+    const tablet=await page.locator('#bpf-editor').evaluate(el=>({position:getComputedStyle(el).position,width:el.getBoundingClientRect().width,scroll:el.scrollWidth,client:el.clientWidth,photo:getComputedStyle(el.querySelector('.bpf-f-photo-tools')).display,footer:getComputedStyle(el.querySelector('.bpf-editor-controls:last-child')).position}));
+    assert.equal(tablet.position,'fixed');assert(tablet.width<=size.width);assert(tablet.scroll<=tablet.client+1);assert.equal(tablet.photo,'grid');assert.equal(tablet.footer,'fixed');
+    console.log(mode,`${size.width}x${size.height}`,'tablet OK');
+   }
    await page.setViewportSize({width:1280,height:900});
    assert.equal(await page.locator('#bpf-editor').evaluate(el=>getComputedStyle(el).position),'static');
    await page.emulateMedia({media:'print'});assert.equal(await page.locator('#bpf-editor').evaluate(el=>getComputedStyle(el).display),'none');
