@@ -22,6 +22,8 @@ vm.runInContext(fs.readFileSync(path.join(root,'sw-guia18.js'),'utf8'),ctx);
     const editor=page.locator('#bpf-editor');await editor.waitFor();
     const geometry=await editor.evaluate(el=>({width:el.getBoundingClientRect().width,client:el.clientWidth,scroll:el.scrollWidth,position:getComputedStyle(el).position,columns:getComputedStyle(el.querySelector('.bpf-answer-grid,.bpf-unified-top')).gridTemplateColumns,button:el.querySelector('.bpf-editor-controls:last-child button').getBoundingClientRect().toJSON()}));
     assert.equal(geometry.position,'fixed');assert(geometry.width<=375);assert(geometry.scroll<=geometry.client+1);assert(geometry.button.height>=44&&geometry.button.bottom<=812);
+    const photo=await editor.locator('.bpf-f-photo-tools').evaluate(el=>({display:getComputedStyle(el).display,gap:el.querySelector('button').getBoundingClientRect().top-el.querySelector('select').getBoundingClientRect().bottom}));
+    assert.equal(photo.display,'grid');assert(photo.gap<=16,'espaço entre seleção e botão da foto');
     console.log(mode,code,'mobile 375px OK');
    }
    await page.setViewportSize({width:1280,height:900});
