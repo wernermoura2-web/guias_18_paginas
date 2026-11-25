@@ -576,6 +576,8 @@ const bpfWaterCheck = (() => {
  const panelEnabled=(row,entry,data)=>conductionF2(row,entry.index)
   ?!bpfPopNAForced(row,entry.scope,entry.index,data)
   :row.code!=='4.6.8'||entry.index!==1||capsDisinfected(entry.scope,data);
+ const rinseNA=(row,panel)=>row.code==='4.6.3'&&panel.id===0&&get(row,0)?.allowNA;
+ const rinseInfoEnabled=(row,panel,data)=>!rinseNA(row,panel)||!panel.entries.some(entry=>data[entry.name]==='2')||panel.entries.some(entry=>hasAnswer(data[entry.name]));
 
  // A ordem é fixada no próprio formulário F, sem sobreposição visual
  // e sem renomear os campos usados por respostas, OBS/NC e anexos.
@@ -1264,7 +1266,8 @@ const bpfWaterCheck = (() => {
     bpfApplyPopF2NA(row,scope,data);
     if(!panelEnabled(row,entry,data))continue;
    }
-   const state=read(entry,data);
+   let state=read(entry,data);
+   if(row.code==='4.6.3'&&get(row,entry.index)?.allowNA&&data[entry.name]==='2')state={...state,notApplicable:true};
    if(!panelEnabled(row,entry,data)){
     data[entry.name]='';
    }else if(state||row.code==='4.7.8'){
@@ -1318,6 +1321,7 @@ const bpfWaterCheck = (() => {
  }
  function records(row,entry,data,override){
   const config=get(row,entry.index);
+  if(row.code==='4.6.3'&&config?.allowNA&&data[entry.name]==='2')return [];
   let state=override??read(entry,data);
   if(!override&&config?.compactWater&&!config.compositeReservoir&&hasAnswer(data[entry.name])&&!state?.[compactAnswerId])state={...state,[compactAnswerId]:{answer:data[entry.name]}};
   if(!state||!panelEnabled(row,entry,data))return [];
@@ -1370,12 +1374,12 @@ const bpfWaterCheck = (() => {
   const supplemental=row.code==='4.3.3'&&panel.id===1?reservoirFilterReport(page,panel,data):row.code==='4.3.4'&&panel.id===0&&!compactWater(row,panel.id)?reservoirFrequencyAnnex(page,row,panel,data).flatMap(item=>item.checklist.map(v=>visualFrequency.label+': '+v)):[];
   const capRoutes=row.code==='4.6.8'&&panel.id===0?[...new Set(entries.map(entry=>capsTransportRoute(entry.scope,data)).filter(Boolean))].map(route=>route==='silo'?'Tampas transportadas com auxílio de silo externo':'Tampas transportadas para a tampadora sem auxílio de silo externo'):[];
   const joint=sharedLineInfo(row,panel)&&entries.length?sharedLineState(page,row,panel,data):null;
-  const infoEnabled=conductionPopInfoEnabled(row,panel,data)&&(!(row.code==='4.1.3'&&panel.id===2)||visualFrequencyEnabled(panel,data));
-  const jointEntry=conductionF2(row,panel.id)?entries.find(e=>panelEnabled(row,e,data)):entries[0];
+  const infoEnabled=rinseInfoEnabled(row,panel,data)&&conductionPopInfoEnabled(row,panel,data)&&(!(row.code==='4.1.3'&&panel.id===2)||visualFrequencyEnabled(panel,data));
+  const jointEntry=conductionF2(row,panel.id)?entries.find(e=>panelEnabled(row,e,data)):rinseNA(row,panel)?entries.find(e=>data[e.name]!=='2'):entries[0];
   const frequencyOnly=row.code==='4.3.4'&&panel.id===0&&Boolean(joint);
   const frequency=frequencyOnly&&visualFrequencyEnabled(panel,data)?joint.state['inspecao-visual']?.frequency:'';
   const jointRecords=joint&&jointEntry&&infoEnabled?records(row,jointEntry,data,joint.state):[];
-  if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length&&!capRoutes.length&&!frequency)return [];
+  if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length&&!capRoutes.length&&!frequency&&!(rinseNA(row,panel)&&entries.some(e=>data[e.name]==='2')))return [];
   const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
   const information=[...mixing,...supplemental,...capRoutes];
   if(frequency)information.push(visualFrequency.label+': '+frequency);
@@ -1456,7 +1460,7 @@ const bpfWaterCheck = (() => {
 
  function validateMandatory(page,row,panels,content){
   if(row.code==='4.6.7'){const panel=panels.find(p=>p.id===0);if(!panel||!panel.entries.length||panel.entries.every(e=>values[e.name]==='2'||read(e,values)?.notApplicable))return true;const state=sharedLineState(page,row,panel,values).state;if(!hasAnswer(state['enxague-ozonizado']?.answer)){const control=content.querySelector('[data-bpf-required-info="enxague-ozonizado"]');alert('ATENÇÃO — Resposta obrigatória: informe se o enxágue é realizado com água mineral natural ozonizada.');control?.scrollIntoView({block:'center'});control?.focus();return false;}return true;}
-  if(row.code==='4.6.3'){const panel=panels.find(p=>p.id===0);if(panel&&sharedLineInfo(row,panel)&&!hasAnswer(sharedLineState(page,row,panel,values).state['embalagens-sopradas']?.answer)){const control=content.querySelector('[data-bpf-required-info="embalagens-sopradas"]');alert('ATENÇÃO — Resposta obrigatória: informe se as embalagens são sopradas no estabelecimento.');control?.scrollIntoView({block:'center'});control?.focus();return false;}return true;}
+  if(row.code==='4.6.3'){const panel=panels.find(p=>p.id===0);if(panel&&rinseInfoEnabled(row,panel,values)&&sharedLineInfo(row,panel)&&!hasAnswer(sharedLineState(page,row,panel,values).state['embalagens-sopradas']?.answer)){const control=content.querySelector('[data-bpf-required-info="embalagens-sopradas"]');alert('ATENÇÃO — Resposta obrigatória: informe se as embalagens são sopradas no estabelecimento.');control?.scrollIntoView({block:'center'});control?.focus();return false;}return true;}
   if(row.code!=='4.6.8')return true;
   const panel=panels.find(p=>p.id===0);if(!panel)return true;
   for(const entry of panel.entries){
@@ -1745,7 +1749,7 @@ const bpfWaterCheck = (() => {
   const boxes=new Map();
   const capsF1=row.code==='4.6.8'&&[0,1].includes(panel.id);
   const sections=config.inline?[]:[['1','Sim'],['0','Não']];
-  if(dependentF2)sections.push(['2','Não se aplica']);
+  if(dependentF2||rinseNA(row,panel))sections.push(['2','Não se aplica (NA)']);
   if(config.checks.some(criterion=>isInformation(config,criterion)))sections.push(['info',informationHeading(config)]);
   for(const [answer,heading] of sections){
    if(capsF1&&answer==='0'){boxes.set('0',boxes.get('1'));continue;}
@@ -1769,7 +1773,7 @@ const bpfWaterCheck = (() => {
    }
   }
   const joint=sharedLineInfo(row,panel)?sharedLineState(page,row,panel,values):null;
-  const naBox=config.allowNA?element('div'):null;if(naBox){naBox.style.cssText='display:flex;flex-direction:column;gap:2px;margin:2px 0;padding:0';answerGrid.prepend(naBox);}
+  const naBox=config.allowNA?(boxes.get('2')||element('div')):null;if(naBox&&!rinseNA(row,panel)){naBox.style.cssText='display:flex;flex-direction:column;gap:2px;margin:2px 0;padding:0';answerGrid.prepend(naBox);}
   for(const entry of panel.entries){
    const previous=read(entry,values);
    const existingAnswer=values[entry.name];
@@ -1777,7 +1781,7 @@ const bpfWaterCheck = (() => {
     ? {[config.checks[0].id]:{answer:existingAnswer}} : null)||(row.code==='4.2.2'&&panel.id===1?{integrityPositive:true}:{});
    if(config.compactWater&&hasAnswer(existingAnswer)&&!state[compactAnswerId])state[compactAnswerId]={answer:existingAnswer};
    const label=bpfScopeLabel(page,entry.scope);
-   if(config.allowNA&&existingAnswer==='2'&&!previous)state.notApplicable=true;
+   if(config.allowNA&&existingAnswer==='2'&&(!previous||rinseNA(row,panel)))state.notApplicable=true;
    const legacy=previous||config.simple?'':bpfAnswerLabel(existingAnswer);
    const legacyLines=[];
    const rows=[];
@@ -1814,10 +1818,11 @@ const bpfWaterCheck = (() => {
     card.addEventListener('bpf-f2-refresh',refresh);
    }
    if(config.allowNA){
-    const control=element('label',label+' — Não se aplica (copos descartáveis)');
-    control.className='bpf-water-choice';
+    const control=element('label',rinseNA(row,panel)?label:label+' — Não se aplica (copos descartáveis)');
+    control.className=rinseNA(row,panel)?'bpf-answer-item':'bpf-water-choice';
     const input=element('input');
     input.type='checkbox';
+    if(rinseNA(row,panel)){input.dataset.bpfRinseNA='1';input.setAttribute('aria-label',label+' — Não se aplica (NA)');}
     input.checked=!!state.notApplicable;
     input.onchange=()=>{state.notApplicable=input.checked;save();};
     control.prepend(input);
@@ -1825,6 +1830,7 @@ const bpfWaterCheck = (() => {
    }
    const entryState=state,entrySave=save;
    for(const [sectionType,box] of boxes){
+    if(rinseNA(row,panel)&&sectionType==='2')continue;
     if(dependentF2&&sectionType==='2'){
      const control=element('label',label);control.className='bpf-water-choice';
      const input=element('input');input.type='checkbox';input.disabled=true;input.dataset.bpfPopNA='';
@@ -2009,6 +2015,13 @@ const bpfWaterCheck = (() => {
    grid.append(box);
   }
   card.append(grid);
+  if(rinseNA(row,panel)){
+   const info=boxes.get('info');
+   const notice=element('p','Não há linha avaliada como Sim ou Não. Outras informações, OBS e NC ficam desabilitadas enquanto a avaliação estiver como NA.');
+   notice.className='bpf-guidance';card.append(notice);
+   const gate=()=>{const enabled=rinseInfoEnabled(row,panel,values);for(const section of [info,...grid.children].filter(Boolean)){section.disabled=!enabled;section.style.opacity=enabled?'1':'.55';}notice.hidden=enabled;};
+   card.addEventListener('bpf-rinse-yes-refresh',gate);gate();
+  }
   if(row.code==='4.3.4'&&panel.id===0&&!config.compactWater)renderReservoirFrequency(card,page,row,panel);
   return true;
  }

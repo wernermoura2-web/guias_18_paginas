@@ -168,6 +168,28 @@ const filterSelect=walk(captureBox).find(n=>n.tagName==='SELECT'&&n.parentElemen
 assert(filterSelect&&filterSelect.value==='1','Resposta de filtro legada deve ser preservada no quadro geral parcial');
 assert.equal(JSON.parse(values[legacyKey]).filtro.frequency,'Mensal');
 console.log('4.1.3 F1: quadro único também com preenchimento antigo e parcial');
+// 4.6.3 descartáveis: NA com identidade visual própria, sem obrigar informações
+// complementares e sem apagar o que já havia sido registrado.
+ctx.Event=class{constructor(type){this.type=type;}};
+const rinsePage=model.find(p=>p.page===8),rinseRow=rinsePage.rows.find(r=>r.code==='4.6.3');
+const rinsePanel={id:0,label:'F1',entries:rinseRow.scopes.map(s=>({scope:s,index:0,name:phraseName(s,0),phrase:s.phrases[0]}))};
+const rinseKey='BPF_LineInfo_8_4_6_3_F1';
+for(const e of rinsePanel.entries){delete values[e.name];delete values['BPF_FWater_'+e.name];}
+values[rinseKey]=JSON.stringify({'embalagens-sopradas':{answer:'1'}});
+const rinseCard=new Node('fieldset');water.render(rinseCard,rinsePage,rinseRow,rinsePanel);
+const naControls=walk(rinseCard).filter(n=>n.dataset.bpfRinseNA),rinseInfo=walk(rinseCard).find(n=>Object.hasOwn(n.dataset,'bpfInfoBox'));
+const rinseNotes=walk(rinseCard).filter(n=>n.tagName==='TEXTAREA'&&n.dataset.note).map(n=>n.parentElement);
+assert.equal(naControls.length,3);assert(rinseCard.textContent.includes('Não se aplica (NA)'));assert(!rinseInfo.disabled);
+naControls[0].checked=true;naControls[0].onchange();assert.equal(values[rinsePanel.entries[0].name],'2');assert(rinseInfo.disabled&&rinseNotes.every(n=>n.disabled));
+assert(water.validateMandatory(rinsePage,rinseRow,[rinsePanel],rinseCard));
+const yesBox=walk(rinseCard).find(n=>n.tagName==='FIELDSET'&&n.children[0]?.textContent==='F1 — Sim');
+const yesControls=walk(yesBox).filter(n=>n.tagName==='INPUT');assert(yesControls[0].disabled&&!yesControls[0].checked);
+yesControls[1].checked=true;yesControls[1].onchange();assert(!rinseInfo.disabled&&rinseNotes.every(n=>!n.disabled));
+for(const input of naControls.slice(1)){input.checked=true;input.onchange();}
+assert(rinseInfo.disabled);assert(water.report(rinsePage,rinseRow,rinsePanel,values).every(r=>r.answer==='2'));assert.equal(JSON.parse(values[rinseKey])['embalagens-sopradas'].answer,'1');
+assert(water.validateMandatory(rinsePage,rinseRow,[rinsePanel],rinseCard));
+naControls[1].checked=false;naControls[1].onchange();assert(!rinseInfo.disabled);assert.equal(values[rinsePanel.entries[1].name],'1');
+console.log('4.6.3: NA por linha, bloqueio de OBS/NC e informações, reativação e relatório NA OK');
 // Exercitar a regra real de confirmação e restauração por unidade.
 const sw=fs.readFileSync('sw-guia18.js','utf8');
 const popRule=sw.match(/const popRule=`<script>([\s\S]*?)<\/script>`;/)[1];
