@@ -1095,23 +1095,50 @@ const bpfWaterCheck = (() => {
   ['Finalidade','A finalidade de uso do saneante corresponde à utilização realizada?','A finalidade de uso do saneante corresponde à utilização realizada','A finalidade de uso do saneante não corresponde à utilização realizada']
  ];
  function sanitizerReception(row,panel){return row.code==='4.5.3'&&panel.id===1;}
+ // Saneantes: um quadro por F, não por material/unidade da recepção.
+ // As chaves individuais legadas continuam intactas para recuperar divergências.
+ function sanitizerReceptionState(page,row,panel,data){
+  const field=sharedLineKey(page,row,panel);let saved={};
+  try{saved=JSON.parse(data[field]||'{}')||{};}catch{}
+  const state={...saved},conflicts={};
+  for(const [key] of sanitizerReceptionQuestions){
+   if(Object.prototype.hasOwnProperty.call(saved,key))continue;
+   const records=panel.entries.map(entry=>({entry,answer:data[receptionKey(entry.name,key)]})).filter(record=>hasAnswer(record.answer));
+   const distinct=[...new Set(records.map(record=>record.answer))];
+   if(distinct.length===1)state[key]=distinct[0];
+   else if(distinct.length>1)conflicts[key]=records;
+  }
+  return {field,state,conflicts};
+ }
  function sanitizerReceptionRecords(page,row,panel,data){
-  return panel.entries.flatMap(entry=>{
-   const result=sanitizerReceptionQuestions.flatMap(([key,question,yes,no])=>{const answer=data[receptionKey(entry.name,key)];return ['1','0'].includes(answer)?[(answer==='1'?yes:no)+' ('+bpfScopeLabel(page,entry.scope)+')']:[];});
-   if(result.length)return result;
-   const legacy=data[receptionKey(entry.name,'Resposta')],check=receptionChecks[row.code][panel.id];
-   return ['1','0'].includes(legacy)?[(legacy==='1'?check.yes:check.no)+' ('+bpfScopeLabel(page,entry.scope)+' — registro anterior)']:[]; 
-  });
+  const {state,conflicts}=sanitizerReceptionState(page,row,panel,data),result=[];
+  for(const [key,question,yes,no] of sanitizerReceptionQuestions){
+   if(hasAnswer(state[key]))result.push(state[key]==='1'?yes:no);
+   else if(conflicts[key])for(const answer of ['1','0']){
+    const labels=conflicts[key].filter(record=>record.answer===answer).map(record=>bpfScopeLabel(page,record.entry.scope));
+    if(labels.length)result.push((answer==='1'?yes:no)+' ('+labels.join(', ')+' — registro anterior)');
+   }
+  }
+  // A avaliação agregada de versões antigas não permite inferir respostas individuais.
+  if(!result.length&&!Object.keys(state).length){
+   const check=receptionChecks[row.code][panel.id];
+   for(const answer of ['1','0']){const labels=panel.entries.filter(entry=>data[receptionKey(entry.name,'Resposta')]===answer).map(entry=>bpfScopeLabel(page,entry.scope));if(labels.length)result.push((answer==='1'?check.yes:check.no)+' ('+labels.join(', ')+' — registro anterior)');}
+  }
+  return result;
  }
  function renderSanitizerReception(card,page,row,panel){
-  const block=element('fieldset');block.className='bpf-answer-box';block.append(element('legend','Informações adicionais — Saneantes'));
-  for(const entry of panel.entries)for(const [key,question,yes,no] of sanitizerReceptionQuestions){
-   const field=receptionKey(entry.name,key),label=element('label');label.style.cssText='display:block;margin:4px 0 6px;line-height:1.25';
+  if(!panel.entries.length||card.querySelector('[data-bpf-sanitizer-reception]'))return;
+  const {field,state,conflicts}=sanitizerReceptionState(page,row,panel,values);
+  const block=element('fieldset');block.className='bpf-answer-box';block.dataset.bpfInfoBox='';block.dataset.bpfSanitizerReception='1';block.append(element('legend','Informações adicionais — Saneantes'));
+  for(const [key,question,yes,no] of sanitizerReceptionQuestions){
+   const label=element('label');label.style.cssText='display:block;margin:4px 0 6px;line-height:1.25';
    const prompt=element('span',question);label.append(prompt);
    const select=element('select');select.style.cssText='display:block;margin:2px 0 0;padding:3px 5px';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
-   select.value=values[field]||'';
+   select.value=state[key]||'';
+   const notice=conflicts[key]?element('p','Respostas anteriores divergentes: '+conflicts[key].map(record=>bpfScopeLabel(page,record.entry.scope)+' — '+bpfAnswerLabel(record.answer)).join('; ')+'. Selecione a resposta geral após conferir.'):null;
+   if(notice){notice.style.cssText='padding:6px;color:#8a4c15';label.append(notice);}
    const refresh=()=>{prompt.textContent=select.value==='1'?yes:select.value==='0'?no:question;};
-   select.onchange=()=>{values[field]=select.value;bpfSyncObservation(row,page);changed();refresh();};
+   select.onchange=()=>{state[key]=select.value;values[field]=JSON.stringify(state);if(notice)notice.hidden=true;bpfSyncObservation(row,page);changed();refresh();};
    refresh();label.append(select);block.append(label);
   }
   card.append(block);
@@ -1176,7 +1203,7 @@ const bpfWaterCheck = (() => {
 
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
-   for(const id of compactWaterPanels[row.code]||[]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}
+   for(const id of row.code==='4.5.3'?[1]:compactWaterPanels[row.code]||[]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}
    if(row.code==='4.6.12'){
     const name=packagingPopPageKey(page);
     data.fields[name]={name,type:'/Ch',flags:0,label:'4.6.12 F1 — Disponibilidade e atualização do POP (informação única por processo)',options:['','1','0'],calc:'',phrasePage:page.page};
@@ -1273,10 +1300,11 @@ const bpfWaterCheck = (() => {
   if(raw){try{
    const state=addGate(JSON.parse(raw)||{}),conflicts=[];
    if(['4.2.2','4.3.2'].includes(row.code)&&panel.id===0)mergeConductionDocuments(state);
-   if(compactWater(row,panel.id))for(const c of get(row,panel.id).checks.filter(c=>isInformation(get(row,panel.id),c))){
-    if(answered(c,state))continue;
-    const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&answered(c,v)).map(v=>JSON.stringify(v[c.id]));
-    if(new Set(recorded).size>1)conflicts.push(c.id);
+   for(const c of get(row,panel.id).checks.filter(c=>isInformation(get(row,panel.id),c))){
+    if(Object.prototype.hasOwnProperty.call(state[c.id]||{},'answer')||answered(c,state))continue;
+    const distinct=[...new Set(panel.entries.map(e=>read(e,data)).filter(v=>v&&answered(c,v)).map(v=>JSON.stringify(v[c.id])))];
+    if(distinct.length===1)state[c.id]=JSON.parse(distinct[0]);
+    else if(distinct.length>1)conflicts.push(c.id);
    }
    return {state,conflicts};
   }catch(_){}}

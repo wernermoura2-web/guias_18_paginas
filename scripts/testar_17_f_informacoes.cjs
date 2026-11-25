@@ -7,7 +7,7 @@ class Node{
  prepend(...nodes){for(const n of nodes)if(n&&typeof n==='object')n.parentElement=this;this.children.unshift(...nodes);}
  replaceChildren(...nodes){this.children=[];this.append(...nodes);}
  setAttribute(){} addEventListener(type,fn){(this.listeners??={})[type]??=[];this.listeners[type].push(fn);} dispatchEvent(event){for(const fn of this.listeners?.[event.type]||[])fn(event);} add(n){this.append(n);}
- querySelector(s){return walk(this).find(n=>n.tagName===s.toUpperCase())||null;}
+ querySelector(s){if(s==='[data-bpf-sanitizer-reception]')return walk(this).find(n=>Object.hasOwn(n.dataset,'bpfSanitizerReception'))||null;return walk(this).find(n=>n.tagName===s.toUpperCase())||null;}
  querySelectorAll(s){return walk(this).filter(n=>s.split(',').some(tag=>n.tagName===tag.toUpperCase()));}
  set textContent(t){this.caption=t;this.children=[];} get textContent(){return (this.caption||'')+this.children.map(n=>typeof n==='string'?n:n.textContent).join('');}
 }
@@ -129,6 +129,45 @@ for(const [code,ids] of Object.entries(target)){
  }
 }
 assert.equal(count,17);
+// Conferir todos os F configurados com múltiplas unidades: somente um quadro geral.
+let audited=0;
+for(const p of model)for(const r of p.rows.filter(r=>r.scopes.length>1))for(let id=0;id<r.phrases.length;id++){
+ const cfg=water.get(r,id);if(!cfg||cfg.inline||r.code==='4.3.3')continue;
+ const information=cfg.checks.filter(c=>c.informationOnly||cfg.separateInformation&&!c.scopeAnswer);if(!information.length)continue;
+ const panel={id,label:'F'+(id+1),entries:r.scopes.filter(s=>s.phrases[id]).map(s=>({scope:s,index:id,name:phraseName(s,id),phrase:s.phrases[id]}))};
+ if(!panel.entries.length)continue;
+ const card=new Node('fieldset');assert(water.render(card,p,r,panel));
+ const box=walk(card).filter(n=>Object.hasOwn(n.dataset,'bpfInfoBox'));assert.equal(box.length,1,r.code+' F'+(id+1));
+ assert.equal(box[0].children.filter(n=>n.className?.startsWith('bpf-water-unit')).length,1,r.code+' F'+(id+1)+' tem de ter apenas um quadro de informações gerais');
+ audited++;
+}
+console.log('Auditoria de informações gerais:',audited,'F com múltiplas unidades, sem repetição');
+// Reprodução da foto: um grupo preenchido, outro vazio e um terceiro divergente.
+const receptionPage=model.find(p=>p.page===6),receptionRow=receptionPage.rows.find(r=>r.code==='4.5.3');
+const receptionPanel={id:1,label:'F2',entries:receptionRow.scopes.map(s=>({scope:s,index:1,name:phraseName(s,1),phrase:s.phrases[1]}))};
+const [first,second,third]=receptionPanel.entries,oldField=(e,k)=>'BPF_Recepcao_'+e.name+'_'+k,commonKey='BPF_LineInfo_6_4_5_3_F2';
+values[oldField(first,'Identificacao')]='1';values[oldField(first,'Validade')]='0';values[oldField(first,'Regularizacao')]='0';values[oldField(first,'Finalidade')]='0';
+values[oldField(third,'Regularizacao')]='1';
+ctx.bpfSyncObservation=()=>{};
+const receptionCard=new Node('fieldset');water.renderReception(receptionCard,receptionPage,receptionRow,receptionPanel);water.renderReception(receptionCard,receptionPage,receptionRow,receptionPanel);
+const selects=walk(receptionCard).filter(n=>n.tagName==='SELECT');assert.equal(selects.length,4,'Somente quatro perguntas de saneantes, mesmo com três grupos');
+assert.deepEqual(selects.map(n=>n.value),['1','0','','0']);assert(receptionCard.textContent.includes('Respostas anteriores divergentes'));
+selects[2].value='1';selects[2].onchange();assert.equal(JSON.parse(values[commonKey]).Regularizacao,'1');assert.equal(values[oldField(first,'Regularizacao')],'0');assert.equal(values[oldField(third,'Regularizacao')],'1');
+assert.equal(water.receptionSummary(receptionPage,receptionRow,receptionPanel,values).length,4,'Relatório com uma única afirmação por pergunta');
+selects[0].value='';selects[0].onchange();const reopened=new Node('fieldset');water.renderReception(reopened,receptionPage,receptionRow,receptionPanel);assert.equal(walk(reopened).filter(n=>n.tagName==='SELECT')[0].value,'','Limpeza explícita não deve restaurar resposta legada');
+console.log('4.5.3 F2: quadro único, migração de respostas anteriores, divergência preservada e relatório sem repetição');
+// Captação: respostas por unidade de uma versão antiga devem preencher o quadro geral
+// mesmo se já houver um JSON parcial do quadro geral.
+const capturePage=model.find(p=>p.page===0),captureRow=capturePage.rows.find(r=>r.code==='4.1.3'),capturePanel={id:0,label:'F1',entries:captureRow.scopes.map(s=>({scope:s,index:0,name:phraseName(s,0),phrase:s.phrases[0]}))};
+const captureKey='BPF_LineInfo_0_4_1_3_F1',legacyKey='BPF_FWater_'+capturePanel.entries[0].name;
+values[captureKey]=JSON.stringify({'pop-registros':{answer:'1'}});values[legacyKey]=JSON.stringify({filtro:{answer:'1',frequency:'Mensal'}});
+const captured=new Node('fieldset');water.render(captured,capturePage,captureRow,capturePanel);
+const captureBox=walk(captured).find(n=>Object.hasOwn(n.dataset,'bpfInfoBox'));
+assert.equal(captureBox.children.filter(n=>n.className?.startsWith('bpf-water-unit')).length,1);
+const filterSelect=walk(captureBox).find(n=>n.tagName==='SELECT'&&n.parentElement?.textContent.includes('Possui filtro de ar microbiológico no poço'));
+assert(filterSelect&&filterSelect.value==='1','Resposta de filtro legada deve ser preservada no quadro geral parcial');
+assert.equal(JSON.parse(values[legacyKey]).filtro.frequency,'Mensal');
+console.log('4.1.3 F1: quadro único também com preenchimento antigo e parcial');
 // Exercitar a regra real de confirmação e restauração por unidade.
 const sw=fs.readFileSync('sw-guia18.js','utf8');
 const popRule=sw.match(/const popRule=`<script>([\s\S]*?)<\/script>`;/)[1];
