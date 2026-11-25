@@ -34,6 +34,12 @@ for(const [code,ids] of Object.entries(target)){
   assert.equal(first.checked,false,'Sim e Não exclusivos');
   const sharedSelect=walk(info[0]).find(n=>n.tagName==='SELECT'&&n.children.some(o=>o.value==='1')&&n.children.some(o=>o.value==='0'));
   if(sharedSelect){sharedSelect.value='1';sharedSelect.onchange();assert.equal(values[panel.entries[0].name],'0','informação geral não altera a avaliação da unidade');assert(values['BPF_LineInfo_'+page.page+'_'+code.replace(/\./g,'_')+'_F'+(id+1)],'informação registrada uma única vez');}
+  if(code==='4.1.3'&&id===2){
+   const selects=walk(info[0]).filter(n=>n.tagName==='SELECT');assert.equal(selects.length,3);
+   assert(selects.every(s=>s.disabled));first.checked=true;first.onchange();assert(selects.every(s=>!s.disabled));
+   for(const select of selects){select.value='';select.onchange();assert(select.parentElement.children[0].textContent.startsWith('Os registros incluem '));assert(select.parentElement.children[0].textContent.endsWith('?'));select.value='0';select.onchange();assert(select.parentElement.children[0].textContent.startsWith('Os registros não incluem '));}
+   no.checked=true;no.onchange();assert(selects.every(s=>s.disabled));assert(!JSON.stringify(water.report(page,row,panel,values)).includes('Os registros não incluem'));
+  }
   if(code==='4.1.3'&&id===0){
    const select=walk(info[0]).find(n=>n.tagName==='SELECT'&&n.parentElement?.textContent.includes('Existe telemetria em linha?'));assert(select,'telemetria deve ter seletor Sim/Não');
    const line=select.parentElement,detail=walk(line).find(n=>n.className==='bpf-water-detail');assert(detail&&detail.hidden,'tipos fechados sem resposta');
@@ -167,7 +173,7 @@ const infoKey='BPF_LineInfo_1_4_2_9_F2';
 values[infoKey]=JSON.stringify({saneantes:{answer:'1',products:{outros:{selected:true,name:'Exemplo'}}}});
 const noPopCard=new Node('fieldset');water.render(noPopCard,page,row,panels[1]);
 const noPopInfo=walk(noPopCard).find(n=>Object.hasOwn(n.dataset,'bpfInfoBox'));
-assert(noPopInfo.textContent.includes('Sanitizantes descritos no POP'));
+assert(noPopInfo.textContent.includes('Quais são os sanitizantes (princípios ativos) descritos no POP'));
 assert(walk(noPopInfo).filter(n=>n.tagName==='INPUT').every(n=>n.disabled&&!n.checked));
 assert.equal(JSON.parse(values[infoKey]).saneantes.answer,'');
 assert(!JSON.stringify(water.report(page,row,panels[1],values)).includes('Sanitizantes descritos no POP'));

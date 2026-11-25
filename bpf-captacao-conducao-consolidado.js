@@ -140,9 +140,9 @@ const bpfWaterCheck = (() => {
     check('nao-captacao','Não',{noOnly:true,scopeAnswer:true})
    ]},
    2:{all:true,answerPrompts:{'1':'informe os registros de limpeza apresentados','0':'informe os registros de limpeza não apresentados'},checks:[
-    check('externa','Área externa (pavimentação, calhas de drenagem, etc.)'),
-    check('interior','Interior da casa de captação (piso, paredes, tubulações, etc.)'),
-    check('captacao','Captação (poço ou surgência)')
+    check('externa','Os registros incluem a área externa (pavimentação, calhas de drenagem, etc.)?',{noLabel:'Os registros não incluem a área externa (pavimentação, calhas de drenagem, etc.)'}),
+    check('interior','Os registros incluem o interior da casa de captação (piso, paredes, tubulações, etc.)?',{noLabel:'Os registros não incluem o interior da casa de captação (piso, paredes, tubulações, etc.)'}),
+    check('captacao','Os registros incluem a captação (poço ou surgência)?',{noLabel:'Os registros não incluem a captação (poço ou surgência)'})
    ]}
   },
   '4.2.2':{
@@ -1342,7 +1342,7 @@ const bpfWaterCheck = (() => {
   const supplemental=row.code==='4.3.3'&&panel.id===1?reservoirFilterReport(page,panel,data):row.code==='4.3.4'&&panel.id===0&&!compactWater(row,panel.id)?reservoirFrequencyAnnex(page,row,panel,data).flatMap(item=>item.checklist.map(v=>visualFrequency.label+': '+v)):[];
   const capRoutes=row.code==='4.6.8'&&panel.id===0?[...new Set(entries.map(entry=>capsTransportRoute(entry.scope,data)).filter(Boolean))].map(route=>route==='silo'?'Tampas transportadas com auxílio de silo externo':'Tampas transportadas para a tampadora sem auxílio de silo externo'):[];
   const joint=sharedLineInfo(row,panel)&&entries.length?sharedLineState(page,row,panel,data):null;
-  const infoEnabled=conductionPopInfoEnabled(row,panel,data);
+  const infoEnabled=conductionPopInfoEnabled(row,panel,data)&&(!(row.code==='4.1.3'&&panel.id===2)||visualFrequencyEnabled(panel,data));
   const jointEntry=conductionF2(row,panel.id)?entries.find(e=>panelEnabled(row,e,data)):entries[0];
   const frequencyOnly=row.code==='4.3.4'&&panel.id===0&&Boolean(joint);
   const frequency=frequencyOnly&&visualFrequencyEnabled(panel,data)?joint.state['inspecao-visual']?.frequency:'';
@@ -1761,6 +1761,7 @@ const bpfWaterCheck = (() => {
      if(!values[entry.name])values[entry.scope.name]='Off';
     }
     refresh();
+    if(row.code==='4.1.3'&&panel.id===2)card.dispatchEvent(new Event('bpf-catchment-records-refresh'));
     if(row.code==='4.3.4'&&panel.id===0)card.dispatchEvent(new Event('bpf-visual-refresh'));
     if(row.code==='4.6.3'&&joint)card.dispatchEvent(new Event('bpf-rinse-yes-refresh'));
     if(config.inline||(row.code==='4.2.9'&&panel.id===0))apply(row,entry.scope,values);
@@ -1869,14 +1870,16 @@ const bpfWaterCheck = (() => {
       rows.push(refreshFrequency);card.addEventListener('bpf-visual-refresh',refreshFrequency);
       continue;
      }
+     const displayQuestion=criterion.label.replace(/^(?:Quais são os\s+)?sanitizantes\s*(?:\(princípios ativos\))?\s+/i,'Quais são os sanitizantes (princípios ativos) ');
+     const displayLabel=displayQuestion!==criterion.label?displayQuestion.replace(/[.?]+$/,'')+'?':criterion.label;
      if((criterion.details==='sanitizers'&&!criterion.explicitAnswer||criterion.informationList)&&answer==='1'){
-      const title=element('strong',criterion.label);
+      const title=element('strong',displayLabel);
       title.className='bpf-water-caption';
       line.append(title);
       fields(line,criterion,item,save,rows);
       continue;
      }
-     const caption=capsF1&&!information&&criterion.scopeAnswer?heading:directChoice?label:criterion.scopeAnswer?heading+' — '+label:answerLabel(criterion,answer);
+     const caption=capsF1&&!information&&criterion.scopeAnswer?heading:directChoice?label:criterion.scopeAnswer?heading+' — '+label:answer==='1'?displayLabel:answerLabel(criterion,answer);
      const control=element('label');
      const captionNode=element('span');
      const displayCaption=value=>{
@@ -1946,6 +1949,10 @@ const bpfWaterCheck = (() => {
       }
       extra.hidden=!enabled||(!information||criterion.details!=='inspection-frequency')&&item.answer!==answer||!showDetails;
      });
+    }
+    if(row.code==='4.1.3'&&panel.id===2&&general){
+     const refreshRecords=()=>{const enabled=visualFrequencyEnabled(panel,values);section.querySelectorAll('input,select,textarea').forEach(input=>{input.disabled=!enabled;});section.style.opacity=enabled?'1':'.55';};
+     rows.push(refreshRecords);card.addEventListener('bpf-catchment-records-refresh',refreshRecords);
     }
     if(row.code==='4.2.9'&&panel.id===0&&sectionType==='0'&&typeof bpfMountPopAbsence==='function'){
      const update=bpfMountPopAbsence(section,entry,row,page,card,()=>card.parentElement?.querySelector('[data-bpf-conduction-f2]')?.dispatchEvent(new Event('bpf-f2-refresh')));
