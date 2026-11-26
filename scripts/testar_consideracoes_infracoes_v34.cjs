@@ -5,7 +5,7 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
 (async()=>{
  for(const file of ['equipe.html','individual.html']){
   const html=await (await worker.attach(new Response(fs.readFileSync(file,'utf8')),new URL('https://example.test/guias/'+file))).text();
-  assert(/bpf-conclusao-nc\.js\?v=20261123-v(?:34-consideracoes-infracoes|36-formatacao-consideracoes)/.test(html));
+  assert(html.includes('bpf-conclusao-nc.js?v=20261126-v76-infracoes'));
   assert(html.includes('bpf-paginacao-observacoes.js?v=20261124-v45-contagem-nc-coerente'));
   assert(html.includes('await bpfPrintConclusionFormatted(pdf,form,observationFont,bpfSourcePages,window.bpfConclusaoNC)'));
   const scope={name:'Teste',col:1,phrases:['PCC','PPRO','PC','POP','PPR'].map(appcc=>({appcc,text:'Requisito '+appcc}))},row={code:'4.1.3',scopes:[scope]};
@@ -14,6 +14,7 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
   const riskMap=Array.from({length:8},(_,i)=>({matrix:'Dropdown'+(60+i)}));
   riskMap.forEach((cfg,i)=>values[cfg.matrix]=i<5?(i%2?'ALTO-PCC':'ALTO'):'BAIXO');
   const ctx={values,BPF_PCC_RISK_MAP:riskMap,BPF_PHRASES:[{page:0,rows:[row]}],titles:['Captação'],bpfPhraseName:(s,i)=>s.name+'_'+i,bpfNoteName:(s,i)=>'note_'+i,bpfScopeLabel:()=> 'Captação 1',bpfPanels:()=>[],bpfGroupedF2:()=>null,bpfReservoirIsLinked:()=>false,bpfGeneralFullText:()=>values['OBS 1'],bpfGeneralFlow:t=>values['OBS 1']=t,bpfNCListVisibility:()=>[],quantitativeSelected:()=>false};
+  ctx.bpfReservoirExcluded=()=>false;
   vm.createContext(ctx);
   const pagination=fs.readFileSync('bpf-paginacao-observacoes.js','utf8');
   const sections=[extract(html,'var PCCFinal=(function(){','const BPF_FINAL_CLASSES='),extract(html,'const BPF_FINAL_CLASSES=','const BPF_NC_CONTINUATION='),extract(html,'const BPF_NC_DEFINITIONS=','</script>'),extract(pagination,'const bpfNCConsiderandosClasses=','const quantKey=')];
@@ -94,6 +95,34 @@ const extract=(s,a,b)=>{const i=s.indexOf(a),j=s.indexOf(b,i+a.length);assert(i>
  const window={Guia:{values}},document={readyState:'loading',addEventListener(){}};
  vm.runInNewContext(fs.readFileSync('bpf-conclusao-nc.js','utf8'),{window,document});
  const conclusion=window.bpfConclusaoNC.include('Texto manual');assert(conclusion.includes('Texto manual'));assert(conclusion.includes('artigo 10, inciso IV'));assert(conclusion.includes('artigo 10, inciso XXXI'));assert(!conclusion.includes('Foram identificadas as seguintes inadequações'));
+ const infractionsSource=fs.readFileSync('bpf-conclusao-nc.js','utf8');
+ const catalog=vm.runInNewContext(infractionsSource.slice(infractionsSource.indexOf('const infractions=['),infractionsSource.indexOf('function savedInfractions'))+'\ninfractions');
+ for(const title of ['Descumprimento das Boas Práticas — RDC nº 173/2006','Descumprimento dos padrões microbiológicos — IN Anvisa nº 161/2022','Descumprimento da Portaria SUVISA nº 4.325/2025','Presença de vetores e pragas urbanas'])assert.equal(catalog.find(p=>p[1]===title)?.[0],'XXIX');
+ assert.equal(catalog.find(p=>p[1]==='Uso de insumo ou saneante vencido')?.[0],'IV');
+ assert.equal(catalog.find(p=>p[1]==='Utilização de produto ou insumo sem registro na Anvisa')?.[0],'IV');
+ assert.equal(catalog.find(p=>p[1]==='Produto vencido exposto à venda ou entregue ao consumo')?.[0],'XVIII');
+ assert.equal(catalog.find(p=>p[1]==='Descumprimento de Termo de Intimação')?.[0],'XXXI');
+ assert.equal(catalog.length,new Set(catalog.map(p=>p[1])).size);
+ assert.equal(JSON.parse(values.BPF_ConclusaoInfracoes)[0].inciso,'IV','registros antigos não devem ser alterados sem revisão');
+ const api=window.bpfConclusaoNC,oldRecords=api.savedInfractions(),manual='Relato manual que não pode desaparecer.';
+ values[api.field]=manual;
+ const generated=oldRecords.map(api.infractionSentence).join('\n\n');
+ values.BPF_ConclusaoTextosEditados=JSON.stringify({['v34:00:'+JSON.stringify(oldRecords)]:generated+'\n\nObservação digitada após a autuação.'});
+ api.recoverLegacyManual();
+ assert(values[api.field].includes(manual)&&values[api.field].includes('Observação digitada após a autuação.'));
+ const recovered=values[api.field];api.recoverLegacyManual();assert.equal(values[api.field],recovered);
+ api.saveManualConclusion({value:recovered+'\n\nOutra não conformidade escrita pelo fiscal.'});
+ const savedManual=values[api.field];
+ values.BPF_ConclusaoInfracoes='[]';values.BPF_ConclusaoFrasesSelecionadas='[]';
+ assert.equal(values[api.field],savedManual);assert.equal(api.include(values[api.field]),savedManual);
+ values.BPF_ConclusaoInfracoes=JSON.stringify(oldRecords.slice(1));
+ assert(api.include(values[api.field]).includes(savedManual));assert(!api.include(values[api.field]).includes('inciso IV'));
+ const inspection={'BPF_Summary_6_4.5.3':'O saneante está fora do prazo de validade; não está regularizado na ANVISA.',a:'0','BPF_Summary_11_4.10.6':'Resultado insatisfatório; sem medidas corretivas.',b:'0'};
+ const w2={Guia:{values:inspection}};
+ vm.runInNewContext(infractionsSource,{window:w2,document,BPF_PHRASES:[{page:6,rows:[{code:'4.5.3',scopes:[{name:'a',phrases:[]}]}]},{page:11,rows:[{code:'4.10.6',scopes:[{name:'b',phrases:[]}]}]}]});
+ const suggestions=w2.bpfConclusaoNC.suggestedInfractions();
+ for(const name of ['Uso de insumo ou saneante vencido','Utilização de produto ou insumo sem registro na Anvisa','Descumprimento das Boas Práticas — RDC nº 173/2006','Descumprimento dos padrões microbiológicos — IN Anvisa nº 161/2022','Descumprimento da Portaria SUVISA nº 4.325/2025'])assert(suggestions.some(s=>s.title===name),name);
+ assert.equal(inspection.BPF_ConclusaoInfracoes,undefined,'sugestão não pode selecionar automaticamente');
  console.log('Conclusão OK: infrações selecionadas, citações e texto manual preservados');
  const pagination=fs.readFileSync('bpf-paginacao-observacoes.js','utf8');
  const pg={};vm.createContext(pg);vm.runInContext(extract(pagination,'const bpfFinalConsiderationsSize=','let bpfFinalConsiderationsFlow=')+'\n'+extract(pagination,'function bpfObservationLines(','function bpfObservationParagraphs(')+'\n'+extract(pagination,'function bpfObservationBreak(','function bpfPaginateObservation('),pg);
