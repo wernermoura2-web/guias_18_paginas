@@ -2,10 +2,11 @@
 'use strict';
 if(window.__bpfSampling404)return;
 window.__bpfSampling404=true;
-const checks=[["F1","mensal_plano","Análise mensal terceirizada prevista no plano, quando aplicável",true],["F2","execucao","Execução do plano conforme previsto",false],["F2","aceitacao","Limites de aceitação definidos",false],["F2","mensal_registro","Análise mensal terceirizada executada, registrada e comparada aos limites",true],["F2","heterotroficas","Limites internos de alerta e de ação para bactérias heterotróficas definidos",false]];
+const checks=[["F1","mensal_plano","O plano de amostragem prevê a análise mensal terceirizada?",false],["F2","execucao","Execução do plano conforme previsto",false],["F2","aceitacao","Limites de aceitação definidos",false],["F2","mensal_registro","Análise mensal terceirizada executada, registrada e comparada aos limites",true],["F2","heterotroficas","Limites internos de alerta e de ação para bactérias heterotróficas definidos",false]];
 const key=id=>'BPF_Sampling_4104_'+id;
 const revised=new Map(),guidance=new Map();
 const captionFor=label=>revised.get(label)||label;
+const answerCaption=(id,label,answer)=>id==='mensal_plano'?(answer==='1'?'O plano de amostragem prevê a análise mensal terceirizada':answer==='0'?'O plano de amostragem não prevê a análise mensal terceirizada':answer==='2'?'Resposta anterior: não se aplica — revisar':'O plano de amostragem prevê a análise mensal terceirizada?'):captionFor(label);
 window.bpfSamplingCaption404=captionFor;
 window.bpfInitSampling404=(data)=>{for(const [,id,label] of checks){const name=key(id);data.fields[name]={name,type:'/Tx',flags:0,label,options:[],calc:'',phrasePage:11};}};
 window.bpfRegisterSamplingReview404=(entries,byKey,pages)=>{
@@ -34,15 +35,17 @@ function refresh(){
    for(const [,id,label,na] of checks.filter(item=>item[0]===f)){
      const row=document.createElement('label');
      row.style.cssText='display:flex;justify-content:space-between;gap:8px;align-items:center;margin:6px 0';
-     const caption=document.createElement('span');caption.textContent=captionFor(label);caption.title=guidance.get(label)||'';
+     const caption=document.createElement('span');caption.textContent=answerCaption(id,label,data()?.[key(id)]);caption.title=guidance.get(label)||'';
      const input=document.createElement('select');
      for(const [value,name] of [['','Selecione'],['1','Sim'],['0','Não'],...(na?[['2','NA']]:[])]){
        const option=document.createElement('option');option.value=value;option.textContent=name;input.append(option);
      }
      input.value=data()?.[key(id)]||'';
+     if(id==='mensal_plano'&&data()?.[key(id)]==='2'){const option=document.createElement('option');option.value='2';option.textContent='NA (registro anterior)';option.disabled=true;input.append(option);input.value='2';}
      input.addEventListener('change',()=>{
        const state=data();if(!state)return;
        state[key(id)]=input.value;
+       caption.textContent=answerCaption(id,label,input.value);
        window.Guia?.recalc?.();
        const notes=[...card.querySelectorAll('textarea')];
        const notifier=notes[0]||card.querySelector('input[data-answer-name]');
@@ -76,10 +79,10 @@ window.bpfSamplingAnnex404=(page,row,panels,state)=>{
     ?['0','1'].find(value=>selected[value].includes(label))||
       (id==='mensal_registro'&&state[key(id)]==='2'?'2':'')
     :state[key(id)];
-   return [label,answer];
+   return [label,answer,id];
   });
   for(const answer of ['1','0','2']){
-   const marked=storedAnswers.filter(([,value])=>value===answer).map(([label])=>captionFor(label));
+   const marked=storedAnswers.filter(([,value])=>value===answer).map(([label,,id])=>answerCaption(id,label,answer));
    const entry=panel.entries[0];
    const overall=entry&&state[entry.name];
    if(f==='F1'&&answer!=='2'){

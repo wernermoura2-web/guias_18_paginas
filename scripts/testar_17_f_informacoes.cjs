@@ -211,6 +211,49 @@ values[flag]='';ctx.bpfApplyPopF2NA(row,scope,values);card.dispatchEvent({type:'
 assert.equal(values[f2],'1');assert(controls[0].checked&&!controls[0].disabled);assert(!na[0].checked);
 console.log('4.2.9 POP: NA automático, bloqueio por unidade e restauração OK');
 ctx.document.createTextNode=t=>t;
+{
+ const p=model.find(p=>p.rows.some(r=>r.code==='4.6.10')),r=p.rows.find(r=>r.code==='4.6.10');
+ const panel={id:1,label:'F2',entries:r.scopes.filter(s=>s.phrases[1]).map(s=>({scope:s,index:1,name:phraseName(s,1),phrase:s.phrases[1]}))};
+ const key='BPF_LineInfo_'+p.page+'_4_6_10_F2';
+ values[key]=JSON.stringify({'transporte-manual-ar-filtrado':{answer:'1'},'pia-higiene-maos-transporte':{answer:'1'}});
+ const box=new Node('fieldset');assert(water.render(box,p,r,panel));
+ const info=walk(box).find(n=>Object.hasOwn(n.dataset,'bpfInfoBox'));
+ const selects=walk(info).filter(n=>n.tagName==='SELECT');
+ assert.equal(selects.length,5);
+ assert.deepEqual(selects.map(s=>s.value),['0','','','1','1']);
+ assert(!selects[1].parentElement.hidden&&selects[2].parentElement.hidden);
+ selects[1].value='1';selects[1].onchange();
+ assert(selects[1].parentElement.textContent.includes('manualmente e diretamente'));
+ selects[0].value='1';selects[0].onchange();
+ assert(selects[0].parentElement.textContent.includes('de forma automática'));
+ assert(selects[1].parentElement.hidden&&!selects[2].parentElement.hidden);
+ selects[2].value='1';selects[2].onchange();
+ assert(selects[2].parentElement.textContent.includes('manualmente no dispensador automático'));
+ selects[3].value='0';selects[3].onchange();
+ assert(selects[3].parentElement.textContent.includes('não é dotado de filtro'));
+ const report=JSON.stringify(water.report(p,r,panel,values));
+ assert(report.includes('manualmente no dispensador automático')&&report.includes('não é dotado de filtro'));
+ assert(!report.includes('manualmente e diretamente'));
+ values[key]=JSON.stringify({'transporte-manual-ar-filtrado':{answer:'0'},'pia-higiene-maos-transporte':{answer:'1'}});
+ const ambiguous=new Node('fieldset');water.render(ambiguous,p,r,panel);
+ const legacy=walk(walk(ambiguous).find(n=>Object.hasOwn(n.dataset,'bpfInfoBox'))).filter(n=>n.tagName==='SELECT');
+ assert.deepEqual(legacy.map(s=>s.value),['','','','','1']);
+ assert(ambiguous.textContent.includes('Registro anterior'));
+ console.log('4.6.10 F2: posicionamento, filtro independente, pia e migração segura OK');
+}
+{
+ const samplingValues={BPF_Sampling_4104_mensal_plano:'1'};
+ const win={Guia:{values:samplingValues}};
+ const samplingContext={window:win,document:{readyState:'loading',addEventListener(){}},bpfGroupNoteName:()=>'',bpfAnswerLabel:()=>'',bpfChecklistSelected:()=>[],bpfChecklistKey:()=>'',bpfNoteName:()=>''};
+ vm.runInNewContext(fs.readFileSync('bpf-amostragem-4104.js','utf8'),samplingContext);
+ const p={page:11},r={code:'4.10.4'},panels=[{id:0,entries:[{name:'f1'}]}];
+ assert(win.bpfSamplingAnnex404(p,r,panels,samplingValues)[0].checklist.includes('O plano de amostragem prevê a análise mensal terceirizada'));
+ samplingValues.BPF_Sampling_4104_mensal_plano='0';
+ assert(win.bpfSamplingAnnex404(p,r,panels,samplingValues)[0].checklist.includes('O plano de amostragem não prevê a análise mensal terceirizada'));
+ samplingValues.BPF_Sampling_4104_mensal_plano='2';
+ assert(win.bpfSamplingAnnex404(p,r,panels,samplingValues)[0].checklist.includes('Resposta anterior: não se aplica — revisar'));
+ console.log('4.10.4 F1: análise mensal, frases afirmativa/negativa e NA anterior preservado');
+}
 const reservoirPage=model.find(p=>p.rows.some(r=>r.code==='4.3.6'));
 const reservoirRow=reservoirPage.rows.find(r=>r.code==='4.3.6');
 const reservoirPanel={id:0,label:'F1',entries:reservoirRow.scopes.map(s=>({scope:s,index:0,name:phraseName(s,0),phrase:s.phrases[0]}))};

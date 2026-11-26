@@ -111,7 +111,10 @@ const bpfWaterCheck = (() => {
   ]}},
   '4.6.10':{1:{simple:true,questionsInInformation:true,checks:[
    check('avaliacao-transporte','Avaliação do transporte das embalagens para a sala de envase'),
-   check('transporte-manual-ar-filtrado','As embalagens colocadas manualmente, em transportadores aéreos para entrada na sala de envase, são movimentadas com sopradores de ar com filtro de ar microbiológico?',{informationOnly:true,informationQuestion:true,yesLabel:'As embalagens colocadas manualmente em transportadores aéreos para entrada na sala de envase são movimentadas com sopradores de ar com filtro de ar microbiológico',noLabel:'As embalagens colocadas manualmente em transportadores aéreos para entrada na sala de envase não são movimentadas com sopradores de ar com filtro de ar microbiológico'}),
+   check('transporte-posicionamento-automatico','As garrafas armazenadas são colocadas na esteira transportadora de forma manual ou automática?',{informationOnly:true,informationQuestion:true,answerOrder:['0','1'],answerLabels:{'0':'Manual','1':'Automática'},yesLabel:'As garrafas armazenadas são colocadas na esteira transportadora de forma automática',noLabel:'As garrafas armazenadas são colocadas na esteira transportadora de forma manual'}),
+   check('transporte-manual-direto','As garrafas são colocadas manualmente e diretamente na esteira transportadora?',{informationOnly:true,informationQuestion:true,requires:'transporte-posicionamento-automatico',requiresAnswer:'0',yesLabel:'As garrafas são colocadas manualmente e diretamente na esteira transportadora',noLabel:'As garrafas não são colocadas manualmente e diretamente na esteira transportadora'}),
+   check('abastecimento-manual-dispensador','As garrafas são colocadas manualmente no dispensador automático para abastecer a esteira transportadora?',{informationOnly:true,informationQuestion:true,requires:'transporte-posicionamento-automatico',requiresAnswer:'1',yesLabel:'As garrafas são colocadas manualmente no dispensador automático para abastecer a esteira transportadora',noLabel:'As garrafas não são colocadas manualmente no dispensador automático para abastecer a esteira transportadora'}),
+   check('soprador-filtro-ar','O soprador de ar do transportador é dotado de filtro de ar microbiológico?',{informationOnly:true,informationQuestion:true,yesLabel:'O soprador de ar do transportador é dotado de filtro de ar microbiológico',noLabel:'O soprador de ar do transportador não é dotado de filtro de ar microbiológico'}),
    check('pia-higiene-maos-transporte','No local existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem?',{informationOnly:true,informationQuestion:true,yesLabel:'No local existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem',noLabel:'No local não existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem'})
   ]}},
   '4.6.4':{0:returnableInspection(prewashChecks)},
@@ -339,10 +342,21 @@ const bpfWaterCheck = (() => {
   else if(a==='0'&&b==='0')state['certificado-declaracao']={answer:'0'};
   return state;
  }
+ function migrateTransportInfo(state){
+  if(!state)return state;
+  // A resposta Sim antiga confirmava os dois fatos. Não não permite
+  // distinguir o modo de posicionamento da existência de filtro.
+  if(state['transporte-manual-ar-filtrado']?.answer==='1'){
+   if(!Object.hasOwn(state,'transporte-posicionamento-automatico'))state['transporte-posicionamento-automatico']={answer:'0'};
+   if(!Object.hasOwn(state,'soprador-filtro-ar'))state['soprador-filtro-ar']={answer:'1'};
+  }
+  return state;
+ }
  const read = (entry,data) => {
   try {
    const name=key(entry);
    let state=JSON.parse(data[name]||'null');
+   if(entry.index===1&&state?.['transporte-manual-ar-filtrado'])state=migrateTransportInfo(state);
    if(entry.index===0&&(getConductionCheckEntry(entry)||reservoirStructureEntry(entry)))state=mergeConductionDocuments(state);
    if(entry.index===0&&entry.scope.phrases[0]?.revision==='limpezaDesinfeccaoRetornaveis'){
     return state?.limpezaDesinfeccaoRetornaveis?state:migrateReturnableWash(entry,state,data);
@@ -543,7 +557,7 @@ const bpfWaterCheck = (() => {
  const isQuestion=criterion=>criterion.informationQuestion||/\?\s*$/.test(criterion.label);
  const hasAnswer=answer=>answer==='1'||answer==='0';
  const statementForAnswer=(criterion,answer)=>{
-  if(criterion.answerLabels)return 'Reposição dos produtos químicos: '+criterion.answerLabels[answer];
+  if(criterion.answerLabels){if(answer==='1'&&criterion.yesLabel)return criterion.yesLabel;if(answer==='0'&&criterion.noLabel)return criterion.noLabel;return 'Reposição dos produtos químicos: '+criterion.answerLabels[answer];}
   if(answer==='0'&&criterion.noLabel)return criterion.noLabel;
   const statement=(answer==='1'&&criterion.yesLabel)||criterion.label.trim().replace(/\?$/,'');
   if(answer!=='0')return statement;
@@ -561,7 +575,7 @@ const bpfWaterCheck = (() => {
  }
  const answerLabel=(criterion,answer)=>answer==='0'?(criterion.noLabel||criterion.label):criterion.label;
  const active = (criterion,state) =>
-  (!criterion.requiresAnyRinseYes||state.bpfAnyRinseYes===true)&&(!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer==='1')&&
+  (!criterion.requiresAnyRinseYes||state.bpfAnyRinseYes===true)&&(!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer===(criterion.requiresAnswer||'1'))&&
   !criterion.hideWhenAllNo?.every(id=>state[id]?.answer==='0');
  const answered = (criterion,state) => active(criterion,state)&&
   ((!criterion.noOnly&&state[criterion.id]?.answer==='1')||(!criterion.yesOnly&&state[criterion.id]?.answer==='0'));
@@ -1302,6 +1316,7 @@ const bpfWaterCheck = (() => {
   const addGate=state=>{if(row.code==='4.6.3')state.bpfAnyRinseYes=panel.entries.some(entry=>data[entry.name]==='1');return state;};
   if(raw){try{
    const state=addGate(JSON.parse(raw)||{}),conflicts=[];
+   if(row.code==='4.6.10'&&panel.id===1)migrateTransportInfo(state);
    if(['4.2.2','4.3.2'].includes(row.code)&&panel.id===0)mergeConductionDocuments(state);
    for(const c of get(row,panel.id).checks.filter(c=>isInformation(get(row,panel.id),c))){
     if(Object.prototype.hasOwnProperty.call(state[c.id]||{},'answer')||answered(c,state))continue;
@@ -1312,6 +1327,11 @@ const bpfWaterCheck = (() => {
    return {state,conflicts};
   }catch(_){}}
   const config=get(row,panel.id),state={},conflicts=[];
+  if(row.code==='4.6.10'&&panel.id===1){
+   const previous=[...new Set(panel.entries.map(e=>read(e,data)?.['transporte-manual-ar-filtrado']?.answer).filter(a=>a==='0'||a==='1'))];
+   if(previous.length===1)state['transporte-manual-ar-filtrado']={answer:previous[0]};
+   migrateTransportInfo(state);
+  }
   for(const c of config.checks.filter(c=>isInformation(config,c))){
    const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&(row.code==='4.6.3'?hasAnswer(v[c.id]?.answer):answered(c,v))).map(v=>v[c.id]);
    const distinct=[...new Set(recorded.map(item=>JSON.stringify(item)))];
@@ -1382,6 +1402,9 @@ const bpfWaterCheck = (() => {
   if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length&&!capRoutes.length&&!frequency&&!(rinseNA(row,panel)&&entries.some(e=>data[e.name]==='2')))return [];
   const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
   const information=[...mixing,...supplemental,...capRoutes];
+  if(row.code==='4.6.10'&&panel.id===1&&joint?.state['transporte-manual-ar-filtrado']?.answer==='0'&&
+    (!hasAnswer(joint.state['transporte-posicionamento-automatico']?.answer)||!hasAnswer(joint.state['soprador-filtro-ar']?.answer)))
+   information.push('Registro anterior: Não na pergunta conjunta sobre colocação manual e soprador com filtro; revisar separadamente as duas respostas');
   if(frequency)information.push(visualFrequency.label+': '+frequency);
   for(const criterion of config.checks.filter(check=>isInformation(config,check))){
    if(!infoEnabled)continue;
@@ -1842,6 +1865,10 @@ const bpfWaterCheck = (() => {
     const general=information&&Boolean(joint);
     if(general&&entry!==panel.entries[0])continue;
     const state=general?joint.state:entryState;
+    if(general&&row.code==='4.6.10'&&panel.id===1&&state['transporte-manual-ar-filtrado']?.answer==='0'){
+     const notice=element('p','Registro anterior: Não na pergunta conjunta. Confira separadamente o modo de posicionamento e o filtro.');
+     box.append(notice);rows.push(()=>{notice.hidden=hasAnswer(state['transporte-posicionamento-automatico']?.answer)&&hasAnswer(state['soprador-filtro-ar']?.answer);});
+    }
     const save=general?()=>{values[sharedLineKey(page,row,panel)]=JSON.stringify(state);refresh();changed();recalc();if(row.code==='4.2.9'&&panel.id===0)card.parentElement?.querySelector('[data-bpf-conduction-f2]')?.dispatchEvent(new Event('bpf-f2-refresh'));}:entrySave;
     const answer=information?'1':sectionType;
     const heading=information?informationHeading(config):answer==='1'?'Sim':'Não';
@@ -1950,13 +1977,13 @@ const bpfWaterCheck = (() => {
       const question=criterion.answerLabels?caption:caption.trim().replace(/[.?]+$/,'')+'?';
       const prompt=element('div',question);
       const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px;font:inherit';
-      for(const [v,t] of [['','Selecione'],['1',criterion.answerLabels?.['1']||'Sim'],['0',criterion.answerLabels?.['0']||'Não']])select.add(new Option(t,v));
+      for(const [v,t] of [['','Selecione'],...(criterion.answerOrder||['1','0']).map(v=>[v,criterion.answerLabels?.[v]||(v==='1'?'Sim':'Não')])])select.add(new Option(t,v));
       select.onchange=()=>{item.answer=select.value;if(criterion.id==='filtro'&&state['registro-filtro'])delete state['registro-filtro'].answer;save();};
       line.append(prompt,select);
       const requiredAlert=criterion.requiredInfo?element('p','ATENÇÃO — resposta obrigatória. Selecione Sim ou Não.'):null;
       if(requiredAlert){requiredAlert.style.cssText='margin:6px 0;padding:8px;background:#fff2cb;border-left:4px solid #c47b13;color:#462f00;font-weight:bold';line.append(requiredAlert);select.dataset.bpfRequiredInfo=criterion.id;select.setAttribute('aria-required','true');}
       rows.push(()=>{
-       const wording=!criterion.answerLabels&&hasAnswer(item.answer)?statementForAnswer(criterion,item.answer):question;
+       const wording=hasAnswer(item.answer)&&(!criterion.answerLabels||criterion.yesLabel||criterion.noLabel)?statementForAnswer(criterion,item.answer):question;
        prompt.textContent=wording;
        prompt.title=(item.answer==='1'?criterion.yesGuidance:item.answer==='0'?criterion.noGuidance:'')||criterion.guidance||'';
        select.setAttribute('aria-label',label+' — '+wording);
