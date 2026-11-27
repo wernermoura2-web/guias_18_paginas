@@ -6,11 +6,14 @@
  const infoNotice='Outras informações incluem exigências de outras normas vigentes, informações complementares sobre os processos e procedimentos operacionais e práticas de excelência. Verifique cada informação durante a inspeção e marque Sim ou Não conforme constatado. Campos sem marcação não constam do relatório.';
  function insertInfoNotice(){
   const editor=document.querySelector('#bpf-editor');
-  if(!editor||editor.querySelector('[data-bpf-complementary-notice]'))return;
-  const title=editor.querySelector('h2');if(!title)return;
-  const notice=document.createElement('p');notice.dataset.bpfComplementaryNotice='';
-  notice.textContent=infoNotice;notice.style.cssText='margin:6px 0 12px;padding:9px 12px;background:#eaf5fa;border-left:4px solid #24789a;color:#183f52;font-size:14px;line-height:1.4';
-  title.after(notice);
+  if(!editor)return;
+  for(const box of editor.querySelectorAll('[data-bpf-info-box]')){
+   if(box.previousElementSibling?.hasAttribute('data-bpf-complementary-notice'))continue;
+   const notice=document.createElement('p');notice.dataset.bpfComplementaryNotice='';
+   notice.textContent=infoNotice;notice.style.cssText='grid-column:1/-1;margin:8px 0 4px;padding:12px;background:#eaf5fa;border-left:4px solid #24789a;color:#183f52;font-size:14px;line-height:1.4';
+   box.before(notice);
+  }
+  for(const notice of editor.querySelectorAll('[data-bpf-complementary-notice]'))if(!notice.nextElementSibling?.hasAttribute('data-bpf-info-box'))notice.remove();
  }
  const infoObserver=new MutationObserver(insertInfoNotice);
  infoObserver.observe(document.documentElement,{childList:true,subtree:true});
@@ -163,7 +166,7 @@
       // O Guia em Branco já está sincronizado com as páginas do HTML.
       // Não usar o antigo .pdf.b64, nem repintar parcialmente as células F.
       const isBlankGuide=fileName==='Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf';
-      const source='./impressao/'+fileName+(isBlankGuide?'':'.b64')+'?v=20261127-v84-documentos';
+      const source='./impressao/'+fileName+(isBlankGuide?'':'.b64')+'?v=20261127-v85-formularios';
       const response=await fetch(source,{cache:'reload'});
       if(!response.ok)throw new Error('PDF indisponível');
       const bytes=isBlankGuide
@@ -174,7 +177,7 @@
       const url=URL.createObjectURL(new Blob([pdfBytes],{type:'application/pdf'}));
       const link=document.createElement('a');
       link.href=url;
-      link.download=fileName;
+      link.download=fileName==='Anexo_F_20_Paginas_Retrato.pdf'?'Anexo_F_Para_Preencher.pdf':fileName;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -220,12 +223,11 @@
   printActions.append(
     makePrintDownload('Imprimir Guia em Branco','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
     makePrintDownload('Imprimir Anexo F para preencher','Anexo_F_20_Paginas_Retrato.pdf'),
-    makePrintDownload('Imprimir Anexo F resumido','Anexo_Resumido_Frases_BPF_APPCC.pdf'),
     makePrintDownload('Imprimir Check-List de Documentos','Checklist_de_Documentos_Envasadora.pdf')
   );
   const editableGuide=document.createElement('a');
   editableGuide.className='bpf-ui-action bpf-ui-editable-guide';
-  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261127-v84-documentos';
+  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261127-v85-formularios';
   editableGuide.download='Guia_Editavel_em_Branco.pdf';
   editableGuide.textContent='Guia Editável em Branco (sem as frases)';
   editableGuide.addEventListener('click',async event=>{

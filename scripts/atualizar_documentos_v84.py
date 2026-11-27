@@ -14,7 +14,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/'impressao'
 MODEL=json.loads(Path(sys.argv[1]).read_text())
-REV='27/11/2026 — v84'
+REV='27/11/2026 — v85'
 NOTICE='Outras informações incluem exigências de outras normas vigentes, informações complementares sobre os processos e procedimentos operacionais e práticas de excelência. Verifique cada informação durante a inspeção e marque Sim ou Não conforme constatado. Campos sem marcação não constam do relatório.'
 NAVY=colors.HexColor('#16445d'); PALE=colors.HexColor('#e9f3f8'); LINE=colors.HexColor('#a8c0cd')
 FONTPATH=Path('/usr/share/fonts/truetype/dejavu')
@@ -62,45 +62,50 @@ def extras(page,code,panel):
     if code in ['4.3.6','4.5.8','4.6.12'] and label=='F1':return ['O POP referente às operações avaliadas está disponível e atualizado?']
     return []
 
-def make_annex(path,compact):
-    size=7.9 if compact else 9;story=[]
+def make_annex(path,compact=False):
+    size=10.5;story=[]
     for k,process in enumerate(MODEL):
         if k:story.append(PageBreak())
-        page=process['page'];story.extend([para(TITLES[page],15,True,NAVY),para('Envasadora: ______________________________ Data: __________ Inspeção: __________',size),para('S = Sim | N = Não. NA = não se aplica, somente na avaliação principal de F que ofereça essa opção. '+NOTICE,size)])
+        page=process['page'];story.extend([para(TITLES[page],17,True,NAVY),para('Envasadora: _________________________ Data: __________',size),para('Inspetor(a): _________________________ Inspeção: __________',size),para('1. Leia a frase do item.  2. Marque a avaliação de cada unidade.  3. Registre OBS (observação) ou NC (não conformidade).  4. Responda às perguntas complementares pertinentes. NA somente quando oferecido na avaliação principal.',size)])
         if page in [0,1]:story.append(para('Situação das unidades: 1 ______ 2 ______ 3 ______ 4 ______ (Ativa — envase / Inativa / Não existente / Água de serviço / Não informada). Na condução, usar a situação da captação correspondente.',size))
         if page==2:story.append(para('Captação de referência: ______. Reproduza a ficha para cada captação com reservatórios.',size))
         for row in process['rows']:
             for panel in row['panels']:
-                title=row['code']+' · '+panel['label']+' · '+' / '.join(panel['classes']); parts=[para(title,size+1,True,NAVY)]
+                title=row['code']+' · '+panel['label']+' · '+' / '.join(panel['classes']); parts=[para(title,size+2,True,NAVY)]
                 for phrase in panel['phrases']:parts.append(para(phrase,size))
                 units=panel['units']; choices='S / N'+(' / NA' if panel['allowNA'] else '')
                 if panel['options'] and len(panel['options'])<25:
                     for option in panel['options']:parts.append(para('• '+option,size))
                 # Um quadro por unidade, sem impor respostas a unidades não avaliadas.
-                if units:parts.append(para('    '.join(f'{u}: ____' for u in units)+'   ('+choices+')',size))
+                if units:
+                    rows=[[para('Unidade avaliada',size,True),para('Sim',size,True),para('Não',size,True)]+([para('NA',size,True)] if panel['allowNA'] else [])]
+                    for u in units:rows.append([para(u,size),para('☐',size+1),para('☐',size+1)]+([para('☐',size+1)] if panel['allowNA'] else []))
+                    parts.append(grid(rows,[329,67,67,67] if panel['allowNA'] else [397,67,67]))
                 if panel.get('checklist'):parts.append(para('Opções: '+'   '.join('☐ '+x for x in panel['checklist']),size))
-                parts.append(para('OBS / NC: ___________________________________________________________________',size))
-                if not compact:parts.append(para('____________________________________________________________________________',size))
+                parts.append(para('OBS / NC (identifique a unidade):',size,True))
+                parts.append(para('____________________________________________________________________',size))
+                parts.append(para('____________________________________________________________________',size))
                 story.append(KeepTogether(parts))
                 checks=panel['checks'];other=extras(page,row['code'],panel)
-                if checks or other:story.append(para(panel['heading']+' — preencha apenas os campos aplicáveis',size,True,NAVY))
+                if checks or other:story.append(KeepTogether([para(row['code']+' · '+panel['label']+' — '+panel['heading'],size+1,True,NAVY),para(NOTICE,size,False,NAVY)]))
                 for c in checks:
                     if c.get('id','').startswith('avaliacao-') or c.get('id') in ['bpf-resposta-geral','higienizacao-adequada']:continue
                     text=c['label']
                     if c.get('requiresStoredBottles'):text='Se adquiridas de terceiros ou sopradas e armazenadas: '+text
                     if c.get('requires')=='transporte-posicionamento-automatico':text=('Se automática: ' if c.get('requiresAnswer')=='1' else 'Se manual: ')+text
-                    if c.get('answerLabels'):text+=' — '+' / '.join(c['answerLabels'].values())
+                    if c.get('answerLabels'):text+=' — '+'  '.join('☐ '+v for v in c['answerLabels'].values())
                     elif c.get('informationList') or c.get('details') in ['sanitizers','packaging-sanitizers']:text+=' — marque os produtos utilizados'
-                    else: text+='  [ ] S  [ ] N'
-                    story.append(para('• '+text,size))
+                    else: text+='\n☐ Sim     ☐ Não'
+                    story.append(para('• '+text,size,False,colors.black,6))
                     if c.get('details') in ['sanitizers','packaging-sanitizers']:
                         pr=c.get('products') or [['','Hipoclorito de sódio'],['','Ozônio'],['','Ácido peracético'],['','Outros']]
-                        story.append(para('  '.join('☐ '+v for _,v in pr)+'  | Periodicidade (se aplicável): __________',size))
+                        for _,v in pr:story.append(para('☐ '+v+'    Periodicidade (se aplicável): __________________',size))
+                        story.append(para('Se marcou Outros, especifique: ___________________________________',size))
                     elif c.get('details')=='residue':story.extend(residue_sheet(size,row['code']+' '+panel['label'].split(' ')[0]))
                     elif c.get('details') in ['filter','inspection-frequency','recirculation','measure','telemetry']:story.append(para('Detalhamento: ___________________________________________________________',size))
-                for x in other:story.append(para('• '+x+'  [ ] S  [ ] N',size))
-                story.append(Spacer(1,5 if compact else 9))
-    title='Anexo F — resumo para impressão' if compact else 'Anexo F — ficha de preenchimento'
+                for x in other:story.append(para('• '+x+'\n☐ Sim     ☐ Não',size,False,colors.black,6))
+                story.append(Spacer(1,12))
+    title='Anexo F — formulário de preenchimento'
     SimpleDocTemplate(str(path),pagesize=A4,leftMargin=32,rightMargin=32,topMargin=51,bottomMargin=35,title=title,author='SES-RJ / SUVISA / COOVFA').build(story,onFirstPage=lambda c,d:header(c,d,title),onLaterPages=lambda c,d:header(c,d,title))
     with fitz.open(path) as d:print(path.name,len(d),'páginas');assert len(d)>10
 
@@ -141,10 +146,10 @@ def illustration(name,title,lines):
     p.get_pixmap(matrix=fitz.Matrix(2,2)).save(ROOT/'assets/manual'/name)
 
 def manual():
-    illustration('aviso-complementares-v84.png','Item 4.6.6 - Frases',[(NOTICE.replace('•','-'),'text'),('Selecione: Sim / Não','text')])
+    illustration('aviso-complementares-v84.png','Item 4.6.6 - Frases',[("F1 - Sim: marque a unidade", "text"), ("F1 - Não: marque a unidade", "text"), (NOTICE, "text"), ("F1 - Outras informações: responda às perguntas abaixo", "text")])
     illustration('residuos-alerta-v84.png','Quais são os resíduos avaliados?',[(r,'text') for r in RESIDUES]+[('Cloro residual: Fenolftaleína selecionada','text'),('ATENÇÃO: indicador não indicado para o resíduo selecionado. Confira a adequação do método.','alert')])
     illustration('residuos-kit-v84.png','Ácido peracético residual', [('Kit específico para ácido peracético','text'),('Qual é o método do kit? Fita reagente específica / Comparador / Fotômetro / DPD específico / Titulação / Outro','text'),('Identificação do kit (fabricante e modelo): __________','text'),('Faixa de medição informada pelo fabricante (mg/L): __________','text')])
-    buf=io.BytesIO();story=[para('Atualização de 27/11/2026 — Informações complementares',18,True,NAVY),para(NOTICE,11),para('Como responder',13,True,NAVY),para('Abra o F do item. Responda a avaliação principal por unidade. Em Outras informações, preencha cada questão aplicável com base na inspeção, registros e informações fornecidas pela empresa. É parte da atuação e da capacitação do inspetor verificar as informações do processo durante a inspeção. Marque Sim ou Não conforme constatado. Sim gera frase afirmativa; Não gera frase negativa. Campos sem marcação não aparecem nas Observações Gerais nem no Anexo F do relatório.',11),para('Exigências de outras normas e práticas de excelência',13,True,NAVY),para('Verifique as exigências aplicáveis da Resolução ANM 193/2024 e de outras normas vigentes. Testes de fluorescência e bioluminescência de ATP podem constituir práticas de excelência; sua avaliação depende do processo e dos controles efetivamente utilizados. Não confunda a falta de uma prática facultativa com uma infração legal.',11),Image(str(ROOT/'assets/manual/aviso-complementares-v84.png'),width=410,height=410*fitz.Pixmap(str(ROOT/'assets/manual/aviso-complementares-v84.png')).height/fitz.Pixmap(str(ROOT/'assets/manual/aviso-complementares-v84.png')).width),para('Figura ilustrativa — aviso e opções de resposta.',9),PageBreak(),para('Avaliação de resíduos de sanitizantes',18,True,NAVY),para('Nos itens com teste de arraste ou pesquisa de resíduos após enxágue, confirme a informação e selecione todos os resíduos avaliados. Em cada grupo aberto, marque os indicadores efetivamente empregados. Selecione Outro quando necessário e identifique o método. Confira os alertas; só registre com base em evidência. Resultados e observações aparecem no relatório para as respostas efetivamente registradas.',11),para('Exemplo: cloro residual e fenolftaleína',13,True,NAVY),Image(str(ROOT/'assets/manual/residuos-alerta-v84.png'),width=340,height=340*fitz.Pixmap(str(ROOT/'assets/manual/residuos-alerta-v84.png')).height/fitz.Pixmap(str(ROOT/'assets/manual/residuos-alerta-v84.png')).width),para('Figura ilustrativa — escolha do resíduo e alerta de inadequação.',9),PageBreak(),para('Kit específico para ácido peracético',18,True,NAVY),para('Ao selecionar este kit, registre o método, fabricante e modelo e a faixa de medição fornecida pelo fabricante. O método deve ser adequado ao resíduo e à finalidade da avaliação. Não presuma ausência de resíduo ou concentração sem evidência. Confira a adequação do indicador e limitações de método.',11),Image(str(ROOT/'assets/manual/residuos-kit-v84.png'),width=400,height=400*fitz.Pixmap(str(ROOT/'assets/manual/residuos-kit-v84.png')).height/fitz.Pixmap(str(ROOT/'assets/manual/residuos-kit-v84.png')).width),para('Figura ilustrativa — detalhamento do kit e método.',9),para('Documentos atualizados',13,True,NAVY),para('O guia impresso em branco e o editável preservam os quadros de avaliação. O Anexo F em branco e o resumo de frases foram sincronizados com os campos atuais. O relatório PDF final é somente leitura e não contém botões Limpar, inclusive na matriz de risco e nas páginas finais. Para registrar uma cópia editável da inspeção, mantenha o JSON salvo.',11)]
+    buf=io.BytesIO();story=[para('Atualização de 27/11/2026 — Informações complementares',18,True,NAVY),para(NOTICE,11),para('Como responder',13,True,NAVY),para('Abra o F do item. Responda a avaliação principal por unidade. O aviso de outras informações aparece imediatamente antes das perguntas complementares de cada F, após a avaliação Sim ou Não. Em Outras informações, preencha cada questão aplicável com base na inspeção, registros e informações fornecidas pela empresa. É parte da atuação e da capacitação do inspetor verificar as informações do processo durante a inspeção. Marque Sim ou Não conforme constatado. Sim gera frase afirmativa; Não gera frase negativa. Campos sem marcação não aparecem nas Observações Gerais nem no Anexo F do relatório.',11),para('Exigências de outras normas e práticas de excelência',13,True,NAVY),para('Verifique as exigências aplicáveis da Resolução ANM 193/2024 e de outras normas vigentes. Testes de fluorescência e bioluminescência de ATP podem constituir práticas de excelência; sua avaliação depende do processo e dos controles efetivamente utilizados. Não confunda a falta de uma prática facultativa com uma infração legal.',11),Image(str(ROOT/'assets/manual/aviso-complementares-v84.png'),width=410,height=410*fitz.Pixmap(str(ROOT/'assets/manual/aviso-complementares-v84.png')).height/fitz.Pixmap(str(ROOT/'assets/manual/aviso-complementares-v84.png')).width),para('Figura ilustrativa — aviso e opções de resposta.',9),PageBreak(),para('Avaliação de resíduos de sanitizantes',18,True,NAVY),para('Nos itens com teste de arraste ou pesquisa de resíduos após enxágue, confirme a informação e selecione todos os resíduos avaliados. Em cada grupo aberto, marque os indicadores efetivamente empregados. Selecione Outro quando necessário e identifique o método. Confira os alertas; só registre com base em evidência. Resultados e observações aparecem no relatório para as respostas efetivamente registradas.',11),para('Exemplo: cloro residual e fenolftaleína',13,True,NAVY),Image(str(ROOT/'assets/manual/residuos-alerta-v84.png'),width=340,height=340*fitz.Pixmap(str(ROOT/'assets/manual/residuos-alerta-v84.png')).height/fitz.Pixmap(str(ROOT/'assets/manual/residuos-alerta-v84.png')).width),para('Figura ilustrativa — escolha do resíduo e alerta de inadequação.',9),PageBreak(),para('Kit específico para ácido peracético',18,True,NAVY),para('Ao selecionar este kit, registre o método, fabricante e modelo e a faixa de medição fornecida pelo fabricante. O método deve ser adequado ao resíduo e à finalidade da avaliação. Não presuma ausência de resíduo ou concentração sem evidência. Confira a adequação do indicador e limitações de método.',11),Image(str(ROOT/'assets/manual/residuos-kit-v84.png'),width=400,height=400*fitz.Pixmap(str(ROOT/'assets/manual/residuos-kit-v84.png')).height/fitz.Pixmap(str(ROOT/'assets/manual/residuos-kit-v84.png')).width),para('Figura ilustrativa — detalhamento do kit e método.',9),para('Documentos atualizados',13,True,NAVY),para('O guia impresso em branco e o editável preservam os quadros de avaliação. O Anexo F é um formulário único de preenchimento em papel, com caixas Sim e Não, campos de observação e perguntas complementares. A opção resumida foi retirada. O relatório PDF final é somente leitura e não contém botões Limpar, inclusive na matriz de risco e nas páginas finais. Para registrar uma cópia editável da inspeção, mantenha o JSON salvo.',11)]
     SimpleDocTemplate(buf,pagesize=A4,leftMargin=38,rightMargin=38,topMargin=52,bottomMargin=38).build(story,onFirstPage=lambda c,d:header(c,d,'Manual de preenchimento — atualização'),onLaterPages=lambda c,d:header(c,d,'Manual de preenchimento — atualização'))
     path=ROOT/'Manual_de_Preenchimento_Guia_BPF_APPCC.pdf'
     with fitz.open(path) as original,fitz.open(stream=buf.getvalue(),filetype='pdf') as supplement:
@@ -156,9 +161,7 @@ def manual():
     path.write_bytes(data)
 
 if __name__=='__main__':
-    for name in ['Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf','Guia_Editavel_em_Branco.pdf','Guia_Editavel_Simplificado.pdf']:patch_guide(OUT/name)
     make_annex(OUT/'Anexo_F_20_Paginas_Retrato.pdf',False)
-    make_annex(OUT/'Anexo_Resumido_Frases_BPF_APPCC.pdf',True)
-    for name in ['Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf','Anexo_F_20_Paginas_Retrato.pdf','Anexo_Resumido_Frases_BPF_APPCC.pdf']:
+    for name in ['Anexo_F_20_Paginas_Retrato.pdf']:
         path=OUT/name;path.with_suffix('.pdf.b64').write_bytes(base64.b64encode(path.read_bytes()))
     manual()
