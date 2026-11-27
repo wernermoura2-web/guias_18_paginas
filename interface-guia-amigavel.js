@@ -209,15 +209,16 @@
   actions.append(makeButton('Salvar arquivo',save,true),makeButton('Abrir preenchimento',open),makeButton('Imprimir PDF',pdf));
   root.appendChild(actions);
   const direct=document.createElement('button');direct.type='button';direct.className='bpf-ui-action';direct.textContent='Importar arquivos de colegas (sem código)';direct.style.cssText='width:100%;margin:0 0 12px;min-height:52px';
-  direct.onclick=()=>window.BPFDirectImport?window.BPFDirectImport.open():alert('A importação está sendo carregada. Tente novamente.');root.appendChild(direct);
-  const directHint=document.createElement('p');directHint.className='bpf-ui-hint';directHint.textContent='Conferir e incorporar JSONs de outros inspetores sem substituir todo o guia.';root.appendChild(directHint);
-  if(inTeam&&(teamBtn||importBtn)){
+  direct.onclick=()=>window.BPFDirectImport?window.BPFDirectImport.open():alert('A importação está sendo carregada. Tente novamente.');
+  const directHint=document.createElement('p');directHint.className='bpf-ui-hint';directHint.textContent='Conferir e incorporar JSONs de outros inspetores sem substituir todo o guia.';
+  {
     const t=makeAccordion('Configurar equipe');
-    if(teamBtn)t.content.appendChild(makeButton('Dados da equipe',teamBtn));
-    if(importBtn){
+    if(inTeam&&teamBtn)t.content.appendChild(makeButton('Dados da equipe',teamBtn));
+    if(inTeam&&importBtn){
       const b=makeButton('Importar processos',importBtn);
       t.content.appendChild(b);
     }
+    t.content.append(direct,directHint);
     root.appendChild(t.details);
   }
   const extra=makeAccordion('Mais opções');
