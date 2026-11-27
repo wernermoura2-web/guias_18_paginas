@@ -927,6 +927,128 @@ const bpfWaterCheck = (() => {
 
 
  // 4.10.3: registro complementar da fiscalização, independente do resultado da avaliação.
+
+ // 4.10.1 — verificações complementares documentais e de implementação,
+ // sem alterar respostas legais, pontuação ou classificação de risco.
+ const cqAuditQ=(id,question,yes,no,extra={})=>({id,question,yes,no,...extra});
+ const cqAuditParams=['Coliformes totais','Escherichia coli','Enterococos','Pseudomonas aeruginosa','Esporos de clostrídios sulfito-redutores','Bactérias heterotróficas'];
+ const cqAuditEquipment=['Estufas','Autoclaves','Contador de colônias','Bomba de vácuo','Sistema de obtenção de água purificada','Balanças','Termômetros','pHmetros','Condutivímetros','Geladeiras','Outros'];
+ const cqAuditHeading={implementation:'Implementação do Controle da Qualidade',documentation:'Documentação do Controle da Qualidade'};
+ const cqAuditGroups={
+  implementation:[
+   {title:'Instalações e recursos',questions:[
+    cqAuditQ('instalacoes','O laboratório dispõe de instalações adequadas à realização das análises físico-químicas e microbiológicas?','O laboratório dispõe de instalações adequadas às análises realizadas.','O laboratório não dispõe de instalações adequadas às análises realizadas.'),
+    cqAuditQ('segregacao','O laboratório dispõe de área específica para realização das análises microbiológicas, devidamente segregada das áreas destinadas às atividades incompatíveis?','O laboratório dispõe de área específica para análises microbiológicas, segregada das atividades incompatíveis.','O laboratório não dispõe de área específica adequadamente segregada para análises microbiológicas.',{guidance:'Avaliar a adequação das instalações e as condições de biossegurança conforme o escopo das análises. RDC ANVISA nº 1.039/2026, art. 4º, incisos IV, VI e VIII; ABNT NBR ISO/IEC 17025:2017, item 6.3.4, alínea c.'}),
+    cqAuditQ('equipamentos','O laboratório dispõe dos equipamentos, instrumentos, materiais e insumos necessários às análises realizadas?','O laboratório dispõe dos equipamentos, instrumentos, materiais e insumos necessários às análises realizadas.','O laboratório não dispõe de todos os equipamentos, instrumentos, materiais e insumos necessários às análises realizadas.',{choices:cqAuditEquipment,choiceLabel:'Equipamentos existentes'}),
+    cqAuditQ('funcionamento','Os equipamentos e instrumentos encontram-se em condições adequadas de funcionamento?','Os equipamentos e instrumentos encontram-se em condições adequadas de funcionamento.','Foram constatados equipamentos e/ou instrumentos em condições inadequadas de funcionamento.'),
+    cqAuditQ('insumos','Os meios de cultura e demais insumos estão identificados, dentro da validade e adequadamente armazenados?','Os meios de cultura e demais insumos estão identificados, dentro da validade e adequadamente armazenados.','Foram constatadas inadequações na identificação, validade e/ou armazenamento dos meios de cultura e demais insumos.'),
+    cqAuditQ('formacao','Os profissionais que executam as análises laboratoriais possuem formação profissional compatível com as atividades desempenhadas e qualificação técnica comprovada?','Os profissionais que executam as análises laboratoriais possuem formação profissional compatível e qualificação técnica comprovada.','Não foi comprovada a formação profissional compatível e/ou a qualificação técnica dos profissionais que executam as análises laboratoriais.',{guidance:'Conferir formação, atribuições, capacitação específica e experiência comprovada. Capacitação em BPF, isoladamente, não comprova competência para a execução das análises.'})
+   ]}
+  ],
+  documentation:[
+   {title:'Documentação geral e metodologia analítica',questions:[
+    cqAuditQ('manual','Foi apresentado o Manual do Laboratório, contemplando as Boas Práticas de Laboratório e os procedimentos aplicáveis?','Foi apresentado o Manual do Laboratório com as Boas Práticas de Laboratório e os procedimentos aplicáveis.','Não foi apresentado o Manual do Laboratório com as Boas Práticas de Laboratório e os procedimentos aplicáveis.'),
+    cqAuditQ('metodo-fq','Foram apresentados os métodos analíticos físico-químicos utilizados?','Foram apresentados os métodos analíticos físico-químicos utilizados.','Não foram apresentados os métodos analíticos físico-químicos utilizados.'),
+    cqAuditQ('metodo-proprio','Foram apresentados os métodos analíticos microbiológicos referentes aos meios preparados no próprio laboratório?','Foram apresentados os métodos analíticos microbiológicos referentes aos meios preparados no próprio laboratório.','Não foram apresentados os métodos analíticos microbiológicos referentes aos meios preparados no próprio laboratório.'),
+    cqAuditQ('metodo-placas','Foram apresentados os métodos analíticos específicos das placas adquiridas prontas para uso?','Foram apresentados os métodos analíticos específicos das placas adquiridas prontas para uso.','Não foram apresentados os métodos analíticos específicos das placas adquiridas prontas para uso.',{allPrepared:true}),
+    cqAuditQ('referencias','Foram apresentadas as referências normativas dos métodos utilizados?','Foram apresentadas as referências normativas dos métodos utilizados.','Não foram apresentadas as referências normativas dos métodos utilizados.'),
+    cqAuditQ('validacao','Foram apresentadas evidências de validação dos métodos próprios, alternativos ou modificados, quando aplicável?','Foram apresentadas evidências de validação dos métodos próprios, alternativos ou modificados.','Não foram apresentadas evidências de validação dos métodos próprios, alternativos ou modificados, quando exigíveis.',{guidance:'Distinguir a verificação de adequação do método de referência da validação de método próprio, alternativo ou modificado. Avaliar a documentação segundo o escopo aplicável. Referências: ABNT NBR ISO/IEC 17025, série ISO 16140 quando aplicável e Codex Alimentarius CXS 234-1999.'})
+   ]},
+   {title:'Meios de cultura e controles analíticos',questions:[
+    cqAuditQ('notas','Foram apresentadas as notas fiscais de aquisição dos meios de cultura ou das placas prontas para uso?','Foram apresentadas as notas fiscais de aquisição dos meios de cultura ou das placas prontas para uso.','Não foram apresentadas as notas fiscais de aquisição dos meios de cultura ou das placas prontas para uso.',{choices:cqAuditParams,choiceLabel:'Parâmetros contemplados'}),
+    cqAuditQ('certificados-meios','Foram apresentados os certificados de análise dos lotes dos meios de cultura ou das placas adquiridas, contemplando esterilidade, produtividade (fertilidade) e seletividade, quando aplicáveis?','Foram apresentados os certificados de análise dos lotes dos meios de cultura ou das placas adquiridas, contemplando esterilidade, produtividade (fertilidade) e seletividade, quando aplicáveis.','Não foram apresentados os certificados de análise dos lotes dos meios de cultura ou das placas adquiridas, contemplando esterilidade, produtividade (fertilidade) e seletividade, quando aplicáveis.',{choices:cqAuditParams,choiceLabel:'Parâmetros contemplados'}),
+    cqAuditQ('registros-preparo','Foram apresentados os registros de preparação e controle da qualidade dos meios preparados no próprio laboratório?','Foram apresentados os registros de preparação e controle da qualidade dos meios preparados no próprio laboratório.','Não foram apresentados os registros de preparação e controle da qualidade dos meios preparados no próprio laboratório.'),
+    cqAuditQ('controle-negativo','Foram apresentados os registros do controle negativo (branco do ensaio)?','Foram apresentados os registros do controle negativo (branco do ensaio).','Não foram apresentados os registros do controle negativo (branco do ensaio).'),
+    cqAuditQ('controle-positivo','Foram apresentados os registros do controle positivo do ensaio dos meios de cultura preparados no próprio laboratório?','Foram apresentados os registros do controle positivo do ensaio dos meios preparados no próprio laboratório.','Não foram apresentados os registros do controle positivo do ensaio dos meios preparados no próprio laboratório.'),
+    cqAuditQ('geladeira','Foram apresentados os registros de monitoramento da temperatura da geladeira utilizada para armazenamento dos meios de cultura e/ou das placas prontas para uso?','Foram apresentados os registros de monitoramento da temperatura da geladeira utilizada para armazenamento dos meios de cultura e/ou placas prontas.','Não foram apresentados os registros de monitoramento da temperatura da geladeira utilizada para armazenamento dos meios de cultura e/ou placas prontas.')
+   ]},
+   ...[['balancas','Balanças','das balanças','nas balanças'],['phmetros','pHmetros','dos pHmetros','nos pHmetros'],['condutivimetros','Condutivímetros','dos condutivímetros','nos condutivímetros'],['termometros','Termômetros','dos termômetros','nos termômetros']].map(([id,title,de,em])=>({title:'Calibração — '+title,questions:[
+    cqAuditQ(id+'-cert','Foram apresentados os certificados de calibração '+de+'?','Foram apresentados os certificados de calibração '+de+'.','Não foram apresentados os certificados de calibração '+de+'.'),
+    cqAuditQ(id+'-vigencia','As calibrações '+de+' encontram-se dentro do prazo estabelecido?','As calibrações '+de+' encontram-se dentro do prazo estabelecido.','As calibrações '+de+' não se encontram dentro do prazo estabelecido.',{parent:id+'-cert'}),
+    cqAuditQ(id+'-etiqueta','As etiquetas de identificação da situação de calibração estão fixadas '+em+'?','As etiquetas de identificação da situação de calibração estão fixadas '+em+'.','As etiquetas de identificação da situação de calibração não estão fixadas '+em+'.')
+   ]})),
+   {title:'Qualificação dos equipamentos',questions:[
+    cqAuditQ('estufas-qual','Foram apresentados os relatórios de qualificação das estufas, contemplando a distribuição de temperatura nas condições avaliadas?','Foram apresentados os relatórios de qualificação das estufas, contemplando a distribuição de temperatura nas condições avaliadas.','Não foram apresentados os relatórios de qualificação das estufas, contemplando a distribuição de temperatura nas condições avaliadas.'),
+    cqAuditQ('estufas-vig','As qualificações das estufas encontram-se vigentes?','As qualificações das estufas encontram-se vigentes.','As qualificações das estufas não se encontram vigentes.',{parent:'estufas-qual'}),
+    cqAuditQ('autoclaves-qual','Foram apresentados os relatórios de qualificação das autoclaves?','Foram apresentados os relatórios de qualificação das autoclaves.','Não foram apresentados os relatórios de qualificação das autoclaves.'),
+    cqAuditQ('autoclaves-vig','As qualificações das autoclaves encontram-se vigentes?','As qualificações das autoclaves encontram-se vigentes.','As qualificações das autoclaves não se encontram vigentes.',{parent:'autoclaves-qual'})
+   ]},
+   {title:'Registros e gerenciamento da qualidade',questions:[
+    cqAuditQ('estufas-reg','Foram apresentados os registros de monitoramento da temperatura das estufas?','Foram apresentados os registros de monitoramento da temperatura das estufas.','Não foram apresentados os registros de monitoramento da temperatura das estufas.'),
+    cqAuditQ('placas-reg','Foram apresentados os registros de entrada e retirada das placas das estufas?','Foram apresentados os registros de entrada e retirada das placas das estufas.','Não foram apresentados os registros de entrada e retirada das placas das estufas.'),
+    cqAuditQ('rastreabilidade','Os registros asseguram a rastreabilidade das amostras, dos meios de cultura e dos insumos utilizados?','Os registros asseguram a rastreabilidade das amostras, dos meios de cultura e dos insumos utilizados.','Os registros não asseguram a rastreabilidade das amostras, dos meios de cultura e dos insumos utilizados.'),
+    cqAuditQ('identificacao','As placas apresentam identificação que permite a rastreabilidade do parâmetro analisado, local de coleta, produto, lote e data, conforme aplicável?','As placas apresentam identificação que permite a rastreabilidade das amostras.','As placas não apresentam identificação suficiente para a rastreabilidade das amostras.'),
+    cqAuditQ('lotes','Foram apresentados os registros de acompanhamento do controle da qualidade dos lotes envasados?','Foram apresentados os registros de acompanhamento do controle da qualidade dos lotes envasados.','Não foram apresentados os registros de acompanhamento do controle da qualidade dos lotes envasados.')
+   ]}
+  ]
+ };
+ const cqAuditKey=(page,group,id)=>'BPF_F_4_10_1_'+page.page+'_'+group+'_'+id;
+ const cqAuditSections=(page,row,panel)=>{
+  if(row.code!=='4.10.1')return [];
+  const panels=bpfPanels(page,row);
+  if(panels.length<2)return panel.id===panels[0]?.id?['implementation','documentation']:[];
+  return panel.id===panels[0].id?['implementation']:panel.id===panels[1].id?['documentation']:[];
+ };
+ const cqAuditVisible=(page,group,q,data)=>!q.parent||data[cqAuditKey(page,group,q.parent)]==='1';
+ function registerCQAuditFields(page,data){
+  for(const [group,sections] of Object.entries(cqAuditGroups))for(const section of sections)for(const q of section.questions){
+   const prefix='4.10.1 — '+cqAuditHeading[group]+' — ',name=cqAuditKey(page,group,q.id);
+   data.fields[name]={name,type:'/Ch',flags:0,label:prefix+q.question,options:q.allPrepared?['','1','0','prepared']:['','1','0'],calc:'',phrasePage:page.page};
+   for(const [index,option] of (q.choices||[]).entries()){
+    const n=cqAuditKey(page,group,q.id+'_op_'+index);data.fields[n]={name:n,type:'/Ch',flags:0,label:prefix+q.choiceLabel+' — '+option,options:['','1'],calc:'',phrasePage:page.page};
+   }
+  }
+ }
+ function renderCQAudit(card,page,row,panel){
+  for(const group of cqAuditSections(page,row,panel)){
+   if(card.querySelector('[data-bpf-cq-audit="'+group+'"]'))continue;
+   const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';box.dataset.bpfCqAudit=group;
+   box.append(element('legend','Outras informações — '+cqAuditHeading[group]));
+   const refreshers=[];
+   const persist=()=>{for(const refresh of refreshers)refresh();bpfSyncObservation(row,page);changed();window.GuiaRecovery?.schedule?.();};
+   for(const section of cqAuditGroups[group]){
+    const heading=element('h4',section.title);heading.style.cssText='margin:16px 0 8px;color:#17445c';box.append(heading);
+    for(const q of section.questions){
+     const wrapper=element('div'),label=element('label'),wording=element('span',q.question),select=element('select'),name=cqAuditKey(page,group,q.id);
+     label.style.cssText='display:block;margin:10px 0;line-height:1.4';select.style.cssText='display:block;width:100%;margin:6px 0;min-height:44px';
+     select.setAttribute('aria-label','4.10.1 — '+q.question);
+     for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não'],...(q.allPrepared?[['prepared','Todos os meios são preparados no próprio laboratório']]:[])])select.add(new Option(t,v));
+     select.value=values[name]||'';label.append(wording,select);wrapper.append(label);
+     let choiceBox=null;const choiceInputs=[];
+     if(q.choices){
+      choiceBox=element('fieldset');choiceBox.style.cssText='margin:8px 0;padding:8px;border:1px solid #91b5c9;border-radius:8px';choiceBox.append(element('legend',q.choiceLabel));
+      for(const [i,caption] of q.choices.entries()){
+       const optLabel=element('label'),input=element('input'),key=cqAuditKey(page,group,q.id+'_op_'+i);
+       input.type='checkbox';input.checked=values[key]==='1';input.onchange=()=>{values[key]=input.checked?'1':'';persist();};optLabel.append(input,document.createTextNode(caption));choiceBox.append(optLabel);choiceInputs.push(input);
+      }
+      wrapper.append(choiceBox);
+     }
+     if(q.guidance){const p=element('p',q.guidance);p.style.cssText='margin:8px 0;padding:12px;background:#e8f2f7;border-left:3px solid #18749c;line-height:1.45';wrapper.append(p);}
+     refreshers.push(()=>{const show=cqAuditVisible(page,group,q,values);wrapper.hidden=!show;wrapper.style.display=show?'block':'none';select.disabled=!show;wording.textContent=select.value==='1'?q.yes:select.value==='0'?q.no:q.question;
+      if(choiceBox){const active=show&&select.value==='1';choiceBox.hidden=!active;choiceBox.style.display=active?'block':'none';for(const input of choiceInputs)input.disabled=!active;}
+     });
+     select.onchange=()=>{values[name]=select.value;persist();};box.append(wrapper);
+    }
+   }
+   for(const refresh of refreshers)refresh();card.append(box);
+  }
+ }
+ function cqAuditReport(page,row,panel,data){
+  const out=[];
+  for(const group of cqAuditSections(page,row,panel)){
+   const checklist=[];
+   for(const section of cqAuditGroups[group])for(const q of section.questions){
+    if(!cqAuditVisible(page,group,q,data))continue;
+    const answer=data[cqAuditKey(page,group,q.id)];if(!['1','0'].includes(answer))continue;
+    let line=answer==='1'?q.yes:q.no;
+    if(answer==='1'&&q.choices){const selected=q.choices.filter((_,i)=>data[cqAuditKey(page,group,q.id+'_op_'+i)]==='1');if(selected.length)line+=' '+q.choiceLabel+': '+selected.join(', ')+'.';}
+    checklist.push(line);
+   }
+   if(checklist.length)out.push({page,row,panel,heading:'Outras informações — '+cqAuditHeading[group],checklist,answer:'',note:'',selected:[]});
+  }
+  return out;
+ }
+
  const cqVisualKey=(page,panel)=>'BPF_F_4_10_3_ConferenciaVisual_Pagina_'+page.page+'_F'+(panel.id+1);
  const cqColonyKey=(page,panel)=>cqVisualKey(page,panel)+'_Colonias';
  const cqColorKey=(page,panel)=>cqVisualKey(page,panel)+'_Cores';
@@ -1349,6 +1471,7 @@ const bpfWaterCheck = (() => {
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
    for(const id of row.code==='4.5.3'?[1]:compactWaterPanels[row.code]||[]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}
+   if(row.code==='4.10.1')registerCQAuditFields(page,data);
    if(row.code==='4.10.3')for(const id of [0,1,2]){
     for(const [keyFn,label] of [[cqVisualKey,'Conferência visual das placas'],[cqColonyKey,'Formação de colônias']]){const name=keyFn(page,{id});data.fields[name]={name,type:'/Ch',flags:0,label:'4.10.3 F'+(id+1)+' — '+label,options:['','1','0'],calc:'',phrasePage:page.page};}
     const name=cqColorKey(page,{id});data.fields[name]={name,type:'/Tx',flags:4096,label:'4.10.3 F'+(id+1)+' — Cores observadas',options:[],calc:'',phrasePage:page.page};
@@ -2235,7 +2358,7 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,ensure469FOrder,ensure458FOrder,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,renderPackagingPopInfo,packagingPopReport,renderCQVisualInfo,cqVisualReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,ensure469FOrder,ensure458FOrder,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,renderPackagingPopInfo,packagingPopReport,renderCQVisualInfo,cqVisualReport,renderCQAudit,cqAuditReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
 })();
 
 
