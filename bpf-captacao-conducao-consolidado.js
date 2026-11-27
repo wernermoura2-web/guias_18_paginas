@@ -928,15 +928,19 @@ const bpfWaterCheck = (() => {
 
  // 4.10.3: registro complementar da fiscalização, independente do resultado da avaliação.
  const cqVisualKey=(page,panel)=>'BPF_F_4_10_3_ConferenciaVisual_Pagina_'+page.page+'_F'+(panel.id+1);
+ const cqColonyKey=(page,panel)=>cqVisualKey(page,panel)+'_Colonias';
+ const cqColorKey=(page,panel)=>cqVisualKey(page,panel)+'_Cores';
+ const cqColonyQuestion='Foi constatada a formação de colônias?';
+ const cqColonyStatement=a=>a==='1'?'Foi constatada a formação de colônias.':'Não foi constatada a formação de colônias.';
  const cqVisualQuestion='Foi realizada a conferência visual das placas de cultura durante a inspeção sanitária?';
  const cqVisualStatement=a=>a==='1'?'Foi realizada a conferência visual das placas de cultura durante a inspeção sanitária.':'Não foi realizada a conferência visual das placas de cultura durante a inspeção sanitária.';
- const cqVisualGuidance='A RDC ANVISA nº 1.039/2026, art. 4º, incisos IV e VIII, não estabelece proibição expressa à conferência visual das placas durante a fiscalização. Solicitar a apresentação das evidências ao analista responsável, sem manipulação pelo inspetor. Manter as placas fechadas e respeitar os procedimentos de biossegurança, preservando a integridade dos ensaios. A constatação visual constitui evidência objetiva da inspeção, cuja interpretação deve respeitar o método analítico e os requisitos de confirmação, quando previstos. Registrar as constatações nos campos de Observações ou Não Conformidades do respectivo F, conforme o caso.';
+ const cqVisualGuidance='A RDC ANVISA nº 1.039/2026, art. 4º, incisos IV e VIII, não estabelece proibição expressa à conferência visual das placas durante a fiscalização. Solicitar a apresentação das evidências ao analista responsável, sem manipulação pelo inspetor. Manter as placas fechadas e respeitar os procedimentos de biossegurança, preservando a integridade dos ensaios. A constatação visual constitui evidência objetiva da inspeção, cuja interpretação deve respeitar o método analítico e os requisitos de confirmação, quando previstos. Quando houver crescimento ou coloração visível, registrar fotograficamente as placas fechadas, quando permitido pelo procedimento de biossegurança, e anexar as fotos ao guia no F correspondente. Registrar, com base nos documentos apresentados pelo laboratório, o tempo e a temperatura de incubação declarados, a identificação da amostra e demais informações disponíveis pertinentes à constatação. Registrar as constatações nos campos de Observações ou Não Conformidades do respectivo F, conforme o caso.';
  function renderCQVisualInfo(card,page,row,panel){
   if(row.code!=='4.10.3'||![0,1,2].includes(panel.id))return;
   if(card.querySelector('[data-bpf-cq-visual]'))return;
   const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';box.dataset.bpfCqVisual='1';
   box.append(element('legend','F'+(panel.id+1)+' — Outras informações'));
-  const details=element('details');details.className='bpf-water-unit';details.dataset.bpfInfoReview='';details.dataset.bpfInfoEntries=JSON.stringify((panel.entries||[]).map(e=>e.name));details.addEventListener('toggle',()=>{if(details.open)details.dataset.bpfInfoVisited='1';});details.append(element('summary','Conferência visual das placas'));
+  const details=element('div');details.className='bpf-water-unit';
   const label=element('label'),wording=element('span',cqVisualQuestion),select=element('select');
   label.style.cssText='display:block;margin:10px 0;line-height:1.4';
   select.style.cssText='display:block;margin:6px 0;min-height:44px;width:100%';
@@ -947,13 +951,34 @@ const bpfWaterCheck = (() => {
   const refresh=()=>{wording.textContent=select.value?cqVisualStatement(select.value):cqVisualQuestion;};
   select.onchange=()=>{values[name]=select.value;refresh();bpfSyncObservation(row,page);changed();window.GuiaRecovery?.schedule?.();};
   refresh();label.append(wording,select);details.append(label);
+  const colonyLabel=element('label'),colonyWording=element('span',cqColonyQuestion),colony=element('select');
+  colonyLabel.style.cssText=label.style.cssText;colony.style.cssText=select.style.cssText;
+  colony.setAttribute('aria-label','4.10.3 F'+(panel.id+1)+' — Formação de colônias');
+  for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])colony.add(new Option(t,v));
+  const colonyKey=cqColonyKey(page,panel),colorKey=cqColorKey(page,panel);
+  colony.value=['1','0'].includes(values[colonyKey])?values[colonyKey]:'';
+  const colorLabel=element('label','Qual a cor ou quais as cores das colônias formadas?'),color=element('textarea');
+  colorLabel.style.cssText='display:block;margin:10px 0;line-height:1.4';
+  color.rows=2;color.style.cssText='display:block;width:100%;margin:6px 0;font:inherit;min-height:44px';
+  color.setAttribute('aria-label','4.10.3 F'+(panel.id+1)+' — Cores observadas');
+  color.value=values[colorKey]||'';colorLabel.append(color);
+  const updateColony=()=>{colonyWording.textContent=colony.value?cqColonyStatement(colony.value):cqColonyQuestion;const show=colony.value==='1';colorLabel.hidden=!show;colorLabel.style.display=show?'block':'none';color.disabled=!show;};
+  const persist=()=>{bpfSyncObservation(row,page);changed();window.GuiaRecovery?.schedule?.();};
+  colony.onchange=()=>{values[colonyKey]=colony.value;updateColony();persist();};
+  color.oninput=()=>{values[colorKey]=color.value;persist();};
+  updateColony();colonyLabel.append(colonyWording,colony);details.append(colonyLabel,colorLabel);
   const guidance=element('p',cqVisualGuidance);guidance.style.cssText='margin:8px 0;padding:12px;background:#eff5fa;border-left:3px solid #18749c;line-height:1.45';
   details.append(element('strong','Orientação ao inspetor'),guidance);box.append(details);card.append(box);
  }
  function cqVisualReport(page,row,panel,data){
   if(row.code!=='4.10.3'||![0,1,2].includes(panel.id))return [];
   const answer=data[cqVisualKey(page,panel)];
-  return ['1','0'].includes(answer)?[{page,row,panel,heading:'Outras informações',checklist:[cqVisualStatement(answer)],answer:'',note:'',selected:[]}]:[];
+  const checklist=[],colony=data[cqColonyKey(page,panel)];
+  if(['1','0'].includes(answer))checklist.push(cqVisualStatement(answer));
+  if(['1','0'].includes(colony))checklist.push(cqColonyStatement(colony));
+  const color=String(data[cqColorKey(page,panel)]||'').trim();
+  if(colony==='1'&&color)checklist.push('Cores observadas das colônias: '+color);
+  return checklist.length?[{page,row,panel,heading:'Outras informações',checklist,answer:'',note:'',selected:[]}]:[];
  }
 
  const packagingPopKey='BPF_F_4_6_12_POP_DisponivelAtualizado';
@@ -1324,7 +1349,10 @@ const bpfWaterCheck = (() => {
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
    for(const id of row.code==='4.5.3'?[1]:compactWaterPanels[row.code]||[]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}
-   if(row.code==='4.10.3')for(const id of [0,1,2]){const name=cqVisualKey(page,{id});data.fields[name]={name,type:'/Ch',flags:0,label:'4.10.3 F'+(id+1)+' — Conferência visual das placas',options:['','1','0'],calc:'',phrasePage:page.page};}
+   if(row.code==='4.10.3')for(const id of [0,1,2]){
+    for(const [keyFn,label] of [[cqVisualKey,'Conferência visual das placas'],[cqColonyKey,'Formação de colônias']]){const name=keyFn(page,{id});data.fields[name]={name,type:'/Ch',flags:0,label:'4.10.3 F'+(id+1)+' — '+label,options:['','1','0'],calc:'',phrasePage:page.page};}
+    const name=cqColorKey(page,{id});data.fields[name]={name,type:'/Tx',flags:4096,label:'4.10.3 F'+(id+1)+' — Cores observadas',options:[],calc:'',phrasePage:page.page};
+   }
    if(row.code==='4.6.12'){
     const name=packagingPopPageKey(page);
     data.fields[name]={name,type:'/Ch',flags:0,label:'4.6.12 F1 — Disponibilidade e atualização do POP (informação única por processo)',options:['','1','0'],calc:'',phrasePage:page.page};
