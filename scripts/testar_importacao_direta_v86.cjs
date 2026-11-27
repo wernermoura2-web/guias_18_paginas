@@ -1,0 +1,26 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const {compareIdentity,diffFields,applyFields}=require('../bpf-importacao-direta.js');
+const date=s=>/^\d\d\/\d\d\/\d{4}$/.test(s)?s.split('/').reverse().join('-'):s;
+const current={ENVASADORA:'Água Teste',DATA:'27/11/2026','ENDEREÇO':'Rua A',F1:'1',F2:'Off',OBS:'local'};
+const received={ENVASADORA:'Agua teste',DATA:'2026-11-27','ENDEREÇO':'Rua A',F1:'1',F2:'0',OBS:''};
+assert.deepEqual(compareIdentity(current,received,date),[]);
+assert.throws(()=>compareIdentity(current,{...received,ENVASADORA:'Outra empresa'},date),/diverge/);
+assert.throws(()=>compareIdentity(current,{...received,DATA:'2026-11-28'},date),/diverge/);
+assert.equal(compareIdentity(current,{...received,DATA:'','ENDEREÇO':'Rua B'},date).length,2);
+assert.deepEqual(diffFields(current,received,['F1','F2','OBS']).map(x=>[x.name,x.conflict]),[['F2',false]]);
+const merged={...current};applyFields(merged,received,['F1','F2','OBS'],'add');assert.equal(merged.F2,'0');assert.equal(merged.OBS,'local');
+const contrary={...received,F1:'0'};assert.throws(()=>applyFields({...current},contrary,['F1','F2','OBS'],'add'),/divergências/);
+const replaced={...current};applyFields(replaced,contrary,['F1','F2','OBS'],'replace');assert.equal(replaced.F1,'0');assert.equal(replaced.OBS,'');
+const skipped={...current};applyFields(skipped,contrary,['F1','F2','OBS'],'skip');assert.deepEqual(skipped,current);
+const identity={ENVASADORA:'Minha envasadora','ENDEREÇO':'Meu endereço',DATA:'',F1:'1'};
+applyFields(identity,{ENVASADORA:'Outro nome','ENDEREÇO':'Outro endereço',DATA:'27/11/2026',F1:'0'},['ENVASADORA','ENDEREÇO','DATA','F1'],'replace');
+assert.deepEqual(identity,{ENVASADORA:'Minha envasadora','ENDEREÇO':'Meu endereço',DATA:'',F1:'0'});
+const sw=vm.createContext({URL,Response,Headers,self:{location:{href:'https://example.test/sw-guia18.js'},addEventListener(){}}});
+vm.runInContext(fs.readFileSync('sw-guia18.js','utf8'),sw);
+(async()=>{for(const mode of ['individual','equipe']){
+ const html=await (await sw.attachFriendlyMenu(new Response(fs.readFileSync(mode+'.html','utf8')),new URL('https://example.test/'+mode+'.html'))).text();
+ assert(html.includes('bpf-importacao-direta.js?v=20261127-v86-importacao-direta'));
+ assert(html.includes('function parseValues18('));assert(html.includes('const PROCESSES18='));assert(html.includes('function sync()'));
+ assert(html.includes('function bpfApplyLoadedPhotoPages('));assert(html.includes('function teamDownload18('));
+ console.log(mode+': motor de importação direta e funções de integração disponíveis');
+}console.log('Identificação, novos campos, 0/Não, divergências e escolha de versão: OK');})().catch(e=>{console.error(e);process.exitCode=1});

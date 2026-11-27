@@ -166,7 +166,7 @@
       // O Guia em Branco já está sincronizado com as páginas do HTML.
       // Não usar o antigo .pdf.b64, nem repintar parcialmente as células F.
       const isBlankGuide=fileName==='Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf';
-      const source='./impressao/'+fileName+(isBlankGuide?'':'.b64')+'?v=20261127-v85-formularios';
+      const source='./impressao/'+fileName+(isBlankGuide?'':'.b64')+'?v=20261127-v86-importacao-direta';
       const response=await fetch(source,{cache:'reload'});
       if(!response.ok)throw new Error('PDF indisponível');
       const bytes=isBlankGuide
@@ -208,6 +208,9 @@
   const actions=document.createElement('div');actions.className='bpf-ui-actions';
   actions.append(makeButton('Salvar arquivo',save,true),makeButton('Abrir preenchimento',open),makeButton('Imprimir PDF',pdf));
   root.appendChild(actions);
+  const direct=document.createElement('button');direct.type='button';direct.className='bpf-ui-action';direct.textContent='Importar arquivos de colegas (sem código)';direct.style.cssText='width:100%;margin:0 0 12px;min-height:52px';
+  direct.onclick=()=>window.BPFDirectImport?window.BPFDirectImport.open():alert('A importação está sendo carregada. Tente novamente.');root.appendChild(direct);
+  const directHint=document.createElement('p');directHint.className='bpf-ui-hint';directHint.textContent='Conferir e incorporar JSONs de outros inspetores sem substituir todo o guia.';root.appendChild(directHint);
   if(inTeam&&(teamBtn||importBtn)){
     const t=makeAccordion('Configurar equipe');
     if(teamBtn)t.content.appendChild(makeButton('Dados da equipe',teamBtn));
@@ -227,7 +230,7 @@
   );
   const editableGuide=document.createElement('a');
   editableGuide.className='bpf-ui-action bpf-ui-editable-guide';
-  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261127-v85-formularios';
+  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261127-v86-importacao-direta';
   editableGuide.download='Guia_Editavel_em_Branco.pdf';
   editableGuide.textContent='Guia Editável em Branco (sem as frases)';
   editableGuide.addEventListener('click',async event=>{
@@ -283,7 +286,7 @@
   if(extra.content.children.length)root.appendChild(extra.details);
   if(remove)mark(remove);
   // Esconder repetições de Importar processos sem esconder confirmação em diálogos.
-  if(inTeam)sourceControls().filter(el=>/^Importar processos$/i.test(label(el))&&!el.closest('dialog,[role="dialog"],[aria-modal="true"]')).forEach(mark);
+  sourceControls().filter(el=>/^Importar processos$/i.test(label(el))&&!el.closest('dialog,[role="dialog"],[aria-modal="true"]')).forEach(mark);
   const anchor=save.closest('nav,.toolbar,.controls,.actions')||save.parentElement;
   anchor.parentNode.insertBefore(root,anchor);
   // Recolher a barra antiga apenas quando ela contiver exclusivamente os controles duplicados.
