@@ -7,12 +7,12 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261127-v90-fotos-4103');
+q.delete('modo'); q.set('v','20261127-v91-conferencia-4103');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
 // Somente o recurso visual é acrescentado. Os F ficam sob controle do formulário original.
-const files=['bpf-etiquetas-appcc-20261108.js?v=20261115-impresso-referencia-pagina','bpf-correcao-f-pdf-v72.js?v=20261115-impresso-referencia-pagina','bpf-fotos-somente-nc-20261109.js?v=20261127-v90-fotos-4103','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-retomada-v130','bpf-pcc-rotulos-risco-20261109.js?v=20261114-matriz-alto-pcc','bpf-impressao-unicode-compat-20261109.js?v=20261112-retomada-v130','bpf-cq-continuacao-20261109.js?v=20261112-retomada-v130','bpf-frases-legais-tela.js?v=20261121-recepcao-f22-v22','bpf-correcao-f23-453.js?v=20261121-recepcao-f22-v22','bpf-frases-imagem-v21.js?v=20261123-f123-padronizacao-v1','bpf-recepcao-frases-v22.js?v=20261123-f123-padronizacao-v1','bpf-inversao-f2-f3-458-v23.js?v=20261121-f458-inversao-v26','bpf-frases-f-padrao-completo-v28.js?v=20261123-f-padrao-v31','bpf-pdf-paridade-html-v27.js?v=20261123-paridade-html-v32-observacoes','bpf-padronizacao-f123-20261123.js?v=20261123-f123-padronizacao-v1'];
+const files=['bpf-etiquetas-appcc-20261108.js?v=20261115-impresso-referencia-pagina','bpf-correcao-f-pdf-v72.js?v=20261115-impresso-referencia-pagina','bpf-fotos-somente-nc-20261109.js?v=20261127-v91-conferencia-4103','bpf-obs-livres-sem-prefixo-sim-20261109.js?v=20261112-retomada-v130','bpf-pcc-rotulos-risco-20261109.js?v=20261114-matriz-alto-pcc','bpf-impressao-unicode-compat-20261109.js?v=20261112-retomada-v130','bpf-cq-continuacao-20261109.js?v=20261112-retomada-v130','bpf-frases-legais-tela.js?v=20261121-recepcao-f22-v22','bpf-correcao-f23-453.js?v=20261121-recepcao-f22-v22','bpf-frases-imagem-v21.js?v=20261123-f123-padronizacao-v1','bpf-recepcao-frases-v22.js?v=20261123-f123-padronizacao-v1','bpf-inversao-f2-f3-458-v23.js?v=20261121-f458-inversao-v26','bpf-frases-f-padrao-completo-v28.js?v=20261123-f-padrao-v31','bpf-pdf-paridade-html-v27.js?v=20261123-paridade-html-v32-observacoes','bpf-padronizacao-f123-20261123.js?v=20261123-f123-padronizacao-v1'];
 let inserted=false;
 frame.addEventListener('load',()=>{
  try{
@@ -33,7 +33,7 @@ frame.addEventListener('load',()=>{
   }
   // Garantir o comparador atual mesmo se um service worker anterior ainda controlar a página.
   if(frame.contentWindow.BPFDirectImport?.version==='V88')next();
-  else{const fresh=doc.createElement('script');fresh.src='./bpf-importacao-direta-v88.js?v=20261127-v90-fotos-4103';fresh.onload=()=>{if(frame.contentWindow.BPFDirectImport?.version!=='V88')console.warn('Comparador V88 não inicializado');next();};fresh.onerror=()=>{console.warn('Comparador V88 indisponível');next();};(doc.head||doc.documentElement).appendChild(fresh);}
+  else{const fresh=doc.createElement('script');fresh.src='./bpf-importacao-direta-v88.js?v=20261127-v91-conferencia-4103';fresh.onload=()=>{if(frame.contentWindow.BPFDirectImport?.version!=='V88')console.warn('Comparador V88 não inicializado');next();};fresh.onerror=()=>{console.warn('Comparador V88 indisponível');next();};(doc.head||doc.documentElement).appendChild(fresh);}
  }catch(e){status.textContent='Não foi possível aplicar as etiquetas. Use o acesso direto abaixo.';}
 });
 async function openGuide(){
