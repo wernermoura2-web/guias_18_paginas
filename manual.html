@@ -384,6 +384,19 @@ main>section>h2+.capitulo-nav{position:sticky;top:0;z-index:2;background:white;p
 <h3>Referências</h3>
 <p><a href="https://support.google.com/chrome/answer/9658361?hl=pt-BR">Ajuda do Chrome: apps Web</a> · <a href="https://support.google.com/chrome/answer/188842?hl=pt-BR">Ajuda do Chrome: favoritos</a></p>
 <a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
+<section id="atualizacao-20261127"><h2 tabindex="-1">Atualização de 27/11/2026 — outras informações e resíduos</h2>
+<h3>Informações complementares: preenchimento em cada F</h3>
+<p>As outras informações incluem exigências de outras normas vigentes, informações complementares sobre os processos e procedimentos operacionais e práticas de excelência. Verifique caso a caso as exigências aplicáveis e preencha todas as informações pertinentes ao processo da empresa, com base no que foi observado e nos registros apresentados. Testes de fluorescência e bioluminescência de ATP são exemplos de práticas que devem ser avaliadas conforme o processo e a exigência aplicável.</p>
+<p>Nas perguntas complementares, selecione Sim ou Não conforme a evidência. É parte da atuação e da capacitação do inspetor verificar as informações sobre o processo durante a inspeção, consultando os registros e os responsáveis da empresa. Não marque por suposição. Campos sem marcação não geram frases nas Observações Gerais nem no Anexo F do relatório. A marcação Sim gera frase afirmativa; Não gera frase negativa. Os campos normativos expressamente obrigatórios devem ser verificados.</p>
+<figure><img src="./assets/manual/aviso-complementares-v84.png" alt="Aviso e opções de resposta das informações complementares"><figcaption>Ilustração da nova orientação exibida acima dos F.</figcaption></figure>
+<h3>Quais são os resíduos avaliados?</h3>
+<p>Nos itens com pesquisa de resíduos ou teste de arraste, selecione todos os resíduos efetivamente avaliados: acidez, alcalinidade, cloro, ozônio, ácido peracético ou outros. A seleção abre os indicadores disponíveis para cada resíduo. Marque os efetivamente empregados. O aplicativo apresenta alertas relativos à adequação e às limitações do método. Não trate o alerta como classificação automática da não conformidade; avalie a evidência e registre a constatação pertinente.</p>
+<figure><img src="./assets/manual/residuos-alerta-v84.png" alt="Seleção de resíduos e alerta de incompatibilidade"><figcaption>Ilustração: exemplo de alerta ao selecionar fenolftaleína para cloro residual.</figcaption></figure>
+<h3>Detalhamento do ácido peracético</h3>
+<p>Ao selecionar kit específico, informe o método (fita reagente específica, comparador colorimétrico, fotômetro/colorímetro, N,N-dietil-p-fenilenodiamina (DPD) específico para ácido peracético, titulação específica ou outro), o fabricante/modelo e a faixa de medição informada pelo fabricante. Registre a existência de registros dos resultados, quando aplicável.</p>
+<figure><img src="./assets/manual/residuos-kit-v84.png" alt="Método, identificação e faixa do kit específico de ácido peracético"><figcaption>Ilustração dos campos de detalhamento do kit.</figcaption></figure>
+<h3>Impressão e conservação do preenchimento</h3><p>Baixe novamente o guia em branco, o guia editável em branco e o anexo F em Mais opções. Utilize as versões atualizadas. O relatório preenchido não editável não contém botões de limpeza nas páginas dos processos, na matriz de risco, nas considerações finais nem nas medidas adotadas. Salve o JSON para retomar o preenchimento ou editar posteriormente.</p>
+<a class="top" href="#sumario">Fechar e voltar ao sumário ↑</a></section>
 </main>
 <script>
 function focusChapter() {
@@ -391,6 +404,30 @@ function focusChapter() {
   if (target?.matches('main > section')) target.querySelector('h2').focus({preventScroll:true});
   if (target?.id === 'sumario') target.querySelector('h2').focus({preventScroll:true});
 }
+const exampleProcesses=[
+ ['4-1-captacao',0,'4.1.3 F1','Verifique os controles e os registros da captação.'],
+ ['4-2-conducao',1,'4.2.2 F2','Verifique as condições da canalização e das conexões.'],
+ ['4-3-reservatorios',2,'4.3.2 F3','Confira as condições físicas do reservatório e das conexões.'],
+ ['4-5-recepcao-de-embalagens-e-insumos',6,'4.5.3 F2','Examine identificação, validade, regularização e finalidade de uso dos saneantes.'],
+ ['4-6-higienizacao-de-retornaveis',7,'4.6.6 F2','Confira a demonstração e os registros do teste de resíduos.'],
+ ['4-6-higienizacao-de-descartaveis',8,'4.6.10 F2','Identifique a origem e o fluxo das garrafas e responda às perguntas condicionais.'],
+ ['4-7-envase-de-retornaveis',9,'4.7.4 F1','Confira o funcionamento das condições de proteção da sala de envase.'],
+ ['4-7-envase-de-descartaveis',10,'4.7.8 F1','Confira os controles complementares da higienização da envasadora.'],
+ ['4-10-controle-da-qualidade',11,'4.10.4 F1','Confira a previsão de análise mensal terceirizada no plano de amostragem.'],
+ ['4-11-responsaveis-e-manipuladores',12,'4.11.1 F1','Confira supervisão e capacitação. Neste exemplo, as evidências complementares são registradas nas OBS e NC das verificações, não em um quadro separado.']
+];
+for(const [id,page,item,description] of exampleProcesses){
+ const sec=document.getElementById(id),block=document.createElement('div');
+ const title=document.createElement('h3');title.textContent='Exemplo ilustrado — '+item;block.append(title);
+ const instructions=document.createElement('p');instructions.textContent=description+' Verifique as informações durante a inspeção e responda conforme constatado. Nas perguntas complementares Sim/Não, o campo sem marcação não gera frase no relatório.';block.append(instructions);
+ const figure=document.createElement('figure'),img=document.createElement('img'),caption=document.createElement('figcaption');
+ img.src='./assets/manual/processo-complementares-'+page+'-v84.png';img.alt='Exemplo didático de preenchimento do item '+item;img.loading='lazy';
+ caption.textContent='Figura ilustrativa da interação. As respostas são fictícias.';figure.append(img,caption);block.append(figure);
+ sec?.querySelector('a.top')?.before(block);
+}
+const updateChapter=document.getElementById('atualizacao-20261127');
+document.querySelector('main > section')?.before(updateChapter);
+const updateLink=document.createElement('li');updateLink.innerHTML='<a href="#atualizacao-20261127">Atualização de 27/11/2026 — outras informações e resíduos</a>';document.querySelector('#sumario ol')?.prepend(updateLink);
 const chapters = [...document.querySelectorAll('main > section')];
 function chapterNav(index){
  const nav = document.createElement('nav');

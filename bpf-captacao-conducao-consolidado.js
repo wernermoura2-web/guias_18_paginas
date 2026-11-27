@@ -1874,7 +1874,7 @@ const bpfWaterCheck = (() => {
   if(page.page===7&&['4.6.5','4.6.6'].includes(row.code)){const phrase=row.phrases[panel.id]?.text;if(phrase&&![...card.querySelectorAll('p')].some(p=>p.textContent.trim()===phrase.trim()))card.append(element('p',phrase));}
   const hasOtherInfo=config.checks.some(criterion=>isInformation(config,criterion));
   const baseHint=config.inline?'Registre as informações da envasadora por linha.':hasOtherInfo?'Marque Sim ou Não conforme a avaliação de cada unidade.':config.sectioned?'Em cada unidade avaliada, responda às verificações aplicáveis.':config.all?'Responda às verificações com opções Sim e Não da unidade avaliada.':'Marque as opções aplicáveis à unidade avaliada.';
-  const hint=element('p',baseHint+(hasOtherInfo?' Somente os campos de “'+informationHeading(config)+'” podem ficar em branco quando não aplicáveis.':''));
+  const hint=element('p',baseHint+(hasOtherInfo?' Verifique todas as perguntas em “'+informationHeading(config)+'” durante a inspeção. Marque conforme constatado; somente as informações marcadas constam do relatório.':''));
   hint.className='bpf-guidance';
   card.append(hint);
   if(!document.getElementById('bpf-water-css')){

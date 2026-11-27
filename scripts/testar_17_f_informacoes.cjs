@@ -210,6 +210,15 @@ console.log('4.1.3 F1: quadro único também com preenchimento antigo e parcial'
  const t=walk(captureBox).find(n=>n.dataset.bpfResidue==='ozonio');t.checked=false;t.onchange();
  report=JSON.stringify(water.report(capturePage,captureRow,capturePanel,values));assert(!report.includes('Ozônio residual'));
  t.checked=true;t.onchange();assert(walk(ozone).find(n=>n.dataset.bpfResidueIndicator==='ortotolidina').checked,'respostas por resíduo preservadas ao reabrir');
+ assert.deepEqual(residueAnswer.children.map(o=>o.value),['','1','0'],'informações complementares: somente Sim e Não, além de campo vazio');
+ residueAnswer.value='0';residueAnswer.onchange();
+ assert(residueAnswer.parentElement.textContent.includes('não testa a ausência de resíduo'));
+ assert(water.report(capturePage,captureRow,capturePanel,values).some(x=>x.checklist.some(c=>c.includes('não testa a ausência de resíduo'))));
+ residueAnswer.value='';residueAnswer.onchange();
+ assert(!water.report(capturePage,captureRow,capturePanel,values).some(x=>x.checklist.some(c=>c.includes('testa a ausência de resíduo')||c.includes('Ozônio residual'))),'sem marcação: não gera frase nem indicadores no relatório');
+ residueAnswer.value='1';residueAnswer.onchange();
+ assert(residueAnswer.parentElement.textContent.includes('testa a ausência de resíduo')&&!residueAnswer.parentElement.children[0].textContent.includes('não testa'));
+ assert(walk(ozone).find(n=>n.dataset.bpfResidueIndicator==='ortotolidina').checked,'limpar marcação não apaga detalhes prévios');
  for(const [code,id,criterion] of [['4.1.3',0,'residuo'],['4.2.7',1,'residuo'],['4.3.5',1,'residuo'],['4.6.6',1,'teste-arraste'],['4.7.8',0,'residuo']]){
   const row=model.flatMap(p=>p.rows).find(r=>r.code===code);assert(water.get(row,id).checks.some(c=>c.id===criterion&&c.details==='residue'),code);
  }

@@ -3,6 +3,18 @@
  if(window.__BPF_UI_FRIENDLY_20261106)return;
  window.__BPF_UI_FRIENDLY_20261106=true;
  const inTeam=/(?:^|\/)equipe(?:_atualizado)?\.html$/i.test(location.pathname);
+ const infoNotice='Outras informações incluem exigências de outras normas vigentes, informações complementares sobre os processos e procedimentos operacionais e práticas de excelência. Verifique cada informação durante a inspeção e marque Sim ou Não conforme constatado. Campos sem marcação não constam do relatório.';
+ function insertInfoNotice(){
+  const editor=document.querySelector('#bpf-editor');
+  if(!editor||editor.querySelector('[data-bpf-complementary-notice]'))return;
+  const title=editor.querySelector('h2');if(!title)return;
+  const notice=document.createElement('p');notice.dataset.bpfComplementaryNotice='';
+  notice.textContent=infoNotice;notice.style.cssText='margin:6px 0 12px;padding:9px 12px;background:#eaf5fa;border-left:4px solid #24789a;color:#183f52;font-size:14px;line-height:1.4';
+  title.after(notice);
+ }
+ const infoObserver=new MutationObserver(insertInfoNotice);
+ infoObserver.observe(document.documentElement,{childList:true,subtree:true});
+ insertInfoNotice();
  const CSS=`
  @media screen{
   .bpf-ui-guide-header{background:linear-gradient(110deg,#123e57,#126a91)!important;color:#fff!important;padding:18px 19px!important}
@@ -151,7 +163,7 @@
       // O Guia em Branco já está sincronizado com as páginas do HTML.
       // Não usar o antigo .pdf.b64, nem repintar parcialmente as células F.
       const isBlankGuide=fileName==='Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf';
-      const source='./impressao/'+fileName+(isBlankGuide?'':'.b64')+'?v=20261123-f-padrao-v31-pdf';
+      const source='./impressao/'+fileName+(isBlankGuide?'':'.b64')+'?v=20261127-v84-documentos';
       const response=await fetch(source,{cache:'reload'});
       if(!response.ok)throw new Error('PDF indisponível');
       const bytes=isBlankGuide
@@ -207,12 +219,13 @@
   printActions.className='bpf-ui-print-actions';
   printActions.append(
     makePrintDownload('Imprimir Guia em Branco','Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf'),
-    makePrintDownload('Imprimir Anexo em Branco','Anexo_F_20_Paginas_Retrato.pdf'),
+    makePrintDownload('Imprimir Anexo F para preencher','Anexo_F_20_Paginas_Retrato.pdf'),
+    makePrintDownload('Imprimir Anexo F resumido','Anexo_Resumido_Frases_BPF_APPCC.pdf'),
     makePrintDownload('Imprimir Check-List de Documentos','Checklist_de_Documentos_Envasadora.pdf')
   );
   const editableGuide=document.createElement('a');
   editableGuide.className='bpf-ui-action bpf-ui-editable-guide';
-  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261123-f-padrao-v31-pdf';
+  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261127-v84-documentos';
   editableGuide.download='Guia_Editavel_em_Branco.pdf';
   editableGuide.textContent='Guia Editável em Branco (sem as frases)';
   editableGuide.addEventListener('click',async event=>{
