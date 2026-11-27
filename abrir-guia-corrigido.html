@@ -7,7 +7,7 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261127-v88-comparacao-lado-a-lado');
+q.delete('modo'); q.set('v','20261127-v89-menu-equipe-esteira');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
@@ -33,7 +33,7 @@ frame.addEventListener('load',()=>{
   }
   // Garantir o comparador atual mesmo se um service worker anterior ainda controlar a página.
   if(frame.contentWindow.BPFDirectImport?.version==='V88')next();
-  else{const fresh=doc.createElement('script');fresh.src='./bpf-importacao-direta-v88.js?v=20261127-v88-comparacao-lado-a-lado';fresh.onload=()=>{if(frame.contentWindow.BPFDirectImport?.version!=='V88')console.warn('Comparador V88 não inicializado');next();};fresh.onerror=()=>{console.warn('Comparador V88 indisponível');next();};(doc.head||doc.documentElement).appendChild(fresh);}
+  else{const fresh=doc.createElement('script');fresh.src='./bpf-importacao-direta-v88.js?v=20261127-v89-menu-equipe-esteira';fresh.onload=()=>{if(frame.contentWindow.BPFDirectImport?.version!=='V88')console.warn('Comparador V88 não inicializado');next();};fresh.onerror=()=>{console.warn('Comparador V88 indisponível');next();};(doc.head||doc.documentElement).appendChild(fresh);}
  }catch(e){status.textContent='Não foi possível aplicar as etiquetas. Use o acesso direto abaixo.';}
 });
 async function openGuide(){
