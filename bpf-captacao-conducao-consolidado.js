@@ -949,20 +949,20 @@ const bpfWaterCheck = (() => {
   const name=cqVisualKey(page,panel);
   select.value=['1','0'].includes(values[name])?values[name]:'';
   const refresh=()=>{wording.textContent=select.value?cqVisualStatement(select.value):cqVisualQuestion;};
-  select.onchange=()=>{values[name]=select.value;refresh();bpfSyncObservation(row,page);changed();window.GuiaRecovery?.schedule?.();};
+  select.onchange=()=>{const before=values[name];values[name]=select.value;refresh();if(before!=='1'||select.value!=='1'){values[colonyKey]='';values[colorKey]='';colony.value='';color.value='';}updateColony();persist();};
   refresh();label.append(wording,select);details.append(label);
   const colonyLabel=element('label'),colonyWording=element('span',cqColonyQuestion),colony=element('select');
   colonyLabel.style.cssText=label.style.cssText;colony.style.cssText=select.style.cssText;
   colony.setAttribute('aria-label','4.10.3 F'+(panel.id+1)+' — Formação de colônias');
   for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])colony.add(new Option(t,v));
   const colonyKey=cqColonyKey(page,panel),colorKey=cqColorKey(page,panel);
-  colony.value=['1','0'].includes(values[colonyKey])?values[colonyKey]:'';
+  colony.value=select.value==='1'&&['1','0'].includes(values[colonyKey])?values[colonyKey]:'';
   const colorLabel=element('label','Qual a cor ou quais as cores das colônias formadas?'),color=element('textarea');
   colorLabel.style.cssText='display:block;margin:10px 0;line-height:1.4';
   color.rows=2;color.style.cssText='display:block;width:100%;margin:6px 0;font:inherit;min-height:44px';
   color.setAttribute('aria-label','4.10.3 F'+(panel.id+1)+' — Cores observadas');
-  color.value=values[colorKey]||'';colorLabel.append(color);
-  const updateColony=()=>{colonyWording.textContent=colony.value?cqColonyStatement(colony.value):cqColonyQuestion;const show=colony.value==='1';colorLabel.hidden=!show;colorLabel.style.display=show?'block':'none';color.disabled=!show;};
+  color.value=select.value==='1'&&colony.value==='1'?(values[colorKey]||''):'';colorLabel.append(color);
+  const updateColony=()=>{colonyWording.textContent=colony.value?cqColonyStatement(colony.value):cqColonyQuestion;const visible=select.value==='1';colonyLabel.hidden=!visible;colonyLabel.style.display=visible?'block':'none';colony.disabled=!visible;const show=visible&&colony.value==='1';colorLabel.hidden=!show;colorLabel.style.display=show?'block':'none';color.disabled=!show;};
   const persist=()=>{bpfSyncObservation(row,page);changed();window.GuiaRecovery?.schedule?.();};
   colony.onchange=()=>{values[colonyKey]=colony.value;updateColony();persist();};
   color.oninput=()=>{values[colorKey]=color.value;persist();};
@@ -975,9 +975,9 @@ const bpfWaterCheck = (() => {
   const answer=data[cqVisualKey(page,panel)];
   const checklist=[],colony=data[cqColonyKey(page,panel)];
   if(['1','0'].includes(answer))checklist.push(cqVisualStatement(answer));
-  if(['1','0'].includes(colony))checklist.push(cqColonyStatement(colony));
+  if(answer==='1'&&['1','0'].includes(colony))checklist.push(cqColonyStatement(colony));
   const color=String(data[cqColorKey(page,panel)]||'').trim();
-  if(colony==='1'&&color)checklist.push('Cores observadas das colônias: '+color);
+  if(answer==='1'&&colony==='1'&&color)checklist.push('Cores observadas das colônias: '+color);
   return checklist.length?[{page,row,panel,heading:'Outras informações',checklist,answer:'',note:'',selected:[]}]:[];
  }
 
