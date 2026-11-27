@@ -111,11 +111,12 @@ const bpfWaterCheck = (() => {
   ]}},
   '4.6.10':{1:{simple:true,questionsInInformation:true,checks:[
    check('avaliacao-transporte','Avaliação do transporte das embalagens para a sala de envase'),
-   check('transporte-posicionamento-automatico','As garrafas armazenadas são colocadas na esteira transportadora de forma manual ou automática?',{informationOnly:true,informationQuestion:true,answerOrder:['0','1'],answerLabels:{'0':'Manual','1':'Automática'},yesLabel:'As garrafas armazenadas são colocadas na esteira transportadora de forma automática',noLabel:'As garrafas armazenadas são colocadas na esteira transportadora de forma manual'}),
-   check('transporte-manual-direto','As garrafas são colocadas manualmente e diretamente na esteira transportadora?',{informationOnly:true,informationQuestion:true,requires:'transporte-posicionamento-automatico',requiresAnswer:'0',yesLabel:'As garrafas são colocadas manualmente e diretamente na esteira transportadora',noLabel:'As garrafas não são colocadas manualmente e diretamente na esteira transportadora'}),
-   check('abastecimento-manual-dispensador','As garrafas são colocadas manualmente no dispensador automático para abastecer a esteira transportadora?',{informationOnly:true,informationQuestion:true,requires:'transporte-posicionamento-automatico',requiresAnswer:'1',yesLabel:'As garrafas são colocadas manualmente no dispensador automático para abastecer a esteira transportadora',noLabel:'As garrafas não são colocadas manualmente no dispensador automático para abastecer a esteira transportadora'}),
-   check('soprador-filtro-ar','O soprador de ar do transportador é dotado de filtro de ar microbiológico?',{informationOnly:true,informationQuestion:true,yesLabel:'O soprador de ar do transportador é dotado de filtro de ar microbiológico',noLabel:'O soprador de ar do transportador não é dotado de filtro de ar microbiológico'}),
-   check('pia-higiene-maos-transporte','No local existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem?',{informationOnly:true,informationQuestion:true,yesLabel:'No local existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem',noLabel:'No local não existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem'})
+   check('origem-garrafas','Qual é a origem e o fluxo das garrafas destinadas ao transportador aéreo?',{informationOnly:true,informationQuestion:true,answerOrder:['direto','terceiros','armazenadas'],answerLabels:{direto:'Sopradas no estabelecimento e enviadas em seguida pelo transportador aéreo',terceiros:'Adquiridas de terceiros',armazenadas:'Sopradas no estabelecimento e armazenadas'},answerStatements:{direto:'As garrafas são sopradas no estabelecimento e enviadas em seguida pelo transportador aéreo',terceiros:'As garrafas são adquiridas de terceiros',armazenadas:'As garrafas são sopradas no estabelecimento e armazenadas'}}),
+   check('transporte-posicionamento-automatico','As garrafas armazenadas são colocadas no transportador aéreo de forma manual ou automática?',{informationOnly:true,informationQuestion:true,requiresStoredBottles:true,answerOrder:['0','1'],answerLabels:{'0':'Manual','1':'Automática'},yesLabel:'As garrafas armazenadas são colocadas no transportador aéreo de forma automática',noLabel:'As garrafas armazenadas são colocadas no transportador aéreo de forma manual'}),
+   check('transporte-manual-direto','As garrafas são colocadas manualmente e diretamente no transportador aéreo?',{informationOnly:true,informationQuestion:true,requiresStoredBottles:true,requires:'transporte-posicionamento-automatico',requiresAnswer:'0',yesLabel:'As garrafas são colocadas manualmente e diretamente no transportador aéreo',noLabel:'As garrafas não são colocadas manualmente e diretamente no transportador aéreo'}),
+   check('abastecimento-manual-dispensador','As garrafas são colocadas manualmente no dispensador automático para abastecer o transportador aéreo?',{informationOnly:true,informationQuestion:true,requiresStoredBottles:true,requires:'transporte-posicionamento-automatico',requiresAnswer:'1',yesLabel:'As garrafas são colocadas manualmente no dispensador automático para abastecer o transportador aéreo',noLabel:'As garrafas não são colocadas manualmente no dispensador automático para abastecer o transportador aéreo'}),
+   check('soprador-filtro-ar','O soprador de ar do transportador aéreo é dotado de filtro de ar microbiológico?',{informationOnly:true,informationQuestion:true,requiresStoredBottles:true,yesLabel:'O soprador de ar do transportador aéreo é dotado de filtro de ar microbiológico',noLabel:'O soprador de ar do transportador aéreo não é dotado de filtro de ar microbiológico'}),
+   check('pia-higiene-maos-transporte','No local existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem?',{informationOnly:true,informationQuestion:true,requiresStoredBottles:true,yesLabel:'No local existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem',noLabel:'No local não existe pia para lavagem das mãos com recursos para higiene e instruções para correta lavagem'})
   ]}},
   '4.6.4':{0:returnableInspection(prewashChecks)},
   '4.6.5':{0:returnableInspection([
@@ -556,7 +557,11 @@ const bpfWaterCheck = (() => {
  };
  const isQuestion=criterion=>criterion.informationQuestion||/\?\s*$/.test(criterion.label);
  const hasAnswer=answer=>answer==='1'||answer==='0';
+ const criterionAnswers=criterion=>criterion.answerOrder||['1','0'];
+ const hasCriterionAnswer=(criterion,answer)=>criterionAnswers(criterion).includes(answer);
+ const storedBottles=state=>['terceiros','armazenadas'].includes(state['origem-garrafas']?.answer);
  const statementForAnswer=(criterion,answer)=>{
+  if(criterion.answerStatements?.[answer])return criterion.answerStatements[answer];
   if(criterion.answerLabels){if(answer==='1'&&criterion.yesLabel)return criterion.yesLabel;if(answer==='0'&&criterion.noLabel)return criterion.noLabel;return 'Reposição dos produtos químicos: '+criterion.answerLabels[answer];}
   if(answer==='0'&&criterion.noLabel)return criterion.noLabel;
   const statement=(answer==='1'&&criterion.yesLabel)||criterion.label.trim().replace(/\?$/,'');
@@ -575,10 +580,10 @@ const bpfWaterCheck = (() => {
  }
  const answerLabel=(criterion,answer)=>answer==='0'?(criterion.noLabel||criterion.label):criterion.label;
  const active = (criterion,state) =>
-  (!criterion.requiresAnyRinseYes||state.bpfAnyRinseYes===true)&&(!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer===(criterion.requiresAnswer||'1'))&&
+  (!criterion.requiresStoredBottles||storedBottles(state))&&(!criterion.requiresAnyRinseYes||state.bpfAnyRinseYes===true)&&(!criterion.route||state.route===criterion.route)&&(!criterion.requires||state[criterion.requires]?.answer===(criterion.requiresAnswer||'1'))&&
   !criterion.hideWhenAllNo?.every(id=>state[id]?.answer==='0');
  const answered = (criterion,state) => active(criterion,state)&&
-  ((!criterion.noOnly&&state[criterion.id]?.answer==='1')||(!criterion.yesOnly&&state[criterion.id]?.answer==='0'));
+  (criterion.answerStatements?hasCriterionAnswer(criterion,state[criterion.id]?.answer):(!criterion.noOnly&&state[criterion.id]?.answer==='1')||(!criterion.yesOnly&&state[criterion.id]?.answer==='0'));
  const text = value => typeof value==='string'?value.trim():'';
 
  const capsDisinfected=(scope,data)=>read({scope,index:0,name:bpfPhraseName(scope,0)},data)
@@ -1320,7 +1325,7 @@ const bpfWaterCheck = (() => {
    if(['4.2.2','4.3.2'].includes(row.code)&&panel.id===0)mergeConductionDocuments(state);
    for(const c of get(row,panel.id).checks.filter(c=>isInformation(get(row,panel.id),c))){
     if(Object.prototype.hasOwnProperty.call(state[c.id]||{},'answer')||answered(c,state))continue;
-    const distinct=[...new Set(panel.entries.map(e=>read(e,data)).filter(v=>v&&answered(c,v)).map(v=>JSON.stringify(v[c.id])))];
+    const distinct=[...new Set(panel.entries.map(e=>read(e,data)).filter(v=>v&&(c.requiresStoredBottles?hasCriterionAnswer(c,v[c.id]?.answer):answered(c,v))).map(v=>JSON.stringify(v[c.id])))];
     if(distinct.length===1)state[c.id]=JSON.parse(distinct[0]);
     else if(distinct.length>1)conflicts.push(c.id);
    }
@@ -1333,7 +1338,7 @@ const bpfWaterCheck = (() => {
    migrateTransportInfo(state);
   }
   for(const c of config.checks.filter(c=>isInformation(config,c))){
-   const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&(row.code==='4.6.3'?hasAnswer(v[c.id]?.answer):answered(c,v))).map(v=>v[c.id]);
+   const recorded=panel.entries.map(e=>read(e,data)).filter(v=>v&&(c.requiresStoredBottles?hasCriterionAnswer(c,v[c.id]?.answer):row.code==='4.6.3'?hasAnswer(v[c.id]?.answer):answered(c,v))).map(v=>v[c.id]);
    const distinct=[...new Set(recorded.map(item=>JSON.stringify(item)))];
    if(distinct.length===1)state[c.id]=JSON.parse(distinct[0]);else if(distinct.length>1)conflicts.push(c.id);
   }
@@ -1402,14 +1407,14 @@ const bpfWaterCheck = (() => {
   if(!units.some(unit=>unit.checks.length)&&!mixing.length&&!supplemental.length&&!jointRecords.length&&!capRoutes.length&&!frequency&&!(rinseNA(row,panel)&&entries.some(e=>data[e.name]==='2')))return [];
   const responses=config.inline?[]:reservoir?['1','0']:['1','0','2'];
   const information=[...mixing,...supplemental,...capRoutes];
-  if(row.code==='4.6.10'&&panel.id===1&&joint?.state['transporte-manual-ar-filtrado']?.answer==='0'&&
+  if(row.code==='4.6.10'&&panel.id===1&&joint&&storedBottles(joint.state)&&joint.state['transporte-manual-ar-filtrado']?.answer==='0'&&
     (!hasAnswer(joint.state['transporte-posicionamento-automatico']?.answer)||!hasAnswer(joint.state['soprador-filtro-ar']?.answer)))
    information.push('Registro anterior: Não na pergunta conjunta sobre colocação manual e soprador com filtro; revisar separadamente as duas respostas');
   if(frequency)information.push(visualFrequency.label+': '+frequency);
   for(const criterion of config.checks.filter(check=>isInformation(config,check))){
    if(!infoEnabled)continue;
    if(frequencyOnly&&criterion.id==='inspecao-visual')continue;
-   for(const answer of ['1','0']){
+   for(const answer of criterionAnswers(criterion)){
     const shared=joint&&!joint.conflicts.includes(criterion.id);
     if(shared){
      const match=jointRecords.find(check=>check.id===criterion.id&&check.answer===answer);
@@ -1867,7 +1872,7 @@ const bpfWaterCheck = (() => {
     const state=general?joint.state:entryState;
     if(general&&row.code==='4.6.10'&&panel.id===1&&state['transporte-manual-ar-filtrado']?.answer==='0'){
      const notice=element('p','Registro anterior: Não na pergunta conjunta. Confira separadamente o modo de posicionamento e o filtro.');
-     box.append(notice);rows.push(()=>{notice.hidden=hasAnswer(state['transporte-posicionamento-automatico']?.answer)&&hasAnswer(state['soprador-filtro-ar']?.answer);});
+     box.append(notice);rows.push(()=>{notice.hidden=!storedBottles(state)||(hasAnswer(state['transporte-posicionamento-automatico']?.answer)&&hasAnswer(state['soprador-filtro-ar']?.answer));});
     }
     const save=general?()=>{values[sharedLineKey(page,row,panel)]=JSON.stringify(state);refresh();changed();recalc();if(row.code==='4.2.9'&&panel.id===0)card.parentElement?.querySelector('[data-bpf-conduction-f2]')?.dispatchEvent(new Event('bpf-f2-refresh'));}:entrySave;
     const answer=information?'1':sectionType;
@@ -1983,12 +1988,12 @@ const bpfWaterCheck = (() => {
       const requiredAlert=criterion.requiredInfo?element('p','ATENÇÃO — resposta obrigatória. Selecione Sim ou Não.'):null;
       if(requiredAlert){requiredAlert.style.cssText='margin:6px 0;padding:8px;background:#fff2cb;border-left:4px solid #c47b13;color:#462f00;font-weight:bold';line.append(requiredAlert);select.dataset.bpfRequiredInfo=criterion.id;select.setAttribute('aria-required','true');}
       rows.push(()=>{
-       const wording=hasAnswer(item.answer)&&(!criterion.answerLabels||criterion.yesLabel||criterion.noLabel)?statementForAnswer(criterion,item.answer):question;
+       const wording=hasCriterionAnswer(criterion,item.answer)&&(!criterion.answerLabels||criterion.answerStatements||criterion.yesLabel||criterion.noLabel)?statementForAnswer(criterion,item.answer):question;
        prompt.textContent=wording;
        prompt.title=(item.answer==='1'?criterion.yesGuidance:item.answer==='0'?criterion.noGuidance:'')||criterion.guidance||'';
        select.setAttribute('aria-label',label+' — '+wording);
        select.disabled=state.notApplicable||!active(criterion,state);
-       select.value=hasAnswer(item.answer)?item.answer:'';
+       select.value=hasCriterionAnswer(criterion,item.answer)?item.answer:'';
        if(requiredAlert){requiredAlert.hidden=hasAnswer(item.answer);requiredAlert.style.display=requiredAlert.hidden?'none':'block';}
       });
      }else line.append(control);

@@ -7,7 +7,7 @@
 (function(){
 'use strict';
 const q=new URLSearchParams(location.search), mode=q.get('modo')==='individual'?'individual':'equipe';
-q.delete('modo'); q.set('v','20261126-v77-transporte-amostragem');
+q.delete('modo'); q.set('v','20261126-v78-origem-garrafas');
 const target='./'+mode+'.html?'+q.toString();
 const frame=document.getElementById('formulario'), status=document.getElementById('avisos');
 document.getElementById('direto').href=target;
