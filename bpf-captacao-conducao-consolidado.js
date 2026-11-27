@@ -925,6 +925,36 @@ const bpfWaterCheck = (() => {
   card.append(box);
  }
 
+
+ // 4.10.3: registro complementar da fiscalização, independente do resultado da avaliação.
+ const cqVisualKey=(page,panel)=>'BPF_F_4_10_3_ConferenciaVisual_Pagina_'+page.page+'_F'+(panel.id+1);
+ const cqVisualQuestion='Foi realizada a conferência visual das placas de cultura durante a inspeção sanitária?';
+ const cqVisualStatement=a=>a==='1'?'Foi realizada a conferência visual das placas de cultura durante a inspeção sanitária.':'Não foi realizada a conferência visual das placas de cultura durante a inspeção sanitária.';
+ const cqVisualGuidance='A RDC ANVISA nº 1.039/2026, art. 4º, incisos IV e VIII, não estabelece proibição expressa à conferência visual das placas durante a fiscalização. Solicitar a apresentação das evidências ao analista responsável, sem manipulação pelo inspetor. Manter as placas fechadas e respeitar os procedimentos de biossegurança, preservando a integridade dos ensaios. A constatação visual constitui evidência objetiva da inspeção, cuja interpretação deve respeitar o método analítico e os requisitos de confirmação, quando previstos. Registrar as constatações nos campos de Observações ou Não Conformidades do respectivo F, conforme o caso.';
+ function renderCQVisualInfo(card,page,row,panel){
+  if(row.code!=='4.10.3'||![0,1,2].includes(panel.id))return;
+  if(card.querySelector('[data-bpf-cq-visual]'))return;
+  const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';box.dataset.bpfCqVisual='1';
+  box.append(element('legend','F'+(panel.id+1)+' — Outras informações'));
+  const label=element('label'),wording=element('span',cqVisualQuestion),select=element('select');
+  label.style.cssText='display:block;margin:10px 0;line-height:1.4';
+  select.style.cssText='display:block;margin:6px 0;min-height:44px;width:100%';
+  select.setAttribute('aria-label','4.10.3 F'+(panel.id+1)+' — Conferência visual');
+  for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
+  const name=cqVisualKey(page,panel);
+  select.value=['1','0'].includes(values[name])?values[name]:'';
+  const refresh=()=>{wording.textContent=select.value?cqVisualStatement(select.value):cqVisualQuestion;};
+  select.onchange=()=>{values[name]=select.value;refresh();bpfSyncObservation(row,page);changed();window.GuiaRecovery?.schedule?.();};
+  refresh();label.append(wording,select);box.append(label);
+  const guidance=element('p',cqVisualGuidance);guidance.style.cssText='margin:8px 0;padding:12px;background:#eff5fa;border-left:3px solid #18749c;line-height:1.45';
+  box.append(element('strong','Orientação ao inspetor'),guidance);card.append(box);
+ }
+ function cqVisualReport(page,row,panel,data){
+  if(row.code!=='4.10.3'||![0,1,2].includes(panel.id))return [];
+  const answer=data[cqVisualKey(page,panel)];
+  return ['1','0'].includes(answer)?[{page,row,panel,heading:'Outras informações',checklist:[cqVisualStatement(answer)],answer:'',note:'',selected:[]}]:[];
+ }
+
  const packagingPopKey='BPF_F_4_6_12_POP_DisponivelAtualizado';
  // Uma resposta por PROCESSO (retornáveis e descartáveis), nunca por linha.
  // A chave antiga, única para os dois processos, permanece como legado.
@@ -1293,6 +1323,7 @@ const bpfWaterCheck = (() => {
  function init(data){
   for(const page of BPF_PHRASES)for(const row of page.rows)for(const scope of row.scopes){
    for(const id of row.code==='4.5.3'?[1]:compactWaterPanels[row.code]||[]){const name=sharedLineKey(page,row,{id});data.fields[name]={name,type:'/Tx',flags:0,label:row.code+' F'+(id+1)+' — Outras informações gerais',options:[],calc:'',phrasePage:page.page};}
+   if(row.code==='4.10.3')for(const id of [0,1,2]){const name=cqVisualKey(page,{id});data.fields[name]={name,type:'/Ch',flags:0,label:'4.10.3 F'+(id+1)+' — Conferência visual das placas',options:['','1','0'],calc:'',phrasePage:page.page};}
    if(row.code==='4.6.12'){
     const name=packagingPopPageKey(page);
     data.fields[name]={name,type:'/Ch',flags:0,label:'4.6.12 F1 — Disponibilidade e atualização do POP (informação única por processo)',options:['','1','0'],calc:'',phrasePage:page.page};
@@ -2175,7 +2206,7 @@ const bpfWaterCheck = (() => {
   render(section,page,row,{...panel,label:'Envasadora Automática',entries:machineEntries(panel),machineDetails:true});
   card.append(section);
  }
- return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,ensure469FOrder,ensure458FOrder,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,renderPackagingPopInfo,packagingPopReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
+ return {get,registerReview,renderMachine,renderReception,receptionSummary,receptionAnnex,preparePhrases,ensure469FOrder,ensure458FOrder,renderReservoirFrequency,renderReservoirFilterInfo,renderReservoirPopInfo,reservoirPopReport,renderPackagingPopInfo,packagingPopReport,renderCQVisualInfo,cqVisualReport,reservoirFrequencyAnnex,capsExamples,init,apply,report,summary,validate,validateMandatory,render,enableHoverUnit};
 })();
 
 
