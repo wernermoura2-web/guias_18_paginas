@@ -936,6 +936,7 @@ const bpfWaterCheck = (() => {
   if(card.querySelector('[data-bpf-cq-visual]'))return;
   const box=element('fieldset');box.className='bpf-answer-box';box.dataset.bpfInfoBox='';box.dataset.bpfCqVisual='1';
   box.append(element('legend','F'+(panel.id+1)+' — Outras informações'));
+  const details=element('details');details.className='bpf-water-unit';details.dataset.bpfInfoReview='';details.dataset.bpfInfoEntries=JSON.stringify((panel.entries||[]).map(e=>e.name));details.addEventListener('toggle',()=>{if(details.open)details.dataset.bpfInfoVisited='1';});details.append(element('summary','Conferência visual das placas'));
   const label=element('label'),wording=element('span',cqVisualQuestion),select=element('select');
   label.style.cssText='display:block;margin:10px 0;line-height:1.4';
   select.style.cssText='display:block;margin:6px 0;min-height:44px;width:100%';
@@ -945,9 +946,9 @@ const bpfWaterCheck = (() => {
   select.value=['1','0'].includes(values[name])?values[name]:'';
   const refresh=()=>{wording.textContent=select.value?cqVisualStatement(select.value):cqVisualQuestion;};
   select.onchange=()=>{values[name]=select.value;refresh();bpfSyncObservation(row,page);changed();window.GuiaRecovery?.schedule?.();};
-  refresh();label.append(wording,select);box.append(label);
+  refresh();label.append(wording,select);details.append(label);
   const guidance=element('p',cqVisualGuidance);guidance.style.cssText='margin:8px 0;padding:12px;background:#eff5fa;border-left:3px solid #18749c;line-height:1.45';
-  box.append(element('strong','Orientação ao inspetor'),guidance);card.append(box);
+  details.append(element('strong','Orientação ao inspetor'),guidance);box.append(details);card.append(box);
  }
  function cqVisualReport(page,row,panel,data){
   if(row.code!=='4.10.3'||![0,1,2].includes(panel.id))return [];
