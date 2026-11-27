@@ -23,6 +23,19 @@ vm.runInContext(fs.readFileSync('sw-guia18.js','utf8')+'\nthis.attach=attachFrie
   values.BPF_CatchmentStatus_4='active';assert(!ctx.bpfCatchmentUnavailable(4));ctx.bpfRestoreInactiveScope(scope,values);
   assert.equal(values.CampoTeste,'1');assert.equal(values.CampoTeste_0,'0');
   assert(html.includes('absent:"NÃO EXISTENTE"'));
+  const conductionStart=html.indexOf('function bpfConductionStatus('),conductionEnd=html.indexOf('function bpfLineHeaderRect(',conductionStart);
+  assert(conductionStart>=0&&conductionEnd>conductionStart);
+  const headers=new Map(),sheet={querySelector:s=>headers.get(Number(s.match(/\d+/)[0]))||null,append:el=>headers.set(el.dataset.conductionStatus,el)};
+  ctx.D={widgets:[1,2,3,4].map(col=>({page:1,name:'CONDUÇÃO '+col+'N DA CAPTAÇÃO',size:[595.32,841.92],rect:[153.6+(col-1)*79.92,696.6,231.96+(col-1)*79.92,712.44]}))};
+  ctx.bpfSheets=[null,sheet];ctx.document={createElement:()=>({dataset:{},style:{}})};ctx.place=(el,box)=>{el.box=box;};
+  vm.runInContext(html.slice(conductionStart,conductionEnd),ctx);
+  values.BPF_CatchmentStatus_2='inactive';values.BPF_CatchmentStatus_4='absent';
+  ctx.bpfRefreshConductionStatusHeaders();
+  assert.equal(headers.get(2).textContent,'CONDUÇÃO 2\nINATIVA');assert.equal(headers.get(4).textContent,'CONDUÇÃO 4\nNÃO EXISTENTE');
+  assert(headers.get(2).box.rect[1]>712.44,'cabeçalho não sobrepõe o nome da captação');
+  values.BPF_CatchmentStatus_4='active';ctx.bpfRefreshConductionStatusHeaders();assert.equal(headers.get(4).textContent,'CONDUÇÃO 4\nATIVA');
+  assert.equal(headers.size,4,'atualização não duplica cabeçalhos');
+  assert(html.includes('bpfRefreshConductionStatusHeaders();')&&html.includes('p===1?bpfConductionHeaderRect(col)'));
   console.log(file+': situação, exclusão da avaliação, reservatório, reativação e PDF OK');
  }
 })().catch(e=>{console.error(e);process.exitCode=1;});
