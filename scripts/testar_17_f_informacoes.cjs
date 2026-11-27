@@ -47,6 +47,17 @@ for(const [code,ids] of Object.entries(target)){
    select.value='0';select.onchange();assert(line.textContent.includes('Não existe telemetria em linha'));assert(detail.hidden,'tipos fechados com Não');
    assert.equal(values[panel.entries[0].name],'0','telemetria informativa não altera a avaliação');
   }
+  if(code==='4.2.7'&&id===1){
+   const tele=walk(info[0]).find(n=>n.tagName==='SELECT'&&n.parentElement.textContent.includes('Existe telemetria em linha'));
+   assert(tele);tele.value='0';tele.onchange();assert(tele.parentElement.textContent.includes('Não existe telemetria em linha'));
+   assert(JSON.stringify(water.report(page,row,panel,values)).includes('Não existe telemetria em linha'));
+  }
+  if(code==='4.3.3'){
+   const device=walk(info[0]).find(n=>n.tagName==='SELECT');
+   device.value='';device.onchange();assert(device.parentElement.children[0].textContent.endsWith('?'));
+   device.value='0';device.onchange();const negative=device.parentElement.children[0].textContent;
+   assert(negative.includes('não')||negative.includes('Não'));assert(JSON.stringify(water.report(page,row,panel,values)).includes(negative));
+  }
   if(['4.2.2','4.3.2'].includes(code)&&id===0){
    const selects=walk(info[0]).filter(n=>n.tagName==='SELECT'&&n.children.some(o=>o.value==='1')&&n.children.some(o=>o.value==='0'));
    assert.equal(selects.length,2,'certificado e declaração reunidos; nota fiscal separada');
@@ -156,6 +167,18 @@ selects[2].value='1';selects[2].onchange();assert.equal(JSON.parse(values[common
 assert.equal(water.receptionSummary(receptionPage,receptionRow,receptionPanel,values).length,4,'Relatório com uma única afirmação por pergunta');
 selects[0].value='';selects[0].onchange();const reopened=new Node('fieldset');water.renderReception(reopened,receptionPage,receptionRow,receptionPanel);assert.equal(walk(reopened).filter(n=>n.tagName==='SELECT')[0].value,'','Limpeza explícita não deve restaurar resposta legada');
 console.log('4.5.3 F2: quadro único, migração de respostas anteriores, divergência preservada e relatório sem repetição');
+{
+ const p=receptionPage,r=receptionRow,panel={id:0,label:'F1',entries:r.scopes.map(s=>({scope:s,index:0,name:phraseName(s,0),phrase:s.phrases[0]}))};
+ const [a,b]=panel.entries;values[oldField(a,'Resposta')]='1';values[oldField(a,'Comprovacao')]='Formulário de recepção';values[oldField(b,'Resposta')]='0';
+ const card=new Node('fieldset');water.renderReception(card,p,r,panel);
+ const inputs=walk(card).filter(n=>n.tagName==='SELECT'&&n.children.some(o=>o.value==='0'));
+ assert.equal(inputs.length,panel.entries.length);assert.equal(inputs[0].value,'1');assert.equal(inputs[1].value,'0');
+ assert(inputs[0].parentElement.textContent.includes('Possui registro que comprova'));assert(inputs[1].parentElement.textContent.includes('Não possui registro que comprova'));
+ inputs[0].value='0';inputs[0].onchange();assert.equal(values[oldField(a,'Resposta')],'0');assert.equal(values[oldField(a,'Comprovacao')],'Formulário de recepção');
+ assert(JSON.stringify(water.receptionSummary(p,r,panel,values)).includes('Não possui registro que comprova'));
+ inputs[0].value='1';inputs[0].onchange();assert.equal(values[oldField(a,'Comprovacao')],'Formulário de recepção');
+ console.log('4.5.3 F1: Sim/Não por grupo, comprovação única e respostas anteriores preservadas');
+}
 // Captação: respostas por unidade de uma versão antiga devem preencher o quadro geral
 // mesmo se já houver um JSON parcial do quadro geral.
 const capturePage=model.find(p=>p.page===0),captureRow=capturePage.rows.find(r=>r.code==='4.1.3'),capturePanel={id:0,label:'F1',entries:captureRow.scopes.map(s=>({scope:s,index:0,name:phraseName(s,0),phrase:s.phrases[0]}))};
@@ -168,6 +191,23 @@ const filterSelect=walk(captureBox).find(n=>n.tagName==='SELECT'&&n.parentElemen
 assert(filterSelect&&filterSelect.value==='1','Resposta de filtro legada deve ser preservada no quadro geral parcial');
 assert.equal(JSON.parse(values[legacyKey]).filtro.frequency,'Mensal');
 console.log('4.1.3 F1: quadro único também com preenchimento antigo e parcial');
+{
+ const record=walk(captureBox).find(n=>n.tagName==='LABEL'&&n.children[0]?.textContent==='Registra o resultado?');
+ assert(record);const select=walk(record).find(n=>n.tagName==='SELECT');
+ select.value='';select.onchange();assert(record.textContent.includes('Registra o resultado?'));
+ select.value='0';select.onchange();assert(record.textContent.includes('Não registra o resultado'));
+ select.value='1';select.onchange();assert(record.children[0].textContent==='Registra o resultado');
+}
+{
+ ctx.window={};
+ const p=model.find(p=>p.rows.some(r=>r.code==='4.6.12')),r=p.rows.find(r=>r.code==='4.6.12');
+ const panel={id:0,label:'F1',entries:r.scopes.map(s=>({scope:s,index:0,name:phraseName(s,0),phrase:s.phrases[0]}))};
+ const card=new Node('fieldset');water.renderPackagingPopInfo(card,p,r,panel);
+ const select=walk(card).find(n=>n.tagName==='SELECT');
+ select.value='';select.onchange();assert(select.parentElement.children[0].textContent.endsWith('?'));
+ select.value='0';select.onchange();assert(select.parentElement.children[0].textContent.includes('não estão disponíveis'));
+ select.value='1';select.onchange();assert(select.parentElement.children[0].textContent.includes('estão disponíveis e atualizados'));
+}
 // 4.6.3 descartáveis: NA com identidade visual própria, sem obrigar informações
 // complementares e sem apagar o que já havia sido registrado.
 ctx.Event=class{constructor(type){this.type=type;}};

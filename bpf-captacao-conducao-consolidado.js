@@ -157,12 +157,12 @@ const bpfWaterCheck = (() => {
     check('nota-fiscal','Foi apresentada a nota fiscal com as especificações do material?',{keepLabel:true,informationQuestion:true})
    ]},
    1:{all:true,checks:[
-    check('vazamento','Tubulação e/ou conexões sem vazamento',{noLabel:"Tubulação e/ou conexões com vazamento"}),
-    check('abaulada','Tubulação sem abaulamento e/ou com suportes suficientes',{noLabel:"Tubulação com abaulamento e/ou sem suportes adequados"}),
-    check('integra','Tubulação sem avarias e/ou lisa e íntegra',{noLabel:"Tubulação com avarias e/ou sem superfície lisa e íntegra"}),
-    check('corrosao','Tubulação e conexões sem corrosão',{noLabel:"Tubulação e/ou conexões com corrosão"}),
-    check('emendas','Tubulações com emendas ou conexões sanitárias',{noLabel:"Tubulações sem emendas ou conexões sanitárias"}),
-    check('acesso','Tubulação acessível e sem vegetação que impeça a inspeção',{noLabel:'Tubulação inacessível ou com vegetação que impeça a inspeção'})
+    check('vazamento','A tubulação e as conexões estão livres de vazamentos?',{yesLabel:'A tubulação e as conexões estão livres de vazamentos',noLabel:'A tubulação e/ou as conexões apresentam vazamentos'}),
+    check('abaulada','A tubulação está livre de abaulamentos e possui suportes suficientes?',{yesLabel:'A tubulação está livre de abaulamentos e possui suportes suficientes',noLabel:'A tubulação apresenta abaulamentos e/ou não possui suportes suficientes'}),
+    check('integra','A tubulação está livre de avarias e apresenta superfície lisa e íntegra?',{yesLabel:'A tubulação está livre de avarias e apresenta superfície lisa e íntegra',noLabel:'A tubulação apresenta avarias e/ou não apresenta superfície lisa e íntegra'}),
+    check('corrosao','A tubulação e as conexões estão livres de corrosão?',{yesLabel:'A tubulação e as conexões estão livres de corrosão',noLabel:'A tubulação e/ou as conexões apresentam corrosão'}),
+    check('emendas','As tubulações possuem emendas ou conexões sanitárias?',{yesLabel:'As tubulações possuem emendas ou conexões sanitárias',noLabel:'As tubulações não possuem emendas ou conexões sanitárias'}),
+    check('acesso','A tubulação está acessível e livre de vegetação que impeça a inspeção?',{yesLabel:'A tubulação está acessível e livre de vegetação que impeça a inspeção',noLabel:'A tubulação está inacessível ou possui vegetação que impede a inspeção'})
    ]}
   },
   '4.6.8':{
@@ -232,14 +232,14 @@ const bpfWaterCheck = (() => {
     check('nota-fiscal','Foi apresentada a nota fiscal com as especificações do material?',{keepLabel:true,informationQuestion:true})
    ]},
    1:{all:true,checks:[
-    check('integro','Reservatório sem avarias e/ou liso e íntegro',{noLabel:'Reservatório com avarias e/ou sem superfície lisa e íntegra'}),
-    check('corrosao','Reservatório e conexões sem corrosão',{noLabel:'Reservatório e/ou conexões com corrosão'}),
-    check('conexoes-sanitarias','Reservatório com conexões sanitárias',{noLabel:'Reservatório sem conexões sanitárias'}),
-    check('sem-vincos-amassados','Reservatório com paredes sem vincos ou amassados',{noLabel:'Reservatório com paredes com vincos ou amassados'})
+    check('integro','O reservatório está livre de avarias e apresenta superfície lisa e íntegra?',{yesLabel:'O reservatório está livre de avarias e apresenta superfície lisa e íntegra',noLabel:'O reservatório apresenta avarias e/ou não apresenta superfície lisa e íntegra'}),
+    check('corrosao','O reservatório e as conexões estão livres de corrosão?',{yesLabel:'O reservatório e as conexões estão livres de corrosão',noLabel:'O reservatório e/ou as conexões apresentam corrosão'}),
+    check('conexoes-sanitarias','O reservatório possui conexões sanitárias?',{yesLabel:'O reservatório possui conexões sanitárias',noLabel:'O reservatório não possui conexões sanitárias'}),
+    check('sem-vincos-amassados','As paredes do reservatório estão livres de vincos e amassados?',{yesLabel:'As paredes do reservatório estão livres de vincos e amassados',noLabel:'As paredes do reservatório apresentam vincos ou amassados'})
    ]},
    2:{all:true,checks:[
-    check('sem-vazamento','Reservatório e/ou conexões sem vazamento',{noLabel:'Reservatório e/ou conexões com vazamento'}),
-    check('escotilha-parede','Reservatório com escotilha na parede para acesso interno',{noLabel:'Reservatório sem escotilha na parede para acesso interno'}),
+    check('sem-vazamento','O reservatório e as conexões estão livres de vazamentos?',{yesLabel:'O reservatório e as conexões estão livres de vazamentos',noLabel:'O reservatório e/ou as conexões apresentam vazamentos'}),
+    check('escotilha-parede','O reservatório possui escotilha na parede para acesso interno?',{yesLabel:'O reservatório possui escotilha na parede para acesso interno',noLabel:'O reservatório não possui escotilha na parede para acesso interno'}),
     check('escotilha-teto','O reservatório possui escotilha de vidro no teto para inspeção visual?',{informationOnly:true,informationQuestion:true,keepLabel:true,yesLabel:'Reservatório com escotilha de vidro no teto para inspeção visual',noLabel:'Reservatório sem escotilha de vidro no teto para inspeção visual'})
    ]}
   },
@@ -247,12 +247,12 @@ const bpfWaterCheck = (() => {
    check('higienizacao-adequada','Sim',{yesOnly:true,scopeAnswer:true}),
    check('nao-conducao','Não',{noOnly:true,scopeAnswer:true}),
    sanitizers('Sanitizantes utilizados na descontaminação ou desinfecção de rotina da condução',{yesOnly:true,frequencyOptional:true}),
-   ...controls('da condução')
+   ...controls('da condução',true)
   ]}},
   '4.2.8':{
    0:{all:true,checks:[
-    check('pop-desmonte','POP contempla o desmonte e a frequência',{noLabel:'O POP não contempla o desmonte e a frequência'}),
-    check('registros-desmonte','Registros do desmonte e troca de componentes (o-ring)',{optional:true,noLabel:'Não possui registros de desmonte e troca de componentes (o-ring)'}),
+    check('pop-desmonte','O POP contempla o desmonte e sua frequência?',{yesLabel:'O POP contempla o desmonte e sua frequência',noLabel:'O POP não contempla o desmonte e/ou sua frequência'}),
+    check('registros-desmonte','Possui registros do desmonte e da troca de componentes (o-ring)?',{optional:true,yesLabel:'Possui registros do desmonte e da troca de componentes (o-ring)',noLabel:'Não possui registros do desmonte e/ou da troca de componentes (o-ring)'}),
     check('inspecao-visual','Realiza e registra a inspeção visual interna das tubulações?',{yesLabel:'Realiza e registra a inspeção visual interna das tubulações',noLabel:'Não realiza e não registra a inspeção visual interna das tubulações'})
    ]},
    1:{singleNo:true,checks:[
@@ -266,7 +266,7 @@ const bpfWaterCheck = (() => {
   '4.2.9':{
    0:{all:true,checks:[
     check('pop-canalizacao','Possui POP referente às operações de higienização da canalização',{noLabel:'Não possui POP referente às operações de higienização da canalização'}),
-    check('implementacao','A limpeza e a higienização são realizadas com os mesmos desinfetantes informados no POP',{noLabel:'A limpeza e a higienização não são realizadas com os mesmos desinfetantes informados no POP.'})
+    check('implementacao','A limpeza e a higienização são realizadas com os mesmos desinfetantes informados no POP?',{yesLabel:'A limpeza e a higienização são realizadas com os mesmos desinfetantes informados no POP',noLabel:'A limpeza e a higienização não são realizadas com os mesmos desinfetantes informados no POP'})
    ]},
    1:{separateInformation:true,informationHeading:'Outras observações',checks:[
     check('sim-conducao','Sim',{yesOnly:true,scopeAnswer:true}),
@@ -804,6 +804,20 @@ const bpfWaterCheck = (() => {
   const answers=entries.map(e=>data[e.name]);
   return answers.includes('0')?'0':answers.includes('1')?'1':'';
  }
+ const reservoirDeviceQuestions=[
+  ['O reservatório possui extravasor protegido por tela milimetrada?','O reservatório possui extravasor protegido por tela milimetrada','O reservatório não possui extravasor protegido por tela milimetrada'],
+  ['O reservatório possui dispositivo inferior para esvaziamento e higienização?','O reservatório possui dispositivo inferior para esvaziamento e higienização','O reservatório não possui dispositivo inferior para esvaziamento e higienização'],
+  ['Os elementos filtrantes são verificados e trocados na frequência definida?','Os elementos filtrantes são verificados e trocados na frequência definida','Os elementos filtrantes não são verificados e/ou trocados na frequência definida'],
+  ['O reservatório possui filtro de ar microbiológico?','O reservatório possui filtro de ar microbiológico','O reservatório não possui filtro de ar microbiológico'],
+  ['O reservatório possui válvula de retenção ou sifão?','O reservatório possui válvula de retenção ou sifão','O reservatório não possui válvula de retenção ou sifão'],
+  ['O reservatório possui torneira específica para coleta de amostras?','O reservatório possui torneira específica para coleta de amostras','O reservatório não possui torneira específica para coleta de amostras'],
+  ['Possui filtros na saída dos reservatórios?','Possui filtros na saída dos reservatórios','Não possui filtros na saída dos reservatórios'],
+  ['São mantidos os registros de verificação e troca dos elementos filtrantes?','São mantidos os registros de verificação e troca dos elementos filtrantes','Não são mantidos os registros de verificação e troca dos elementos filtrantes']
+ ];
+ function reservoirDeviceStatement(row,e,answer){
+  const labels=reservoirDeviceQuestions[e.index];
+  return labels?labels[answer==='1'?1:2]:bpfUnifiedOption(row,e)+': '+(answer==='1'?'Sim':'Não');
+ }
  function renderCompactReservoir(card,page,row,panel){
   const state=compactReservoirState(page,row,panel,values),field=sharedLineKey(page,row,panel);
   state.checks??={};state.filters??={};state.decisions??={};
@@ -822,7 +836,7 @@ const bpfWaterCheck = (() => {
   }
   const info=element('fieldset');info.className='bpf-answer-box';info.dataset.bpfInfoBox='';info.append(element('legend',panel.label+' — Outras informações'));
   const ask=(caption,target,id,yes,no)=>{const label=element('label'),wording=element('span'),select=element('select');label.style.cssText='display:block;margin:10px 0';select.style.cssText='display:block;margin:5px 0;padding:5px;font:inherit';for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));select.value=target[id]||'';const base=caption.trim().replace(/[.?]+$/,'');const refresh=()=>{wording.textContent=select.value==='1'?(yes||base):select.value==='0'?(no||'Não — '+base):base+'?';};select.onchange=()=>{target[id]=select.value;refresh();save();};refresh();label.append(wording,select);info.append(label);};
-  for(const i of new Set(panel.entries.map(e=>e.index))){const e=panel.entries.find(e=>e.index===i);ask(bpfUnifiedOption(row,e),state.checks,i);}
+  for(const i of new Set(panel.entries.map(e=>e.index))){const e=panel.entries.find(e=>e.index===i),[caption,yes,no]=reservoirDeviceQuestions[i]||[bpfUnifiedOption(row,e)];ask(caption,state.checks,i,yes,no);}
   if(panel.id===1){
    for(const [id,caption,yes,no] of filterQuestions)ask(caption,state.filters,id,yes,no);
    info.append(element('strong','Qual o elemento filtrante utilizado?'));state.filters.media??=[];
@@ -841,7 +855,7 @@ const bpfWaterCheck = (() => {
   const report=[];
   for(const answer of ['1','0']){const selected=scopes.filter(s=>compactReservoirDecision(panel.entries.filter(e=>e.scope===s),data)===answer);if(!selected.length)continue;const note=text(data[bpfGroupNoteName(page,row,panel,answer)]);report.push({page,row,panel,answer,checklist:selected.map(s=>bpfScopeLabel(page,s)),note,selected:panel.entries.filter(e=>selected.includes(e.scope))});}
   const info=[];
-  for(const i of new Set(panel.entries.map(e=>e.index))){const e=panel.entries.find(e=>e.index===i),a=state.checks?.[i];if(hasAnswer(a))info.push(bpfUnifiedOption(row,e)+': '+(a==='1'?'Sim':'Não'));else for(const value of ['1','0']){const old=panel.entries.filter(x=>x.index===i&&state.legacy?.[x.name]===value);if(old.length)info.push(bpfUnifiedOption(row,e)+': '+(value==='1'?'Sim':'Não')+' ('+old.map(x=>bpfScopeLabel(page,x.scope)).join(', ')+')');}}
+  for(const i of new Set(panel.entries.map(e=>e.index))){const e=panel.entries.find(e=>e.index===i),a=state.checks?.[i];if(hasAnswer(a))info.push(reservoirDeviceStatement(row,e,a));else for(const value of ['1','0']){const old=panel.entries.filter(x=>x.index===i&&state.legacy?.[x.name]===value);if(old.length)info.push(reservoirDeviceStatement(row,e,value)+' ('+old.map(x=>bpfScopeLabel(page,x.scope)).join(', ')+')');}}
   if(panel.id===1){const filters=state.filters||{};for(const [id,caption,yes,no] of filterQuestions){if(hasAnswer(filters[id]))info.push(filters[id]==='1'?yes:no);}if(filters.media?.length)info.push('Elemento filtrante utilizado: '+filters.media.map(m=>m==='Outros'&&filters.other?filters.other:m).join(', '));if(!Object.keys(filters).some(k=>k!=='media'||filters.media.length))info.push(...reservoirFilterReport(page,panel,data));}
   if(info.length)report.push({page,row,panel,heading:'Outras informações',checklist:info,note:'',selected:[]});return report;
  }
@@ -869,7 +883,7 @@ const bpfWaterCheck = (() => {
  // A chave antiga, única para os dois processos, permanece como legado.
  const packagingPopPageKey=page=>packagingPopKey+'_Pagina_'+page.page;
  // Antigo F2: frase única, sem seleção de linha, incorporada ao F1.
- const packagingPopQuestion='Os Procedimentos Operacionais Padronizados referentes às operações de higienização das embalagens devem estar disponíveis e atualizados.';
+ const packagingPopQuestion='Os Procedimentos Operacionais Padronizados referentes às operações de higienização das embalagens estão disponíveis e atualizados?';
  const packagingPopStatement=a=>a==='1'?'Os Procedimentos Operacionais Padronizados de higienização das embalagens estão disponíveis e atualizados.':'Os Procedimentos Operacionais Padronizados de higienização das embalagens não estão disponíveis ou estão desatualizados.';
  function packagingLegacyKey(scope){
   const copy={...scope,phrases:scope.phrases.slice()};
@@ -1099,14 +1113,21 @@ const bpfWaterCheck = (() => {
   const persist=()=>{bpfSyncObservation(row,page);changed();};
   const write=(entry,key,value)=>{values[receptionKey(entry.name,key)]=value;};
   const saveCommon=()=>{for(const entry of panel.entries.filter(e=>selected.has(e.name))){write(entry,'Resposta','1');write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}persist();};
-  for(const entry of panel.entries){const label=element('label',bpfScopeLabel(page,entry.scope));label.style.cssText='display:block;margin:9px 0';const input=element('input');input.type='checkbox';input.checked=selected.has(entry.name);input.onchange=()=>{
-   if(input.checked){selected.add(entry.name);write(entry,'Resposta','1');write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}
-   else{selected.delete(entry.name);for(const key of ['Resposta','Comprovacao','Detalhes'])write(entry,key,'');if(!selected.size){evidence='';details='';select.value='';area.value='';}}
-   refresh();persist();
-  };label.prepend(input);block.append(label);}
+  for(const entry of panel.entries){
+   const label=element('label',bpfScopeLabel(page,entry.scope));label.style.cssText='display:block;margin:9px 0';
+   const wording=element('span'),input=element('select');wording.style.display='block';input.style.cssText='display:block;margin:5px 0;padding:5px';
+   for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])input.add(new Option(t,v));
+   input.value=read(entry,'Resposta');const update=()=>{wording.textContent=input.value==='1'?check.yes:input.value==='0'?check.no:check.question;};
+   input.onchange=()=>{
+    write(entry,'Resposta',input.value);
+    if(input.value==='1'){selected.add(entry.name);if(evidence){write(entry,'Comprovacao',evidence);write(entry,'Detalhes',evidence==='Outro'?details:'');}}
+    else selected.delete(entry.name);
+    update();refresh();persist();
+   };update();label.append(wording,input);block.append(label);
+  }
   const followup=element('div');const label=element('label','Comprovação');label.style.display='block';const select=element('select');select.style.cssText='display:block;margin:6px 0;padding:5px';for(const name of ['Selecione',...receptionEvidence])select.add(new Option(name,name==='Selecione'?'':name));select.value=evidence;select.onchange=()=>{evidence=select.value;if(evidence!=='Outro')details=area.value='';refresh();saveCommon();};label.append(select);followup.append(label);
   const other=element('label','Especifique a outra comprovação');const area=element('textarea');area.rows=2;area.style.cssText='display:block;width:100%;margin-top:6px';area.value=details;area.oninput=()=>{details=area.value;saveCommon();};other.append(area);followup.append(other);block.append(followup);
-  const refresh=()=>{const visible=selected.size>0;followup.hidden=!visible;followup.style.display=visible?'block':'none';other.hidden=!visible||evidence!=='Outro';other.style.display=other.hidden?'none':'block';area.disabled=other.hidden;question.textContent=visible?check.yes:check.question;};
+  const refresh=()=>{const visible=selected.size>0;followup.hidden=!visible;followup.style.display=visible?'block':'none';other.hidden=!visible||evidence!=='Outro';other.style.display=other.hidden?'none':'block';area.disabled=other.hidden;question.textContent=check.caption;};
   refresh();card.append(block);
  }
  const sanitizerReceptionQuestions=[
@@ -1623,10 +1644,12 @@ const bpfWaterCheck = (() => {
     options(telemetry,item.parameters,(id,selected)=>{item.parameters[id]=selected;save();});
     break;
    case 'residue': {
-    const record=field('Registra o resultado',item.recorded==='1'?'Sim':item.recorded==='0'?'Não':'',value=>{
-     item.recorded=value==='Sim'?'1':value==='Não'?'0':'';
-     save();
-    },['Sim','Não']);
+    const record=element('label'),wording=element('span'),select=element('select');
+    record.className='bpf-water-field';
+    for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
+    const refreshRecord=()=>{select.value=hasAnswer(item.recorded)?item.recorded:'';wording.textContent=item.recorded==='1'?'Registra o resultado':item.recorded==='0'?'Não registra o resultado':'Registra o resultado?';};
+    select.onchange=()=>{item.recorded=select.value;refreshRecord();save();};
+    refreshRecord();record.append(wording,select);container.append(record);
     record.classList.add('bpf-water-record');
     item.tests??={};
     let other;
