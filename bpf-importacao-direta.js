@@ -24,7 +24,15 @@
   else if(decision==='add')for(const x of changes)target[x.name]=x.incoming;
   else throw Error('Escolha de importação inválida.');
  }
- const core={has,norm,compareIdentity,diffFields,applyFields};
+ function applySelected(target,incoming,names,selected){
+  const allowed=new Set(names);
+  for(const n of new Set(selected))if(allowed.has(n)&&!['ENVASADORA','ENDEREÇO','DATA'].includes(n)&&has(incoming[n]))target[n]=incoming[n];
+ }
+ function fieldSummary(current,incoming,names){
+  const unique=[...new Set(names)],diffs=diffFields(current,incoming,unique);
+  return {diffs,conflicts:diffs.filter(x=>x.conflict).length,identical:unique.filter(n=>has(incoming[n])&&current[n]===incoming[n]).length,localOnly:unique.filter(n=>has(current[n])&&!has(incoming[n])).length};
+ }
+ const core={has,norm,compareIdentity,diffFields,applyFields,applySelected,fieldSummary};
  if(typeof module!=='undefined'&&module.exports){module.exports=core;return;}
  if(window.BPFDirectImport)return;
  const active={queue:[],modal:null,busy:false};
@@ -51,12 +59,33 @@
  function skip(){active.modal?.remove();active.modal=null;active.busy=false;nextFile();}
  const picker=make('input',undefined,{type:'file',accept:'.json,application/json',multiple:'',hidden:''});
  picker.onchange=()=>{if(active.busy||active.modal)return;active.queue=[...picker.files];picker.value='';nextFile();};document.body.append(picker);
- const css=make('style',`#bpf-direct-import{position:fixed;inset:0;background:#102c3c99;z-index:20000;overflow:auto;padding:12px;box-sizing:border-box;font:16px/1.45 Arial,sans-serif;color:#183f52}#bpf-direct-import .direct-box{margin:0 auto;max-width:760px;background:#fff;border-radius:16px;padding:16px;box-shadow:0 8px 24px #163e5530}#bpf-direct-import h2{margin:0 0 12px;font-size:21px}#bpf-direct-import p{margin:8px 0}#bpf-direct-import .direct-card{border:1px solid #c9dce5;border-radius:12px;padding:12px;margin:12px 0;overflow-wrap:anywhere}#bpf-direct-import .direct-card h3{font-size:16px;margin:0 0 8px}#bpf-direct-import select,#bpf-direct-import button{box-sizing:border-box;min-height:44px;max-width:100%;font:inherit;padding:8px 12px;border:1px solid #afc9d7;border-radius:8px;background:white;color:#183f52}#bpf-direct-import select{display:block;width:100%;margin:8px 0}#bpf-direct-import summary{cursor:pointer;padding:8px 0;font-weight:700}#bpf-direct-import .direct-diff{border-top:1px solid #dce9ef;padding:8px 0}#bpf-direct-import .direct-diff strong{display:block}#bpf-direct-import pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;margin:4px 0}#bpf-direct-import .direct-warn{background:#fff3d9;border-left:4px solid #d49a26;padding:8px 12px}#bpf-direct-import label{display:flex;gap:8px;align-items:center;min-height:44px}#bpf-direct-import input[type=checkbox]{width:20px;height:20px;flex:none}#bpf-direct-import .direct-actions{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:8px;padding:12px 0 0;background:white;border-top:1px solid #dce9ef}#bpf-direct-import .direct-primary{background:#087aaa;color:white;font-weight:700;flex:1}#bpf-direct-import img{width:66px;height:66px;object-fit:contain}#bpf-direct-import .direct-image{border-top:1px solid #dce9ef;padding:4px 0}`);document.head.append(css);
+ const css=make('style',`#bpf-direct-import{position:fixed;inset:0;background:#102c3c99;z-index:20000;overflow:auto;padding:12px;box-sizing:border-box;font:16px/1.45 Arial,sans-serif;color:#183f52}#bpf-direct-import .direct-box{margin:0 auto;max-width:760px;background:#fff;border-radius:16px;padding:16px;box-shadow:0 8px 24px #163e5530}#bpf-direct-import h2{margin:0 0 12px;font-size:21px}#bpf-direct-import p{margin:8px 0}#bpf-direct-import .direct-card{border:1px solid #c9dce5;border-radius:12px;padding:12px;margin:12px 0;overflow-wrap:anywhere}#bpf-direct-import .direct-card h3{font-size:16px;margin:0 0 8px}#bpf-direct-import select,#bpf-direct-import button{box-sizing:border-box;min-height:44px;max-width:100%;font:inherit;padding:8px 12px;border:1px solid #afc9d7;border-radius:8px;background:white;color:#183f52}#bpf-direct-import select{display:block;width:100%;margin:8px 0}#bpf-direct-import summary{cursor:pointer;padding:8px 0;font-weight:700}#bpf-direct-import .direct-diff{border-top:1px solid #dce9ef;padding:8px 0}#bpf-direct-import .direct-diff strong{display:block}#bpf-direct-import pre{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;margin:4px 0}#bpf-direct-import .direct-warn{background:#fff3d9;border-left:4px solid #d49a26;padding:8px 12px}#bpf-direct-import label{display:flex;gap:8px;align-items:center;min-height:44px}#bpf-direct-import input[type=checkbox]{width:20px;height:20px;flex:none}#bpf-direct-import .direct-actions{position:sticky;bottom:0;display:flex;flex-wrap:wrap;gap:8px;padding:12px 0 0;background:white;border-top:1px solid #dce9ef}#bpf-direct-import .direct-primary{background:#087aaa;color:white;font-weight:700;flex:1}#bpf-direct-import img{width:66px;height:66px;object-fit:contain}#bpf-direct-import .direct-image{border-top:1px solid #dce9ef;padding:4px 0}#bpf-direct-import .direct-compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0}#bpf-direct-import .direct-side{min-width:0;border:1px solid #c9dce5;border-radius:8px;padding:8px;font-size:14px;overflow-wrap:anywhere}#bpf-direct-import .direct-before{background:#eff4f7}#bpf-direct-import .direct-after{background:#e8f5ef;border-color:#a7d4be}#bpf-direct-import .direct-side strong{font-size:12px;color:#355565;margin-bottom:6px}#bpf-direct-import .direct-badge{display:inline-block;font-size:12px;font-weight:700;border-radius:6px;padding:4px 8px;margin:4px 0}#bpf-direct-import .direct-conflict{background:#fff3d9;color:#704700}#bpf-direct-import .direct-new{background:#e8f5ef;color:#17633d}#bpf-direct-import .direct-info{background:#eaf5fb;border-radius:8px;padding:12px}#bpf-direct-import .direct-state{font-size:14px;color:#355565}#bpf-direct-import .direct-actions{position:static}#bpf-direct-import .direct-diff label{font-weight:700} @media(max-width:480px){#bpf-direct-import{padding:4px}#bpf-direct-import .direct-box{padding:12px}#bpf-direct-import .direct-card{padding:8px}#bpf-direct-import .direct-side{padding:8px}} `);document.head.append(css);
  function showDiff(parent,diffs){
-  const d=make('details');d.append(make('summary','Ver dados e diferenças ('+diffs.length+')'));
-  for(const x of diffs){const box=make('div',undefined,{class:'direct-diff'});const title=D.fields[x.name]?.label||x.name;
-   box.append(make('strong',title+(x.conflict?' — divergência':'')),make('p','Seu guia:'),make('pre',has(x.current)?x.current:'(em branco)'),make('p','Arquivo do colega:'),make('pre',x.incoming));d.append(box);}
-  parent.append(d);
+  const choices=[];
+  for(const x of diffs){
+   const row=make('div',undefined,{class:'direct-diff'});
+   const title=D.fields[x.name]?.label||x.name;
+   row.append(make('strong',title),make('span',x.conflict?'Divergência':'Novo campo',{class:'direct-badge '+(x.conflict?'direct-conflict':'direct-new')}));
+   const sides=make('div',undefined,{class:'direct-compare'});
+   function display(v){if(!has(v))return 'Em branco';const f=D.fields[x.name];if(f?.type==='/Btn'&&(v==='0'||v==='1'))return v==='1'?'Sim':'Não';return v;}
+   for(const [caption,val,cls] of [['Meu guia (antes)',x.current,'direct-before'],['Guia do colega (recebido)',x.incoming,'direct-after']]){
+    const col=make('div',undefined,{class:'direct-side '+cls});col.append(make('strong',caption),make('pre',display(val)));sides.append(col);
+   }
+   const ch=choice('Importar esta alteração',false);
+   row.append(sides,ch.el);parent.append(row);choices.push({x,input:ch.input});
+  }
+  return choices;
+ }
+ function reviewCard(title,names,incoming){
+  const c=card(title),{diffs,conflicts,identical,localOnly}=fieldSummary(values,incoming,names);
+  c.append(make('p',diffs.length?((diffs.length-conflicts)+' novos · '+conflicts+' divergências · '+identical+' idênticos'):(identical?'Dados recebidos idênticos ('+identical+')':'Sem preenchimento recebido'),{class:'direct-state'}));
+  if(localOnly)c.append(make('p',localOnly+' campo(s) preenchido(s) apenas no seu guia — preservados.'));
+  if(!diffs.length)return {c,choices:[]};
+  const bulk=choice('Selecionar todas as alterações deste bloco',false);c.append(bulk.el);
+  const choices=showDiff(c,diffs);
+  bulk.input.onchange=()=>{for(const {input}of choices)input.checked=bulk.input.checked;bulk.input.indeterminate=false;};
+  for(const {input}of choices)input.addEventListener('change',()=>{const n=choices.filter(y=>y.input.checked).length;bulk.input.checked=n===choices.length;bulk.input.indeterminate=n>0&&n<choices.length;});
+  return {c,choices};
  }
  function card(title){const el=make('section',undefined,{class:'direct-card'});el.append(make('h3',title));return el;}
  function choice(label,selected){const el=make('label');const input=make('input',undefined,{type:'checkbox'});input.checked=selected;el.append(input,document.createTextNode(label));return {el,input};}
@@ -82,21 +111,16 @@
   if(warnings.length)box.append(make('p',warnings.join(' '),{class:'direct-warn'}));
   const confirm=choice('Confirmo que este arquivo pertence à mesma inspeção.',false);box.append(confirm.el);
   const selections=[];
+  box.append(make('p','Compare os valores lado a lado e marque somente as alterações que deseja incorporar. Campos vazios do colega nunca apagam os seus dados.',{class:'direct-info'}));
+  const respField='RESPONSÁVEIS PELA INSPEÇÃORow1';
+  const respNames=[...new Set([respField,...Object.keys(D.fields).filter(n=>norm(n).startsWith('responsaveis pela inspecao'))])];
+  const respReview=reviewCard('Responsáveis pela inspeção',respNames,incoming.values);box.append(respReview.c);
   for(const [code,meta]of Object.entries(PROCESSES18)){
-   const names=processFields(code),diffs=diffFields(values,incoming.values,names);if(!diffs.length)continue;
-   const conflicts=diffs.filter(x=>x.conflict).length,c=card(code+' — '+meta.label),select=make('select',undefined,{'aria-label':'Importação de '+meta.label});
-   c.append(make('p',`${diffs.length-conflicts} novos campos · ${conflicts} divergências`));
-   const opt=(value,label)=>{const o=make('option',label,{value});select.append(o);};opt('skip','Não importar este processo');
-   if(!conflicts){opt('add','Acrescentar informações novas');select.value='add';}
-   else{c.append(make('p','Há campos preenchidos de forma diferente. Compare as versões; a substituição abrange o processo inteiro e pode apagar campos que o colega deixou em branco.',{class:'direct-warn'}));opt('replace','Usar a versão recebida (substituir processo inteiro)');}
-   const cleared=conflicts?names.filter(n=>has(values[n])&&!has(incoming.values[n])).map(n=>({name:n,current:values[n],incoming:'(em branco — seria apagado na substituição)',conflict:true})):[];
-   showDiff(c,[...diffs,...cleared]);c.append(select);box.append(c);selections.push({code,names,select});
+   const names=processFields(code).filter(n=>!respNames.includes(n)),review=reviewCard(code+' — '+meta.label,names,incoming.values);
+   box.append(review.c);selections.push({code,names,choices:review.choices});
   }
-  const docNames=Object.keys(D.fields).filter(n=>/^doc_legal_\d+_(situacao|atende|observacao)$/.test(n)),docDiff=diffFields(values,incoming.values,docNames),docChoices=[];
-  if(docDiff.length){const c=card('Documentos legais e regulatórios');for(const x of docDiff){const ch=choice(D.fields[x.name]?.label||x.name,!x.conflict);c.append(ch.el);showDiff(c,[x]);docChoices.push({x,input:ch.input});}box.append(c);}
-  const photoChoices=[];for(const kind of ['photos','labels']){const names=Object.keys(incoming.images).filter(n=>galleryKind(n)===kind);if(!names.length)continue;const c=card(kind==='photos'?'Fotos recebidas':'Rótulos recebidos');for(const n of names){const ch=choice(incoming.values['BPF_PhotoLocation_'+n]||n,true);ch.el.className='direct-image';const img=make('img',undefined,{src:incoming.images[n],alt:'Anexo recebido',loading:'lazy'});ch.el.append(img);c.append(ch.el);photoChoices.push({kind,name:n,input:ch.input});}box.append(c);}
-  const respField='RESPONSÁVEIS PELA INSPEÇÃORow1',receivedResp=incoming.values[respField];let resp=null;
-  if(has(receivedResp)&&receivedResp!==values[respField]){const c=card('Responsáveis pela inspeção');c.append(make('pre',receivedResp));resp=choice('Acrescentar os responsáveis para conferência',true);c.append(resp.el);box.append(c);}
+  const docNames=Object.keys(D.fields).filter(n=>/^doc_legal_\d+_(situacao|atende|observacao)$/.test(n)),docReview=reviewCard('Documentos legais e regulatórios',docNames,incoming.values),docChoices=docReview.choices;box.append(docReview.c);
+  const photoChoices=[];for(const kind of ['photos','labels']){const names=Object.keys(incoming.images).filter(n=>galleryKind(n)===kind);const c=card(kind==='photos'?'Fotos recebidas':'Rótulos recebidos');if(!names.length)c.append(make('p','Nenhum anexo recebido.'));for(const n of names){const ch=choice(incoming.values['BPF_PhotoLocation_'+n]||n,false);ch.el.className='direct-image';const img=make('img',undefined,{src:incoming.images[n],alt:'Anexo recebido',loading:'lazy'});ch.el.append(img);c.append(ch.el);photoChoices.push({kind,name:n,input:ch.input});}box.append(c);}
   const error=make('p',undefined,{role:'alert',class:'direct-warn'});error.hidden=true;box.append(error);
   const footer=make('div',undefined,{class:'direct-actions'}),backup=make('button','Salvar cópia do meu guia',{type:'button'}),apply=make('button','Incorporar selecionados',{type:'button',class:'direct-primary'}),ignore=make('button','Ignorar arquivo',{type:'button'}),cancel=make('button','Fechar',{type:'button'});
   backup.onclick=()=>teamDownload18(values,images,'Guia_Antes_Importacao_'+new Date().toISOString().replace(/[:.]/g,'-')+'.json');ignore.onclick=skip;cancel.onclick=close;footer.append(backup,apply,ignore,cancel);box.append(footer);
@@ -104,12 +128,13 @@
    if(!confirm.input.checked)throw Error('Confirme que os arquivos são da mesma inspeção.');
    if(snapshotTeam18()!==base)throw Error('O guia foi alterado desde a prévia. Feche e reabra o arquivo para conferir.');
    compareIdentity(values,incoming.values,bpfDateToISO);
-   const next={...values},pics={...images},selected=selections.filter(x=>x.select.value!=='skip');
-   for(const x of selected)applyFields(next,incoming.values,x.names,x.select.value);
+   const next={...values},pics={...images},selected=selections.filter(x=>x.choices.some(y=>y.input.checked));
+   for(const x of selected)applySelected(next,incoming.values,x.names,x.choices.filter(y=>y.input.checked).map(y=>y.x.name));
    checkSources(values,next,incoming.values,selected.map(x=>x.code));
    const extras=[];for(const {x,input}of docChoices)if(input.checked){next[x.name]=x.incoming;extras.push('documents');}
    for(const kind of ['photos','labels'])if(importGallery(next,pics,incoming,kind,photoChoices.filter(x=>x.kind===kind&&x.input.checked).map(x=>x.name)))extras.push(kind);
-   if(resp?.input.checked){const old=String(next[respField]||'').trim();const existing=new Set(old.split(/\r?\n/).map(norm));const fresh=String(receivedResp).split(/\r?\n/).filter(x=>norm(x)&&!existing.has(norm(x)));if(fresh.length){next[respField]=[old,'[IMPORTADO PARA CONFERÊNCIA — '+file.name.replace(/[\r\n]/g,' ')+']',...fresh].filter(Boolean).join('\n');extras.push('inspectors');}}
+   const respSelected=respReview.choices.filter(y=>y.input.checked).map(y=>y.x.name);
+   if(respSelected.length){applySelected(next,incoming.values,respNames,respSelected);extras.push('inspectors');}
    if(!selected.length&&!extras.length)throw Error('Selecione ao menos um processo ou informação nova.');
    const previous=JSON.parse(base);
    try{bpfApplyLoadedPhotoPages(next,pics);Object.assign(values,next);Object.assign(images,pics);recalc();sync();}
