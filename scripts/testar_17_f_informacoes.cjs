@@ -197,6 +197,23 @@ console.log('4.1.3 F1: quadro único também com preenchimento antigo e parcial'
  select.value='';select.onchange();assert(record.textContent.includes('Registra o resultado?'));
  select.value='0';select.onchange();assert(record.textContent.includes('Não registra o resultado'));
  select.value='1';select.onchange();assert(record.children[0].textContent==='Registra o resultado');
+ const residueAnswer=walk(captureBox).find(n=>n.tagName==='SELECT'&&n.parentElement.children[0]?.textContent.includes('testa a ausência de resíduo de saneante'));
+ assert(residueAnswer);residueAnswer.value='1';residueAnswer.onchange();
+ const chooseResidue=id=>{const t=walk(captureBox).find(n=>n.dataset.bpfResidue===id);const g=walk(captureBox).find(n=>n.dataset.bpfResidueGroup===id);assert(t&&g);t.checked=true;t.onchange();assert(!g.hidden);return g;};
+ const chooseIndicator=(g,id)=>{const t=walk(g).find(n=>n.dataset.bpfResidueIndicator===id);assert(t);t.checked=true;t.onchange();return walk(g).filter(n=>n.dataset.bpfResidueAlert&&!n.hidden);};
+ const alkaline=chooseResidue('alcalinidade');assert(chooseIndicator(alkaline,'ortotolidina').some(n=>n.dataset.bpfResidueAlert==='no'&&n.textContent.includes('soda cáustica')));
+ const ozone=chooseResidue('ozonio');assert(chooseIndicator(ozone,'ortotolidina').some(n=>n.textContent.includes('qualitativamente')));
+ const paa=chooseResidue('peracetico');assert(chooseIndicator(paa,'dpd').some(n=>n.textContent.includes('kit de cloro não é suficiente')));
+ chooseIndicator(paa,'kit-peracetico');const kit=walk(paa).find(n=>n.tagName==='SELECT');kit.value='Fita reagente específica';kit.onchange();
+ let report=JSON.stringify(water.report(capturePage,captureRow,capturePanel,values));
+ assert(report.includes('Alcalinidade residual')&&report.includes('Ozônio residual')&&report.includes('Ácido peracético residual')&&report.includes('Fita reagente específica')&&report.includes('N,N-dietil-p-fenilenodiamina (DPD)'));
+ const t=walk(captureBox).find(n=>n.dataset.bpfResidue==='ozonio');t.checked=false;t.onchange();
+ report=JSON.stringify(water.report(capturePage,captureRow,capturePanel,values));assert(!report.includes('Ozônio residual'));
+ t.checked=true;t.onchange();assert(walk(ozone).find(n=>n.dataset.bpfResidueIndicator==='ortotolidina').checked,'respostas por resíduo preservadas ao reabrir');
+ for(const [code,id,criterion] of [['4.1.3',0,'residuo'],['4.2.7',1,'residuo'],['4.3.5',1,'residuo'],['4.6.6',1,'teste-arraste'],['4.7.8',0,'residuo']]){
+  const row=model.flatMap(p=>p.rows).find(r=>r.code===code);assert(water.get(row,id).checks.some(c=>c.id===criterion&&c.details==='residue'),code);
+ }
+ console.log('Cinco F: resíduos, indicadores, alertas compatibilidade, kit específico e relatório OK');
 }
 {
  ctx.window={};

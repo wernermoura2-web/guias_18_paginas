@@ -38,7 +38,7 @@ const bpfWaterCheck = (() => {
   check('saneantes','Quais são os sanitizantes utilizados para descontaminação ou desinfecção de rotina da envasadora?',{
    details:'sanitizers',informationList:true,reportLabel:'Sanitizantes utilizados para descontaminação ou desinfecção de rotina da envasadora',frequencyOptional:true}),
   check('residuo','Após a desinfecção da envasadora, testa a ausência de resíduo de saneante na água após o enxágue?',{
-   details:'residue',optionalDetails:true,tests:[['dpd','Fotômetro de bolso (DPD)'],['ortotolidina','Kit de gotas (Ortotolidina)'],['outros','Outro']]}),
+   details:'residue',optionalDetails:true,tests:[['dpd','Fotômetro de bolso — N,N-dietil-p-fenilenodiamina (DPD)'],['ortotolidina','Kit de gotas (Ortotolidina)'],['outros','Outro']]}),
   check('microbiologia','Após o enxágue da envasadora, testa a ausência de contaminação microbiológica?'),
   check('atp','Após o enxágue da envasadora, faz teste de bioluminescência de ATP?'),
   check('fluorescente','Após o enxágue da envasadora, faz teste fluorescente?')
@@ -196,7 +196,7 @@ const bpfWaterCheck = (() => {
     check('bicos-pressao','Os bicos estão desobstruídos e a pressão dos jatos permite que a água de enxágue alcance o fundo das embalagens?')
    ]),
    1:returnableInspection([
-    check('teste-arraste','O teste de arraste foi demonstrado?'),
+    check('teste-arraste','O teste de arraste foi demonstrado?',{details:'residue',recordInPanel:true,optionalDetails:true}),
     check('registros-residuos','Há registros dos testes de resíduos?'),
     ...[
      check('instrumento-adequado','O instrumento portátil é adequado ao desinfetante utilizado?'),
@@ -284,6 +284,53 @@ const bpfWaterCheck = (() => {
   'Outro'
  ];
  const tests = [['telemetria','Telemetria'],['indicador','Teste com indicador'],['outros','Outros']];
+ const residueTypes=[
+  ['acidez','Acidez residual (saneantes ácidos)'],
+  ['alcalinidade','Alcalinidade residual (soda cáustica e detergentes alcalinos)'],
+  ['cloro','Cloro residual (hipoclorito de sódio e detergentes clorados)'],
+  ['ozonio','Ozônio residual'],
+  ['peracetico','Ácido peracético residual'],
+  ['outros','Outros']
+ ];
+ const residueIndicators=[
+  ['bromocresol','Verde de bromocresol'],['fenolftaleina','Fenolftaleína'],['bromotimol','Azul de bromotimol'],
+  ['ortotolidina','Ortotolidina'],['dpd','N,N-dietil-p-fenilenodiamina (DPD)'],
+  ['indigo','Trissulfonato de índigo'],['kit-peracetico','Kit específico para ácido peracético'],['outros','Outros']
+ ];
+ const residueCompatibility={
+  bromocresol:['ok','conditional','no','no','no'],
+  fenolftaleina:['conditional','ok','no','no','no'],
+  bromotimol:['conditional','conditional','no','no','no'],
+  ortotolidina:['no','no','conditional','conditional','no'],
+  dpd:['no','no','ok','conditional','conditional'],
+  indigo:['no','no','no','ok','no'],
+  'kit-peracetico':['no','no','no','no','ok']
+ };
+ function residueNotice(residue,indicator){
+  const label=residueIndicators.find(([id])=>id===indicator)?.[1]||indicator;
+  const target=residueTypes.find(([id])=>id===residue)?.[1]||residue;
+  const status=residueCompatibility[indicator]?.[residueTypes.findIndex(([id])=>id===residue)]||'conditional';
+  if(status==='no')return {status,message:'ATENÇÃO: '+label+' não é indicado para avaliar especificamente '+target.toLowerCase()+'.'};
+  if(indicator==='ortotolidina'&&residue==='ozonio')return {status,message:'ATENÇÃO: A ortotolidina pode indicar qualitativamente a presença de oxidantes, incluindo ozônio. Não utilizar para quantificar ozônio sem método específico validado.'};
+  if(indicator==='dpd'&&residue==='peracetico')return {status,message:'ATENÇÃO: Utilizar método DPD específico e validado para ácido peracético; um kit de cloro não é suficiente.'};
+  if(indicator==='dpd'&&residue==='ozonio')return {status,message:'ATENÇÃO: O DPD reage com oxidantes; somente utilizar método específico validado para ozônio, considerando interferências.'};
+  if(indicator==='ortotolidina')return {status,message:'ATENÇÃO: Indicador pouco seletivo de oxidantes. Confirmar adequação e limitações do método.'};
+  if(['bromocresol','fenolftaleina','bromotimol'].includes(indicator))return {status,message:(status==='conditional'?'ATENÇÃO: ':'')+'Indicador de pH, não específico do princípio ativo. Avaliar faixa de viragem, pH da água de referência e adequação do método.'};
+  if(status==='conditional')return {status,message:'ATENÇÃO: Confirmar a adequação e a validação do método para o resíduo avaliado.'};
+  return {status,message:'Método compatível, desde que adequado à faixa de medição e à sensibilidade necessária.'};
+ }
+ function residueSelected(item){return residueTypes.filter(([id])=>item.residueChecks?.[id]?.selected);}
+ function residueDetails(item){
+  return residueSelected(item).map(([id,label])=>{
+   const r=item.residueChecks[id];
+   const indicators=residueIndicators.filter(([k])=>r.indicators?.[k]).map(([k,name])=>{
+    if(k==='outros')return text(r.otherIndicator)||name;
+    if(k==='kit-peracetico')return [name,text(r.kitMethod)==='Outro'?text(r.kitOtherMethod)||'Outro':text(r.kitMethod),text(r.kitIdentification),text(r.kitRange)&&'Faixa: '+text(r.kitRange)].filter(Boolean).join(' — ');
+    return name;
+   });
+   return (id==='outros'?text(item.otherResidue)||label:label)+(indicators.length?': '+indicators.join(', '):': indicador não informado');
+  });
+ }
  // Os 17 F solicitados: resposta por unidade, informações uma vez por F.
  const compactWaterPanels={
   '4.1.3':[0,2], '4.2.2':[0,1], '4.2.7':[1], '4.2.8':[0,1],
@@ -1391,9 +1438,11 @@ const bpfWaterCheck = (() => {
      details=telemetry.filter(([id])=>item.parameters?.[id]).map(([,label])=>label).join(', ');
      break;
     case 'residue':
-     details=[item.recorded==='1'?'Registra o resultado':item.recorded==='0'?'Não registra o resultado':'',
-      ...(c.tests||tests).filter(([id])=>item.tests?.[id]).map(([id,label])=>id==='outros'?text(item.otherTest)||label:label)
-     ].filter(Boolean).join(', ');
+     {
+      const legacy=(c.tests||tests).filter(([id])=>item.tests?.[id]).map(([id,label])=>id==='outros'?text(item.otherTest)||label:label);
+      details=[...residueDetails(item),!c.recordInPanel&&(item.recorded==='1'?'Registra o resultado':item.recorded==='0'?'Não registra o resultado':''),
+       legacy.length?'Método registrado anteriormente: '+legacy.join(', '):''].filter(Boolean).join(' | ');
+     }
      break;
     case 'filter': details=text(item.frequency)&&'Frequência de troca: '+text(item.frequency);break;
     case 'inspection-frequency': details=text(item.frequency)&&'Frequência: '+text(item.frequency);break;
@@ -1500,7 +1549,13 @@ const bpfWaterCheck = (() => {
    case 'packaging-sanitizers':
     return !criterion.products.some(([id])=>item.products?.[id])||(item.products?.outros&&!text(item.otherProduct));
    case 'telemetry': return !telemetry.some(([id])=>item.parameters?.[id]);
-   case 'residue': return !item.recorded||!(criterion.tests||tests).some(([id])=>item.tests?.[id])||(item.tests.outros&&!text(item.otherTest));
+   case 'residue': {
+    const selected=residueSelected(item);
+    const legacy=(criterion.tests||tests).some(([id])=>item.tests?.[id]);
+    return (!criterion.recordInPanel&&!item.recorded)||(!selected.length&&!legacy)||
+     (selected.some(([id])=>!residueIndicators.some(([key])=>item.residueChecks[id]?.indicators?.[key])))||
+     (item.tests?.outros&&!text(item.otherTest));
+   }
    case 'recirculation': return !recirculation.includes(item.procedure);
    case 'measure': return !text(item.description);
    default: return false;
@@ -1644,22 +1699,56 @@ const bpfWaterCheck = (() => {
     options(telemetry,item.parameters,(id,selected)=>{item.parameters[id]=selected;save();});
     break;
    case 'residue': {
-    const record=element('label'),wording=element('span'),select=element('select');
-    record.className='bpf-water-field';
-    for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
-    const refreshRecord=()=>{select.value=hasAnswer(item.recorded)?item.recorded:'';wording.textContent=item.recorded==='1'?'Registra o resultado':item.recorded==='0'?'Não registra o resultado':'Registra o resultado?';};
-    select.onchange=()=>{item.recorded=select.value;refreshRecord();save();};
-    refreshRecord();record.append(wording,select);container.append(record);
-    record.classList.add('bpf-water-record');
-    item.tests??={};
-    let other;
-    options(criterion.tests||tests,item.tests,(id,selected)=>{
-     item.tests[id]=selected;
-     other.hidden=!item.tests.outros;
-     save();
-    });
-    other=field('Outro teste',item.otherTest,value=>{item.otherTest=value;save();});
-    other.hidden=!item.tests.outros;
+    const legacy=(criterion.tests||tests).filter(([id])=>item.tests?.[id]).map(([id,label])=>id==='outros'?text(item.otherTest)||label:label);
+    if(legacy.length)container.append(element('p','Método registrado anteriormente: '+legacy.join(', ')+'. As respostas antigas foram preservadas; confira a classificação por resíduo.'));
+    container.append(element('strong','Quais são os resíduos avaliados?'));
+    item.residueChecks??={};
+    for(const [id,label] of residueTypes){
+     const r=item.residueChecks[id]??={};r.indicators??={};
+     const row=element('label',label),toggle=element('input');toggle.type='checkbox';row.className='bpf-water-choice';toggle.dataset.bpfResidue=id;row.prepend(toggle);container.append(row);
+     const group=element('fieldset');group.style.cssText='margin:6px 0 12px;padding:10px;border:1px solid #a9c6d8;border-radius:6px;background:#f1f7fa';
+     group.dataset.bpfResidueGroup=id;group.append(element('legend',label),element('strong','Quais são os indicadores utilizados?'));
+     container.append(group);
+     if(id==='outros'){
+      const other=element('label','Especifique o resíduo avaliado'),area=element('textarea');area.rows=2;area.value=item.otherResidue||'';area.oninput=()=>{item.otherResidue=area.value;save();};other.append(area);group.append(other);
+     }
+     const refreshers=[];
+     for(const [k,name] of residueIndicators){
+      const option=element('label',name),input=element('input');input.type='checkbox';input.dataset.bpfResidueIndicator=k;option.className='bpf-water-choice';option.prepend(input);group.append(option);
+      const notice=residueNotice(id,k),alert=element('p',notice.message);alert.dataset.bpfResidueAlert=notice.status;
+      alert.setAttribute('role','note');alert.style.cssText='padding:8px;margin:4px 0 8px;border-left:4px solid '+(notice.status==='no'?'#ad2525':notice.status==='conditional'?'#bf861b':'#39784c')+';background:'+(notice.status==='no'?'#fff0ef':notice.status==='conditional'?'#fff5d9':'#edf7ed')+';color:#253c48;font-size:90%';group.append(alert);
+      const detail=element('div');
+      if(k==='outros'){
+       const area=element('textarea');area.rows=2;area.value=r.otherIndicator||'';area.placeholder='Identifique o indicador ou método';area.oninput=()=>{r.otherIndicator=area.value;save();};detail.append(area);
+      }
+      if(k==='kit-peracetico'){
+       const methodLabel=element('label','Qual é o método do kit específico para ácido peracético?'),method=element('select');
+       for(const m of ['','Fita reagente específica','Comparador colorimétrico específico','Fotômetro/colorímetro específico','Método N,N-dietil-p-fenilenodiamina (DPD) específico para ácido peracético','Titulação específica','Outro'])method.add(new Option(m||'Selecione',m));
+       method.value=r.kitMethod||'';methodLabel.append(method);detail.append(methodLabel);
+       for(const [key,caption] of [['kitOtherMethod','Especifique o outro método'],['kitIdentification','Identificação do kit (fabricante e modelo)'],['kitRange','Faixa de medição informada pelo fabricante (mg/L)']]){
+        const l=element('label',caption),a=element('textarea');a.rows=2;a.value=r[key]||'';l.append(a);detail.append(l);
+        if(key==='kitOtherMethod')refreshers.push(()=>{l.hidden=method.value!=='Outro';});
+        a.oninput=()=>{r[key]=a.value;save();};
+       }
+       method.onchange=()=>{r.kitMethod=method.value;refreshers.forEach(f=>f());save();};
+      }
+      if(detail.children.length)group.append(detail);
+      input.onchange=()=>{r.indicators[k]=input.checked;refreshers.forEach(f=>f());save();};
+      refreshers.push(()=>{input.checked=!!r.indicators[k];alert.hidden=!input.checked;detail.hidden=!input.checked;});
+     }
+     const update=()=>{toggle.checked=!!r.selected;group.hidden=!toggle.checked;refreshers.forEach(f=>f());};
+     toggle.onchange=()=>{r.selected=toggle.checked;update();save();};
+     updates.push(update);update();
+    }
+    if(!criterion.recordInPanel){
+     const record=element('label'),wording=element('span'),select=element('select');
+     record.className='bpf-water-field';
+     for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não']])select.add(new Option(t,v));
+     const refreshRecord=()=>{select.value=hasAnswer(item.recorded)?item.recorded:'';wording.textContent=item.recorded==='1'?'Registra o resultado':item.recorded==='0'?'Não registra o resultado':'Registra o resultado?';};
+     select.onchange=()=>{item.recorded=select.value;refreshRecord();save();};
+     refreshRecord();record.append(wording,select);container.append(record);
+     record.classList.add('bpf-water-record');
+    }
     break;
    }
    case 'inspection-frequency': {
