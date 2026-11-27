@@ -31,7 +31,7 @@ function eligible(page,row){
       answered.push({entry:entries[0],answer});
    }
   }
-  const f=row.code==='4.10.3'&&panel.id>=3?'F'+(panel.id+2):
+  const f=row.code==='4.10.3'?'F'+(panel.id+1):
    (String(panel.label||'').match(/^F\\d+/)?.[0]||'F'+(panel.id+1));
   for(const item of answered){
    const answer=item.answer;
