@@ -31,12 +31,35 @@ function strip(value){
  }
  return s;
 }
+// As informações complementares são calculadas a partir das respostas atuais,
+// sem substituir as observações livres que já foram transferidas.
+function complementEntries(i,v){
+ if(![0,2].includes(i)||typeof bpfCQComplementEntries!=='function'||typeof BPF_PHRASES==='undefined')return [];
+ const page=BPF_PHRASES.find(p=>Number(p.page)===11),row=page?.rows.find(r=>r.code===ids[i]);
+ return row?bpfCQComplementEntries(row,page,v):[];
+}
+function transferredText(v,i){
+ const saved=actualText(v[original(i)],i);
+ const compact=text=>String(text||'').replace(/\s+/g,' ').trim();
+ const missing=complementEntries(i,v).filter(entry=>!compact(saved).includes(compact(entry)));
+ return [saved,missing.join('; ')].filter(Boolean).join('\n\n');
+}
+function snapshotWithoutComplements(text,i,v){
+ let result=String(text||'');
+ for(const entry of complementEntries(i,v)){
+  // Remove somente o trecho gerado exato; o texto livre permanece.
+  const at=result.indexOf(entry);if(at<0)continue;
+  const prefix=at>=2&&result.slice(at-2,at)==='; '?2:0;
+  result=result.slice(0,at-prefix)+result.slice(at+entry.length);
+ }
+ return result.trim();
+}
 function block(){
  const v=valuesRef();if(!v)return '';
  let lines=[];
  for(let i=0;i<ids.length;i++){
   if(!moved(v,i))continue;
-  const value=actualText(v[original(i)],i);
+  const value=transferredText(v,i);
   if(value)lines.push('ITEM '+ids[i]+' — OBSERVAÇÕES\n'+value);
  }
  return lines.length?start+'\n'+'----------------------------------------\n\n'+lines.join('\n\n----------------------------------------\n\n')+'\n\n'+end:'';
@@ -48,10 +71,10 @@ function update(){
  for(let i=0;i<ids.length;i++){
   const current=actualText(v[names[i]],i),saved=actualText(v[original(i)],i);
   if(moved(v,i)){
-   if(!saved&&current)v[original(i)]=current;
+   if(!saved&&current)v[original(i)]=snapshotWithoutComplements(current,i,v);
    v[names[i]]=reference(i);
   }else if(v[names[i]]===reference(i)&&saved){
-   v[names[i]]=saved;
+   v[names[i]]=transferredText(v,i);
   }
  }
 }
@@ -60,11 +83,11 @@ function toggle(i){
  if(!moved(v,i)){
   const current=actualText(v[names[i]],i);
   if(!current)return;
-  v[original(i)]=current;
+  v[original(i)]=snapshotWithoutComplements(current,i,v);
   v[key(i)]='1';
  }else{
   v[key(i)]='0';
-  v[names[i]]=actualText(v[original(i)],i);
+  v[names[i]]=transferredText(v,i);
  }
  if(typeof changed==='function')changed();
  window.Guia?.recalc();
