@@ -941,17 +941,17 @@ const bpfWaterCheck = (() => {
     cqAuditQ('equipamentos','O laboratório dispõe dos equipamentos, instrumentos, materiais e insumos necessários às análises realizadas?','O laboratório dispõe dos equipamentos, instrumentos, materiais e insumos necessários às análises realizadas.','O laboratório não dispõe de todos os equipamentos, instrumentos, materiais e insumos necessários às análises realizadas.',{choices:cqAuditEquipment,choiceLabel:'Equipamentos existentes',choicesAlways:true}),
     cqAuditQ('funcionamento','Os equipamentos e instrumentos encontram-se em condições adequadas de funcionamento?','Os equipamentos e instrumentos encontram-se em condições adequadas de funcionamento.','Foram constatados equipamentos e/ou instrumentos em condições inadequadas de funcionamento.'),
     cqAuditQ('insumos','Os meios de cultura e demais insumos estão identificados, dentro da validade e adequadamente armazenados?','Os meios de cultura e demais insumos estão identificados, dentro da validade e adequadamente armazenados.','Foram constatadas inadequações na identificação, validade e/ou armazenamento dos meios de cultura e demais insumos.'),
-    cqAuditQ('formacao','Os profissionais que executam as análises laboratoriais possuem formação profissional compatível com as atividades desempenhadas e qualificação técnica comprovada?','Os profissionais que executam as análises laboratoriais possuem formação profissional compatível e qualificação técnica comprovada.','Não foi comprovada a formação profissional compatível e/ou a qualificação técnica dos profissionais que executam as análises laboratoriais.',{guidance:'Conferir formação, atribuições, capacitação específica e experiência comprovada. Capacitação em BPF, isoladamente, não comprova competência para a execução das análises. ABNT NBR ISO/IEC 17025:2017, itens 6.2.2 e 6.2.5: verificar requisitos de competência e registros pertinentes.'}),
-    cqAuditQ('autoclave-area','A autoclave está instalada em área separada e dotada de exaustão adequada?','A autoclave está instalada em área separada e dotada de exaustão adequada.','A autoclave não está instalada em área separada e/ou não possui exaustão adequada.')
+    cqAuditQ('formacao','Os profissionais que executam as análises laboratoriais possuem formação profissional compatível com as atividades desempenhadas e qualificação técnica comprovada?','Os profissionais que executam as análises laboratoriais possuem formação profissional compatível e qualificação técnica comprovada.','Não foi comprovada a formação profissional compatível e/ou a qualificação técnica dos profissionais que executam as análises laboratoriais.',{guidance:'Conferir a compatibilidade da formação profissional com as atribuições da função e os requisitos de competência documentados pelo laboratório. Verificar evidências de qualificação, capacitação específica, conhecimento técnico, habilidades, experiência, supervisão, autorização para as atividades atribuídas e acompanhamento da competência. Capacitação em BPF, isoladamente, não comprova competência analítica. ABNT NBR ISO/IEC 17025:2017, itens 6.2.2, 6.2.3, 6.2.5 e 6.2.6.'}),
+    cqAuditQ('autoclave-area','A autoclave está instalada em área separada e com adequada exaustão?','A autoclave está instalada em área separada e dotada de exaustão adequada.','A autoclave não está instalada em área separada e/ou não possui exaustão adequada.')
    ]}
   ],
   documentation:[
    {title:'Documentação geral e metodologia analítica',questions:[
-    cqAuditQ('manual','Foi apresentado o Manual do Laboratório, contemplando as Boas Práticas de Laboratório e os procedimentos aplicáveis?','Foi apresentado o Manual do Laboratório com as Boas Práticas de Laboratório e os procedimentos aplicáveis.','Não foi apresentado o Manual do Laboratório com as Boas Práticas de Laboratório e os procedimentos aplicáveis.',{guidance:'Conferir a documentação do sistema de gestão, sua disponibilidade e controle. ABNT NBR ISO/IEC 17025:2017, itens 8.2 e 8.3, quando aplicáveis; a norma não exige necessariamente um documento único denominado manual.'}),
+    cqAuditQ('manual','Foi apresentado o Manual do Laboratório, contemplando as Boas Práticas de Laboratório e os procedimentos aplicáveis?','Foi apresentado o Manual do Laboratório com as Boas Práticas de Laboratório e os procedimentos aplicáveis.','Não foi apresentado o Manual do Laboratório com as Boas Práticas de Laboratório e os procedimentos aplicáveis.',{guidance:'Conferir as políticas e objetivos do sistema de gestão, a documentação dos processos e suas responsabilidades, a disponibilidade dos documentos para o pessoal e o controle de aprovação, revisão, atualização e identificação das versões. Verificar também o controle dos registros. ABNT NBR ISO/IEC 17025:2017, itens 8.2, 8.3 e 8.4, quando aplicáveis. A norma não exige necessariamente um documento único denominado manual; podem ser apresentados documentos equivalentes.'}),
     cqAuditQ('metodo-fq','Foram apresentados os métodos analíticos físico-químicos utilizados?','Foram apresentados os métodos analíticos físico-químicos utilizados.','Não foram apresentados os métodos analíticos físico-químicos utilizados.'),
-    cqAuditQ('metodo-proprio','Foram apresentados os métodos analíticos microbiológicos referentes aos meios preparados no próprio laboratório?','Foram apresentados os métodos analíticos microbiológicos referentes aos meios preparados no próprio laboratório.','Não foram apresentados os métodos analíticos microbiológicos referentes aos meios preparados no próprio laboratório.',{specialOption:['no-own','O estabelecimento não utiliza meios preparados no próprio laboratório']}),
+    cqAuditQ('metodo-proprio','Foram apresentados os métodos analíticos microbiológicos referentes aos meios preparados no próprio laboratório?','Foram apresentados os métodos analíticos microbiológicos referentes aos meios preparados no próprio laboratório.','Não foram apresentados os métodos analíticos microbiológicos referentes aos meios preparados no próprio laboratório.',{specialOption:['no-own','O estabelecimento não utiliza meios próprios']}),
     cqAuditQ('metodo-placas','Foram apresentados os métodos analíticos específicos das placas adquiridas prontas para uso?','Foram apresentados os métodos analíticos específicos das placas adquiridas prontas para uso.','Não foram apresentados os métodos analíticos específicos das placas adquiridas prontas para uso.',{specialOption:['prepared','O estabelecimento não utiliza placas com meios prontos']}),
-    cqAuditQ('metodos-completude','Os métodos analíticos apresentados contêm as informações técnicas necessárias, a identificação dos meios utilizados, os critérios de confirmação quando previstos, as referências reconhecidas e as evidências de validação quando aplicável?','Os métodos analíticos apresentados contêm as informações técnicas necessárias, as referências reconhecidas e as evidências de validação quando aplicável.','Os métodos analíticos apresentados não contêm todas as informações técnicas necessárias, as referências reconhecidas e/ou as evidências de validação quando aplicável.',{guidance:'Verificar a documentação apresentada e sua adequação ao escopo analítico, sem substituir a avaliação técnica do responsável pelo laboratório. ABNT NBR ISO/IEC 17025:2017, item 7.2.'}),
+    cqAuditQ('metodos-completude','Os métodos de análise utilizados contêm todas as informações necessárias?','Os métodos de análise utilizados contêm todas as informações necessárias.','Os métodos de análise utilizados não contêm todas as informações necessárias.',{choices:['Meios utilizados','Procedimentos para confirmação dos resultados, se necessário','Identificação dos métodos de referência reconhecidos','Validação, quando aplicável','Outros'],choicesOn:'0',choiceLabel:'Informações ausentes ou incompletas',otherChoice:true,guidance:'Avaliar a documentação apresentada segundo o escopo analítico e a aplicabilidade dos requisitos. ABNT NBR ISO/IEC 17025:2017, item 7.2.'}),
    ]},
    {title:'Meios de cultura e controles analíticos',questions:[
     cqAuditQ('notas','Foram apresentadas as notas fiscais de aquisição dos meios de cultura ou das placas prontas para uso?','Foram apresentadas as notas fiscais de aquisição dos meios de cultura ou das placas prontas para uso.','Não foram apresentadas as notas fiscais de aquisição dos meios de cultura ou das placas prontas para uso.',{choices:cqAuditParams,choiceLabel:'Parâmetros contemplados'}),
@@ -1002,6 +1002,7 @@ const bpfWaterCheck = (() => {
   for(const [group,sections] of Object.entries(cqAuditGroups))for(const section of sections)for(const q of section.questions){
    const prefix='4.10.1 — '+cqAuditHeading[group]+' — ',name=cqAuditKey(page,group,q.id);
    data.fields[name]={name,type:'/Ch',flags:0,label:prefix+q.question,options:q.specialOption?['','1','0',q.specialOption[0]]:['','1','0'],calc:'',phrasePage:page.page};
+   if(q.otherChoice){const n=cqAuditKey(page,group,q.id+'_outros');data.fields[n]={name:n,type:'/Tx',flags:4096,label:prefix+'Outras informações ausentes ou incompletas',options:[],calc:'',phrasePage:page.page};}
    for(const [index,option] of (q.choices||[]).entries()){
     const n=cqAuditKey(page,group,q.id+'_op_'+index);data.fields[n]={name:n,type:'/Ch',flags:0,label:prefix+q.choiceLabel+' — '+option,options:['','1'],calc:'',phrasePage:page.page};
    }
@@ -1022,18 +1023,24 @@ const bpfWaterCheck = (() => {
      select.setAttribute('aria-label','4.10.1 — '+q.question);
      for(const [v,t] of [['','Selecione'],['1','Sim'],['0','Não'],...(q.specialOption?[q.specialOption]:[])])select.add(new Option(t,v));
      select.value=cqAuditAnswer(page,group,q.id,values);label.append(wording,select);wrapper.append(label);
-     let choiceBox=null;const choiceInputs=[];
+     let choiceBox=null,otherLabel=null,otherInput=null;const choiceInputs=[];
      if(q.choices){
       choiceBox=element('fieldset');choiceBox.style.cssText='margin:8px 0;padding:8px;border:1px solid #91b5c9;border-radius:8px';choiceBox.append(element('legend',q.choiceLabel));
       for(const [i,caption] of q.choices.entries()){
        const optLabel=element('label'),input=element('input'),key=cqAuditKey(page,group,q.id+'_op_'+i);
        input.type='checkbox';input.checked=values[key]==='1';input.onchange=()=>{values[key]=input.checked?'1':'';persist();};optLabel.append(input,document.createTextNode(caption));choiceBox.append(optLabel);choiceInputs.push(input);
       }
+      if(q.otherChoice){
+       otherLabel=element('label','Especifique outras informações ausentes ou incompletas:');otherInput=element('textarea');otherInput.rows=2;
+       otherLabel.style.cssText='display:block;margin:8px 0';otherInput.style.cssText='display:block;width:100%;min-height:44px;margin:6px 0;font:inherit';
+       const otherKey=cqAuditKey(page,group,q.id+'_outros');otherInput.value=values[otherKey]||'';otherInput.oninput=()=>{values[otherKey]=otherInput.value;persist();};
+       otherLabel.append(otherInput);choiceBox.append(otherLabel);
+      }
       wrapper.append(choiceBox);
      }
      if(q.guidance){const p=element('p',q.guidance);p.style.cssText='margin:8px 0;padding:12px;background:#e8f2f7;border-left:3px solid #18749c;line-height:1.45';wrapper.append(p);}
      refreshers.push(()=>{const show=cqAuditVisible(page,group,q,values);wrapper.hidden=!show;wrapper.style.display=show?'block':'none';select.disabled=!show;wording.textContent=select.value==='1'?q.yes:select.value==='0'?q.no:q.question;
-      if(choiceBox){const active=show&&(q.choicesAlways||select.value==='1');choiceBox.hidden=!active;choiceBox.style.display=active?'block':'none';for(const input of choiceInputs)input.disabled=!active;}
+      if(choiceBox){const active=show&&(q.choicesAlways||select.value===(q.choicesOn||'1'));choiceBox.hidden=!active;choiceBox.style.display=active?'block':'none';for(const input of choiceInputs)input.disabled=!active;if(otherLabel){const otherActive=active&&choiceInputs[choiceInputs.length-1]?.checked===true;otherLabel.hidden=!otherActive;otherLabel.style.display=otherActive?'block':'none';otherInput.disabled=!otherActive;}}
      });
      select.onchange=()=>{values[name]=select.value;persist();};box.append(wrapper);
     }
@@ -1049,7 +1056,7 @@ const bpfWaterCheck = (() => {
     if(!cqAuditVisible(page,group,q,data))continue;
     const answer=cqAuditAnswer(page,group,q.id,data);
     let line=['1','0'].includes(answer)?(answer==='1'?q.yes:q.no):'';
-    if((q.choicesAlways||answer==='1')&&q.choices){const selected=q.choices.filter((_,i)=>data[cqAuditKey(page,group,q.id+'_op_'+i)]==='1');if(selected.length)line+=(line?' ':'')+q.choiceLabel+': '+selected.join(', ')+'.';}
+    if((q.choicesAlways||answer===(q.choicesOn||'1'))&&q.choices){const selected=q.choices.filter((_,i)=>data[cqAuditKey(page,group,q.id+'_op_'+i)]==='1');if(q.otherChoice&&selected.includes('Outros')){const other=String(data[cqAuditKey(page,group,q.id+'_outros')]||'').trim();if(other)selected[selected.indexOf('Outros')]='Outros: '+other;}if(selected.length)line+=(line?' ':'')+q.choiceLabel+': '+selected.join(', ')+'.';}
     if(line)checklist.push(line);
    }
    if(checklist.length)out.push({page,row,panel,heading:'Outras informações — '+cqAuditHeading[group],checklist,answer:'',note:'',selected:[]});
