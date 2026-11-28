@@ -166,7 +166,7 @@
       // O Guia em Branco já está sincronizado com as páginas do HTML.
       // Não usar o antigo .pdf.b64, nem repintar parcialmente as células F.
       const isBlankGuide=fileName==='Guia_BPF_APPCC_Em_Branco_18_Paginas.pdf';
-      const source='./impressao/'+fileName+(isBlankGuide?'':'.b64')+'?v=20261127-v86-importacao-direta';
+      const source='./impressao/'+fileName+(isBlankGuide?'':'.b64')+'?v=20261127-v100-documentos-anexos';
       const response=await fetch(source,{cache:'reload'});
       if(!response.ok)throw new Error('PDF indisponível');
       const bytes=isBlankGuide
@@ -231,7 +231,7 @@
   );
   const editableGuide=document.createElement('a');
   editableGuide.className='bpf-ui-action bpf-ui-editable-guide';
-  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261127-v86-importacao-direta';
+  editableGuide.href='./impressao/Guia_Editavel_em_Branco.pdf?v=20261127-v100-documentos-anexos';
   editableGuide.download='Guia_Editavel_em_Branco.pdf';
   editableGuide.textContent='Guia Editável em Branco (sem as frases)';
   editableGuide.addEventListener('click',async event=>{
