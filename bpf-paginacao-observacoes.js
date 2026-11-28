@@ -121,12 +121,28 @@ function bpfPaginateFinalConsiderations(text,firstRect,nextRect,font,bold){
  return groups.map(join);
 }
 
+// Formatação de apresentação: não modifica os textos nem as respostas salvas.
+function bpfCQPresentationText(text){
+ const source=String(text||'').replace(/\r\n?/g,'\n').replace(/;\s+(?=(?:4\.10\.\d+\s+)?F\d+\s+[—–-]\s+)/g,'\n\n');
+ return source.split('\n').map(line=>{
+  const match=line.match(/^((?:4\.10\.\d+\s+)?F\d+\s+[—–-]\s+[^—–\n]{1,150}\s+[—–-]\s+Outras informações(?:\s+[—–-]\s+(?:Implementação|Documentação) do Controle da Qualidade)?)\s+[—–-]\s+(.*)$/i);
+  if(!match)return line;
+  return match[1].trim()+'\n'+match[2].replace(/\s+\|\s+/g,'\n');
+ }).join('\n');
+}
+function bpfCQHeading(line){
+ return /^\s*(?:CONTINUAÇÃO DAS OBSERVAÇÕES\s+[—–-]\s+CONTROLE DA QUALIDADE|FIM DAS OBSERVAÇÕES DO CONTROLE DA QUALIDADE|ITEM 4\.10\.\d+\b)/i.test(line)
+ || /^\s*(?:4\.10\.\d+\s+)?F\d+\s+[—–-]\s+[^—–\n]{1,150}\s+[—–-]\s+Outras informações(?:\s+[—–-]\s+(?:Implementação|Documentação) do Controle da Qualidade)?\s*$/i.test(line);
+}
+function bpfCQSubtitle(line){
+ return line.match(/^\s*(?:4\.10\.\d+\s+)?F\d+\s+[—–-]\s+[^—–\n]{1,150}(?=\s+[—–-]\s+|$)/i)?.[0]?.trimEnd()||'';
+}
 function bpfObservationParagraphs(text,spacing){
  const rows=[];
  for(const line of text.split('\n')){
   const definition=spacing==='nc'&&bpfIsNCDefinition(line);
-  const title=spacing==='nc'&&bpfIsFinalConsiderationTitle(line);
-  const label=spacing==='nc'&&!title?bpfConsiderationLabel(line):'';
+  const title=spacing==='nc'&&bpfIsFinalConsiderationTitle(line)||spacing==='cq'&&bpfCQHeading(line);
+  const label=!title?(spacing==='nc'?bpfConsiderationLabel(line):spacing==='cq'?bpfCQSubtitle(line):''):'';
   const ncEntry=spacing==='nc'&&bpfIsNCEntry(line);
   const cqStart=spacing==='cq'&&/^\s*CONTINUAÇÃO DAS OBSERVAÇÕES\s+[—–-]\s+CONTROLE DA QUALIDADE\s*$/i.test(line);
   const cqEnd=spacing==='cq'&&/^\s*FIM DAS OBSERVAÇÕES DO CONTROLE DA QUALIDADE\s*$/i.test(line);
@@ -140,6 +156,8 @@ function bpfObservationParagraphs(text,spacing){
   let gap=0;
   if(definition)gap=before?.definition?1/3:1;
   else if(before?.definition&&line.trim())gap=1;
+  else if(spacing==='cq'&&(title||label))gap=rows.length?.7:0;
+  else if(spacing==='cq'&&line.trim()&&before?.line.trim()&&!/^-{4,}$/.test(line.trim()))gap=(before.title||Boolean(before.label)) ? .25 : .15;
   else if(title)gap=.65;
   else if(cqStart||before?.cqEnd&&line.trim())gap=1;
   else if(cqItem||before?.cqItem&&line.trim())gap=1/3;
@@ -377,8 +395,12 @@ function bpfReconcileObservationPages(finalFont,finalBold){
  if(typeof bpfRefreshFinalConsiderationsSelector==='function')bpfRefreshFinalConsiderationsSelector();
  const full=String(values.obs_gerais_continuacao||'').replace(/\r\n?/g,'\n');
  const rect=D.widgets.find(widget=>widget.name==='obs_gerais_continuacao')?.rect;
- if(rect&&full!==bpfCQObservationFlow.full){
-  bpfCQObservationFlow={full,parts:bpfPaginateObservation(full,rect,bpfNCPageRect,BPF_CQ_FONT_SIZE,bpfObservationScreenFont(BPF_CQ_FONT_SIZE),'cq')};
+ if(rect&&(full!==bpfCQObservationFlow.full||finalFont&&finalFont!==bpfCQObservationFlow.font)){
+  const normalize=finalFont?(window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String)):String;
+  const measure=f=>({widthOfTextAtSize:(t,size)=>f.widthOfTextAtSize(normalize(t),size)});
+  const normal=finalFont?measure(finalFont):bpfObservationScreenFont(BPF_CQ_FONT_SIZE);
+  const bold=finalBold?measure(finalBold):bpfObservationScreenFont(BPF_CQ_FONT_SIZE,true);
+  bpfCQObservationFlow={full,font:finalFont||null,parts:bpfPaginateObservation(bpfCQPresentationText(full),rect,bpfNCPageRect,BPF_CQ_FONT_SIZE,normal,'cq',bold)};
  }
  const finalText=String(values[bpfFinalConsiderationsField]||'').replace(/\r\n?/g,'\n');
  const finalRect=D.widgets.find(widget=>widget.name===bpfFinalConsiderationsField)?.rect;
@@ -443,7 +465,7 @@ function bpfObservationPDFSourceIndex(source){
  return source+[...bpfOverflowPages.values()].filter(page=>page.anchor<source).length;
 }
 
-function bpfPrintProcessObservations(pdf,form,font,normalize,black){
+function bpfPrintProcessObservations(pdf,form,font,normalize,black,bold=font){
  for(const name of bpfObservationTargets){
   const field=form.getFieldMaybe(name);
   if(!field)continue;
@@ -460,8 +482,10 @@ function bpfPrintProcessObservations(pdf,form,font,normalize,black){
    if(!text)continue;
    const usableWidth=Math.max(1,width-6),usableHeight=Math.max(1,height-6);
    const leading=size=>size*1.25;
-   const wrap=size=>bpfObservationLines(text,font,usableWidth,size);
-   const fits=size=>(wrap(size).length+bpfPdfObservationBlankLines)*leading(size)<=usableHeight;
+   const cq=source.page===11;
+   const cqRows=cq?bpfObservationParagraphs(bpfCQPresentationText(text),'cq'):[];
+   const wrap=size=>cq?cqRows.flatMap(({line,title,label,gap})=>bpfFinalWrappedRows(line,title,label,font,bold,usableWidth,size).map((row,i)=>({...row,title,gap:i===0?gap:0}))):bpfObservationLines(text,font,usableWidth,size).map(rest=>({lead:'',rest,title:false,gap:0}));
+   const fits=size=>(wrap(size).reduce((sum,row)=>sum+1+row.gap,0)+bpfPdfObservationBlankLines)*leading(size)<=usableHeight;
    let size=9;
    if(!fits(size)){
     let low=.25,high=size;
@@ -473,7 +497,8 @@ function bpfPrintProcessObservations(pdf,form,font,normalize,black){
     size=low;
    }
    const top=y+height-3;
-   wrap(size).forEach((row,i)=>page.drawText(row,{x:x+3,y:top-size-i*leading(size),size,font,color:black}));
+   let baseline=top-size;
+   for(const {lead,rest,title,gap} of wrap(size)){baseline-=gap*leading(size);if(lead)page.drawText(lead,{x:x+3,y:baseline,size,font:bold,color:black});if(rest)page.drawText(rest,{x:x+3+(lead?bold.widthOfTextAtSize(lead,size):0),y:baseline,size,font:title?bold:font,color:black});baseline-=leading(size);}
   }
   form.removeField(field);
  }
@@ -494,7 +519,7 @@ async function bpfPDFWithObservationOverflows(pdf,form,font){
  const blue=PDFLib.rgb(221/255,235/255,246/255);
  const template=bpfOverflowPages.size?await pdf.embedJpg(bpfNCBackground):null;
  const normalize=window.bpfNormalizePdfText||(typeof bpfPrintNormalizeWinAnsi==='function'?bpfPrintNormalizeWinAnsi:String);
- bpfPrintProcessObservations(pdf,form,font,normalize,black);
+ bpfPrintProcessObservations(pdf,form,font,normalize,black,bold);
  const draw=(page,rect,text,size,spacing)=>{
   const content=normalize(text.trimEnd());
   const [x,,right,top]=rect,leading=size*(spacing==='final'?bpfFinalConsiderationsLeading:1.35);
